@@ -15,7 +15,7 @@ import net.minecraftforge.event.TickEvent;
 @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
 public class ClientFacadeVisibility {
 
-    private static boolean FACADES_VISIBLE = true;
+    private static volatile boolean FACADES_VISIBLE = true;
 
     @UseOnly(LogicalSide.CLIENT)
     public static boolean areFacadesVisible() {

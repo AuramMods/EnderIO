@@ -151,6 +151,7 @@ dependencies {
     "modLocalRuntime"(libs.curios)
 
     // Forge 1.20.1 renderer/shader implementations for compatibility testing
+    modCompileOnly(libs.embeddium)
     modCompileOnly(libs.oculus)
     "modLocalRuntime"(libs.embeddium)
     "modLocalRuntime"(libs.oculus)

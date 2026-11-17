@@ -19,8 +19,8 @@ Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions
 | FTB Library | 2001.2.13 | `dev.ftb.mods:ftb-library-forge` | Pending |
 | Architectury | 9.2.14+forge | Modrinth `architectury-api:1MKTLiiG` | Pending |
 | Curios | 5.14.1+1.20.1 | Modrinth `curios:IPQlZkz1` | Pending |
-| Embeddium | 0.3.31+mc1.20.1 | Modrinth `embeddium:UTbfe5d1`; renderer compatibility profile | Pending |
-| Oculus | 1.20.1-1.8.0 | Modrinth `oculus:iQ1SwGc3`; shader compatibility profile | Pending |
+| Embeddium | 0.3.31+mc1.20.1 | Modrinth `embeddium:UTbfe5d1`; compile-only mesh-appender API and optional renderer profile | Pending; adapter implemented in cycle 022 |
+| Oculus | 1.20.1-1.8.0 | Modrinth `oculus:iQ1SwGc3`; shader compatibility profile | Pending; Forge mod-ID detection corrected in cycle 022 |
 | GraphLib3 | 3.0.5 | Existing `dev.gigaherz.graph:GraphLib3` bundled library | Pending |
 
 Inventory Sorter hooks still need a target-mod test profile. Optional dependency loading, metadata dependencies inside downloaded jars (including nested jars), default/minimal/all-integrations profiles and API changes still require validation. The standard Gradle dependency report resolves the dependency graph; it does not prove all remapped jar files have been downloaded or that the APIs compile.

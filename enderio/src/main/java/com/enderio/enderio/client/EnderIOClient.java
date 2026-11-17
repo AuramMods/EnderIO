@@ -143,6 +143,9 @@ public class EnderIOClient {
 
         event.enqueueWork(() -> {
             registerScreens();
+            if (net.minecraftforge.fml.ModList.get().isLoaded("embeddium")) {
+                com.enderio.enderio.compat.embeddium.EmbeddiumFacadeRendering.init();
+            }
             //switch to item model component in 1.21.2
             ItemProperties.register(EIOItems.SOUL_VIAL.get(), SoulVialItem.FILLED_MODEL_PROPERTY,
                 (stack, level, player, seed) -> SoulBoundUtils.isBound(stack) ? 1 : 0);

@@ -22,7 +22,7 @@ public class ModCompatHelper {
     private static void init() {
         if (!initialized) {
             hasJEI = ModList.get().isLoaded("jei");
-            hasIris = ModList.get().isLoaded("iris");
+            hasIris = ModList.get().isLoaded("oculus") || ModList.get().isLoaded("iris");
             initialized = true;
         }
     }

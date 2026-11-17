@@ -113,6 +113,8 @@ tasks.named<JavaCompile>(sourceSets.test.get().compileJavaTaskName) {
     source(rootProject.file("enderio/src/test/java/com/enderio/enderio/client/ModelRenderUtilTests.java"))
     source(rootProject.file("enderio/src/main/java/com/enderio/enderio/client/foundation/renderer/PreviewLayerBuffer.java"))
     source(rootProject.file("enderio/src/test/java/com/enderio/enderio/client/PreviewLayerBufferTests.java"))
+    source(rootProject.file("enderio/src/main/java/com/enderio/enderio/client/foundation/renderer/FixedAlphaVertexConsumer.java"))
+    source(rootProject.file("enderio/src/test/java/com/enderio/enderio/client/FixedAlphaVertexConsumerTests.java"))
 }
 
 dependencies {

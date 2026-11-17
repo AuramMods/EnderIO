@@ -11,6 +11,8 @@
     "client": [
         "GliderRotationMixin",
         "BlockRenderDispatcherMixin",
+        "ChunkCompileTaskAccessor",
+        "ChunkRebuildTaskMixin",
         "MouseHandlerMixin"
     ],
     "minVersion": "0.8",
