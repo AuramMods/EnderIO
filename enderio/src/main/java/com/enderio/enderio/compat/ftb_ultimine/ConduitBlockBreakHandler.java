@@ -58,13 +58,13 @@ public enum ConduitBlockBreakHandler implements BlockBreakHandler {
 
         // Get operation
         BreakOperation operation = breakOperations.get(player);
-        switch (operation) {
-        case null -> {
+        if (operation == null) {
             return Result.FAIL;
         }
 
         // Attempt to apply operations
-        case FacadeBreakOperation(Block facadeBlock) -> {
+        if (operation instanceof FacadeBreakOperation facadeOperation) {
+            Block facadeBlock = facadeOperation.facadeBlock();
             if (!conduitBundle.hasFacade()) {
                 return Result.FAIL;
             }
@@ -85,8 +85,8 @@ public enum ConduitBlockBreakHandler implements BlockBreakHandler {
             if (lightLevelBefore != level.getLightEmission(pos)) {
                 level.getLightEngine().checkBlock(pos);
             }
-        }
-        case ConduitBreakOperation(Holder<Conduit<?, ?>> conduit) -> {
+        } else if (operation instanceof ConduitBreakOperation conduitOperation) {
+            Holder<Conduit<?, ?>> conduit = conduitOperation.conduit();
             if (!conduitBundle.hasConduitStrict(conduit)) {
                 return Result.FAIL;
             }
@@ -96,7 +96,6 @@ public enum ConduitBlockBreakHandler implements BlockBreakHandler {
                     dropItem(level, originPos, droppedStack);
                 }
             });
-        }
         }
 
         if (conduitBundle.isEmpty()) {

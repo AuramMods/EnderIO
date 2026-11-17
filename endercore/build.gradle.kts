@@ -2,6 +2,12 @@ plugins {
     id("mod-common-conventions")
 }
 
+val gameTestSourceSet = sourceSets.create("gametest") {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().output
+}
+configurations[gameTestSourceSet.implementationConfigurationName].extendsFrom(configurations.implementation.get())
+
 dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
     testImplementation(libs.junitJupiter)
@@ -24,9 +30,37 @@ legacyForge {
         create("endercore") {
             sourceSet(sourceSets["main"])
         }
+        create("endercore_tests") {
+            sourceSet(gameTestSourceSet)
+        }
     }
 
     addModdingDependenciesTo(sourceSets.test.get())
+    addModdingDependenciesTo(gameTestSourceSet)
+
+    runs {
+        create("gameTestServer") {
+            type = "gameTestServer"
+            programArguments.add("nogui")
+            systemProperty("java.awt.headless", "true")
+            sourceSet = gameTestSourceSet
+            gameDirectory = project.file("run/gametest-server")
+            loadedMods = listOf(mods["endercore"], mods["endercore_tests"])
+            systemProperty("forge.enabledGameTestNamespaces", "endercore_tests")
+            systemProperty("endercore.gametest.report", layout.buildDirectory.file("test-results/gameTestServer/results.xml").get().asFile.absolutePath)
+        }
+    }
+}
+
+val prepareGameTestServerProfile = tasks.register<PrepareTestProfile>("prepareGameTestServerProfile") {
+    gameDirectory = layout.projectDirectory.dir("run/gametest-server")
+    client = false
+}
+tasks.matching { it.name == "runGameTestServer" }.configureEach {
+    dependsOn(prepareGameTestServerProfile)
+}
+tasks.named("check") {
+    dependsOn("runGameTestServer")
 }
 
 // Expand variables in mods.toml

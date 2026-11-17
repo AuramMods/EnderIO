@@ -92,12 +92,13 @@ public abstract class StoredEntityDataSyncSlot implements SyncSlot {
 
     @Override
     public void unpackPayload(Level level, SlotPayload payload) {
-        if (payload instanceof ListSlotPayload(List<SlotPayload> contents)) {
+        if (payload instanceof ListSlotPayload listPayload) {
+            List<SlotPayload> contents = listPayload.contents();
             if (contents.isEmpty()) {
                 set(Soul.EMPTY);
             } else {
-                if (contents.getFirst() instanceof ResourceLocationSlotPayload(ResourceLocation value)) {
-                    set(Soul.of(value));
+                if (contents.get(0) instanceof ResourceLocationSlotPayload locationPayload) {
+                    set(Soul.of(locationPayload.value()));
                 }
             }
         }
