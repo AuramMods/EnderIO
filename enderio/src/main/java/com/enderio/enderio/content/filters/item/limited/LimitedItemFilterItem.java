@@ -8,7 +8,7 @@ import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.enderio.content.filters.FiltersLang;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOMenus;
-import net.minecraft.core.component.DataComponentType;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -22,15 +22,14 @@ import java.util.List;
 
 public class LimitedItemFilterItem extends AbstractFilterItem<LimitedItemFilter> {
 
-    public static final BiFunction<ItemStack, Direction, ItemFilter> ITEM_FILTER_PROVIDER = (stack, v) -> stack
-            .getOrDefault(EIODataComponents.LIMITED_ITEM_FILTER, LimitedItemFilter.EMPTY);
+    public static final BiFunction<ItemStack, Direction, ItemFilter> ITEM_FILTER_PROVIDER = (stack, v) -> EIODataComponents.LIMITED_ITEM_FILTER.getOrDefault(stack, LimitedItemFilter.EMPTY);
 
     public LimitedItemFilterItem(Properties properties) {
         super(properties);
     }
 
     @Override
-    protected DataComponentType<LimitedItemFilter> dataComponentType() {
+    protected ItemDataKey<LimitedItemFilter> dataComponentType() {
         return EIODataComponents.LIMITED_ITEM_FILTER;
     }
 

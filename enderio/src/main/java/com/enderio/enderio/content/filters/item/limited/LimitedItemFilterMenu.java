@@ -7,7 +7,7 @@ import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.enderio.content.filters.item.general.DamageFilterMode;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponentType;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
@@ -35,11 +35,11 @@ public class LimitedItemFilterMenu extends AbstractFilterMenu<LimitedItemFilter>
                 BoolSyncSlot.readOnly(() -> getFilter().shouldCompareComponents()));
 
         this.damageFilterSyncSlot = addUpdatableSyncSlot(EnumSyncSlot.simple(DamageFilterMode.class,
-                () -> getFilterStack().getOrDefault(EIODataComponents.LIMITED_ITEM_FILTER, LimitedItemFilter.EMPTY)
+                () -> EIODataComponents.LIMITED_ITEM_FILTER.getOrDefault(getFilterStack(), LimitedItemFilter.EMPTY)
                         .damageFilterMode(),
                 (mode) -> modifyFilterStack(stack -> {
-                    var filter = stack.getOrDefault(EIODataComponents.LIMITED_ITEM_FILTER, LimitedItemFilter.EMPTY);
-                    stack.set(EIODataComponents.LIMITED_ITEM_FILTER,
+                    var filter = EIODataComponents.LIMITED_ITEM_FILTER.getOrDefault(stack, LimitedItemFilter.EMPTY);
+                    EIODataComponents.LIMITED_ITEM_FILTER.set(stack,
                             new LimitedItemFilter(filter.matches(), filter.shouldCompareComponents(), mode));
                     return stack;
                 })));
@@ -71,7 +71,7 @@ public class LimitedItemFilterMenu extends AbstractFilterMenu<LimitedItemFilter>
     }
 
     @Override
-    protected DataComponentType<LimitedItemFilter> dataComponentType() {
+    protected ItemDataKey<LimitedItemFilter> dataComponentType() {
         return EIODataComponents.LIMITED_ITEM_FILTER;
     }
 

@@ -18,7 +18,7 @@ public class BrokenSpawnerItem extends Item implements ICustomCreativeTabEntries
 
     public static ItemStack forSoul(Soul soul) {
         ItemStack brokenSpawner = new ItemStack(EIOItems.BROKEN_SPAWNER.get());
-        brokenSpawner.set(EIODataComponents.SOUL, soul);
+        EIODataComponents.SOUL.set(brokenSpawner, soul);
         return brokenSpawner;
     }
 

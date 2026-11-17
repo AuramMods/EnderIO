@@ -32,7 +32,8 @@ public class TravelStaffItem extends Item implements AdvancedTooltipProvider, IC
             v) -> new NbtEnergyStorage(stack, EIODataComponents.ENERGY, TravelStaffItem.getMaxEnergy());
 
     public TravelStaffItem(Properties properties) {
-        super(properties.component(EIODataComponents.TRAVEL_ITEM, true).stacksTo(1));
+        super(properties.stacksTo(1));
+        EIODataComponents.TRAVEL_ITEM.withDefault(this, () -> true);
     }
 
     @Override

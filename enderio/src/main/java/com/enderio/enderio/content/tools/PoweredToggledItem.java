@@ -30,9 +30,8 @@ public abstract class PoweredToggledItem extends Item implements AdvancedTooltip
         (stack, v) -> new NbtEnergyStorage(stack, EIODataComponents.ENERGY, ((PoweredToggledItem)stack.getItem()).getMaxEnergy());
 
     public PoweredToggledItem(Properties properties) {
-        super(properties
-            .stacksTo(1)
-            .component(EIODataComponents.TOGGLED, false));
+        super(properties.stacksTo(1));
+        EIODataComponents.TOGGLED.withDefault(this, () -> false);
     }
 
     protected abstract void onTickWhenActive(Player player, ItemStack stack, Level level, Entity entity, int slotId,
@@ -43,15 +42,15 @@ public abstract class PoweredToggledItem extends Item implements AdvancedTooltip
     protected abstract int getEnergyUse();
 
     protected boolean isEnabled(ItemStack stack) {
-        return Boolean.TRUE.equals(stack.get(EIODataComponents.TOGGLED));
+        return Boolean.TRUE.equals(EIODataComponents.TOGGLED.get(stack));
     }
 
     protected void enable(ItemStack stack) {
-        stack.set(EIODataComponents.TOGGLED, true);
+        EIODataComponents.TOGGLED.set(stack, true);
     }
 
     protected void disable(ItemStack stack) {
-        stack.set(EIODataComponents.TOGGLED, false);
+        EIODataComponents.TOGGLED.set(stack, false);
     }
 
     protected boolean hasCharge(ItemStack stack) {

@@ -58,7 +58,7 @@ public class PaintedSlabBlock extends SlabBlock implements EntityBlock, PaintedB
                 paint = paintedBlockEntity.getPrimaryPaint();
             }
 
-            paint.ifPresent(block -> stack.set(EIODataComponents.BLOCK_PAINT, BlockPaintData.of(block)));
+            paint.ifPresent(block -> EIODataComponents.BLOCK_PAINT.set(stack, BlockPaintData.of(block)));
         }
 
         return stack;

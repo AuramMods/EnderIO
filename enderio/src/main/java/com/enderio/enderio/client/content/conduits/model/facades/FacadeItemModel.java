@@ -91,11 +91,11 @@ public class FacadeItemModel implements IDynamicBakedModel {
 
     @Override
     public List<RenderType> getRenderTypes(ItemStack itemStack, boolean fabulous) {
-        if (!itemStack.has(EIODataComponents.BLOCK_PAINT)) {
+        if (!EIODataComponents.BLOCK_PAINT.has(itemStack)) {
             return List.of(RenderType.solid());
         }
 
-        var paintData = itemStack.get(EIODataComponents.BLOCK_PAINT);
+        var paintData = EIODataComponents.BLOCK_PAINT.get(itemStack);
         if (paintData == null) {
             return List.of(RenderType.cutout());
         }
@@ -109,11 +109,11 @@ public class FacadeItemModel implements IDynamicBakedModel {
 
     @Override
     public List<BakedModel> getRenderPasses(ItemStack itemStack, boolean fabulous) {
-        if (!itemStack.has(EIODataComponents.BLOCK_PAINT)) {
+        if (!EIODataComponents.BLOCK_PAINT.has(itemStack)) {
             return List.of(this);
         }
 
-        var paintData = itemStack.get(EIODataComponents.BLOCK_PAINT);
+        var paintData = EIODataComponents.BLOCK_PAINT.get(itemStack);
         return itemRenderCache.computeIfAbsent(paintData.paint(),
                 paintKey -> List.of(new FacadeItemModel(facadeModel, paintData.paint())));
     }

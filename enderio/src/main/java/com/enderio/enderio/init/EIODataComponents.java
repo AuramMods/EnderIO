@@ -3,7 +3,6 @@ package com.enderio.enderio.init;
 import com.enderio.core.common.util.NamedFluidContents;
 import com.enderio.core.common.item.ItemDataKey;
 import com.enderio.enderio.EnderIO;
-import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.api.attachment.CoordinateSelection;
 import com.enderio.enderio.api.capacitor.CapacitorData;
 import com.enderio.enderio.api.components.GrindingBallData;
@@ -24,164 +23,104 @@ import com.enderio.enderio.content.paint.BlockPaintData;
 import com.enderio.enderio.foundation.attachment.ActionRange;
 import com.enderio.enderio.foundation.io.IOConfig;
 import com.mojang.serialization.Codec;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.neoforge.fluids.SimpleFluidContent;
-import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.fluids.FluidStack;
 
-import java.util.function.UnaryOperator;
 
+/** Persistent item keys for Forge 1.20.1; native stack NBT provides save and network transport. */
 public class EIODataComponents {
-    private static final DeferredRegister<DataComponentType<?>> DATA_COMPONENT_TYPES = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, EnderIO.MOD_ID);
 
     // region Generic
 
-    public static final DataComponentType<SimpleFluidContent> ITEM_FLUID_CONTENT = register("item_fluid_content",
-        builder -> builder.persistent(SimpleFluidContent.CODEC).networkSynchronized(SimpleFluidContent.STREAM_CODEC));
+    public static final ItemDataKey<FluidStack> ITEM_FLUID_CONTENT = new ItemDataKey<>(EnderIO.rl("item_fluid_content"), FluidStack.CODEC, false);
 
-    public static final DataComponentType<NamedFluidContents> NAMED_FLUID_CONTENTS = register("named_fluid_contents",
-        builder -> builder.persistent(NamedFluidContents.CODEC).networkSynchronized(NamedFluidContents.STREAM_CODEC));
+    public static final ItemDataKey<NamedFluidContents> NAMED_FLUID_CONTENTS = new ItemDataKey<>(EnderIO.rl("named_fluid_contents"), NamedFluidContents.CODEC);
 
     public static final ItemDataKey<Integer> ENERGY = new ItemDataKey<>(EnderIO.rl("energy"), Codec.intRange(0, Integer.MAX_VALUE), false);
 
-    public static final DataComponentType<Soul> SOUL = register("soul", builder -> builder.persistent(Soul.CODEC).networkSynchronized(Soul.STREAM_CODEC));
+    public static final ItemDataKey<Soul> SOUL = new ItemDataKey<>(EnderIO.rl("soul"), Soul.OPTIONAL_CODEC, false, EnderIO.rl("stored_entity"));
 
     // endregion
 
     // region Capacitors
 
-    public static final DataComponentType<CapacitorData> CAPACITOR_DATA = register("capacitor_data",
-        builder -> builder.persistent(CapacitorData.CODEC).networkSynchronized(CapacitorData.STREAM_CODEC));
+    public static final ItemDataKey<CapacitorData> CAPACITOR_DATA = new ItemDataKey<>(EnderIO.rl("capacitor_data"), CapacitorData.CODEC);
 
     // endregion
 
     // region Conduits
 
-    public static final DataComponentType<FacadeType> FACADE_TYPE = register("facade_type",
-        builder -> builder.persistent(FacadeType.CODEC).networkSynchronized(FacadeType.STREAM_CODEC));
+    public static final ItemDataKey<FacadeType> FACADE_TYPE = new ItemDataKey<>(EnderIO.rl("facade_type"), FacadeType.CODEC);
 
-    public static final DataComponentType<ConduitProbeItem.ProbeConfigData> PROBE_CONFIG = register("probe_config",
-        builder -> builder.persistent(ConduitProbeItem.ProbeConfigData.CODEC).networkSynchronized(ConduitProbeItem.ProbeConfigData.STREAM_CODEC));
+    public static final ItemDataKey<ConduitProbeItem.ProbeConfigData> PROBE_CONFIG = new ItemDataKey<>(EnderIO.rl("probe_config"), ConduitProbeItem.ProbeConfigData.CODEC);
 
-    public static final DataComponentType<ConduitProbeItem.State> PROBE_STATE = register("probe_state",
-        builder -> builder.persistent(ConduitProbeItem.State.CODEC).networkSynchronized(ConduitProbeItem.State.STREAM_CODEC));
+    public static final ItemDataKey<ConduitProbeItem.State> PROBE_STATE = new ItemDataKey<>(EnderIO.rl("probe_state"), ConduitProbeItem.State.CODEC);
 
     // endregion
 
     // region Filters
 
-    public static final DataComponentType<EnderItemFilter> ITEM_FILTER = register("item_filter",
-        builder -> builder.persistent(EnderItemFilter.CODEC).networkSynchronized(EnderItemFilter.STREAM_CODEC));
+    public static final ItemDataKey<EnderItemFilter> ITEM_FILTER = new ItemDataKey<>(EnderIO.rl("item_filter"), EnderItemFilter.CODEC);
 
-    public static final DataComponentType<LimitedItemFilter> LIMITED_ITEM_FILTER = register("limited_item_filter",
-        builder -> builder.persistent(LimitedItemFilter.CODEC).networkSynchronized(LimitedItemFilter.STREAM_CODEC));
+    public static final ItemDataKey<LimitedItemFilter> LIMITED_ITEM_FILTER = new ItemDataKey<>(EnderIO.rl("limited_item_filter"), LimitedItemFilter.CODEC);
 
-    public static final DataComponentType<EnderFluidFilter> FLUID_FILTER = register("fluid_filter",
-        builder -> builder.persistent(EnderFluidFilter.CODEC).networkSynchronized(EnderFluidFilter.STREAM_CODEC));
+    public static final ItemDataKey<EnderFluidFilter> FLUID_FILTER = new ItemDataKey<>(EnderIO.rl("fluid_filter"), EnderFluidFilter.CODEC);
 
-    public static final DataComponentType<EnderSoulFilter> SOUL_FILTER = register("soul_filter",
-        builder -> builder.persistent(EnderSoulFilter.CODEC).networkSynchronized(EnderSoulFilter.STREAM_CODEC));
+    public static final ItemDataKey<EnderSoulFilter> SOUL_FILTER = new ItemDataKey<>(EnderIO.rl("soul_filter"), EnderSoulFilter.CODEC, true, EnderIO.rl("entity_filter"));
 
-    public static final DataComponentType<DoubleRedstoneChannel.Component> REDSTONE_FILTER_DOUBLE_CHANNEL = register("redstone_filter_double_channel",
-        builder -> builder.persistent(DoubleRedstoneChannel.Component.CODEC).networkSynchronized(DoubleRedstoneChannel.Component.STREAM_CODEC));
+    public static final ItemDataKey<DoubleRedstoneChannel.Component> REDSTONE_FILTER_DOUBLE_CHANNEL = new ItemDataKey<>(EnderIO.rl("redstone_filter_double_channel"), DoubleRedstoneChannel.Component.CODEC, false, EnderIO.rl("redstone_and_filter"), EnderIO.rl("redstone_or_filter"), EnderIO.rl("redstone_nand_filter"), EnderIO.rl("redstone_nor_filter"), EnderIO.rl("redstone_xnor_filter"), EnderIO.rl("redstone_xor_filter"));
 
-    public static final DataComponentType<RedstoneCountFilter.Component> REDSTONE_COUNT_FILTER = register("redstone_count_filter",
-        builder -> builder.persistent(RedstoneCountFilter.Component.CODEC).networkSynchronized(RedstoneCountFilter.Component.STREAM_CODEC));
+    public static final ItemDataKey<RedstoneCountFilter.Component> REDSTONE_COUNT_FILTER = new ItemDataKey<>(EnderIO.rl("redstone_count_filter"), RedstoneCountFilter.Component.CODEC, false);
 
-    public static final DataComponentType<RedstoneTimerFilter.Component> REDSTONE_TIMER_FILTER = register("redstone_timer_filter",
-        builder -> builder.persistent(RedstoneTimerFilter.Component.CODEC).networkSynchronized(RedstoneTimerFilter.Component.STREAM_CODEC));
+    public static final ItemDataKey<RedstoneTimerFilter.Component> REDSTONE_TIMER_FILTER = new ItemDataKey<>(EnderIO.rl("redstone_timer_filter"), RedstoneTimerFilter.Component.CODEC, false);
 
-    public static final DataComponentType<RedstoneTLatchFilter.Component> REDSTONE_TLATCH_FILTER = register("redstone_tlatch_filter",
-        builder -> builder.persistent(RedstoneTLatchFilter.Component.CODEC).networkSynchronized(RedstoneTLatchFilter.Component.STREAM_CODEC));
+    public static final ItemDataKey<RedstoneTLatchFilter.Component> REDSTONE_TLATCH_FILTER = new ItemDataKey<>(EnderIO.rl("redstone_tlatch_filter"), RedstoneTLatchFilter.Component.CODEC, false);
 
     // endregion
 
     // region Machines
 
-    public static final DataComponentType<IOConfig> IO_CONFIG = savedAndSynced("io_config", IOConfig.CODEC, IOConfig.STREAM_CODEC);
+    public static final ItemDataKey<IOConfig> IO_CONFIG = new ItemDataKey<>(EnderIO.rl("io_config"), IOConfig.CODEC);
 
-    public static final DataComponentType<RedstoneControl> REDSTONE_CONTROL = savedAndSynced("redstone_control", RedstoneControl.CODEC,
-        RedstoneControl.STREAM_CODEC);
+    public static final ItemDataKey<RedstoneControl> REDSTONE_CONTROL = new ItemDataKey<>(EnderIO.rl("redstone_control"), RedstoneControl.CODEC);
 
-    public static final DataComponentType<ActionRange> ACTION_RANGE = savedAndSynced("action_range", ActionRange.CODEC, ActionRange.STREAM_CODEC);
+    public static final ItemDataKey<ActionRange> ACTION_RANGE = new ItemDataKey<>(EnderIO.rl("action_range"), ActionRange.CODEC);
 
-    public static final DataComponentType<Boolean> IS_RANGE_VISIBLE = savedAndSynced("is_range_visible", Codec.BOOL, ByteBufCodecs.BOOL);
+    public static final ItemDataKey<Boolean> IS_RANGE_VISIBLE = new ItemDataKey<>(EnderIO.rl("is_range_visible"), Codec.BOOL);
 
-    public static final DataComponentType<AlloySmelterMode> ALLOY_SMELTER_MODE = saved("alloy_smelter_mode", AlloySmelterMode.CODEC);
-    public static final DataComponentType<Integer> ALLOY_SMELTER_PROCESSED_INPUTS = saved("alloy_smelter_processed_inputs", Codec.INT);
+    public static final ItemDataKey<AlloySmelterMode> ALLOY_SMELTER_MODE = new ItemDataKey<>(EnderIO.rl("alloy_smelter_mode"), AlloySmelterMode.CODEC);
+    public static final ItemDataKey<Integer> ALLOY_SMELTER_PROCESSED_INPUTS = new ItemDataKey<>(EnderIO.rl("alloy_smelter_processed_inputs"), Codec.INT);
 
     // Could use the GRINDING_BALL component, but then you could use a sag mill as a
     // grinding ball :P
-    public static final DataComponentType<GrindingBallData> SAG_MILL_GRINDING_BALL = saved("sag_mill_grinding_ball", GrindingBallData.CODEC);
-    public static final DataComponentType<Integer> SAG_MILL_GRINDING_BALL_DAMAGE = saved("sag_mill_grinding_ball_damage", Codec.INT);
+    public static final ItemDataKey<GrindingBallData> SAG_MILL_GRINDING_BALL = new ItemDataKey<>(EnderIO.rl("sag_mill_grinding_ball"), GrindingBallData.CODEC);
+    public static final ItemDataKey<Integer> SAG_MILL_GRINDING_BALL_DAMAGE = new ItemDataKey<>(EnderIO.rl("sag_mill_grinding_ball_damage"), Codec.INT);
 
     // endregion
 
     // region Paint
 
-    public static final DataComponentType<BlockPaintData> BLOCK_PAINT = register("block_paint",
-        builder -> builder.persistent(BlockPaintData.CODEC).networkSynchronized(BlockPaintData.STREAM_CODEC));
+    public static final ItemDataKey<BlockPaintData> BLOCK_PAINT = new ItemDataKey<>(EnderIO.rl("block_paint"), BlockPaintData.CODEC);
 
     // endregion
 
     // region Tools
 
-    public static final DataComponentType<Boolean> TOGGLED = register("toggled",
-        builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
+    public static final ItemDataKey<Boolean> TOGGLED = new ItemDataKey<>(EnderIO.rl("toggled"), Codec.BOOL);
 
-    public static final DataComponentType<CoordinateSelection> COORDINATE_SELECTION = register("coordinate_selection",
-        builder -> builder.persistent(CoordinateSelection.CODEC).networkSynchronized(CoordinateSelection.STREAM_CODEC));
+    public static final ItemDataKey<CoordinateSelection> COORDINATE_SELECTION = new ItemDataKey<>(EnderIO.rl("coordinate_selection"), CoordinateSelection.CODEC);
 
     // endregion
 
     // region Travel
 
-    public static final DataComponentType<Boolean> TRAVEL_ITEM = register("travel_item",
-        builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
+    public static final ItemDataKey<Boolean> TRAVEL_ITEM = new ItemDataKey<>(EnderIO.rl("travel_item"), Codec.BOOL);
 
     // endregion
 
     // region Vials
 
-    public static final DataComponentType<Float> ENTITY_MAX_HEALTH = register("entity_max_health",
-        builder -> builder.persistent(Codec.FLOAT).networkSynchronized(ByteBufCodecs.FLOAT));
+    public static final ItemDataKey<Float> ENTITY_MAX_HEALTH = new ItemDataKey<>(EnderIO.rl("entity_max_health"), Codec.FLOAT);
 
     // endregion
 
-    public static void register(IEventBus bus) {
-        // Remap entity to soul
-        DATA_COMPONENT_TYPES.addAlias(EnderIO.rl("stored_entity"), EnderIO.rl("soul"));
-        DATA_COMPONENT_TYPES.addAlias(EnderIO.rl("entity_filter"), EnderIO.rl("soul_filter"));
-
-        DATA_COMPONENT_TYPES.register("conduit", () -> EnderIODataComponents.CONDUIT);
-
-        // Flatten redstone filter component types
-        DATA_COMPONENT_TYPES.addAlias(EnderIO.rl("redstone_and_filter"), EnderIO.rl("redstone_filter_double_channel"));
-        DATA_COMPONENT_TYPES.addAlias(EnderIO.rl("redstone_or_filter"), EnderIO.rl("redstone_filter_double_channel"));
-        DATA_COMPONENT_TYPES.addAlias(EnderIO.rl("redstone_nand_filter"), EnderIO.rl("redstone_filter_double_channel"));
-        DATA_COMPONENT_TYPES.addAlias(EnderIO.rl("redstone_nor_filter"), EnderIO.rl("redstone_filter_double_channel"));
-        DATA_COMPONENT_TYPES.addAlias(EnderIO.rl("redstone_xnor_filter"), EnderIO.rl("redstone_filter_double_channel"));
-        DATA_COMPONENT_TYPES.addAlias(EnderIO.rl("redstone_xor_filter"), EnderIO.rl("redstone_filter_double_channel"));
-
-        DATA_COMPONENT_TYPES.register(bus);
-    }
-
-    // Creates the object immediately to ensure we can use it for item creation.
-    private static <T> DataComponentType<T> register(String name, UnaryOperator<DataComponentType.Builder<T>> builder) {
-        var componentType = builder.apply(DataComponentType.builder()).build();
-        DATA_COMPONENT_TYPES.register(name, () -> componentType);
-        return componentType;
-    }
-
-    private static <T> DataComponentType<T> saved(String name, Codec<T> codec) {
-        return register(name, builder -> builder.persistent(codec));
-    }
-
-    private static <T> DataComponentType<T> savedAndSynced(String name, Codec<T> codec, StreamCodec<? super RegistryFriendlyByteBuf, T> streamCodec) {
-        return register(name, builder -> builder.persistent(codec).networkSynchronized(streamCodec));
-    }
 }

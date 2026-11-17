@@ -58,7 +58,7 @@ public class SetLootCapacitorFunction extends LootItemConditionalFunction {
             modifier.ifPresent(m -> modifiers.put(m, range.getFloat(context)));
         }
 
-        stack.set(EIODataComponents.CAPACITOR_DATA, new CapacitorData(base, modifiers));
+        EIODataComponents.CAPACITOR_DATA.set(stack, new CapacitorData(base, modifiers));
         return stack;
     }
 

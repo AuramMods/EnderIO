@@ -228,7 +228,7 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
             if (capacitorExtension != null) {
                 capacitorData = capacitorExtension.getCapacitorData(capacitorItem, level.registryAccess());
             } else {
-                capacitorData = getCapacitorItem().getOrDefault(EIODataComponents.CAPACITOR_DATA, CapacitorData.NONE);
+                capacitorData = EIODataComponents.CAPACITOR_DATA.getOrDefault(getCapacitorItem(), CapacitorData.NONE);
             }
 
             updateCapacitorState();

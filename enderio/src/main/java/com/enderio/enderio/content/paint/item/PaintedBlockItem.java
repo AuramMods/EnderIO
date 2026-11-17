@@ -30,7 +30,7 @@ public class PaintedBlockItem extends BlockItem {
     protected boolean updateCustomBlockEntityTag(BlockPos pos, Level level, @Nullable Player player, ItemStack stack, BlockState state) {
         boolean result = super.updateCustomBlockEntityTag(pos, level, player, stack, state);
 
-        var paintData = stack.get(EIODataComponents.BLOCK_PAINT);
+        var paintData = EIODataComponents.BLOCK_PAINT.get(stack);
 
         if (paintData == null) {
             // TODO: Log error?

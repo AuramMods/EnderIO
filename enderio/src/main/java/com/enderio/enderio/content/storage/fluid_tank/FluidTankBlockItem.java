@@ -13,6 +13,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import java.util.function.BiFunction;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
+import com.enderio.core.common.capability.NbtFluidHandlerItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.List;
 public class FluidTankBlockItem extends BlockItem implements AdvancedTooltipProvider {
 
     public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack,
-            v) -> new FluidHandlerItemStack(() -> EIODataComponents.ITEM_FLUID_CONTENT, stack,
+            v) -> new NbtFluidHandlerItemStack(EIODataComponents.ITEM_FLUID_CONTENT, stack,
                     ((FluidTankBlockItem) stack.getItem()).capacity);
 
     protected final int capacity;

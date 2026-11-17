@@ -53,13 +53,13 @@ public class TravelHandler {
 
     private static boolean canItemTeleport(Player player, InteractionHand hand) {
         @Nullable
-        Boolean comp = player.getItemInHand(hand).get(EIODataComponents.TRAVEL_ITEM);
+        Boolean comp = EIODataComponents.TRAVEL_ITEM.get(player.getItemInHand(hand));
         return comp != null && comp;
     }
 
     public static boolean isTravelItem(ItemStack stack){
         if(stack != null && !stack.isEmpty()) {
-            Boolean comp = stack.get(EIODataComponents.TRAVEL_ITEM);
+            Boolean comp = EIODataComponents.TRAVEL_ITEM.get(stack);
             if (comp != null && comp) {
                 return true;
             }

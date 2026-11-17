@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
+import java.util.function.Consumer;
 
 public class RedstoneFilterItem extends Item {
 
@@ -63,7 +63,8 @@ public class RedstoneFilterItem extends Item {
     private final Type type;
 
     public RedstoneFilterItem(Properties properties, Type type) {
-        super(type.componentApplicator().apply(properties));
+        super(properties);
+        type.defaultApplicator().accept(this);
         this.type = type;
     }
 
@@ -91,8 +92,8 @@ public class RedstoneFilterItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, level, tooltipComponents, tooltipFlag);
         
         // Create a filter instance to check if it's configured
         RedstoneFilter filter = stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER, null).orElse(null);
@@ -110,30 +111,30 @@ public class RedstoneFilterItem extends Item {
     }
 
     public enum Type {
-        NOT(p -> p, null),
-        OR(p -> p.component(EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL, DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
-        AND(p -> p.component(EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL, DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
-        NOR(p -> p.component(EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL, DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
-        NAND(p -> p.component(EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL, DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
-        XOR(p -> p.component(EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL, DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
-        XNOR(p -> p.component(EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL, DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
-        TLATCH(p -> p.component(EIODataComponents.REDSTONE_TLATCH_FILTER, RedstoneTLatchFilter.INSTANCE), null),
-        COUNT(p -> p.component(EIODataComponents.REDSTONE_COUNT_FILTER, RedstoneCountFilter.INSTANCE), EIOMenus.REDSTONE_COUNT_FILTER::get),
-        SENSOR(p -> p, null),
-        TIMER(p -> p.component(EIODataComponents.REDSTONE_TIMER_FILTER, RedstoneTimerFilter.INSTANCE), EIOMenus.REDSTONE_TIMER_FILTER::get);
+        NOT(p -> {}, null),
+        OR(p -> EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL.withDefault(p, () -> DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
+        AND(p -> EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL.withDefault(p, () -> DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
+        NOR(p -> EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL.withDefault(p, () -> DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
+        NAND(p -> EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL.withDefault(p, () -> DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
+        XOR(p -> EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL.withDefault(p, () -> DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
+        XNOR(p -> EIODataComponents.REDSTONE_FILTER_DOUBLE_CHANNEL.withDefault(p, () -> DoubleRedstoneChannel.INSTANCE), EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER::get),
+        TLATCH(p -> EIODataComponents.REDSTONE_TLATCH_FILTER.withDefault(p, () -> RedstoneTLatchFilter.INSTANCE), null),
+        COUNT(p -> EIODataComponents.REDSTONE_COUNT_FILTER.withDefault(p, () -> RedstoneCountFilter.INSTANCE), EIOMenus.REDSTONE_COUNT_FILTER::get),
+        SENSOR(p -> {}, null),
+        TIMER(p -> EIODataComponents.REDSTONE_TIMER_FILTER.withDefault(p, () -> RedstoneTimerFilter.INSTANCE), EIOMenus.REDSTONE_TIMER_FILTER::get);
 
-        private UnaryOperator<Item.Properties> componentApplicator;
+        private Consumer<Item> defaultApplicator;
 
         @Nullable
         private Supplier<MenuType<?>> menu;
 
-        Type(UnaryOperator<Item.Properties> componentApplicator, @Nullable Supplier<MenuType<?>> menu) {
-            this.componentApplicator = componentApplicator;
+        Type(Consumer<Item> defaultApplicator, @Nullable Supplier<MenuType<?>> menu) {
+            this.defaultApplicator = defaultApplicator;
             this.menu = menu;
         }
 
-        public UnaryOperator<Item.Properties> componentApplicator() {
-            return componentApplicator;
+        public Consumer<Item> defaultApplicator() {
+            return defaultApplicator;
         }
 
         public @Nullable MenuType<?> menu() {

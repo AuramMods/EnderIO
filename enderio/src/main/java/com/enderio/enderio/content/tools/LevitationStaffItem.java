@@ -21,7 +21,7 @@ import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 public class LevitationStaffItem extends PoweredToggledItem {
 
     public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack,
-            v) -> new StrictFluidHandlerItemStack(() -> EIODataComponents.ITEM_FLUID_CONTENT, stack, 1000,
+            v) -> new StrictFluidHandlerItemStack(EIODataComponents.ITEM_FLUID_CONTENT, stack, 1000,
                     EIOTags.Fluids.STAFF_OF_LEVITY_FUEL);
 
     public LevitationStaffItem(Properties properties) {

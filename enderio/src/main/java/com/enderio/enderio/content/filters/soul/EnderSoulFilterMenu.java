@@ -7,7 +7,7 @@ import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.enderio.foundation.soul.StoredEntityDataSyncSlot;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponentType;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
@@ -63,7 +63,7 @@ public class EnderSoulFilterMenu extends AbstractFilterMenu<EnderSoulFilter> {
     }
 
     @Override
-    protected DataComponentType<EnderSoulFilter> dataComponentType() {
+    protected ItemDataKey<EnderSoulFilter> dataComponentType() {
         return EIODataComponents.SOUL_FILTER;
     }
 

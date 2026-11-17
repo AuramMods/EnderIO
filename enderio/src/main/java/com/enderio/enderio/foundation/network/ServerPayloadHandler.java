@@ -125,12 +125,12 @@ public class ServerPayloadHandler {
     }
 
     private void toggleMagnet(ItemStack stack, Player player) {
-        var magnetActive = stack.getComponents().get(EIODataComponents.TOGGLED);
+        var magnetActive = EIODataComponents.TOGGLED.get(stack);
         if(magnetActive != null && magnetActive){
-            stack.set(EIODataComponents.TOGGLED, false);
+            EIODataComponents.TOGGLED.set(stack, false);
             player.displayClientMessage(EIOCommonLang.ELECTROMAGNET_OFF, true);
         } else {
-            stack.set(EIODataComponents.TOGGLED, true);
+            EIODataComponents.TOGGLED.set(stack, true);
             player.displayClientMessage(EIOCommonLang.ELECTROMAGNET_ON, true);
         }
     }

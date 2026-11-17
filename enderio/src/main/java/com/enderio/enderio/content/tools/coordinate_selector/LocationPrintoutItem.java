@@ -78,11 +78,11 @@ public class LocationPrintoutItem extends Item {
     }
 
     public static Optional<CoordinateSelection> getSelection(ItemStack stack) {
-        return Optional.ofNullable(stack.get(EIODataComponents.COORDINATE_SELECTION));
+        return Optional.ofNullable(EIODataComponents.COORDINATE_SELECTION.get(stack));
     }
 
     public static void setSelection(ItemStack stack, CoordinateSelection selection) {
-        stack.set(EIODataComponents.COORDINATE_SELECTION, selection);
+        EIODataComponents.COORDINATE_SELECTION.set(stack, selection);
     }
 
     @Override

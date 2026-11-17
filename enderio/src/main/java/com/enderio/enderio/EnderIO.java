@@ -97,7 +97,6 @@ public class EnderIO {
         // Perform initialization and registration for everything so things are
         // registered.
         EnderIORegistries.register(modEventBus);
-        EIODataComponents.register(modEventBus);
         EIOCreativeTabs.register(modEventBus);
         EIOItems.register(modEventBus);
         EIOBlocks.register(modEventBus);

@@ -8,7 +8,7 @@ import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.enderio.content.filters.FiltersLang;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOMenus;
-import net.minecraft.core.component.DataComponentType;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -30,8 +30,7 @@ import java.util.function.Supplier;
 
 public class EnderItemFilterItem extends AbstractFilterItem<EnderItemFilter> {
 
-    public static final BiFunction<ItemStack, Direction, ItemFilter> ITEM_FILTER_PROVIDER = (stack, v) -> stack
-            .getOrDefault(EIODataComponents.ITEM_FILTER, EnderItemFilter.EMPTY);
+    public static final BiFunction<ItemStack, Direction, ItemFilter> ITEM_FILTER_PROVIDER = (stack, v) -> EIODataComponents.ITEM_FILTER.getOrDefault(stack, EnderItemFilter.EMPTY);
 
     private final Type type;
 
@@ -41,7 +40,7 @@ public class EnderItemFilterItem extends AbstractFilterItem<EnderItemFilter> {
     }
 
     @Override
-    protected DataComponentType<EnderItemFilter> dataComponentType() {
+    protected ItemDataKey<EnderItemFilter> dataComponentType() {
         return EIODataComponents.ITEM_FILTER;
     }
 

@@ -310,7 +310,7 @@ public abstract class LegacyPoweredMachineBlockEntity extends LegacyMachineBlock
 
         MachineInventoryLayout layout = getInventoryLayout();
         if (requiresCapacitor() && layout != null) {
-            cachedCapacitorData = getCapacitorItem().getOrDefault(EIODataComponents.CAPACITOR_DATA, CapacitorData.NONE);
+            cachedCapacitorData = EIODataComponents.CAPACITOR_DATA.getOrDefault(getCapacitorItem(), CapacitorData.NONE);
         } else {
             cachedCapacitorData = CapacitorData.NONE;
         }

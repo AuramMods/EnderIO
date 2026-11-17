@@ -37,7 +37,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidType;
-import net.neoforged.neoforge.fluids.SimpleFluidContent;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import org.jetbrains.annotations.Nullable;
@@ -242,7 +242,7 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
     protected void applyImplicitComponents(DataComponentInput components) {
         super.applyImplicitComponents(components);
 
-        SimpleFluidContent storedFluid = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
+        FluidStack storedFluid = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
         if (storedFluid != null) {
             var tank = TANK.getTank(this);
             tank.setFluid(storedFluid.copy());
@@ -260,7 +260,7 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
 
         var tank = TANK.getTank(this);
         if (!tank.isEmpty()) {
-            components.set(EIODataComponents.ITEM_FLUID_CONTENT, SimpleFluidContent.copyOf(tank.getFluid()));
+            components.set(EIODataComponents.ITEM_FLUID_CONTENT, tank.getFluid().copy());
         }
 
         components.set(EIODataComponents.ACTION_RANGE, actionRange);

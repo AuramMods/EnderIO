@@ -52,7 +52,7 @@ public record PaintingRecipe(Ingredient input, ItemStack output) implements Mach
         }
 
         var paintBlock = blockItem.getBlock();
-        outputStack.set(EIODataComponents.BLOCK_PAINT, BlockPaintData.of(paintBlock));
+        EIODataComponents.BLOCK_PAINT.set(outputStack, BlockPaintData.of(paintBlock));
 
         outputs.add(OutputStack.of(outputStack));
         return outputs;

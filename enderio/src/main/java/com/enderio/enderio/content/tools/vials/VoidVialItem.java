@@ -41,7 +41,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
     public static final ResourceLocation FILLED_MODEL_PROPERTY = EnderIO.rl("void_vial_filled");
 
     public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack, v) -> new StrictFluidHandlerItemStack(
-        () -> EIODataComponents.ITEM_FLUID_CONTENT, stack, Ints.saturatedCast(ExperienceUtil.getFluidFromLevel(10)), Tags.Fluids.EXPERIENCE);
+        EIODataComponents.ITEM_FLUID_CONTENT, stack, Ints.saturatedCast(ExperienceUtil.getFluidFromLevel(10)), Tags.Fluids.EXPERIENCE);
 
     public VoidVialItem(Properties properties) {
         super(properties.stacksTo(1));

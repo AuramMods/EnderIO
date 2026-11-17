@@ -33,7 +33,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.SimpleFluidContent;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 
@@ -226,7 +226,7 @@ public class WeatherObeliskBlockEntity extends MachineBlockEntity implements Flu
     protected void applyImplicitComponents(DataComponentInput components) {
         super.applyImplicitComponents(components);
 
-        SimpleFluidContent storedFluid = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
+        FluidStack storedFluid = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
         if (storedFluid != null) {
             var tank = TANK.getTank(this);
             tank.setFluid(storedFluid.copy());
@@ -239,7 +239,7 @@ public class WeatherObeliskBlockEntity extends MachineBlockEntity implements Flu
 
         var tank = TANK.getTank(this);
         if (!tank.isEmpty()) {
-            components.set(EIODataComponents.ITEM_FLUID_CONTENT, SimpleFluidContent.copyOf(tank.getFluid()));
+            components.set(EIODataComponents.ITEM_FLUID_CONTENT, tank.getFluid().copy());
         }
     }
 }

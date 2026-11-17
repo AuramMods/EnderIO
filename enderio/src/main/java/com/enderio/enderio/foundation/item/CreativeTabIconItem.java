@@ -3,7 +3,7 @@ package com.enderio.enderio.foundation.item;
 import com.enderio.core.common.item.ICustomCreativeTabEntries;
 import net.minecraft.world.item.Item;
 
-public class CreativeTabIconItem extends Item implements ICustomCreativeTabEntries {
+public class CreativeTabIconItem extends GlintedItem implements ICustomCreativeTabEntries {
     public CreativeTabIconItem(Properties props) {
         super(props);
     }

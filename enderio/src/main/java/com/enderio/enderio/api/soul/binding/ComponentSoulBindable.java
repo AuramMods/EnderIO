@@ -1,22 +1,22 @@
 package com.enderio.enderio.api.soul.binding;
 
 import com.enderio.enderio.api.soul.Soul;
-import net.minecraft.core.component.DataComponentType;
-import net.neoforged.neoforge.common.MutableDataComponentHolder;
+import com.enderio.core.common.item.ItemDataKey;
+import net.minecraft.world.item.ItemStack;
 
 public class ComponentSoulBindable implements SoulBindable {
 
-    protected final MutableDataComponentHolder parent;
-    protected final DataComponentType<Soul> componentType;
+    protected final ItemStack parent;
+    protected final ItemDataKey<Soul> componentType;
 
-    public ComponentSoulBindable(MutableDataComponentHolder parent, DataComponentType<Soul> componentType) {
+    public ComponentSoulBindable(ItemStack parent, ItemDataKey<Soul> componentType) {
         this.parent = parent;
         this.componentType = componentType;
     }
 
     @Override
     public Soul getBoundSoul() {
-        return parent.getOrDefault(componentType, Soul.EMPTY);
+        return componentType.getOrDefault(parent, Soul.EMPTY);
     }
 
     @Override
@@ -39,6 +39,6 @@ public class ComponentSoulBindable implements SoulBindable {
             throw new IllegalArgumentException("Soul is not valid for this item.");
         }
 
-        parent.set(componentType, newSoul);
+        componentType.set(parent, newSoul);
     }
 }

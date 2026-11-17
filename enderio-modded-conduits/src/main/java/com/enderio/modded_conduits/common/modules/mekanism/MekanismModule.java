@@ -38,7 +38,7 @@ import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentType;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
@@ -97,8 +97,7 @@ public class MekanismModule implements ConduitCommonModule {
         CONDUIT_CONNECTION_CONFIG_TYPES.register("heat", () -> HeatConduitConnectionConfig.TYPE);
     }
 
-    private static final DeferredRegister.DataComponents DATA_COMPONENT_TYPES = DeferredRegister
-            .createDataComponents(EnderIO.MOD_ID);
+
 
     // endregion
 
@@ -120,10 +119,8 @@ public class MekanismModule implements ConduitCommonModule {
             .register("chemical", () -> new ConduitDataType<>(ChemicalConduitData.CODEC,
                     ChemicalConduitData.STREAM_CODEC, ChemicalConduitData::new));
 
-    public static final Supplier<DataComponentType<EnderChemicalFilter>> CHEMICAL_FILTER = DATA_COMPONENT_TYPES
-            .registerComponentType("chemical_filter",
-                    builder -> builder.persistent(EnderChemicalFilter.CODEC)
-                            .networkSynchronized(EnderChemicalFilter.STREAM_CODEC));
+    public static final ItemDataKey<EnderChemicalFilter> CHEMICAL_FILTER =
+        new ItemDataKey<>(EnderIO.rl("chemical_filter"), EnderChemicalFilter.CODEC);
 
     public static final ItemDeferredHolder<EnderChemicalFilterItem> BASIC_CHEMICAL_FILTER = ITEMS.registerItem(
         "basic_chemical_filter",
@@ -181,7 +178,6 @@ public class MekanismModule implements ConduitCommonModule {
         CONDUIT_DATA_TYPES.register(modEventBus);
         CONDUIT_CONNECTION_CONFIG_TYPES.register(modEventBus);
         CONDUIT_NETWORK_CONTEXT_TYPES.register(modEventBus);
-        DATA_COMPONENT_TYPES.register(modEventBus);
         modEventBus.addListener(this::registerCapabilities);
         modEventBus.addListener(this::addToCreativeTabs);
 

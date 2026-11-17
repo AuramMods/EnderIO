@@ -58,7 +58,7 @@ public class TooltipHandler {
         if (capacitorExtension != null) {
             capacitorData = capacitorExtension.getCapacitorData(itemStack, registries);
         } else {
-            capacitorData = itemStack.get(EIODataComponents.CAPACITOR_DATA);
+            capacitorData = EIODataComponents.CAPACITOR_DATA.get(itemStack);
         }
 
         if (capacitorData != null) {

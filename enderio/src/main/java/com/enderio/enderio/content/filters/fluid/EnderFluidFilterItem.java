@@ -8,7 +8,7 @@ import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.enderio.content.filters.FiltersLang;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOMenus;
-import net.minecraft.core.component.DataComponentType;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -24,8 +24,7 @@ import java.util.function.Supplier;
 
 public class EnderFluidFilterItem extends AbstractFilterItem<EnderFluidFilter> {
 
-    public static final BiFunction<ItemStack, Direction, FluidFilter> FLUID_FILTER_PROVIDER = (stack, v) -> stack
-            .getOrDefault(EIODataComponents.FLUID_FILTER, EnderFluidFilter.EMPTY);
+    public static final BiFunction<ItemStack, Direction, FluidFilter> FLUID_FILTER_PROVIDER = (stack, v) -> EIODataComponents.FLUID_FILTER.getOrDefault(stack, EnderFluidFilter.EMPTY);
 
     private final Type type;
 
@@ -35,7 +34,7 @@ public class EnderFluidFilterItem extends AbstractFilterItem<EnderFluidFilter> {
     }
 
     @Override
-    protected DataComponentType<EnderFluidFilter> dataComponentType() {
+    protected ItemDataKey<EnderFluidFilter> dataComponentType() {
         return EIODataComponents.FLUID_FILTER;
     }
 

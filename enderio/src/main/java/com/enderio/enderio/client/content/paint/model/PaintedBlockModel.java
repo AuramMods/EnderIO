@@ -188,21 +188,21 @@ public class PaintedBlockModel implements IDynamicBakedModel {
 
     @Override
     public List<RenderType> getRenderTypes(ItemStack itemStack, boolean fabulous) {
-        if (!itemStack.has(EIODataComponents.BLOCK_PAINT)) {
+        if (!EIODataComponents.BLOCK_PAINT.has(itemStack)) {
             return List.of(fabulous ? Sheets.translucentCullBlockSheet() : Sheets.translucentItemSheet());
         }
 
-        var paintData = itemStack.get(EIODataComponents.BLOCK_PAINT);
+        var paintData = EIODataComponents.BLOCK_PAINT.get(itemStack);
         return List.of(ItemBlockRenderTypes.getRenderType(paintData.paint().defaultBlockState(), fabulous));
     }
 
     @Override
     public List<BakedModel> getRenderPasses(ItemStack itemStack, boolean fabulous) {
-        if (!itemStack.has(EIODataComponents.BLOCK_PAINT)) {
+        if (!EIODataComponents.BLOCK_PAINT.has(itemStack)) {
             return List.of();
         }
 
-        var paintData = itemStack.get(EIODataComponents.BLOCK_PAINT);
+        var paintData = EIODataComponents.BLOCK_PAINT.get(itemStack);
         return itemRenderCache.computeIfAbsent(paintData.paint(),
                 paintKey -> List.of(new ItemModel(paintData.paint())));
     }

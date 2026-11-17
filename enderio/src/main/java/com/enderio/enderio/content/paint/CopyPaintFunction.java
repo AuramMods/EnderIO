@@ -47,7 +47,7 @@ public class CopyPaintFunction extends LootItemConditionalFunction {
                 ? paintedBlockEntity.getPrimaryPaint()
                 : paintedBlockEntity.getSecondaryPaint();
 
-            currentPaint.ifPresent(paint -> stack.set(EIODataComponents.BLOCK_PAINT, BlockPaintData.of(paint)));
+            currentPaint.ifPresent(paint -> EIODataComponents.BLOCK_PAINT.set(stack, BlockPaintData.of(paint)));
         }
 
         return stack;

@@ -20,7 +20,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 import static com.enderio.enderio.foundation.util.ExperienceUtil.EXP_TO_FLUID;
@@ -91,7 +90,7 @@ public class XPVacuumBlockEntity extends VacuumMachineBlockEntity<ExperienceOrb>
     protected void applyImplicitComponents(DataComponentInput components) {
         super.applyImplicitComponents(components);
 
-        SimpleFluidContent storedFluid = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
+        FluidStack storedFluid = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
         if (storedFluid != null) {
             var tank = TANK.getTank(this);
             tank.setFluid(storedFluid.copy());
@@ -104,7 +103,7 @@ public class XPVacuumBlockEntity extends VacuumMachineBlockEntity<ExperienceOrb>
 
         var tank = TANK.getTank(this);
         if (!tank.isEmpty()) {
-            components.set(EIODataComponents.ITEM_FLUID_CONTENT, SimpleFluidContent.copyOf(tank.getFluid()));
+            components.set(EIODataComponents.ITEM_FLUID_CONTENT, tank.getFluid().copy());
         }
     }
 

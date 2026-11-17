@@ -23,7 +23,7 @@ public class PaintedSlabBlockItem extends PaintedBlockItem {
     protected boolean updateCustomBlockEntityTag(BlockPos pos, Level level, @Nullable Player player, ItemStack stack, BlockState state) {
         boolean result = updateCustomBlockEntityTag(level, player, pos, stack);
 
-        var paintData = stack.get(EIODataComponents.BLOCK_PAINT);
+        var paintData = EIODataComponents.BLOCK_PAINT.get(stack);
 
         if (paintData == null) {
             // TODO: Log error

@@ -47,9 +47,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.client.event.RecipesUpdatedEvent;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidType;
-import net.neoforged.neoforge.fluids.SimpleFluidContent;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 
@@ -280,7 +279,7 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
         super.applyImplicitComponents(components);
         boundSoul = components.getOrDefault(EIODataComponents.SOUL, Soul.EMPTY);
 
-        SimpleFluidContent storedFluid = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
+        FluidStack storedFluid = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
         if (storedFluid != null) {
             var tank = TANK.getTank(this);
             tank.setFluid(storedFluid.copy());
@@ -297,7 +296,7 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
 
         var tank = TANK.getTank(this);
         if (!tank.isEmpty()) {
-            components.set(EIODataComponents.ITEM_FLUID_CONTENT, SimpleFluidContent.copyOf(tank.getFluid()));
+            components.set(EIODataComponents.ITEM_FLUID_CONTENT, tank.getFluid().copy());
         }
     }
 

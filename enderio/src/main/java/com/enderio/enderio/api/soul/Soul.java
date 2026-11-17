@@ -6,18 +6,23 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.FriendlyByteBuf;
+import com.enderio.core.common.network.codec.PacketCodec;
+import com.mojang.datafixers.util.Either;
+import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.MapLike;
+import com.mojang.serialization.RecordBuilder;
+import net.minecraft.resources.RegistryOps;
+import io.netty.handler.codec.DecoderException;
+import io.netty.handler.codec.EncoderException;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Bee;
 import org.jetbrains.annotations.Nullable;
@@ -54,7 +59,7 @@ public record Soul(@Nullable EntityType<?> entityType, CompoundTag entityTag) {
         "SleepingX",
         "SleepingY",
         "SleepingZ",
-        Leashable.LEASH_TAG,
+        "Leash",
         Entity.UUID_TAG
     );
 
@@ -73,10 +78,38 @@ public record Soul(@Nullable EntityType<?> entityType, CompoundTag entityTag) {
 
     private static final Codec<Soul> NEW_CODEC;
 
-    private static final Codec<Soul> OLD_CODEC = RecordCodecBuilder.create(
-        instance -> instance.group(
-            CompoundTag.CODEC.fieldOf("entityTag").forGetter(Soul::entityTag)
-        ).apply(instance, Soul::new));
+    private static final Codec<Soul> OLD_CODEC = CompoundTag.CODEC.fieldOf("entityTag").codec().flatXmap(tag -> {
+        ResourceLocation typeId = ResourceLocation.tryParse(tag.getString(Entity.ID_TAG));
+        if (typeId == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(typeId)) {
+            return DataResult.error(() -> "Unknown legacy soul entity type: " + tag.getString(Entity.ID_TAG));
+        }
+        return DataResult.success(new Soul(BuiltInRegistries.ENTITY_TYPE.get(typeId), tag));
+    }, soul -> soul.isEmpty() ? DataResult.error(() -> "Cannot encode empty legacy soul")
+        : DataResult.success(soul.getEntityTagWithId()));
+
+    // DFU in 1.20.1's optionalFieldOf suppresses malformed present values. Preserve
+    // null/missing support without turning an unknown entity ID into an empty soul.
+    private static final MapCodec<Optional<EntityType<?>>> OPTIONAL_ENTITY_TYPE = new MapCodec<>() {
+        @Override
+        public <T> DataResult<Optional<EntityType<?>>> decode(DynamicOps<T> ops, MapLike<T> input) {
+            T value = input.get("entity_type");
+            return value == null || value.equals(ops.empty()) ? DataResult.success(Optional.empty())
+                : ResourceLocation.CODEC.parse(ops, value).flatMap(id -> BuiltInRegistries.ENTITY_TYPE.containsKey(id)
+                    ? DataResult.success(Optional.of(BuiltInRegistries.ENTITY_TYPE.get(id)))
+                    : DataResult.error(() -> "Unknown soul entity type: " + id));
+        }
+
+        @Override
+        public <T> RecordBuilder<T> encode(Optional<EntityType<?>> value, DynamicOps<T> ops, RecordBuilder<T> prefix) {
+            value.ifPresent(type -> prefix.add("entity_type", BuiltInRegistries.ENTITY_TYPE.byNameCodec().encodeStart(ops, type)));
+            return prefix;
+        }
+
+        @Override
+        public <T> Stream<T> keys(DynamicOps<T> ops) {
+            return Stream.of(ops.createString("entity_type"));
+        }
+    };
 
     public static final Codec<Soul> OPTIONAL_CODEC;
 
@@ -86,28 +119,51 @@ public record Soul(@Nullable EntityType<?> entityType, CompoundTag entityTag) {
         // TODO: 26.1: Change entityType to be an Optional perhaps? Not doing anything further here to avoid breaking API.
         Codec<Soul> newCodec = RecordCodecBuilder.create(
             instance -> instance.group(
-                BuiltInRegistries.ENTITY_TYPE.byNameCodec().optionalFieldOf("entity_type").forGetter(soul -> Optional.ofNullable(soul.entityType())),
+                OPTIONAL_ENTITY_TYPE.forGetter(soul -> Optional.ofNullable(soul.entityType())),
                 CompoundTag.CODEC.fieldOf("entity_tag").forGetter(Soul::entityTag)
             ).apply(instance, Soul::new));
 
         // Only apply validator to the main codec, we'll skip it on the optional codec for now in case
         // TODO: 26.1: simplify this back down.
-        NEW_CODEC = newCodec.validate((soul) -> soul.entityType == null ? DataResult.error(() -> "Entity type cannot be null") : DataResult.success(soul));
+        NEW_CODEC = newCodec.flatXmap(Soul::requireEntity, Soul::requireEntity);
 
-        OPTIONAL_CODEC = ExtraCodecs
-            .optionalEmptyMap(Codec.withAlternative(newCodec, OLD_CODEC))
-            .xmap(opt -> opt.filter(s -> !s.isEmpty()).orElse(EMPTY), soul -> soul.isEmpty() ? Optional.empty() : Optional.of(soul));
+        Codec<Soul> optionalValueCodec = alternative(newCodec, OLD_CODEC);
+        OPTIONAL_CODEC = new Codec<>() {
+            @Override
+            public <T> DataResult<Pair<Soul, T>> decode(DynamicOps<T> ops, T input) {
+                boolean emptyMap = ops.getMap(input).result().map(map -> map.entries().findAny().isEmpty()).orElse(false);
+                return emptyMap ? DataResult.success(Pair.of(Soul.EMPTY, ops.empty()))
+                    : optionalValueCodec.decode(ops, input).map(pair -> pair.mapFirst(soul -> soul.isEmpty() ? Soul.EMPTY : soul));
+            }
+
+            @Override
+            public <T> DataResult<T> encode(Soul soul, DynamicOps<T> ops, T prefix) {
+                return soul.isEmpty() ? ops.mergeToMap(prefix, java.util.Map.of()) : optionalValueCodec.encode(soul, ops, prefix);
+            }
+        };
     }
 
-    public static final Codec<Soul> CODEC = Codec.withAlternative(NEW_CODEC, OLD_CODEC);
+    private static DataResult<Soul> requireEntity(Soul soul) {
+        return soul.entityType == null ? DataResult.error(() -> "Entity type cannot be null") : DataResult.success(soul);
+    }
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, Soul> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.registry(Registries.ENTITY_TYPE),
-        Soul::entityType,
-        ByteBufCodecs.COMPOUND_TAG,
-        Soul::entityTag,
-        Soul::new
-    );
+    private static Codec<Soul> alternative(Codec<Soul> current, Codec<Soul> legacy) {
+        return Codec.either(current, legacy).xmap(either -> either.map(soul -> soul, soul -> soul), Either::left);
+    }
+
+    public static final Codec<Soul> CODEC = alternative(NEW_CODEC, OLD_CODEC);
+
+    public static final PacketCodec<Soul> STREAM_CODEC = PacketCodec.of((buffer, soul) -> {
+        if (soul.isEmpty()) throw new EncoderException("Cannot encode an empty soul with the required soul codec");
+        buffer.writeVarInt(BuiltInRegistries.ENTITY_TYPE.getId(soul.entityType()));
+        buffer.writeNbt(soul.entityTag());
+    }, buffer -> {
+        int entityId = buffer.readVarInt();
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.byId(entityId);
+        CompoundTag tag = buffer.readNbt();
+        if (type == null || BuiltInRegistries.ENTITY_TYPE.getId(type) != entityId || tag == null) throw new DecoderException("Invalid soul entity type or NBT");
+        return new Soul(type, tag);
+    });
 
     public Soul {
         // Remove tags we don't want
@@ -118,16 +174,9 @@ public record Soul(@Nullable EntityType<?> entityType, CompoundTag entityTag) {
         this(entityTypeOpt.orElse(null), entityTag);
     }
 
-    // Legacy data support.
-    private Soul(CompoundTag tag) {
-        // Note: doesn't remove ID from the tag to ensure backwards compatibility.
-        // TODO: 1.22 - remove this.
-        this(BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(tag.getString(Entity.ID_TAG))), tag);
-    }
-
-    public static final StreamCodec<RegistryFriendlyByteBuf, Soul> OPTIONAL_STREAM_CODEC = new StreamCodec<>() {
+    public static final PacketCodec<Soul> OPTIONAL_STREAM_CODEC = new PacketCodec<>() {
         @Override
-        public Soul decode(RegistryFriendlyByteBuf byteBuf) {
+        public Soul decode(FriendlyByteBuf byteBuf) {
             boolean hasEntity = byteBuf.readBoolean();
             if (!hasEntity) {
                 return EMPTY;
@@ -137,7 +186,7 @@ public record Soul(@Nullable EntityType<?> entityType, CompoundTag entityTag) {
         }
 
         @Override
-        public void encode(RegistryFriendlyByteBuf o, Soul soul) {
+        public void encode(FriendlyByteBuf o, Soul soul) {
             o.writeBoolean(soul.hasEntity());
             if (soul.hasEntity()) {
                 STREAM_CODEC.encode(o, soul);
@@ -253,7 +302,7 @@ public record Soul(@Nullable EntityType<?> entityType, CompoundTag entityTag) {
         if (!this.hasEntity()) {
             throw new IllegalStateException("Cannot encode empty StoredEntityData");
         } else {
-            return CODEC.encodeStart(lookupProvider.createSerializationContext(NbtOps.INSTANCE), this).getOrThrow();
+            return CODEC.encodeStart(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), this).getOrThrow(false, message -> LOGGER.error("Cannot save soul: {}", message));
         }
     }
 
@@ -262,7 +311,7 @@ public record Soul(@Nullable EntityType<?> entityType, CompoundTag entityTag) {
     }
 
     public static Optional<Soul> parse(HolderLookup.Provider lookupProvider, Tag tag) {
-        return CODEC.parse(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag)
+        return CODEC.parse(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), tag)
             .resultOrPartial(error -> LOGGER.error("Tried to load invalid StoredEntityData: '{}'", error));
     }
 

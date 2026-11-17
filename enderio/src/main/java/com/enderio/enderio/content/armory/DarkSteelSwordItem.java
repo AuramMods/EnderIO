@@ -4,7 +4,7 @@ import com.enderio.core.client.item.AdvancedTooltipProvider;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIODataComponents;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.EntityType;
@@ -13,7 +13,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.component.ResolvableProfile;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -21,9 +20,8 @@ import java.util.Optional;
 
 public class DarkSteelSwordItem extends SwordItem implements AdvancedTooltipProvider, IDarkSteelItem {
     public DarkSteelSwordItem(Properties properties) {
-        super(DarkSteelTiers.DARK_STEEL_TIER,
-                properties.attributes(createAttributes(DarkSteelTiers.DARK_STEEL_TIER, 3, -2.4F))
-                        .component(EIODataComponents.TRAVEL_ITEM, false));
+        super(DarkSteelTiers.DARK_STEEL_TIER, 3, -2.4F, properties);
+        EIODataComponents.TRAVEL_ITEM.withDefault(this, () -> false);
     }
 
     @Override
@@ -74,7 +72,7 @@ public class DarkSteelSwordItem extends SwordItem implements AdvancedTooltipProv
         }
         if (target instanceof Player player) {
             ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
-            stack.set(DataComponents.PROFILE, new ResolvableProfile(player.getGameProfile()));
+            stack.getOrCreateTag().put("SkullOwner", NbtUtils.writeGameProfile(new net.minecraft.nbt.CompoundTag(), player.getGameProfile()));
             return Optional.of(stack);
         }
         return Optional.empty();

@@ -6,7 +6,7 @@ import com.enderio.enderio.content.filters.AbstractFilterItem;
 import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.enderio.content.filters.FiltersLang;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
-import net.minecraft.core.component.DataComponentType;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -23,8 +23,7 @@ import java.util.function.Supplier;
 
 public class EnderChemicalFilterItem extends AbstractFilterItem<EnderChemicalFilter> {
 
-    public static final BiFunction<ItemStack, Direction, ChemicalFilter> CHEMICAL_FILTER_PROVIDER = (stack, v) -> stack
-        .getOrDefault(MekanismModule.CHEMICAL_FILTER, EnderChemicalFilter.EMPTY);
+    public static final BiFunction<ItemStack, Direction, ChemicalFilter> CHEMICAL_FILTER_PROVIDER = (stack, v) -> MekanismModule.CHEMICAL_FILTER.getOrDefault(stack, EnderChemicalFilter.EMPTY);
 
     private final Type type;
 
@@ -34,8 +33,8 @@ public class EnderChemicalFilterItem extends AbstractFilterItem<EnderChemicalFil
     }
 
     @Override
-    protected DataComponentType<EnderChemicalFilter> dataComponentType() {
-        return MekanismModule.CHEMICAL_FILTER.get();
+    protected ItemDataKey<EnderChemicalFilter> dataComponentType() {
+        return MekanismModule.CHEMICAL_FILTER;
     }
 
     @Override

@@ -1,33 +1,33 @@
 package com.enderio.core.common.capability;
 
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 
 import java.util.function.Predicate;
 
 /**
  * FluidHandler for Items which only accept specific fluids
  */
-public class StrictFluidHandlerItemStack extends FluidHandlerItemStack {
+public class StrictFluidHandlerItemStack extends NbtFluidHandlerItemStack {
 
     private final Predicate<Fluid> fluidPredicate;
 
-    public StrictFluidHandlerItemStack(ItemStack container, int capacity, Fluid validFluid) {
+    public StrictFluidHandlerItemStack(ItemDataKey<FluidStack> key, ItemStack container, int capacity, Fluid validFluid) {
 
-        this(container, capacity, fluid -> fluid == validFluid);
+        this(key, container, capacity, fluid -> fluid == validFluid);
     }
 
-    public StrictFluidHandlerItemStack(ItemStack container, int capacity, TagKey<Fluid> validFluid) {
+    public StrictFluidHandlerItemStack(ItemDataKey<FluidStack> key, ItemStack container, int capacity, TagKey<Fluid> validFluid) {
 
-        this(container, capacity, fluid -> fluid.is(validFluid));
+        this(key, container, capacity, fluid -> fluid.is(validFluid));
     }
 
-    public StrictFluidHandlerItemStack(ItemStack container, int capacity, Predicate<Fluid> isFluidValid) {
+    public StrictFluidHandlerItemStack(ItemDataKey<FluidStack> key, ItemStack container, int capacity, Predicate<Fluid> isFluidValid) {
 
-        super(container, capacity);
+        super(key, container, capacity);
         fluidPredicate = isFluidValid;
     }
 

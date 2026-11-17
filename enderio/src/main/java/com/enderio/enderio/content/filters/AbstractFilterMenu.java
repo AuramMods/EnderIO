@@ -3,7 +3,7 @@ package com.enderio.enderio.content.filters;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.core.common.menu.BaseEnderMenu;
 import com.enderio.core.common.network.menu.IntSyncSlot;
-import net.minecraft.core.component.DataComponentType;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -49,18 +49,18 @@ public abstract class AbstractFilterMenu<T> extends BaseEnderMenu {
         this.playerInventorySlot = addSyncSlot(IntSyncSlot.standalone());
     }
 
-    protected abstract DataComponentType<T> dataComponentType();
+    protected abstract ItemDataKey<T> dataComponentType();
     protected abstract T defaultFilter();
 
     @UseOnly(LogicalSide.SERVER)
     protected T getFilter() {
-        return getFilterStack().getOrDefault(dataComponentType(), defaultFilter());
+        return dataComponentType().getOrDefault(getFilterStack(), defaultFilter());
     }
 
     @UseOnly(LogicalSide.SERVER)
     protected void setFilter(T filter) {
         var stack = getFilterStack().copy();
-        stack.set(dataComponentType(), filter);
+        dataComponentType().set(stack, filter);
         setFilterStack(stack);
     }
 

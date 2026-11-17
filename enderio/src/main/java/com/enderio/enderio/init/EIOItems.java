@@ -29,12 +29,11 @@ import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.content.tools.vials.VoidVialItem;
 import com.enderio.enderio.content.travel.TravelStaffItem;
 import com.enderio.enderio.foundation.item.CreativeTabIconItem;
+import com.enderio.enderio.foundation.item.GlintedItem;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
-import net.minecraft.world.item.component.ItemLore;
 import net.minecraftforge.eventbus.api.IEventBus;
 import com.enderio.core.common.registries.ItemDeferredHolder;
 
@@ -117,13 +116,13 @@ public class EIOItems {
     // region Capacitors
 
     public static final ItemDeferredHolder<CapacitorItem> BASIC_CAPACITOR = ITEMS.registerItem("basic_capacitor",
-        CapacitorItem::new, new Item.Properties().component(EIODataComponents.CAPACITOR_DATA, CapacitorData.simple(1)));
+        properties -> EIODataComponents.CAPACITOR_DATA.withDefault(new CapacitorItem(properties), () -> CapacitorData.simple(1)));
 
     public static final ItemDeferredHolder<CapacitorItem> DOUBLE_LAYER_CAPACITOR = ITEMS.registerItem("double_layer_capacitor",
-        CapacitorItem::new, new Item.Properties().component(EIODataComponents.CAPACITOR_DATA, CapacitorData.simple(2)));
+        properties -> EIODataComponents.CAPACITOR_DATA.withDefault(new CapacitorItem(properties), () -> CapacitorData.simple(2)));
 
     public static final ItemDeferredHolder<CapacitorItem> OCTADIC_CAPACITOR = ITEMS.registerItem("octadic_capacitor",
-        CapacitorItem::new, new Item.Properties().component(EIODataComponents.CAPACITOR_DATA, CapacitorData.simple(3)));
+        properties -> EIODataComponents.CAPACITOR_DATA.withDefault(new CapacitorItem(properties), () -> CapacitorData.simple(3)));
 
     public static final ItemDeferredHolder<LootCapacitorItem> LOOT_CAPACITOR = ITEMS.registerItem("loot_capacitor",
         LootCapacitorItem::new, new Item.Properties().stacksTo(1));
@@ -233,17 +232,14 @@ public class EIOItems {
     public static final ItemDeferredHolder<ConduitBlockItem> CONDUIT = ITEMS.registerItem("conduit", ConduitBlockItem::new);
 
     // TODO: Why is facade type being stored as a component... it could just be part of the block item
-    public static final ItemDeferredHolder<ConduitFacadeItem> CONDUIT_FACADE = ITEMS.registerItem("conduit_facade", ConduitFacadeItem::new,
-        new Item.Properties().component(EIODataComponents.FACADE_TYPE, FacadeType.BASIC));
+    public static final ItemDeferredHolder<ConduitFacadeItem> CONDUIT_FACADE = ITEMS.registerItem("conduit_facade", properties -> EIODataComponents.FACADE_TYPE.withDefault(new ConduitFacadeItem(properties), () -> FacadeType.BASIC));
 
-    public static final ItemDeferredHolder<ConduitFacadeItem> TRANSPARENT_CONDUIT_FACADE = ITEMS.registerItem("transparent_conduit_facade", ConduitFacadeItem::new,
-        new Item.Properties().component(EIODataComponents.FACADE_TYPE, FacadeType.TRANSPARENT));
+    public static final ItemDeferredHolder<ConduitFacadeItem> TRANSPARENT_CONDUIT_FACADE = ITEMS.registerItem("transparent_conduit_facade", properties -> EIODataComponents.FACADE_TYPE.withDefault(new ConduitFacadeItem(properties), () -> FacadeType.TRANSPARENT));
 
-    public static final ItemDeferredHolder<ConduitFacadeItem> HARDENED_CONDUIT_FACADE = ITEMS.registerItem("hardened_conduit_facade", ConduitFacadeItem::new,
-        new Item.Properties().component(EIODataComponents.FACADE_TYPE, FacadeType.HARDENED));
+    public static final ItemDeferredHolder<ConduitFacadeItem> HARDENED_CONDUIT_FACADE = ITEMS.registerItem("hardened_conduit_facade", properties -> EIODataComponents.FACADE_TYPE.withDefault(new ConduitFacadeItem(properties), () -> FacadeType.HARDENED));
 
     public static final ItemDeferredHolder<ConduitFacadeItem> TRANSPARENT_HARDENED_CONDUIT_FACADE = ITEMS.registerItem("transparent_hardened_conduit_facade",
-        ConduitFacadeItem::new, new Item.Properties().component(EIODataComponents.FACADE_TYPE, FacadeType.TRANSPARENT_HARDENED));
+        properties -> EIODataComponents.FACADE_TYPE.withDefault(new ConduitFacadeItem(properties), () -> FacadeType.TRANSPARENT_HARDENED));
 
     // endregion
 
@@ -280,7 +276,7 @@ public class EIOItems {
     // region Creative Tab Icon
 
     public static final ItemDeferredHolder<CreativeTabIconItem> CREATIVE_ICON = ITEMS.registerItem("creative_tab_icon",
-        CreativeTabIconItem::new, new Item.Properties().component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true));
+        CreativeTabIconItem::new);
 
     // endregion
 
@@ -289,14 +285,11 @@ public class EIOItems {
     }
 
     private static ItemDeferredHolder<Item> basicGlinted(String name) {
-        return ITEMS.registerItem(name, Item::new, new Item.Properties().component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true));
+        return ITEMS.registerItem(name, GlintedItem::new);
     }
 
     private static ItemDeferredHolder<Item> lore(String name, Component lore) {
-        return ITEMS.registerItem(name, Item::new, new Item.Properties()
-            .rarity(Rarity.RARE)
-            .component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
-            .component(DataComponents.LORE, new ItemLore(List.of(lore))));
+        return ITEMS.registerItem(name, properties -> new GlintedItem(properties, List.of(lore)), new Item.Properties().rarity(Rarity.RARE));
     }
 
     public static void register(IEventBus bus) {

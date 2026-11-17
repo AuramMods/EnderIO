@@ -63,7 +63,7 @@ public interface PaintedBlock extends IBlockExtension {
 
     default ItemStack getPaintedStack(BlockGetter level, BlockPos pos, ItemLike itemLike) {
         ItemStack stack = new ItemStack(itemLike);
-        stack.set(EIODataComponents.BLOCK_PAINT, BlockPaintData.of(getPaint(level, pos)));
+        EIODataComponents.BLOCK_PAINT.set(stack, BlockPaintData.of(getPaint(level, pos)));
         return stack;
     }
 }

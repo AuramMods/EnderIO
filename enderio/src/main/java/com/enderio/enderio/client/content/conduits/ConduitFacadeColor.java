@@ -51,7 +51,7 @@ public class ConduitFacadeColor implements BlockColor, ItemColor {
 
     @Override
     public int getColor(ItemStack stack, int tintIndex) {
-        var facadeData = stack.get(EIODataComponents.BLOCK_PAINT);
+        var facadeData = EIODataComponents.BLOCK_PAINT.get(stack);
         if (facadeData != null) {
             var block = facadeData.paint();
             return Minecraft.getInstance().getItemColors().getColor(block.asItem().getDefaultInstance(), tintIndex);

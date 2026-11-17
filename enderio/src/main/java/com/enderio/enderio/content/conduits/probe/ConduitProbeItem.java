@@ -104,7 +104,7 @@ public class ConduitProbeItem extends Item {
                 .ifPresent(cloned -> configData.conduitData().put(conduitKey, cloned));
             }
         });
-        itemStack.set(EIODataComponents.PROBE_CONFIG, configData);
+        EIODataComponents.PROBE_CONFIG.set(itemStack, configData);
 
         if (!configData.conduitData().isEmpty()) {
             MutableComponent message = Component.empty();
@@ -122,7 +122,7 @@ public class ConduitProbeItem extends Item {
     }
 
     public void handlePaste(ConduitBundleBlockEntity conduitBlock, Direction face, ItemStack itemStack, Player player) {
-        ProbeConfigData configData = itemStack.get(EIODataComponents.PROBE_CONFIG);
+        ProbeConfigData configData = EIODataComponents.PROBE_CONFIG.get(itemStack);
         if (configData == null) {
             return;
         }
@@ -151,7 +151,7 @@ public class ConduitProbeItem extends Item {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 
         tooltipComponents.add(TooltipUtil.styledWithArgs(ConduitLang.CONDUIT_PROBE_MODE_TOOLTIP, getState(stack).getStateText()));
-        ProbeConfigData configData = stack.get(EIODataComponents.PROBE_CONFIG);
+        ProbeConfigData configData = EIODataComponents.PROBE_CONFIG.get(stack);
         if (configData != null && !configData.conduitData().isEmpty()) {
             
             tooltipComponents.add(ConduitLang.CONDUIT_PROBE_CONTAINS_COPIED.withStyle(ChatFormatting.GRAY));
@@ -162,7 +162,7 @@ public class ConduitProbeItem extends Item {
     }
 
     public static State getState(ItemStack stack) {
-        return stack.getOrDefault(EIODataComponents.PROBE_STATE, State.PROBE);
+        return EIODataComponents.PROBE_STATE.getOrDefault(stack, State.PROBE);
     }
     
     public static void setState(Player player, ItemStack stack, State state) {
@@ -170,7 +170,7 @@ public class ConduitProbeItem extends Item {
             throw new IllegalArgumentException("Invalid item passed to setState.");
         }
 
-        stack.set(EIODataComponents.PROBE_STATE, state);
+        EIODataComponents.PROBE_STATE.set(stack, state);
 
         if (player.level().isClientSide()) {
             PacketDistributor.sendToServer(new ServerboundSyncProbeStatePacket(state));

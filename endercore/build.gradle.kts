@@ -8,6 +8,25 @@ val gameTestSourceSet = sourceSets.create("gametest") {
 }
 configurations[gameTestSourceSet.implementationConfigurationName].extendsFrom(configurations.implementation.get())
 
+// Exercise the actual standalone main-mod state classes while the rest of the port
+// still cannot compile. These sources enter only the test output, never EnderCore's jar.
+tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
+    val mainSource = rootProject.file("enderio/src/main/java/com/enderio/enderio")
+    source(listOf(
+        "api/soul/Soul.java",
+        "api/soul/binding/SoulBindable.java",
+        "api/soul/binding/ComponentSoulBindable.java",
+        "api/soul/binding/ReadOnlyComponentSoulBindable.java",
+        "api/soul/storage/SoulHandler.java",
+        "api/soul/storage/SoulHandlerModifiable.java",
+        "api/soul/storage/SingleComponentSoulHandler.java",
+        "content/filters/item/ItemFilterUtils.java",
+        "compat/vanilla/SpawnEggSoulBindable.java",
+        "compat/vanilla/SpawnEggSoulHandler.java"
+    ).map { mainSource.resolve(it) })
+}
+
+
 dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
     testImplementation(libs.junitJupiter)

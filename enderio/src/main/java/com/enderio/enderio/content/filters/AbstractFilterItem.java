@@ -3,8 +3,7 @@ package com.enderio.enderio.content.filters;
 import net.minecraft.core.Direction;
 import com.enderio.enderio.api.filter.FilterMenuProvider;
 import com.enderio.enderio.init.EIODataComponents;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.DataComponents;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -34,12 +33,12 @@ public abstract class AbstractFilterItem<T> extends Item implements FilterMenuPr
         super(properties);
     }
 
-    protected abstract DataComponentType<T> dataComponentType();
+    protected abstract ItemDataKey<T> dataComponentType();
     protected abstract T defaultFilter();
     protected abstract AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, AbstractFilterMenu.FilterAccess filterAccess);
 
     protected T getFilter(ItemStack stack) {
-        return stack.getOrDefault(dataComponentType(), defaultFilter());
+        return dataComponentType().getOrDefault(stack, defaultFilter());
     }
 
     @Override
@@ -89,10 +88,10 @@ public abstract class AbstractFilterItem<T> extends Item implements FilterMenuPr
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, level, tooltipComponents, tooltipFlag);
 
-        var filter = stack.getOrDefault(dataComponentType(), defaultFilter());
+        var filter = dataComponentType().getOrDefault(stack, defaultFilter());
         if (filter.equals(defaultFilter())) {
             // Add helpful hint for unconfigured filters
             tooltipComponents.add(FiltersLang.UNCONFIGURED_HINT);
@@ -101,11 +100,11 @@ public abstract class AbstractFilterItem<T> extends Item implements FilterMenuPr
 
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
-        if (stack.has(DataComponents.HIDE_TOOLTIP) || stack.has(DataComponents.HIDE_ADDITIONAL_TOOLTIP)) {
+        if (stack.hasTag() && (stack.getTag().getInt("HideFlags") & ItemStack.TooltipPart.ADDITIONAL.getMask()) != 0) {
             return Optional.empty();
         }
 
-        var filter = stack.getOrDefault(dataComponentType(), defaultFilter());
+        var filter = dataComponentType().getOrDefault(stack, defaultFilter());
         if (filter.equals(defaultFilter()) || !(filter instanceof TooltipComponent filterTooltipComponent)) {
             return Optional.empty();
         }

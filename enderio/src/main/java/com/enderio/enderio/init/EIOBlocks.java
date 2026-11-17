@@ -513,16 +513,16 @@ public class EIOBlocks {
         () -> new FluidTankBlockItem(PRESSURIZED_FLUID_TANK.get(), new Item.Properties(), 32000));
 
     public static final ItemDeferredHolder<BlockItem> POWERED_SPAWNER_ITEM = ITEMS.register("powered_spawner",
-        () -> new BlockItem(POWERED_SPAWNER.get(), new Item.Properties().component(EIODataComponents.SOUL, Soul.EMPTY)));
+        () -> EIODataComponents.SOUL.withDefault(new BlockItem(POWERED_SPAWNER.get(), new Item.Properties()), () -> Soul.EMPTY));
 
     public static final ItemDeferredHolder<BlockItem> SOUL_ENGINE_ITEM = ITEMS.register("soul_engine",
-        () -> new BlockItem(SOUL_ENGINE.get(), new Item.Properties().component(EIODataComponents.SOUL, Soul.EMPTY)));
+        () -> EIODataComponents.SOUL.withDefault(new BlockItem(SOUL_ENGINE.get(), new Item.Properties()), () -> Soul.EMPTY));
 
     public static final Map<SolarPanelTier, ItemDeferredHolder<BlockItem>> SOLAR_PANEL_ITEMS = Util.make(() -> {
         Map<SolarPanelTier, ItemDeferredHolder<BlockItem>> items = new HashMap<>();
         for (var entry : SOLAR_PANELS.entrySet()) {
             items.put(entry.getKey(), ITEMS.register(entry.getValue().getId().getPath(),
-                () -> new BlockItem(entry.getValue().get(), new Item.Properties().component(EIODataComponents.SOUL, Soul.EMPTY))));
+                () -> EIODataComponents.SOUL.withDefault(new BlockItem(entry.getValue().get(), new Item.Properties()), () -> Soul.EMPTY)));
         }
         return ImmutableMap.copyOf(items);
     });

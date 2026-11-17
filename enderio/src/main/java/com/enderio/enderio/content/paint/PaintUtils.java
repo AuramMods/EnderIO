@@ -28,7 +28,7 @@ public class PaintUtils {
             return Optional.of(List.of(InteractionHand.values()).stream()
                 .map(player::getItemInHand)
                 .filter(itemStack -> blockItemClass.isInstance(itemStack.getItem()))
-                .map(stack -> stack.get(EIODataComponents.BLOCK_PAINT))
+                .map(stack -> EIODataComponents.BLOCK_PAINT.get(stack))
                 .filter(Objects::nonNull)
                 .map(BlockPaintData::paint)
                 .map(block -> block.getSoundType(block.defaultBlockState(), level, pos, player))

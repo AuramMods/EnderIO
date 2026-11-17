@@ -1,38 +1,17 @@
 package com.enderio.enderio.content.filters.item;
 
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.List;
-import java.util.Objects;
-
 public class ItemFilterUtils {
-    // Ignore damage as it is controlled with the damage filter.
-    private static final List<DataComponentType<?>> IGNORED_COMPONENT_TYPES = List.of(DataComponents.DAMAGE);
-
+    /** Damage has its own filter mode; all other stored item tags must agree in both directions. */
     public static boolean doComponentsMatch(ItemStack referenceStack, ItemStack stack) {
-        for (var component : referenceStack.getComponents()) {
-            if (IGNORED_COMPONENT_TYPES.contains(component.type())) {
-                continue;
-            }
+        return comparableTag(referenceStack).equals(comparableTag(stack));
+    }
 
-            if (!Objects.equals(stack.get(component.type()), component.value())) {
-                return false;
-            }
-        }
-
-        // Ensure no additional components are present
-        for (var component : stack.getComponents()) {
-            if (IGNORED_COMPONENT_TYPES.contains(component.type())) {
-                continue;
-            }
-
-            if (!Objects.equals(referenceStack.get(component.type()), component.value())) {
-                return false;
-            }
-        }
-
-        return true;
+    private static CompoundTag comparableTag(ItemStack stack) {
+        CompoundTag tag = stack.hasTag() ? stack.getTag().copy() : new CompoundTag();
+        tag.remove("Damage");
+        return tag;
     }
 }

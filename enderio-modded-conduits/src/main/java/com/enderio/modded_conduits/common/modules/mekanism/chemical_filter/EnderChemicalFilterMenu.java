@@ -6,7 +6,7 @@ import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
 import mekanism.api.chemical.ChemicalStack;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponentType;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
@@ -59,8 +59,8 @@ public class EnderChemicalFilterMenu extends AbstractFilterMenu<EnderChemicalFil
     }
 
     @Override
-    protected DataComponentType<EnderChemicalFilter> dataComponentType() {
-        return MekanismModule.CHEMICAL_FILTER.get();
+    protected ItemDataKey<EnderChemicalFilter> dataComponentType() {
+        return MekanismModule.CHEMICAL_FILTER;
     }
 
     @Override

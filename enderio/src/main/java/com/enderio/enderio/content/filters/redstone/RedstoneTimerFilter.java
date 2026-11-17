@@ -37,24 +37,24 @@ public class RedstoneTimerFilter implements RedstoneInputFilter {
     }
 
     public int getMaxTicks() {
-        return stack.get(EIODataComponents.REDSTONE_TIMER_FILTER).maxTicks();
+        return EIODataComponents.REDSTONE_TIMER_FILTER.get(stack).maxTicks();
     }
 
     public int getTicks() {
-        return stack.get(EIODataComponents.REDSTONE_TIMER_FILTER).ticks();
+        return EIODataComponents.REDSTONE_TIMER_FILTER.get(stack).ticks();
     }
 
     public void setTimer(int ticks, int maxTicks) {
-        stack.set(EIODataComponents.REDSTONE_TIMER_FILTER, new Component(ticks, maxTicks));
+        EIODataComponents.REDSTONE_TIMER_FILTER.set(stack, new Component(ticks, maxTicks));
     }
 
     public void setMaxTicks(int maxTicks) {
-        stack.set(EIODataComponents.REDSTONE_TIMER_FILTER, new Component(0, maxTicks));
+        EIODataComponents.REDSTONE_TIMER_FILTER.set(stack, new Component(0, maxTicks));
     }
 
     @Override
     public boolean isConfigured() {
-        Component current = stack.get(EIODataComponents.REDSTONE_TIMER_FILTER);
+        Component current = EIODataComponents.REDSTONE_TIMER_FILTER.get(stack);
         return current != null && !current.equals(INSTANCE);
     }
 

@@ -71,7 +71,7 @@ public class PaintedSandEntity extends FallingBlockEntity implements IEntityWith
     @Override
     public ItemEntity spawnAtLocation(ItemStack stack, float offsetY) {
         if (!stack.isEmpty() && blockData != null) {
-            stack.set(EIODataComponents.BLOCK_PAINT, BlockPaintData.of(getPaint()));
+            EIODataComponents.BLOCK_PAINT.set(stack, BlockPaintData.of(getPaint()));
         }
 
         return super.spawnAtLocation(stack, offsetY);

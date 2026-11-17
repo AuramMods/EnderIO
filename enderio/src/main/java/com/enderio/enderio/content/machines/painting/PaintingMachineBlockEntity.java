@@ -155,7 +155,7 @@ public class PaintingMachineBlockEntity extends PoweredMachineBlockEntity {
                 Optional<BlockPaintData> s = outputs.stream()
                         .findFirst()
                         .map(OutputStack::getItem)
-                        .flatMap(item -> Optional.ofNullable(item.get(EIODataComponents.BLOCK_PAINT)));
+                        .flatMap(item -> Optional.ofNullable(EIODataComponents.BLOCK_PAINT.get(item)));
 
                 s.ifPresent(paintData -> {
                     for (Player player : getLevel().players()) {

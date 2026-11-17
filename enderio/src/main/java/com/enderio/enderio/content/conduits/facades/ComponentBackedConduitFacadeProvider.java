@@ -23,7 +23,7 @@ public class ComponentBackedConduitFacadeProvider implements ConduitFacadeProvid
 
     @Override
     public boolean isValid() {
-        return itemStack.has(EIODataComponents.BLOCK_PAINT);
+        return EIODataComponents.BLOCK_PAINT.has(itemStack);
     }
 
     @Override
@@ -32,11 +32,11 @@ public class ComponentBackedConduitFacadeProvider implements ConduitFacadeProvid
             throw new IllegalStateException("Facade cannot be used if isValid() is false.");
         }
 
-        return Objects.requireNonNull(itemStack.get(EIODataComponents.BLOCK_PAINT)).paint();
+        return Objects.requireNonNull(EIODataComponents.BLOCK_PAINT.get(itemStack)).paint();
     }
 
     @Override
     public FacadeType type() {
-        return itemStack.getOrDefault(EIODataComponents.FACADE_TYPE, FacadeType.BASIC);
+        return EIODataComponents.FACADE_TYPE.getOrDefault(itemStack, FacadeType.BASIC);
     }
 }

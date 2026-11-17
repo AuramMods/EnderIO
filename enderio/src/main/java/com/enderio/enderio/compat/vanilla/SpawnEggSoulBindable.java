@@ -2,10 +2,8 @@ package com.enderio.enderio.compat.vanilla;
 
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.api.soul.binding.SoulBindable;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
-import net.minecraft.world.item.component.CustomData;
 
 public class SpawnEggSoulBindable implements SoulBindable {
     private final ItemStack spawnEgg;
@@ -21,12 +19,12 @@ public class SpawnEggSoulBindable implements SoulBindable {
         }
 
         // Get custom entity data
-        var customEntityData = spawnEgg.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
-        if (!customEntityData.isEmpty()) {
-            return new Soul(spawnEggItem.getType(spawnEgg), customEntityData.copyTag());
+        var customEntityData = spawnEgg.getTagElement("EntityTag");
+        if (customEntityData != null && !customEntityData.isEmpty()) {
+            return new Soul(spawnEggItem.getType(spawnEgg.getTag()), customEntityData.copy());
         }
 
-        return Soul.of(spawnEggItem.getType(spawnEgg));
+        return Soul.of(spawnEggItem.getType(spawnEgg.getTag()));
     }
 
     @Override

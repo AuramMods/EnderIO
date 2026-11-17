@@ -36,15 +36,15 @@ public class RedstoneTLatchFilter implements RedstoneOutputFilter {
     }
 
     public boolean isActive() {
-        return stack.get(EIODataComponents.REDSTONE_TLATCH_FILTER).active();
+        return EIODataComponents.REDSTONE_TLATCH_FILTER.get(stack).active();
     }
 
     public boolean isDeactivated() {
-        return stack.get(EIODataComponents.REDSTONE_TLATCH_FILTER).deactivated();
+        return EIODataComponents.REDSTONE_TLATCH_FILTER.get(stack).deactivated();
     }
 
     public void setState(boolean active, boolean deactivated) {
-        stack.set(EIODataComponents.REDSTONE_TLATCH_FILTER, new Component(active, deactivated));
+        EIODataComponents.REDSTONE_TLATCH_FILTER.set(stack, new Component(active, deactivated));
     }
 
     @Override

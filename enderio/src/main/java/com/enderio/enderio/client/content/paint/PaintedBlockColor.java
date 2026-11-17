@@ -48,7 +48,7 @@ public class PaintedBlockColor implements BlockColor, ItemColor {
 
     @Override
     public int getColor(ItemStack itemStack, int tintIndex) {
-        var paintData = itemStack.get(EIODataComponents.BLOCK_PAINT);
+        var paintData = EIODataComponents.BLOCK_PAINT.get(itemStack);
         if (paintData != null) {
             var block = paintData.paint();
             return Minecraft.getInstance().getItemColors().getColor(block.asItem().getDefaultInstance(), tintIndex);

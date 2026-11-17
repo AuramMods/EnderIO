@@ -30,6 +30,6 @@ public interface ICapacitorExtension {
      */
     @Nullable
     default CapacitorData getCapacitorData(ItemStack capacitorStack, @Nullable HolderLookup.Provider registries) {
-        return capacitorStack.get(EIODataComponents.CAPACITOR_DATA);
+        return EIODataComponents.CAPACITOR_DATA.get(capacitorStack);
     }
 }
