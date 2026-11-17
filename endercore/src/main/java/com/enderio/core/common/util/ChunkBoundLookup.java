@@ -156,7 +156,10 @@ public class ChunkBoundLookup<T> {
      * @param value The value to remove.
      */
     public void remove(T value) {
-        Set<ChunkPos> chunks = valueKeys.get(value);
+        Set<ChunkPos> chunks = valueKeys.remove(value);
+        if (chunks == null) {
+            return;
+        }
         for (ChunkPos chunkPos : chunks) {
             Set<T> dataAtChunk = chunkData.get(chunkPos.toLong());
 
@@ -168,6 +171,5 @@ public class ChunkBoundLookup<T> {
             }
         }
 
-        valueKeys.remove(value);
     }
 }

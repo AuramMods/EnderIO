@@ -8,6 +8,38 @@ import org.junit.jupiter.api.Test;
 
 public class ChunkBoundLookupTests {
     @Test
+    public void repeatedUnloadAndRemovalPreserveOtherEntries() {
+        var lookup = new ChunkBoundLookup<Object>();
+        var removed = new Object();
+        var retained = new Object();
+        var center = new BlockPos(-17, 0, -17);
+        lookup.remove(removed);
+        lookup.addForBlockRadius(center, 32, removed);
+        lookup.addForBlockRadius(center, 32, retained);
+        lookup.remove(removed);
+        lookup.remove(removed);
+        for (int x = -4; x <= 0; x++) {
+            for (int z = -4; z <= 0; z++) {
+                Assertions.assertEquals(java.util.Set.of(retained), lookup.getForChunk(new ChunkPos(x, z)));
+            }
+        }
+        Assertions.assertEquals(java.util.Set.of(retained), lookup.values());
+    }
+
+    @Test
+    public void reloadRebuildsRangeWithoutOldChunkEntries() {
+        var lookup = new ChunkBoundLookup<Object>();
+        var value = new Object();
+        lookup.updateForBlockRadius(new BlockPos(-17, 0, -17), 32, value);
+        lookup.remove(value);
+        lookup.updateForBlockRadius(new BlockPos(32, 0, 32), 0, value);
+        Assertions.assertTrue(lookup.getForChunk(new ChunkPos(-2, -2)).isEmpty());
+        Assertions.assertEquals(java.util.Set.of(value), lookup.getForChunk(new ChunkPos(2, 2)));
+        lookup.updateForBlockRadius(new BlockPos(32, 0, 32), 0, value);
+        Assertions.assertEquals(1, lookup.values().size());
+    }
+
+    @Test
     public void addToChunk() {
         // Arrange.
         var lookup = new ChunkBoundLookup<String>();

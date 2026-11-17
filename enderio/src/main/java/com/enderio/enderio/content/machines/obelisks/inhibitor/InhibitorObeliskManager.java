@@ -1,7 +1,7 @@
 package com.enderio.enderio.content.machines.obelisks.inhibitor;
 
 import com.enderio.enderio.content.machines.obelisks.ObeliskAreaManager;
-import com.enderio.enderio.init.EIOAttachments;
+import com.enderio.enderio.init.EIOLevelStates;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,7 +14,7 @@ import java.util.Set;
 public class InhibitorObeliskManager extends ObeliskAreaManager<InhibitorObeliskBlockEntity> {
 
     public static InhibitorObeliskManager getManager(ServerLevel level) {
-        return level.getData(EIOAttachments.INHIBITOR_OBELISK_MANAGER);
+        return EIOLevelStates.INHIBITOR_OBELISK_MANAGER.get(level);
     }
 
     @SuppressWarnings("unused")
@@ -31,17 +31,16 @@ public class InhibitorObeliskManager extends ObeliskAreaManager<InhibitorObelisk
         }
 
         // If there is no obelisk manager, there is nothing to do.
-        if (!serverLevel.hasData(EIOAttachments.INHIBITOR_OBELISK_MANAGER)) {
+        var obeliskManager = EIOLevelStates.INHIBITOR_OBELISK_MANAGER.getIfPresent(serverLevel);
+        if (obeliskManager == null) {
             return;
         }
 
-        var target = new BlockPos((int) event.getTargetX(), (int) event.getTargetY(), (int) event.getTargetZ());
-
-        var obeliskManager = getManager(serverLevel);
+        var target = BlockPos.containing(event.getTargetX(), event.getTargetY(), event.getTargetZ());
 
         Set<InhibitorObeliskBlockEntity> obelisks = obeliskManager.getObelisksFor(target);
         if (obelisks.isEmpty()) {
-            var prev = new BlockPos((int) event.getPrevX(), (int) event.getPrevY(), (int) event.getPrevZ());
+            var prev = BlockPos.containing(event.getPrevX(), event.getPrevY(), event.getPrevZ());
             obelisks = obeliskManager.getObelisksFor(prev);
             if (obelisks.isEmpty()) {
                 return;

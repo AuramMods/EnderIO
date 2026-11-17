@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.neoforged.neoforge.attachment.AttachmentType;
+import com.enderio.enderio.init.EIOLevelStates;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.TickEvent;
 import org.jetbrains.annotations.Nullable;
@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentMap;
 
 @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class FireCraftingManager {
-    public static final AttachmentType<FireCraftingManager> ATTACHMENT_TYPE = AttachmentType.builder(FireCraftingManager::new).build();
 
     private final ConcurrentMap<BlockPos, Long> fireTracker = new ConcurrentHashMap<>();
 
@@ -202,7 +201,7 @@ public class FireCraftingManager {
     @SubscribeEvent
     public static void onNeighborNotifyEvent(BlockEvent.NeighborNotifyEvent event) {
         if (event.getLevel() instanceof ServerLevel level) {
-            var fireCraftingManager = level.getData(FireCraftingManager.ATTACHMENT_TYPE);
+            var fireCraftingManager = EIOLevelStates.FIRE_CRAFTING_MANAGER.get(level);
             fireCraftingManager.onRandomTick(level, event.getPos());
         }
     }
@@ -214,7 +213,7 @@ public class FireCraftingManager {
             return;
         }
         if (event.level instanceof ServerLevel level) {
-            var fireCraftingManager = level.getData(FireCraftingManager.ATTACHMENT_TYPE);
+            var fireCraftingManager = EIOLevelStates.FIRE_CRAFTING_MANAGER.get(level);
             fireCraftingManager.onWorldTick(level);
         }
     }

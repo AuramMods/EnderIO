@@ -37,6 +37,7 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
         implements RangedActor {
 
     private @Nullable AABB aabb;
+    private @Nullable ObeliskAreaManager<T> registeredManager;
     public static final SingleSlotAccess FILTER = new SingleSlotAccess();
 
     private static final ActionRange DEFAULT_RANGE = new ActionRange(0, false);
@@ -55,40 +56,39 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
 
     @Override
     public void setLevel(Level level) {
-        super.setLevel(level);
-
-        if (level instanceof ServerLevel serverLevel) {
-            var manager = getAreaManager(serverLevel);
-            if (manager != null) {
-                // noinspection unchecked
-                manager.register((T) this);
-            }
+        if (this.level != level) {
+            unregisterFromManager();
         }
+        super.setLevel(level);
         updateFilterState();
     }
 
     @Override
     public void setRemoved() {
+        unregisterFromManager();
         super.setRemoved();
+    }
 
-        if (level instanceof ServerLevel serverLevel) {
-            var manager = getAreaManager(serverLevel);
-            if (manager != null) {
-                // noinspection unchecked
-                manager.unregister((T) this);
-            }
+    @Override
+    public void onChunkUnloaded() {
+        unregisterFromManager();
+        super.onChunkUnloaded();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void unregisterFromManager() {
+        if (registeredManager != null) {
+            registeredManager.unregister((T) this);
+            registeredManager = null;
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected void updateLocations() {
         aabb = new AABB(getBlockPos()).inflate(getRange());
 
-        if (level instanceof ServerLevel serverLevel) {
-            var manager = getAreaManager(serverLevel);
-            if (manager != null) {
-                // noinspection unchecked
-                manager.update((T) this);
-            }
+        if (registeredManager != null) {
+            registeredManager.update((T) this);
         }
     }
 
@@ -208,6 +208,11 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
     @Override
     public void onLoad() {
         super.onLoad();
+        // Forge assigns the level before native NBT loading is complete. Only
+        // join the live index when onLoad runs, and rebuild it after chunk reload.
+        if (!isRemoved() && level instanceof ServerLevel serverLevel) {
+            registeredManager = getAreaManager(serverLevel);
+        }
         updateLocations();
     }
 
@@ -238,6 +243,7 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
         } else {
             actionRange = DEFAULT_RANGE;
         }
+        updateLocations();
     }
 
     @Override
@@ -247,6 +253,7 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
         var actionRange = EIODataComponents.ACTION_RANGE.get(components);
         if (actionRange != null) {
             this.actionRange = actionRange;
+            updateLocations();
         }
     }
 

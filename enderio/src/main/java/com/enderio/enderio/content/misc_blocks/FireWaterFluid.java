@@ -1,6 +1,6 @@
 package com.enderio.enderio.content.misc_blocks;
 
-import com.enderio.enderio.content.fire_crafting.FireCraftingManager;
+import com.enderio.enderio.init.EIOLevelStates;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -13,10 +13,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
-import net.neoforged.neoforge.event.EventHooks;
-import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.minecraftforge.event.ForgeEventFactory;
+import net.minecraftforge.fluids.ForgeFlowingFluid;
 
-public abstract class FireWaterFluid extends BaseFlowingFluid {
+public abstract class FireWaterFluid extends ForgeFlowingFluid {
 
     protected FireWaterFluid(Properties properties) {
         super(properties);
@@ -36,7 +36,7 @@ public abstract class FireWaterFluid extends BaseFlowingFluid {
     }
 
     private void performFireCrafting(ServerLevel level, BlockPos pos) {
-        var fireCraftingManager = level.getData(FireCraftingManager.ATTACHMENT_TYPE);
+        var fireCraftingManager = EIOLevelStates.FIRE_CRAFTING_MANAGER.get(level);
         fireCraftingManager.tryPerformFireCrafting(level, pos);
     }
 
@@ -59,7 +59,7 @@ public abstract class FireWaterFluid extends BaseFlowingFluid {
                 BlockState blockstate = level.getBlockState(blockpos);
                 if (blockstate.isAir()) {
                     if (this.hasFlammableNeighbours(level, blockpos)) {
-                        level.setBlockAndUpdate(blockpos, EventHooks.fireFluidPlaceBlockEvent(level, blockpos, pos, BaseFireBlock.getState(level, blockpos)));
+                        level.setBlockAndUpdate(blockpos, ForgeEventFactory.fireFluidPlaceBlockEvent(level, blockpos, pos, BaseFireBlock.getState(level, blockpos)));
                         return;
                     }
                 } else if (blockstate.blocksMotion()) {
@@ -74,7 +74,7 @@ public abstract class FireWaterFluid extends BaseFlowingFluid {
                 }
 
                 if (level.isEmptyBlock(blockpos1.above()) && this.isFlammable(level, blockpos1, Direction.UP)) {
-                    level.setBlockAndUpdate(blockpos1.above(), EventHooks.fireFluidPlaceBlockEvent(level, blockpos1.above(), pos, BaseFireBlock.getState(level, blockpos1)));
+                    level.setBlockAndUpdate(blockpos1.above(), ForgeEventFactory.fireFluidPlaceBlockEvent(level, blockpos1.above(), pos, BaseFireBlock.getState(level, blockpos1)));
                 }
             }
         }
@@ -95,7 +95,7 @@ public abstract class FireWaterFluid extends BaseFlowingFluid {
             return false;
         } else {
             BlockState state = p_level.getBlockState(p_pos);
-            return state.ignitedByLava(p_level, p_pos, face);
+            return state.ignitedByLava() && state.isFlammable(p_level, p_pos, face);
         }
     }
 

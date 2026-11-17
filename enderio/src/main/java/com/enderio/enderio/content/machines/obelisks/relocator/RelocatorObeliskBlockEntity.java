@@ -21,7 +21,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
-import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
+import net.minecraftforge.event.entity.living.MobSpawnEvent.FinalizeSpawn;
 import org.jetbrains.annotations.Nullable;
 
 public class RelocatorObeliskBlockEntity extends ObeliskBlockEntity<RelocatorObeliskBlockEntity> {
@@ -68,7 +68,7 @@ public class RelocatorObeliskBlockEntity extends ObeliskBlockEntity<RelocatorObe
         return MachinesConfig.CLIENT.BLOCKS.RELOCATOR_RANGE_COLOR.get();
     }
 
-    public boolean handleSpawnEvent(FinalizeSpawnEvent event) {
+    public boolean handleSpawnEvent(FinalizeSpawn event) {
         if (!isActive()) {
             return false;
         }
@@ -82,8 +82,8 @@ public class RelocatorObeliskBlockEntity extends ObeliskBlockEntity<RelocatorObe
             double y = getBlockPos().getY() + randomsource.nextInt(3) - 1;
             double z = getBlockPos().getZ() + (randomsource.nextDouble() - randomsource.nextDouble()) * 5 + 0.5D;
             EntityTeleportEvent telEvent = new EntityTeleportEvent(event.getEntity(), x, y, z);
-            if (!MinecraftForge.EVENT_BUS.post(telEvent).isCanceled()) {
-                event.getEntity().teleportTo(x, y, z);
+            if (!MinecraftForge.EVENT_BUS.post(telEvent)) {
+                event.getEntity().teleportTo(telEvent.getTargetX(), telEvent.getTargetY(), telEvent.getTargetZ());
                 return true;
             }
         }

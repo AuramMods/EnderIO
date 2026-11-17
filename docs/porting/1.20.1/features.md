@@ -319,3 +319,5 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 ## Shared state and presentation
 
 Capabilities and invalidation, NBT item state, codecs, packets, menus, attachment replacements, data-map replacements, keybindings, dynamic models, particles and resource reload remain pending. Existing test scenarios are listed individually in `baseline.json`; port their actual assertions rather than replacing them with compile-only checks.
+
+Cycle 024 adds five native Forge GameTests for the shared transient level capability and two spatial-lookup unit tests. The real obelisk/fire-crafting managers now use that capability; their complete gameplay and chunk/restart behavior remain **UNVERIFIED** until the main mod runs. This does not change the feature-family acceptance statuses. See [cycle 024](cycle-024.md).
