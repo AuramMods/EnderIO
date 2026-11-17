@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "package": "com.enderio.core.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": ["client.ContainerSlotRenderingMixin"],
+  "minVersion": "0.8",
+  "refmap": "endercore.refmap.json",
+  "injectors": {"defaultRequire": 1}
+}

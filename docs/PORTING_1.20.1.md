@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 004 adapts core networking, synchronization and block-entity APIs. Eighteen isolated tests pass, while a Forge bootstrap failure prevents seven registry-dependent tests from running. Full EnderCore compilation still fails with 25 errors. No game or server has been launched.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 005 brings EnderCore to successful Java 17 compilation and reobfuscated jar generation. Its normal test task has 36 passing methods and one class-bootstrap failure preventing seven registry-dependent tests from running. The main Ender IO module currently fails during Minecraft source rebuilding with its access transformers. No game or server has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -71,10 +71,10 @@ Prefer Forge-native adapters and shared utilities in this project's namespaces. 
 | Cycle area | Work | Status |
 | --- | --- | --- |
 | Preparation | Record source references, create local branch, write tracker and goal | Complete |
-| Inventory and build | Expand parity/dependency matrix; establish Forge 1.20.1 toolchain, metadata, artifacts and silent test profiles | In progress: platform artifacts/compiler and metadata work; final packaging and non-activating client launch pending |
-| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | In progress: core registry/recipe/network helpers adapted, 18 isolated tests pass; Forge test bootstrap, full module compilation and runtime validation pending |
+| Inventory and build | Expand parity/dependency matrix; establish Forge 1.20.1 toolchain, metadata, artifacts and silent test profiles | In progress: EnderCore compiles and reobfuscates; main-module platform rebuilding, final packaging and non-activating client launch pending |
+| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | In progress: EnderCore compiles; 36 normal unit tests pass; Forge test bootstrap, remaining module consumers and runtime validation pending |
 | Core content | Port every implemented block/item/entity, machine, conduit, filter, tool, soul and travel feature | Pending |
-| Assets and client | Data generation, recipes/tags, models, textures, rendering, screens, particles, input, mixins | Pending |
+| Assets and client | Data generation, recipes/tags, models, textures, rendering, screens, particles, input, mixins | In progress: core sprite atlas, slot-rendering hook and native vertex/UI APIs compile; all visual/runtime checks pending |
 | Integrations | Adapt each supported integration and modded conduit; test with dependencies present and absent | Pending |
 | Verification | Port existing tests, add meaningful regressions, exercise gameplay, multiplayer, persistence and packaged artifacts | Pending |
 | Delivery | Clean build, complete evidence matrix, usage/migration notes and final committed artifact record | Pending |
@@ -136,7 +136,8 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 | 001: preparation | Created local `1.20.1` from the fixed 1.21.1 baseline; recorded architecture, historical Forge reference, work areas and goal | Read-only source/build/test inspection, fetched fork refs and compared upstream tips; documentation diff review; no build/runtime tests | `82e957e17` |
 | 002: Forge build foundation | Legacy Forge build plugin, Forge 47.4.28/Java 17, metadata/refmap/reobfuscation configuration, dependency pins, CI platform settings, isolated muted profiles, source inventory and feature matrix | Minecraft artifacts generated; EnderCore compilation reached source errors (400-report cap); metadata/profile tasks passed; no gameplay tests or client/server launch. [Evidence](porting/1.20.1/cycle-002.md) | `7cf58a36d` |
 | 003: core registration and serialization | Native Forge registration/capability factories, NBT fluid/item helpers, recipe/datagen API adaptations and bounded ordered-list codec | Eight isolated codec tests passed; full EnderCore compile fails with 319 errors; runtime remains unverified. [Evidence](porting/1.20.1/cycle-003.md) | `7d4dbcaa2` |
-| 004: core networking and synchronization | Native Forge SimpleChannel transport, bounded packet codecs, menu/legacy slot handling, block-entity save and capability APIs | 18 isolated tests pass; one test-class bootstrap failure prevents seven further methods from executing. Full EnderCore compile fails with 25 errors. [Evidence](porting/1.20.1/cycle-004.md) | Commit containing cycle 004 |
+| 004: core networking and synchronization | Native Forge SimpleChannel transport, bounded packet codecs, menu/legacy slot handling, block-entity save and capability APIs | 18 isolated tests pass; one test-class bootstrap failure prevents seven further methods from executing. Full EnderCore compile fails with 25 errors. [Evidence](porting/1.20.1/cycle-004.md) | `a41928e47` |
+| 005: compile and package EnderCore | Java 17 graph API, native GUI/vertex calls, reloadable sprite atlas and slot-rendering mixin; retired scoped test compilation | EnderCore compile/jar/reobfuscation pass; 36 normal tests pass, one bootstrap failure remains. Main-module Minecraft recompile fails. [Evidence](porting/1.20.1/cycle-005.md) | Commit containing cycle 005 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

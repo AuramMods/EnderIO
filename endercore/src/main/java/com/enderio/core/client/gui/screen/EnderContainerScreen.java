@@ -7,6 +7,7 @@ import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
+import com.enderio.core.client.GuiSprites;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
@@ -85,7 +86,7 @@ public abstract class EnderContainerScreen<T extends AbstractContainerMenu> exte
             for (var overlay : overlayRenderables.get(layer)) {
                 if (!(overlay instanceof AbstractWidget widget) || widget.isActive()) {
                     overlay.render(guiGraphics, mouseX, mouseY,
-                            Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false));
+                            Minecraft.getInstance().getFrameTime());
 
                     if (overlay instanceof BaseOverlay baseOverlay) {
                         zOffset += baseOverlay.getAdditionalZOffset();
@@ -131,15 +132,20 @@ public abstract class EnderContainerScreen<T extends AbstractContainerMenu> exte
         return false;
     }
 
-    @Override
+    /** Called by the client mixin after vanilla has calculated drag/split stack counts. */
+    public final void renderEnderSlotContents(GuiGraphics graphics, ItemStack stack, Slot slot, @Nullable String count) {
+        renderSlotContents(graphics, stack, slot, count);
+    }
+
     protected void renderSlotContents(GuiGraphics guiGraphics, ItemStack itemstack, Slot slot,
             @Nullable String countString) {
-        super.renderSlotContents(guiGraphics, itemstack, slot, countString);
+        guiGraphics.renderItem(itemstack, slot.x, slot.y, slot.x + slot.y * imageWidth);
+        guiGraphics.renderItemDecorations(font, itemstack, slot.x, slot.y, countString);
 
         if (slot instanceof SlotWithOverlay slotWithOverlay) {
             if (slotWithOverlay.getForegroundSprite() != null) {
                 RenderSystem.disableDepthTest();
-                guiGraphics.blitSprite(slotWithOverlay.getForegroundSprite(), slot.x, slot.y, 16, 16);
+                GuiSprites.blit(guiGraphics, slotWithOverlay.getForegroundSprite(), slot.x, slot.y, 16, 16);
                 RenderSystem.enableDepthTest();
             }
         }
@@ -256,18 +262,18 @@ public abstract class EnderContainerScreen<T extends AbstractContainerMenu> exte
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
         for (var layer : overlayWidgets.keySet()) {
             for (var overlay : overlayWidgets.get(layer)) {
                 if (!(overlay instanceof AbstractWidget widget) || widget.isActive()) {
                     if (overlay.isMouseOver(mouseX, mouseY)) {
-                        return overlay.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+                        return overlay.mouseScrolled(mouseX, mouseY, scrollY);
                     }
                 }
             }
         }
 
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, scrollY);
     }
 
     /**

@@ -3,17 +3,10 @@ package com.enderio.core.client.gui.widgets;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 
 // The same as AbstractButton but does not show the white outline when focussed.
 public abstract class EnderButton extends AbstractWidget {
-    protected static final WidgetSprites SPRITES = new WidgetSprites(
-            new ResourceLocation("widget/button"),
-            new ResourceLocation("widget/button_disabled"),
-            new ResourceLocation("widget/button_highlighted"));
-
     public EnderButton(int x, int y, int width, int height, Component message) {
         super(x, y, width, height, message);
     }
@@ -25,8 +18,9 @@ public abstract class EnderButton extends AbstractWidget {
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, this.alpha);
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
-        guiGraphics.blitSprite(SPRITES.get(this.active, this.isHovered()), this.getX(), this.getY(), this.getWidth(),
-                this.getHeight());
+        int textureY = 46 + (!active ? 0 : isHovered() ? 40 : 20);
+        guiGraphics.blitNineSliced(WIDGETS_LOCATION, getX(), getY(), getWidth(), getHeight(),
+            20, 4, 200, 20, 0, textureY);
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         renderButtonFace(guiGraphics, mouseX, mouseY, partialTick);
     }

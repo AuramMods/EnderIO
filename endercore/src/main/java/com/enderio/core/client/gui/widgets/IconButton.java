@@ -1,5 +1,6 @@
 package com.enderio.core.client.gui.widgets;
 
+import com.enderio.core.client.GuiSprites;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -30,7 +31,7 @@ public class IconButton extends EnderButton {
 
     @Override
     public void renderButtonFace(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        guiGraphics.blitSprite(sprite, getX(), getY(), width, height);
+        GuiSprites.blit(guiGraphics, sprite, getX(), getY(), width, height);
     }
 
     @Override

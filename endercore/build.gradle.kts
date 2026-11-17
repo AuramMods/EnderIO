@@ -3,12 +3,15 @@ plugins {
 }
 
 dependencies {
+    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
 }
 
 tasks.test {
     useJUnitPlatform()
+    workingDir = layout.buildDirectory.dir("test-runtime").get().asFile
+    doFirst { workingDir.mkdirs() }
 }
 
 legacyForge {
@@ -72,4 +75,14 @@ publishing {
             }
         }
     }
+}
+
+
+mixin {
+    add(sourceSets.main.get(), "endercore.refmap.json")
+    config("endercore.mixins.json")
+}
+
+tasks.named<Jar>("jar") {
+    manifest.attributes["MixinConfigs"] = "endercore.mixins.json"
 }

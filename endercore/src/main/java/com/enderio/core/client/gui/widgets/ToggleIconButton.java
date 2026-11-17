@@ -1,6 +1,7 @@
 package com.enderio.core.client.gui.widgets;
 
 import com.enderio.core.EnderCore;
+import com.enderio.core.client.GuiSprites;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -69,7 +70,7 @@ public class ToggleIconButton extends EnderButton {
         boolean value = getter.get();
         ResourceLocation sprite = spriteFunction.apply(getter.get());
         if (sprite != null) {
-            guiGraphics.blitSprite(sprite, getX(), getY(), width, height);
+            GuiSprites.blit(guiGraphics, sprite, getX(), getY(), width, height);
         }
 
         // TODO: Temp solution for the value changing externally (data sync)
