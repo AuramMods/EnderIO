@@ -1,5 +1,9 @@
 package com.enderio.enderio.api.soul.binding;
 
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
+
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.api.soul.storage.SoulHandler;
 import org.jetbrains.annotations.ApiStatus;
@@ -11,6 +15,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Experimental
 @ApiStatus.AvailableSince("8.0")
 public interface SoulBindable {
+    Capability<SoulBindable> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
 
     /**
      * @return the currently bound soul, or {@link Soul#EMPTY}.

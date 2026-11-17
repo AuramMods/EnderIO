@@ -14,7 +14,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -51,12 +50,7 @@ public class CapacitorBankBlock extends EIOEntityBlock<CapacitorBankBlockEntity>
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        throw new NotImplementedException("Block codecs are a later problem...");
-    }
-
-    @Override
-    protected RenderShape getRenderShape(BlockState state) {
+    public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 
@@ -76,22 +70,21 @@ public class CapacitorBankBlock extends EIOEntityBlock<CapacitorBankBlockEntity>
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
-        BlockHitResult hitResult) {
-
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hitResult) {
+        if (hand != net.minecraft.world.InteractionHand.MAIN_HAND) return InteractionResult.PASS;
         if (level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
             if (player instanceof ServerPlayer serverPlayer) {
-                serverPlayer.openMenu(menuProvider, pos);
+                net.minecraftforge.network.NetworkHooks.openScreen(serverPlayer, menuProvider, pos);
             }
 
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
 
-        return super.useWithoutItem(state, level, pos, player, hitResult);
+        return super.use(state, level, pos, player, hand, hitResult);
     }
 
     @Override
-    protected @Nullable MenuProvider getMenuProvider(BlockState state, Level level, BlockPos pos) {
+    public @Nullable MenuProvider getMenuProvider(BlockState state, Level level, BlockPos pos) {
         // Do not allow opening in spectator mode.
         // TODO: We can convert our menus to not use a BE backing fully to enable this.
         return null;
@@ -115,7 +108,7 @@ public class CapacitorBankBlock extends EIOEntityBlock<CapacitorBankBlockEntity>
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (level.getBlockEntity(pos) instanceof CapacitorBankBlockEntity capBank) {
             capBank.removeNode();
         }

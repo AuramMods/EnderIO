@@ -71,7 +71,7 @@ public class TransferUtil {
         if (canPush) {
             int filled = 0;
             for (int i = 0; i < selfItemHandler.getTanks(); i++) {
-                filled += FluidUtil.tryFluidTransfer(otherItemHandler, selfItemHandler, selfItemHandler.getFluidInTank(i).copyWithAmount(Integer.MAX_VALUE), true).getAmount();
+                filled += FluidUtil.tryFluidTransfer(otherItemHandler, selfItemHandler, new FluidStack(selfItemHandler.getFluidInTank(i), Integer.MAX_VALUE), true).getAmount();
             }
             if (filled > 0) {
                 return;
@@ -83,7 +83,7 @@ public class TransferUtil {
                 if (selfItemHandler.getFluidInTank(i).isEmpty()) {
                     FluidUtil.tryFluidTransfer(selfItemHandler, otherItemHandler, Integer.MAX_VALUE, true);
                 } else {
-                    FluidUtil.tryFluidTransfer(selfItemHandler, otherItemHandler, selfItemHandler.getFluidInTank(i).copyWithAmount(Integer.MAX_VALUE), true);
+                    FluidUtil.tryFluidTransfer(selfItemHandler, otherItemHandler, new FluidStack(selfItemHandler.getFluidInTank(i), Integer.MAX_VALUE), true);
                 }
             }
         }
@@ -134,7 +134,7 @@ public class TransferUtil {
 
         // Use first available self handler to check total available energy
         // all of the 'self' handlers should be the same buffer.
-        int availableEnergy = transfers.getFirst().self.extractEnergy(Integer.MAX_VALUE, true);
+        int availableEnergy = transfers.get(0).self.extractEnergy(Integer.MAX_VALUE, true);
         if (availableEnergy <= 0) {
             return;
         }

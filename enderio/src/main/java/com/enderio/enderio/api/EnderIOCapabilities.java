@@ -21,7 +21,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.MOD)
 public class EnderIOCapabilities {
 
-    public static final Capability<SideConfig> SIDE_CONFIG = CapabilityManager.get(new CapabilityToken<>() {});
+    public static final Capability<SideConfig> SIDE_CONFIG = SideConfig.CAPABILITY;
 
     public static final Capability<ICapacitorExtension> CAPACITOR_EXTENSION = ICapacitorExtension.CAPABILITY;
 
@@ -33,11 +33,11 @@ public class EnderIOCapabilities {
 
     public static final Capability<SoulFilter> SOUL_FILTER = CapabilityManager.get(new CapabilityToken<>() {});
 
-    public static final Capability<SoulBindable> SOUL_BINDABLE_ITEM = CapabilityManager.get(new CapabilityToken<>() {});
+    public static final Capability<SoulBindable> SOUL_BINDABLE_ITEM = SoulBindable.CAPABILITY;
 
     public static final Capability<SoulBindable> SOUL_BINDABLE_BLOCK = SOUL_BINDABLE_ITEM;
 
-    public static final Capability<SoulHandler> SOUL_HANDLER_ITEM = CapabilityManager.get(new CapabilityToken<>() {});
+    public static final Capability<SoulHandler> SOUL_HANDLER_ITEM = SoulHandler.CAPABILITY;
 
     public static final Capability<SoulHandler> SOUL_HANDLER_BLOCK = SOUL_HANDLER_ITEM;
 

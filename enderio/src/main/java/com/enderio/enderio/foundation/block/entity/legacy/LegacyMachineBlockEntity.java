@@ -24,7 +24,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -62,7 +62,7 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
 
     private final IOConfig defaultIOConfig;
 
-    public static final ModelProperty<IOConfigurable> IO_CONFIG_PROPERTY = new ModelProperty<>();
+    public static final ModelProperty<IOConfigurable> IO_CONFIG_PROPERTY = com.enderio.enderio.foundation.block.entity.MachineBlockEntity.IO_CONFIG_PROPERTY;
 
     private ModelData modelData = ModelData.EMPTY;
 
@@ -523,9 +523,9 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
 
     // TODO: Rename to onBlockEntityItemUsed?
     // called when a player uses the block entity, before menu is may open.
-    public ItemInteractionResult onBlockEntityUsed(BlockState state, Level level, BlockPos pos, Player player,
+    public InteractionResult onBlockEntityUsed(BlockState state, Level level, BlockPos pos, Player player,
             InteractionHand hand, BlockHitResult hit) {
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return InteractionResult.PASS;
     }
 
     public boolean stillValid(Player player) {
@@ -537,46 +537,20 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
             return false;
         }
 
-        return player.canInteractWithBlock(this.worldPosition, 1.5);
+        return player.canReach(this.worldPosition, 1.5);
     }
 
     // TODO: should be enabled once the client side call in WrenchableBlockHandler
     // is removed
     // @EnsureSide(EnsureSide.Side.SERVER)
     @Override
-    public ItemInteractionResult onWrenched(UseOnContext context) {
-        var player = context.getPlayer();
-        if (player == null || level == null) {
-            return ItemInteractionResult.SUCCESS;
+    public InteractionResult onWrenched(UseOnContext context) {
+        if (context.getPlayer() == null || level == null) return InteractionResult.PASS;
+        if (context.getPlayer().isSecondaryUseActive()) {
+            return com.enderio.enderio.foundation.block.MachineWrench.dismantle(context);
         }
-
-        if (player.isSecondaryUseActive()) {// aka break block
-            BlockPos pos = getBlockPos();
-            BlockState state = getBlockState();
-            Block block = state.getBlock();
-
-            if (level instanceof ServerLevel serverLevel) {
-                List<ItemStack> drops = Block.getDrops(state, serverLevel, pos, serverLevel.getBlockEntity(pos));
-                Inventory inventory = player.getInventory();
-                for (ItemStack item : drops) {
-                    inventory.placeItemBackInInventory(item);
-                }
-            }
-
-            block.playerWillDestroy(level, pos, state, player);
-            level.removeBlock(pos, false);
-            block.destroy(level, pos, state);
-
-            // TODO: custom sound when sound manager is up and running??
-        } else {
-            // Cycle side config
-            if (level.isClientSide()) {
-                if (isIOConfigMutable()) {
-                    cycleIOMode(context.getClickedFace());
-                }
-            }
-        }
-        return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        if (!level.isClientSide && isIOConfigMutable()) cycleIOMode(context.getClickedFace());
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     public boolean canOpenMenu() {

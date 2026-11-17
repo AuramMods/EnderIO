@@ -24,7 +24,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -103,7 +102,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     // region Block Shape
 
     @Override
-    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         if (context instanceof EntityCollisionContext entityCollisionContext && entityCollisionContext.getEntity() instanceof Player player) {
             return getBundleShape(level, pos, FacadeUtil.areFacadesVisible(player));
         }
@@ -112,7 +111,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     }
 
     @Override
-    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return getBundleShape(level, pos, true);
     }
 
@@ -178,12 +177,12 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     }
 
     @Override
-    protected boolean canBeReplaced(BlockState state, BlockPlaceContext useContext) {
+    public boolean canBeReplaced(BlockState state, BlockPlaceContext useContext) {
         return false;
     }
 
     @Override
-    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
             BlockPos neighborPos, boolean movedByPiston) {
 
         if (level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity conduit) {
@@ -325,7 +324,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
             Holder<Conduit<?, ?>> conduit = null;
 
             // More than 1 conduit, find it and remove it - do not destroy bundle.
-            HitResult hit = player.pick(player.blockInteractionRange() + 5, 0.0f, false);
+            HitResult hit = player.pick(player.getBlockReach() + 5, 0.0f, false);
             if (hit.getType() == HitResult.Type.BLOCK) {
                 conduit = conduitBundle.getShape().getConduit(((BlockHitResult) hit).getBlockPos(), hit);
             }
@@ -355,7 +354,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         // Wipe out all conduits and facades before the block is removed - this sends the relevant notifications to neighboring conduits
         // TODO: I think conduits would do well to interact over capabilities instead of relying on manual block entity manipulation. A topic for 26.1.
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity conduitBundle) {
@@ -370,38 +369,39 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     // region Interactions
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
             Player player, InteractionHand hand, BlockHitResult hitResult) {
+        ItemStack stack = player.getItemInHand(hand);
 
         if (level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity conduitBundle) {
             var result = addConduit(stack, level, pos, player, conduitBundle);
-            if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) {
+            if (result != InteractionResult.PASS) {
                 return result;
             }
 
             result = addFacade(stack, level, pos, player, conduitBundle);
-            if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) {
+            if (result != InteractionResult.PASS) {
                 return result;
             }
         }
 
-        return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+        return hand == InteractionHand.MAIN_HAND ? openConnectionMenu(state, level, pos, player, hitResult) : InteractionResult.PASS;
     }
 
-    private ItemInteractionResult addConduit(ItemStack stack, Level level, BlockPos pos, Player player,
+    private InteractionResult addConduit(ItemStack stack, Level level, BlockPos pos, Player player,
             ConduitBundleBlockEntity conduitBundle) {
         // Get the conduit from the item
         Holder<Conduit<?, ?>> conduit = EnderIODataComponents.CONDUIT.get(stack, level.registryAccess());
         if (conduit == null) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
 
         if (!conduitBundle.canAddConduit(conduit)) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
 
         // Attempt to add to the bundle
-        HitResult hit = player.pick(player.blockInteractionRange() + 5, 1, false);
+        HitResult hit = player.pick(player.getBlockReach() + 5, 1, false);
         Direction primaryConnectionSide = null;
         if (hit instanceof BlockHitResult blockHitResult) {
             primaryConnectionSide = blockHitResult.getDirection().getOpposite();
@@ -425,7 +425,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
                         "ConduitBundleAccessor#canAddConduit returned true, but addConduit returned BLOCKED");
             }
 
-            return ItemInteractionResult.FAIL;
+            return InteractionResult.FAIL;
         }
 
         BlockState blockState = level.getBlockState(pos);
@@ -434,18 +434,18 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
                 (soundtype.getVolume() + 1.0F) / 2.0F, soundtype.getPitch() * 0.8F);
         level.gameEvent(GameEvent.BLOCK_PLACE, pos, GameEvent.Context.of(player, blockState));
 
-        return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
-    private ItemInteractionResult addFacade(ItemStack stack, Level level, BlockPos pos, Player player,
+    private InteractionResult addFacade(ItemStack stack, Level level, BlockPos pos, Player player,
             ConduitBundleBlockEntity conduitBundle) {
         var facadeProvider = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
         if (facadeProvider == null || !facadeProvider.isValid()) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
 
         if (conduitBundle.hasFacade()) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
 
         int lightLevelBefore = level.getLightEmission(pos);
@@ -467,11 +467,10 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
                 (soundtype.getVolume() + 1.0F) / 2.0F, soundtype.getPitch() * 0.8F);
         level.gameEvent(GameEvent.BLOCK_PLACE, pos, GameEvent.Context.of(player, blockState));
 
-        return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+    private InteractionResult openConnectionMenu(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity conduitBundle) {
             // TODO: The connection shouldn't include the plate.. if we hit the plate open
             // the first conduit?
@@ -488,7 +487,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
             }
         }
 
-        return super.useWithoutItem(state, level, pos, player, hitResult);
+        return InteractionResult.PASS;
     }
 
     // endregion
@@ -523,12 +522,12 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     }
 
     @Override
-    protected int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+    public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
         return getNetworkSignal(level, pos, direction, false);
     }
 
     @Override
-    protected int getDirectSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+    public int getDirectSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
         return getNetworkSignal(level, pos, direction, true);
     }
 

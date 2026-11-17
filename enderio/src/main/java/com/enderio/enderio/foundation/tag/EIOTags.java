@@ -25,7 +25,7 @@ public class EIOTags {
     public static class Items {
         public static final TagKey<Item> HIDE_FACADES = tag("enderio/hide_facades");
 
-        public static final TagKey<Item> WRENCH = commonTag("tools/wrench");
+        public static final TagKey<Item> WRENCH = com.enderio.enderio.foundation.block.entity.Wrenchable.WRENCH_TAG;
         public static final TagKey<Item> GLIDER = tag("tools/glider");
 
         public static final TagKey<Item> DUSTS_LAPIS = commonTag("dusts/lapis");

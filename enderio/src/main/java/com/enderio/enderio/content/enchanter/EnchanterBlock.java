@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class EnchanterBlock extends Block implements EntityBlock {
 
-    private static final MapCodec<EnchanterBlock> CODEC = simpleCodec(EnchanterBlock::new);
 
     private static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -43,20 +42,15 @@ public class EnchanterBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected MapCodec<EnchanterBlock> codec() {
-        return CODEC;
-    }
-
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
-            BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
+        if (hand != net.minecraft.world.InteractionHand.MAIN_HAND) return InteractionResult.PASS;
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
 
         var blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof MenuProvider menuProvider && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(menuProvider, pos);
+            net.minecraftforge.network.NetworkHooks.openScreen(serverPlayer, menuProvider, pos);
         }
 
         return InteractionResult.CONSUME;

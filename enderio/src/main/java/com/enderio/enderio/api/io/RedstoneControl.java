@@ -1,5 +1,7 @@
 package com.enderio.enderio.api.io;
 
+import com.enderio.core.common.item.ItemDataKey;
+
 import com.enderio.core.common.lang.EnumLangMap;
 import com.enderio.enderio.api.EnderIOAPI;
 import com.mojang.serialization.Codec;
@@ -24,6 +26,7 @@ public enum RedstoneControl implements StringRepresentable {
     NEVER_ACTIVE(3, "never_active", bool -> false, false);
 
     public static final Codec<RedstoneControl> CODEC = StringRepresentable.fromEnum(RedstoneControl::values);
+    public static final ItemDataKey<RedstoneControl> ITEM_DATA = new ItemDataKey<>(EnderIOAPI.rl("redstone_control"), CODEC);
     public static final IntFunction<RedstoneControl> BY_ID = ByIdMap.continuous(key -> key.id, values(),
             ByIdMap.OutOfBoundsStrategy.ZERO);
     public static final PacketCodec<RedstoneControl> STREAM_CODEC = PacketCodecs.idMapper(BY_ID, v -> v.id);

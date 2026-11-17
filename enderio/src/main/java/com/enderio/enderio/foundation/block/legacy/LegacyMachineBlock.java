@@ -1,20 +1,13 @@
 package com.enderio.enderio.foundation.block.legacy;
 
 import com.enderio.enderio.foundation.block.entity.legacy.LegacyMachineBlockEntity;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -36,19 +29,6 @@ import java.util.function.Supplier;
 
 @Deprecated(forRemoval = true, since = "7.1")
 public class LegacyMachineBlock extends BaseEntityBlock {
-    public static final Codec<Supplier<BlockEntityType<? extends LegacyMachineBlockEntity>>> BLOCK_ENTITY_TYPE_CODEC = BuiltInRegistries.BLOCK_ENTITY_TYPE
-            .holderByNameCodec()
-            .flatXmap(
-                    blockEntityTypeHolder -> DataResult.success(
-                            () -> (BlockEntityType<? extends LegacyMachineBlockEntity>) blockEntityTypeHolder.value()),
-                    sup -> DataResult.success(sup.get().builtInRegistryHolder()));
-
-    private static final MapCodec<LegacyMachineBlock> CODEC = RecordCodecBuilder
-            .mapCodec(instance -> instance
-                    .group(BLOCK_ENTITY_TYPE_CODEC.fieldOf("block_entity_type")
-                            .forGetter(output -> output.blockEntityType), propertiesCodec())
-                    .apply(instance, LegacyMachineBlock::new));
-
     private final Supplier<BlockEntityType<? extends LegacyMachineBlockEntity>> blockEntityType;
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -73,11 +53,6 @@ public class LegacyMachineBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected MapCodec<? extends LegacyMachineBlock> codec() {
-        return CODEC;
-    }
-
-    @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
@@ -90,24 +65,23 @@ public class LegacyMachineBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
             Player player, InteractionHand interactionHand, BlockHitResult hit) {
 
         BlockEntity entity = level.getBlockEntity(pos);
         if (!(entity instanceof LegacyMachineBlockEntity machineBlockEntity)) { // This also covers nulls
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
 
         var result = machineBlockEntity.onBlockEntityUsed(state, level, pos, player, interactionHand, hit);
-        if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) {
+        if (result != InteractionResult.PASS) {
             return result;
         }
 
-        return super.useItemOn(stack, state, level, pos, player, interactionHand, hit);
+        return interactionHand == InteractionHand.MAIN_HAND ? openMachineMenu(state, level, pos, player, hit) : InteractionResult.PASS;
     }
 
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
+    private InteractionResult openMachineMenu(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult blockHitResult) {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
@@ -124,7 +98,7 @@ public class LegacyMachineBlock extends BaseEntityBlock {
 
         MenuProvider menuprovider = this.getMenuProvider(state, level, pos);
         if (menuprovider != null && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(menuprovider, buf -> buf.writeBlockPos(pos));
+            net.minecraftforge.network.NetworkHooks.openScreen(serverPlayer, menuprovider, pos);
         }
 
         return InteractionResult.CONSUME;
@@ -155,7 +129,7 @@ public class LegacyMachineBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
             BlockPos neighborPos, boolean movedByPiston) {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
         if (level.getBlockEntity(pos) instanceof LegacyMachineBlockEntity machineBlock) {

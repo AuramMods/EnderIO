@@ -11,7 +11,6 @@ import com.enderio.enderio.foundation.block.entity.Wrenchable;
 import com.enderio.enderio.foundation.block.entity.legacy.LegacyMachineBlockEntity;
 import com.enderio.enderio.foundation.block.legacy.LegacyMachineBlock;
 import com.enderio.enderio.foundation.io.IOConfig;
-import com.enderio.enderio.foundation.network.packets.ServerboundCycleIOConfigPacket;
 import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.Util;
@@ -24,7 +23,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -43,7 +42,6 @@ import java.util.function.BiFunction;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.data.ModelProperty;
 import net.minecraftforge.energy.IEnergyStorage;
-import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumMap;
@@ -320,42 +318,13 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
     }
 
     @Override
-    public ItemInteractionResult onWrenched(UseOnContext context) {
-        var player = context.getPlayer();
-        if (player == null || level == null) {
-            return ItemInteractionResult.SUCCESS;
+    public InteractionResult onWrenched(UseOnContext context) {
+        if (context.getPlayer() == null || level == null) return InteractionResult.PASS;
+        if (context.getPlayer().isSecondaryUseActive()) {
+            return com.enderio.enderio.foundation.block.MachineWrench.dismantle(context);
         }
-
-        // Holding shift
-        if (player.isSecondaryUseActive()) {
-            BlockPos pos = getBlockPos();
-            BlockState state = getBlockState();
-            Block block = state.getBlock();
-
-            if (level instanceof ServerLevel serverLevel) {
-                List<ItemStack> drops = Block.getDrops(state, serverLevel, pos, serverLevel.getBlockEntity(pos));
-                Inventory inventory = player.getInventory();
-                for (ItemStack item : drops) {
-                    inventory.placeItemBackInInventory(item);
-                }
-            }
-
-            block.playerWillDestroy(level, pos, state, player);
-            level.removeBlock(pos, false);
-            block.destroy(level, pos, state);
-
-            // TODO: custom sound when sound manager is up and running??
-
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
-        } else {
-            if (level.isClientSide()) {
-                if (isIOConfigMutable()) {
-                    EIONetwork.sendToServer(new ServerboundCycleIOConfigPacket(worldPosition, context.getClickedFace()));
-                }
-            }
-
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
-        }
+        if (!level.isClientSide && isIOConfigMutable()) cycleIOMode(context.getClickedFace());
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     public DisplayMode getDisplayMode(Direction direction) {

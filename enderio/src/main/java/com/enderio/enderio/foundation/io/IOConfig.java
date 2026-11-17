@@ -1,5 +1,8 @@
 package com.enderio.enderio.foundation.io;
 
+import com.enderio.core.common.item.ItemDataKey;
+import com.enderio.enderio.api.EnderIOAPI;
+
 import com.enderio.core.common.network.NetworkDataSlot;
 import com.enderio.enderio.api.io.IOMode;
 import com.mojang.logging.LogUtils;
@@ -27,6 +30,8 @@ public record IOConfig(Map<Direction, IOMode> modes) {
     public static final Codec<IOConfig> CODEC = RecordCodecBuilder.create(instance -> instance
             .group(Codec.unboundedMap(Direction.CODEC, IOMode.CODEC).fieldOf("Modes").forGetter(IOConfig::modes))
             .apply(instance, IOConfig::new));
+
+    public static final ItemDataKey<IOConfig> ITEM_DATA = new ItemDataKey<>(EnderIOAPI.rl("io_config"), CODEC);
 
     public static final PacketCodec<IOConfig> STREAM_CODEC = PacketCodec.composite(
             PacketCodec.map(c -> new EnumMap<>(Direction.class), PacketCodecs.DIRECTION, IOMode.STREAM_CODEC),

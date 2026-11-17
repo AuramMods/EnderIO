@@ -9,17 +9,12 @@ import com.enderio.enderio.api.io.SideConfig;
 import com.enderio.enderio.api.soul.binding.SoulBindable;
 import com.enderio.enderio.foundation.MachineNBTKeys;
 import com.enderio.enderio.foundation.block.EIOBlockEntity;
-import com.enderio.enderio.foundation.block.ProgressMachineBlock;
-import com.enderio.enderio.foundation.block.entity.legacy.LegacyMachineBlockEntity;
-import com.enderio.enderio.foundation.block.legacy.LegacyMachineBlock;
 import com.enderio.enderio.foundation.inventory.MachineInventory;
 import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
 import com.enderio.enderio.foundation.io.IOConfig;
 import com.enderio.enderio.foundation.io.SidedIOConfigurable;
 import com.enderio.enderio.foundation.io.TransferUtil;
-import com.enderio.enderio.foundation.network.packets.ServerboundCycleIOConfigPacket;
 import com.enderio.enderio.foundation.state.MachineState;
-import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -28,7 +23,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -44,7 +39,6 @@ import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
-import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
@@ -69,7 +63,7 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     public static final BiFunction<BlockEntity, Direction, SoulBindable> SOUL_BINDABLE = (be, ctx)
         -> be instanceof SoulBindable bindable ? bindable : null;
 
-    private static final ModelProperty<IOConfigurable> IO_CONFIG_PROPERTY = LegacyMachineBlockEntity.IO_CONFIG_PROPERTY;
+    public static final ModelProperty<IOConfigurable> IO_CONFIG_PROPERTY = new ModelProperty<>();
 
     @Nullable
     private final MachineInventory inventory;
@@ -102,7 +96,7 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
             inventory = null;
         }
 
-        this.supportsActiveState = blockState.hasProperty(ProgressMachineBlock.POWERED);
+        this.supportsActiveState = blockState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.POWERED);
     }
 
     /**
@@ -124,12 +118,12 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
 
             boolean isActive = isActive();
             boolean needBlockStateUpdate = supportsActiveState
-                    && getBlockState().getValue(ProgressMachineBlock.POWERED) != isActive;
+                    && getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.POWERED) != isActive;
             boolean needStateUpdate = states.contains(MachineState.ACTIVE) != isActive;
 
             if (needBlockStateUpdate) {
                 level.setBlockAndUpdate(worldPosition,
-                        getBlockState().setValue(ProgressMachineBlock.POWERED, isActive));
+                        getBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.POWERED, isActive));
             }
 
             if (needStateUpdate) {
@@ -143,8 +137,8 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
      */
     protected final Direction getBlockFacing() {
         BlockState state = getBlockState();
-        if (state.hasProperty(LegacyMachineBlock.FACING)) {
-            return getBlockState().getValue(LegacyMachineBlock.FACING);
+        if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)) {
+            return getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING);
         }
 
         return Direction.SOUTH;
@@ -484,42 +478,13 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     // region Wrenchable Implementation
 
     @Override
-    public ItemInteractionResult onWrenched(UseOnContext context) {
-        var player = context.getPlayer();
-        if (player == null || level == null) {
-            return ItemInteractionResult.SUCCESS;
+    public InteractionResult onWrenched(UseOnContext context) {
+        if (context.getPlayer() == null || level == null) return InteractionResult.PASS;
+        if (context.getPlayer().isSecondaryUseActive()) {
+            return com.enderio.enderio.foundation.block.MachineWrench.dismantle(context);
         }
-
-        // Holding shift
-        if (player.isSecondaryUseActive()) {
-            BlockPos pos = getBlockPos();
-            BlockState state = getBlockState();
-            Block block = state.getBlock();
-
-            if (level instanceof ServerLevel serverLevel) {
-                List<ItemStack> drops = Block.getDrops(state, serverLevel, pos, serverLevel.getBlockEntity(pos));
-                Inventory inventory = player.getInventory();
-                for (ItemStack item : drops) {
-                    inventory.placeItemBackInInventory(item);
-                }
-            }
-
-            block.playerWillDestroy(level, pos, state, player);
-            level.removeBlock(pos, false);
-            block.destroy(level, pos, state);
-
-            // TODO: custom sound when sound manager is up and running??
-
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
-        } else {
-            if (level.isClientSide()) {
-                if (isIOConfigMutable()) {
-                    EIONetwork.sendToServer(new ServerboundCycleIOConfigPacket(worldPosition, context.getClickedFace()));
-                }
-            }
-
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
-        }
+        if (!level.isClientSide && isIOConfigMutable()) cycleIOMode(context.getClickedFace());
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     // endregion
@@ -604,11 +569,11 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
         }
 
         if (isIOConfigMutable()) {
-            ioConfig = EIODataComponents.IO_CONFIG.getOrDefault(componentInput, IOConfig.empty());
+            ioConfig = IOConfig.ITEM_DATA.getOrDefault(componentInput, IOConfig.empty());
         }
 
         if (supportsRedstoneControl()) {
-            var redstoneControl = EIODataComponents.REDSTONE_CONTROL.get(componentInput);
+            var redstoneControl = RedstoneControl.ITEM_DATA.get(componentInput);
             if (redstoneControl != null) {
                 this.redstoneControl = redstoneControl;
             }
@@ -624,11 +589,11 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
         }
 
         if (isIOConfigMutable()) {
-            EIODataComponents.IO_CONFIG.set(components, ioConfig);
+            IOConfig.ITEM_DATA.set(components, ioConfig);
         }
 
         if (supportsRedstoneControl()) {
-            EIODataComponents.REDSTONE_CONTROL.set(components, redstoneControl);
+            RedstoneControl.ITEM_DATA.set(components, redstoneControl);
         }
     }
 

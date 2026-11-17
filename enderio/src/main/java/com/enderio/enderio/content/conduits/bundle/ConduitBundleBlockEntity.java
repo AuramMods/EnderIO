@@ -57,7 +57,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.Container;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
@@ -324,16 +324,16 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    public ItemInteractionResult onWrenched(UseOnContext context) {
+    public InteractionResult onWrenched(UseOnContext context) {
         if (level == null) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
 
         // Get hit conduit
         var side = context.getClickedFace();
         var conduit = shape.getConduit(context.getClickedPos(), context.getHitResult());
         if (conduit == null) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
 
         var player = context.getPlayer();
@@ -349,24 +349,24 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
                         level.isClientSide ? Block.UPDATE_ALL_IMMEDIATE : Block.UPDATE_ALL);
             }
 
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
+            return InteractionResult.sidedSuccess(level.isClientSide());
         }
 
         // Get connection
         var conduitConnection = shape.getConnectionFromHit(context.getClickedPos(), context.getHitResult());
         if (conduitConnection != null) {
             disableNeighborConnection(conduitConnection);
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
+            return InteractionResult.sidedSuccess(level.isClientSide());
         }
 
         // Attempt to make a new forced connection
         var status = getConnectionStatus(conduit, side);
         if (!status.isConnected()) {
             tryConnectTo(conduit, side, true);
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
+            return InteractionResult.sidedSuccess(level.isClientSide());
         }
 
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return InteractionResult.PASS;
     }
 
     // Exposed publicly for use in tests.

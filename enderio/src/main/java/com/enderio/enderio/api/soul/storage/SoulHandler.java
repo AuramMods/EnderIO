@@ -1,5 +1,9 @@
 package com.enderio.enderio.api.soul.storage;
 
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
+
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.api.soul.binding.SoulBindable;
 import org.jetbrains.annotations.ApiStatus;
@@ -12,6 +16,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Experimental
 @ApiStatus.AvailableSince("8.0")
 public interface SoulHandler {
+    Capability<SoulHandler> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
     int getSlots();
 
     Soul getSoulInSlot(int slot);

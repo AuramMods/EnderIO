@@ -37,10 +37,8 @@ public class ConduitFacadeItem extends BlockItem {
         BlockState blockState = level.getBlockState(blockpos);
         if (!blockState.canBeReplaced()) {
             // noinspection DataFlowIssue
-            return blockState
-                    .useItemOn(context.getItemInHand(), level, player, context.getHand(),
-                            context.getHitResult().withPosition(blockpos))
-                    .result();
+            return player == null ? InteractionResult.PASS : blockState.use(level, player, context.getHand(),
+                context.getHitResult().withPosition(blockpos));
         }
 
         return super.place(context);

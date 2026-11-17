@@ -19,7 +19,7 @@ public class ResettingLeverBlock extends LeverBlock {
     private final boolean inverted;
 
     public ResettingLeverBlock(int delaySeconds, boolean inverted) {
-        super(Properties.ofFullCopy(Blocks.LEVER));
+        super(Properties.copy(Blocks.LEVER));
         this.delay = delaySeconds * 20;
         this.inverted = inverted;
     }
@@ -33,12 +33,13 @@ public class ResettingLeverBlock extends LeverBlock {
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!state.getValue(POWERED)) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
+        if (hand != net.minecraft.world.InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+        if (!level.isClientSide && !state.getValue(POWERED)) {
             level.scheduleTick(pos, this, delay);
         }
 
-        return super.useWithoutItem(state, level, pos, player, hit);
+        return super.use(state, level, pos, player, hand, hit);
     }
 
     @Override
@@ -46,7 +47,7 @@ public class ResettingLeverBlock extends LeverBlock {
         super.tick(state, level, pos, randomSource);
 
         if (state.getValue(POWERED) && !level.isClientSide) {
-            this.pull(state, level, pos, null);
+            this.pull(state, level, pos);
         }
     }
 

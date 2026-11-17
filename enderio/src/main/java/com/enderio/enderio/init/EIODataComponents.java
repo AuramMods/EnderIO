@@ -79,9 +79,9 @@ public class EIODataComponents {
 
     // region Machines
 
-    public static final ItemDataKey<IOConfig> IO_CONFIG = new ItemDataKey<>(EnderIO.rl("io_config"), IOConfig.CODEC);
+    public static final ItemDataKey<IOConfig> IO_CONFIG = IOConfig.ITEM_DATA;
 
-    public static final ItemDataKey<RedstoneControl> REDSTONE_CONTROL = new ItemDataKey<>(EnderIO.rl("redstone_control"), RedstoneControl.CODEC);
+    public static final ItemDataKey<RedstoneControl> REDSTONE_CONTROL = RedstoneControl.ITEM_DATA;
 
     public static final ItemDataKey<ActionRange> ACTION_RANGE = new ItemDataKey<>(EnderIO.rl("action_range"), ActionRange.CODEC);
 
