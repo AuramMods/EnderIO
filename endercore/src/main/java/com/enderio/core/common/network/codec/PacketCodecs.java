@@ -64,6 +64,15 @@ public final class PacketCodecs {
         if (stack.isEmpty()) throw new DecoderException("Required item stack is empty");
         return stack;
     });
+    /** Filter entries carry logical stock counts beyond the native item's signed byte count. */
+    public static final PacketCodec<ItemStack> ITEM_STACK_DATA = PacketCodec.of((buffer, stack) -> {
+        buffer.writeVarInt(stack.isEmpty() ? 0 : stack.getCount());
+        if (!stack.isEmpty()) ITEM_STACK.encode(buffer, stack.copyWithCount(1));
+    }, buffer -> {
+        int count = buffer.readVarInt();
+        if (count < 0) throw new DecoderException("Negative item data count");
+        return count == 0 ? ItemStack.EMPTY : REQUIRED_ITEM_STACK.decode(buffer).copyWithCount(count);
+    });
     public static final PacketCodec<FluidStack> FLUID_STACK = PacketCodec.of((buffer, stack) -> stack.writeToPacket(buffer),
         FluidStack::readFromPacket);
     public static final PacketCodec<ParticleOptions> PARTICLE = PacketCodec.of((buffer, particle) -> {

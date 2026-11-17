@@ -1,5 +1,6 @@
 package com.enderio.modded_conduits.common.modules.mekanism.chemical;
 
+import org.jetbrains.annotations.Nullable;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.ConduitCapabilityAccessor;
@@ -119,13 +120,13 @@ public record ChemicalConduit(ResourceLocation texture, Component description, l
     }
 
     @Override
-    public void addToTooltip(Item.TooltipContext context, Consumer<Component> tooltipAdder,
+    public void addToTooltip(@Nullable Level level, Consumer<Component> tooltipAdder,
             TooltipFlag tooltipFlag) {
         String transferLimitFormatted = String.format("%,d", transferRatePerTick());
         tooltipAdder
                 .accept(TooltipUtil.styledWithArgs(ConduitLang.FLUID_EFFECTIVE_RATE_TOOLTIP, transferLimitFormatted));
 
-        if (tooltipFlag.hasShiftDown()) {
+        if (TooltipUtil.hasShiftDown()) {
             String rawRateFormatted = String.format("%,d",
                     (int) Math.ceil(transferRatePerTick() * type().getTickRate(this)));
             tooltipAdder.accept(TooltipUtil.styledWithArgs(ConduitLang.FLUID_RAW_RATE_TOOLTIP, rawRateFormatted));

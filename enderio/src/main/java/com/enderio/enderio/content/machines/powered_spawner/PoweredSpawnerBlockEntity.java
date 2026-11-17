@@ -137,7 +137,7 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
             var outputSlotStack = OUTPUT.getItemStack(this);
             if (!outputSlotStack.isEmpty()) {
                 var potentialSoulVial = SoulVialItem.forSoul(getSoulForCapture());
-                if (!ItemStack.isSameItemSameComponents(potentialSoulVial, outputSlotStack)) {
+                if (!ItemStack.isSameItemSameTags(potentialSoulVial, outputSlotStack)) {
                     setReason(SpawnerBlockedReason.OUTPUT_FULL);
                     return null;
                 }

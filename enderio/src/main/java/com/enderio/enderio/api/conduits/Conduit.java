@@ -25,7 +25,6 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipProvider;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.Capability;
 import org.apache.commons.lang3.NotImplementedException;
@@ -38,7 +37,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, TConnectionConfig extends ConnectionConfig>
-        extends Comparable<TConduit>, TooltipProvider {
+        extends Comparable<TConduit> {
 
     Codec<Conduit<?, ?>> DIRECT_CODEC = EnderIORegistries.codec(EnderIORegistries.CONDUIT_TYPE)
             .dispatch(Conduit::type, type -> type.codec().codec());
@@ -277,8 +276,7 @@ public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, 
 
     // region Tooltips
 
-    @Override
-    default void addToTooltip(Item.TooltipContext context, Consumer<Component> tooltipAdder,
+    default void addToTooltip(@Nullable Level level, Consumer<Component> tooltipAdder,
             TooltipFlag tooltipFlag) {
     }
 

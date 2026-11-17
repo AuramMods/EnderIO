@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.filters.item.existing;
 
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.common.serialization.OrderedListCodec;
 import com.enderio.core.common.util.EqualityUtil;
 import com.enderio.enderio.api.filter.ItemFilter;
@@ -23,7 +24,7 @@ public record ExistingItemFilter(boolean hasSnapshot, NonNullList<ItemStack> sna
     public static final Codec<ExistingItemFilter> CODEC = RecordCodecBuilder
             .create(componentInstance -> componentInstance
                     .group(Codec.BOOL.fieldOf("hasSnapshot").forGetter(ExistingItemFilter::hasSnapshot),
-                            OrderedListCodec.create(256, ItemStack.OPTIONAL_CODEC, ItemStack.EMPTY)
+                            OrderedListCodec.create(256, StackDataCodecs.OPTIONAL_ITEM, ItemStack.EMPTY)
                                     .fieldOf("snapshot")
                                     .forGetter(ExistingItemFilter::snapshot),
                             Codec.BOOL.fieldOf("shouldCompareComponents")
@@ -33,7 +34,7 @@ public record ExistingItemFilter(boolean hasSnapshot, NonNullList<ItemStack> sna
 
     public static final PacketCodec<ExistingItemFilter> STREAM_CODEC = PacketCodec.composite(
             PacketCodecs.BOOL, ExistingItemFilter::hasSnapshot,
-            PacketCodecs.ITEM_STACK.list(256), ExistingItemFilter::snapshot,
+            PacketCodecs.ITEM_STACK_DATA.list(256), ExistingItemFilter::snapshot,
             PacketCodecs.BOOL, ExistingItemFilter::shouldCompareComponents, PacketCodecs.BOOL,
             ExistingItemFilter::isInverted, ExistingItemFilter::new);
 
@@ -54,7 +55,7 @@ public record ExistingItemFilter(boolean hasSnapshot, NonNullList<ItemStack> sna
                     continue;
                 }
 
-                boolean matches = shouldCompareComponents ? ItemStack.isSameItemSameComponents(match, stack)
+                boolean matches = shouldCompareComponents ? ItemStack.isSameItemSameTags(match, stack)
                         : ItemStack.isSameItem(match, stack);
 
                 if (matches) {
@@ -68,7 +69,7 @@ public record ExistingItemFilter(boolean hasSnapshot, NonNullList<ItemStack> sna
                     continue;
                 }
 
-                boolean matches = shouldCompareComponents ? ItemStack.isSameItemSameComponents(match, stack)
+                boolean matches = shouldCompareComponents ? ItemStack.isSameItemSameTags(match, stack)
                         : ItemStack.isSameItem(match, stack);
 
                 if (matches) {
@@ -99,6 +100,6 @@ public record ExistingItemFilter(boolean hasSnapshot, NonNullList<ItemStack> sna
 
     @Override
     public int hashCode() {
-        return Objects.hash(hasSnapshot, EqualityUtil.hashListContents(snapshot, ItemStack::hashItemAndComponents), shouldCompareComponents, isInverted);
+        return Objects.hash(hasSnapshot, EqualityUtil.hashListContents(snapshot, StackDataCodecs::hashItem), shouldCompareComponents, isInverted);
     }
 }

@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.filters.item.limited;
 
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.common.serialization.OrderedListCodec;
 import com.enderio.core.common.util.EqualityUtil;
 import com.enderio.enderio.api.filter.ItemFilter;
@@ -38,7 +39,7 @@ public record LimitedItemFilter(NonNullList<ItemStack> matches, boolean shouldCo
     public static final LimitedItemFilter EMPTY = new LimitedItemFilter(SLOT_COUNT);
 
     public static final Codec<LimitedItemFilter> CODEC = RecordCodecBuilder.create(instance -> instance
-            .group(OrderedListCodec.create(256, ItemStack.OPTIONAL_CODEC, ItemStack.EMPTY)
+            .group(OrderedListCodec.create(256, StackDataCodecs.OPTIONAL_ITEM, ItemStack.EMPTY)
                     .fieldOf("items")
                     .forGetter(LimitedItemFilter::matches),
                     Codec.BOOL.optionalFieldOf("isNbt", false).forGetter(LimitedItemFilter::shouldCompareComponents),
@@ -47,7 +48,7 @@ public record LimitedItemFilter(NonNullList<ItemStack> matches, boolean shouldCo
             .apply(instance, LimitedItemFilter::new));
 
     public static final PacketCodec<LimitedItemFilter> STREAM_CODEC = PacketCodec.composite(
-            PacketCodecs.ITEM_STACK.list(256), LimitedItemFilter::matches,
+            PacketCodecs.ITEM_STACK_DATA.list(256), LimitedItemFilter::matches,
             PacketCodecs.BOOL, LimitedItemFilter::shouldCompareComponents,
             DamageFilterMode.STREAM_CODEC, LimitedItemFilter::damageFilterMode,
             LimitedItemFilter::new);
@@ -98,7 +99,7 @@ public record LimitedItemFilter(NonNullList<ItemStack> matches, boolean shouldCo
             int limit = match.getCount();
 
             // Count how many matching items are currently in the target
-            int currentCount = 0;
+            long currentCount = 0;
             for (int i = 0; i < targetContext.target().getSlots(); i++) {
                 ItemStack inSlot = targetContext.target().getStackInSlot(i);
                 if (!inSlot.isEmpty() && ItemStack.isSameItem(match, inSlot)) {
@@ -108,7 +109,7 @@ public record LimitedItemFilter(NonNullList<ItemStack> matches, boolean shouldCo
                 }
             }
 
-            int available = targetContext.direction() == ItemFilterDirection.INSERT
+            long available = targetContext.direction() == ItemFilterDirection.INSERT
                 ? limit - currentCount
                 : currentCount - limit;
 
@@ -116,7 +117,7 @@ public record LimitedItemFilter(NonNullList<ItemStack> matches, boolean shouldCo
                 return ItemStack.EMPTY;
             }
 
-            return stack.copyWithCount(Math.min(stack.getCount(), available));
+            return stack.copyWithCount((int) Math.min(stack.getCount(), available));
         }
 
         // Whitelist only: deny items not found in filter
@@ -141,6 +142,6 @@ public record LimitedItemFilter(NonNullList<ItemStack> matches, boolean shouldCo
 
     @Override
     public int hashCode() {
-        return Objects.hash(EqualityUtil.hashListContents(matches, ItemStack::hashItemAndComponents), shouldCompareComponents, damageFilterMode);
+        return Objects.hash(EqualityUtil.hashListContents(matches, StackDataCodecs::hashItem), shouldCompareComponents, damageFilterMode);
     }
 }

@@ -17,11 +17,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.SingleThreadedRandomSource;
-import net.neoforged.neoforge.client.RenderTypeGroup;
-import net.neoforged.neoforge.client.model.BakedModelWrapper;
-import net.neoforged.neoforge.client.model.IModelBuilder;
-import net.neoforged.neoforge.client.model.IQuadTransformer;
-import net.neoforged.neoforge.client.model.data.ModelData;
+import net.minecraftforge.client.RenderTypeGroup;
+import net.minecraftforge.client.model.BakedModelWrapper;
+import net.minecraftforge.client.model.IModelBuilder;
+import net.minecraftforge.client.model.IQuadTransformer;
+import net.minecraftforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -44,12 +44,20 @@ public class ConduitItemModel extends BakedModelWrapper<BakedModel> {
     public static class ConduitItemOverrides extends ItemOverrides {
 
         private final Map<Holder<Conduit<?, ?>>, BakedModel> CACHE = new HashMap<>();
+        private net.minecraft.core.RegistryAccess currentRegistries;
 
         @Nullable
         @Override
         public BakedModel resolve(BakedModel model, ItemStack stack, @Nullable ClientLevel level,
                 @Nullable LivingEntity entity, int seed) {
-            Holder<Conduit<?, ?>> conduit = stack.get(EnderIODataComponents.CONDUIT);
+            var currentLevel = level == null ? Minecraft.getInstance().level : level;
+            var registries = currentLevel == null ? null : currentLevel.registryAccess();
+            if (registries != currentRegistries) {
+                CACHE.clear();
+                currentRegistries = registries;
+            }
+            Holder<Conduit<?, ?>> conduit = registries == null ? null
+                : EnderIODataComponents.CONDUIT.get(stack, registries);
             return CACHE.computeIfAbsent(conduit, t -> createBakedModel(t, model));
         }
 

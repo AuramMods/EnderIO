@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.filters.fluid;
 
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.common.serialization.OrderedListCodec;
 import com.enderio.core.common.util.EqualityUtil;
 import com.enderio.enderio.api.filter.FluidFilter;
@@ -23,7 +24,7 @@ public record EnderFluidFilter(NonNullList<FluidStack> matches, boolean isDenyLi
 
     // TODO: 1.22: Rename fields.
     public static final Codec<EnderFluidFilter> CODEC = RecordCodecBuilder.create(inst -> inst
-            .group(OrderedListCodec.create(256, FluidStack.OPTIONAL_CODEC, FluidStack.EMPTY)
+            .group(OrderedListCodec.create(256, StackDataCodecs.OPTIONAL_FLUID, FluidStack.EMPTY)
                     .fieldOf("fluids")
                     .forGetter(EnderFluidFilter::matches),
                     Codec.BOOL.fieldOf("isInvert").forGetter(EnderFluidFilter::isDenyList),
@@ -32,7 +33,7 @@ public record EnderFluidFilter(NonNullList<FluidStack> matches, boolean isDenyLi
 
     // @formatter:off
     public static final PacketCodec<EnderFluidFilter> STREAM_CODEC = PacketCodec.composite(
-        FluidStack.OPTIONAL_STREAM_CODEC.list(256),
+        PacketCodecs.FLUID_STACK.list(256),
         EnderFluidFilter::matches,
         PacketCodecs.BOOL,
         EnderFluidFilter::isDenyList,
@@ -60,7 +61,7 @@ public record EnderFluidFilter(NonNullList<FluidStack> matches, boolean isDenyLi
                 continue;
             }
 
-            if (shouldCompareComponents ? FluidStack.isSameFluidSameComponents(match, stack) : FluidStack.isSameFluid(match, stack)) {
+            if (shouldCompareComponents ? match.isFluidEqual(stack) : match.getFluid() == stack.getFluid()) {
                 return isDenyList ? FluidStack.EMPTY : stack;
             }
         }
@@ -81,11 +82,11 @@ public record EnderFluidFilter(NonNullList<FluidStack> matches, boolean isDenyLi
         EnderFluidFilter other = (EnderFluidFilter) o;
         return isDenyList == other.isDenyList &&
                 shouldCompareComponents == other.shouldCompareComponents &&
-                EqualityUtil.areListsEqual(matches, other.matches, FluidStack::matches);
+                EqualityUtil.areListsEqual(matches, other.matches, StackDataCodecs::fluidsEqual);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(EqualityUtil.hashListContents(matches, FluidStack::hashFluidAndComponents), isDenyList, shouldCompareComponents);
+        return Objects.hash(EqualityUtil.hashListContents(matches, StackDataCodecs::hashFluid), isDenyList, shouldCompareComponents);
     }
 }

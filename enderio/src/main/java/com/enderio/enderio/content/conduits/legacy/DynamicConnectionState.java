@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.conduits.legacy;
 
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.bundle.SlotType;
@@ -33,9 +34,9 @@ public record DynamicConnectionState(boolean isInsert, DyeColor insertChannel, b
                     DyeColor.CODEC.fieldOf("extract_channel").forGetter(DynamicConnectionState::extractChannel),
                     RedstoneControl.CODEC.fieldOf("redstone_control").forGetter(DynamicConnectionState::control),
                     DyeColor.CODEC.fieldOf("redstone_channel").forGetter(DynamicConnectionState::redstoneChannel),
-                    ItemStack.OPTIONAL_CODEC.lenientOptionalFieldOf("filter_insert", ItemStack.EMPTY).forGetter(DynamicConnectionState::filterInsert),
-                    ItemStack.OPTIONAL_CODEC.lenientOptionalFieldOf("filter_extract", ItemStack.EMPTY).forGetter(DynamicConnectionState::filterExtract),
-                    ItemStack.OPTIONAL_CODEC.lenientOptionalFieldOf("upgrade_extract", ItemStack.EMPTY)
+                    StackDataCodecs.OPTIONAL_ITEM.lenientOptionalFieldOf("filter_insert", ItemStack.EMPTY).forGetter(DynamicConnectionState::filterInsert),
+                    StackDataCodecs.OPTIONAL_ITEM.lenientOptionalFieldOf("filter_extract", ItemStack.EMPTY).forGetter(DynamicConnectionState::filterExtract),
+                    StackDataCodecs.OPTIONAL_ITEM.lenientOptionalFieldOf("upgrade_extract", ItemStack.EMPTY)
                             .forGetter(DynamicConnectionState::upgradeExtract))
             .apply(instance, DynamicConnectionState::new));
 

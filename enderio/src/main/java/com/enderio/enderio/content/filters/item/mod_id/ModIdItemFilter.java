@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.filters.item.mod_id;
 
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.common.serialization.OrderedListCodec;
 import com.enderio.core.common.util.EqualityUtil;
 import com.enderio.enderio.api.filter.ItemFilter;
@@ -18,14 +19,14 @@ import java.util.Objects;
 
 public record ModIdItemFilter(NonNullList<ItemStack> examples, boolean isDenyList) implements ItemFilter {
     public static final Codec<ModIdItemFilter> CODEC = RecordCodecBuilder.create(componentInstance -> componentInstance
-            .group(OrderedListCodec.create(256, ItemStack.OPTIONAL_CODEC, ItemStack.EMPTY)
+            .group(OrderedListCodec.create(256, StackDataCodecs.OPTIONAL_ITEM, ItemStack.EMPTY)
                     .fieldOf("examples")
                     .forGetter(ModIdItemFilter::examples),
                     Codec.BOOL.fieldOf("isDenyList").forGetter(ModIdItemFilter::isDenyList))
             .apply(componentInstance, ModIdItemFilter::new));
 
     public static final PacketCodec<ModIdItemFilter> STREAM_CODEC = PacketCodec.composite(
-            PacketCodecs.ITEM_STACK.list(256), ModIdItemFilter::examples,
+            PacketCodecs.ITEM_STACK_DATA.list(256), ModIdItemFilter::examples,
             PacketCodecs.BOOL, ModIdItemFilter::isDenyList, ModIdItemFilter::new);
 
     public ModIdItemFilter(List<ItemStack> examples, boolean isDenyList) {
@@ -71,6 +72,6 @@ public record ModIdItemFilter(NonNullList<ItemStack> examples, boolean isDenyLis
 
     @Override
     public int hashCode() {
-        return Objects.hash(EqualityUtil.hashListContents(examples, ItemStack::hashItemAndComponents), isDenyList);
+        return Objects.hash(EqualityUtil.hashListContents(examples, StackDataCodecs::hashItem), isDenyList);
     }
 }

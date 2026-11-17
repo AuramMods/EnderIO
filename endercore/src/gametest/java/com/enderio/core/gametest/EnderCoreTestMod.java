@@ -12,6 +12,7 @@ import javax.xml.parsers.ParserConfigurationException;
 @Mod("endercore_tests")
 public class EnderCoreTestMod {
     public EnderCoreTestMod() throws ParserConfigurationException {
+        SerializationTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         CapabilityTestBlocks.register(FMLJavaModLoadingContext.get().getModEventBus());
         ItemDataTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         NetworkTestContent.register();

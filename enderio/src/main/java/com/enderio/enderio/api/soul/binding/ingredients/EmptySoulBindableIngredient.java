@@ -6,7 +6,6 @@ import com.enderio.enderio.api.soul.SoulBoundUtils;
 import com.enderio.enderio.api.soul.storage.SoulHandler;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -14,24 +13,27 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.common.crafting.ICustomIngredient;
-import net.neoforged.neoforge.common.crafting.IngredientType;
+import net.minecraftforge.common.crafting.AbstractIngredient;
+import com.enderio.core.common.serialization.CodecIngredientSerializer;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.google.gson.JsonElement;
 
 import java.util.stream.Stream;
 
-public class EmptySoulBindableIngredient implements ICustomIngredient {
+public class EmptySoulBindableIngredient extends AbstractIngredient {
 
     public static final MapCodec<EmptySoulBindableIngredient> CODEC = RecordCodecBuilder
             .mapCodec(inst -> inst.group(BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(i -> i.item))
                     .apply(inst, EmptySoulBindableIngredient::new));
 
-    public static final IngredientType<EmptySoulBindableIngredient> TYPE = new IngredientType<>(CODEC);
+    public static final CodecIngredientSerializer<EmptySoulBindableIngredient> TYPE = new CodecIngredientSerializer<>(CODEC.codec(),
+        PacketCodecs.registry(BuiltInRegistries.ITEM).map(EmptySoulBindableIngredient::new, ingredient -> ingredient.item));
 
     private final Item item;
     private final ItemStack itemStack;
 
     public static Ingredient of(ItemLike item) {
-        return new EmptySoulBindableIngredient(item.asItem()).toVanilla();
+        return new EmptySoulBindableIngredient(item.asItem());
     }
 
     public EmptySoulBindableIngredient(Item item) {
@@ -46,24 +48,24 @@ public class EmptySoulBindableIngredient implements ICustomIngredient {
                 return;
             }
             itemStack = new ItemStack(Blocks.BARRIER);
-            itemStack.set(DataComponents.CUSTOM_NAME, Component.literal("Item cannot be bound: " + stack.getHoverName()));
+            itemStack.setHoverName(Component.literal("Item cannot be bound: " + stack.getHoverName()));
         } else if (SoulBoundUtils.tryBindSoul(stack, Soul.EMPTY)) {
             itemStack = stack;
         } else {
             ItemStack errorStack = new ItemStack(Blocks.BARRIER);
-            errorStack.set(DataComponents.CUSTOM_NAME, Component.literal("Unable to empty binding of " + stack.getHoverName()));
+            errorStack.setHoverName(Component.literal("Unable to empty binding of " + stack.getHoverName()));
             itemStack = errorStack;
         }
     }
 
     @Override
     public boolean test(ItemStack itemStack) {
-        return itemStack.is(item) && !SoulBoundUtils.isBound(itemStack);
+        return itemStack != null && itemStack.is(item) && !SoulBoundUtils.isBound(itemStack);
     }
 
     @Override
-    public Stream<ItemStack> getItems() {
-        return Stream.of(itemStack);
+    public ItemStack[] getItems() {
+        return new ItemStack[] {itemStack};
     }
 
     @Override
@@ -72,7 +74,13 @@ public class EmptySoulBindableIngredient implements ICustomIngredient {
     }
 
     @Override
-    public IngredientType<?> getType() {
+    public CodecIngredientSerializer<EmptySoulBindableIngredient> getSerializer() {
         return TYPE;
     }
+
+    @Override
+    public boolean isEmpty() { return false; }
+
+    @Override
+    public JsonElement toJson() { return TYPE.toJson(this); }
 }

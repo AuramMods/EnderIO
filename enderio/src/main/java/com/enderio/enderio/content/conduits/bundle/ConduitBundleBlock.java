@@ -243,7 +243,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
         }
 
         if (level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity conduitBundle) {
-            Holder<Conduit<?, ?>> conduit = stack.get(EnderIODataComponents.CONDUIT);
+            Holder<Conduit<?, ?>> conduit = EnderIODataComponents.CONDUIT.get(stack, level.registryAccess());
             if (conduit != null) {
                 // Use the primary connection face, if available from placement.
                 Direction primaryConnectionSide = conduitBundle.primaryConnectionSide;
@@ -391,7 +391,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     private ItemInteractionResult addConduit(ItemStack stack, Level level, BlockPos pos, Player player,
             ConduitBundleBlockEntity conduitBundle) {
         // Get the conduit from the item
-        Holder<Conduit<?, ?>> conduit = stack.get(EnderIODataComponents.CONDUIT);
+        Holder<Conduit<?, ?>> conduit = EnderIODataComponents.CONDUIT.get(stack, level.registryAccess());
         if (conduit == null) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }

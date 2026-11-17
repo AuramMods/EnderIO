@@ -126,7 +126,7 @@ public record EnergyConduit(ResourceLocation texture, Component description, int
     }
 
     @Override
-    public void addToTooltip(Item.TooltipContext context, Consumer<Component> tooltipAdder,
+    public void addToTooltip(@Nullable Level level, Consumer<Component> tooltipAdder,
             TooltipFlag tooltipFlag) {
         String transferLimitFormatted = String.format("%,d", transferRatePerTick());
         tooltipAdder.accept(TooltipUtil.styledWithArgs(ConduitLang.ENERGY_RATE_TOOLTIP, transferLimitFormatted));

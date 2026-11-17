@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.filters.item.general;
 
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.common.serialization.OrderedListCodec;
 import com.enderio.core.common.util.EqualityUtil;
 import com.enderio.enderio.api.filter.ItemFilter;
@@ -24,7 +25,7 @@ public record EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList
 
     // TODO: 1.22: Change field names
     public static final Codec<EnderItemFilter> CODEC = RecordCodecBuilder.create(componentInstance -> componentInstance
-            .group(OrderedListCodec.create(256, ItemStack.OPTIONAL_CODEC, ItemStack.EMPTY)
+            .group(OrderedListCodec.create(256, StackDataCodecs.OPTIONAL_ITEM, ItemStack.EMPTY)
                     .fieldOf("items")
                     .forGetter(EnderItemFilter::matches),
                     Codec.BOOL.optionalFieldOf("isInvert", false).forGetter(EnderItemFilter::isDenyList),
@@ -34,7 +35,7 @@ public record EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList
             .apply(componentInstance, EnderItemFilter::new));
 
     public static final PacketCodec<EnderItemFilter> STREAM_CODEC = PacketCodec.composite(
-            PacketCodecs.ITEM_STACK.list(256), EnderItemFilter::matches,
+            PacketCodecs.ITEM_STACK_DATA.list(256), EnderItemFilter::matches,
             PacketCodecs.BOOL, EnderItemFilter::isDenyList, PacketCodecs.BOOL,
             EnderItemFilter::shouldCompareComponents, DamageFilterMode.STREAM_CODEC, EnderItemFilter::damageFilterMode,
             EnderItemFilter::new);
@@ -98,6 +99,6 @@ public record EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList
 
     @Override
     public int hashCode() {
-        return Objects.hash(EqualityUtil.hashListContents(matches, ItemStack::hashItemAndComponents), isDenyList, shouldCompareComponents, damageFilterMode);
+        return Objects.hash(EqualityUtil.hashListContents(matches, StackDataCodecs::hashItem), isDenyList, shouldCompareComponents, damageFilterMode);
     }
 }

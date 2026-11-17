@@ -1,25 +1,23 @@
 package com.enderio.enderio.init;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.enderio.api.conduits.ConduitIngredient;
 import com.enderio.enderio.api.soul.binding.ingredients.AnySoulBindableIngredient;
 import com.enderio.enderio.api.soul.binding.ingredients.EmptySoulBindableIngredient;
 import com.enderio.enderio.api.soul.binding.ingredients.FilledSoulStorageIngredient;
+import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.neoforge.common.crafting.IngredientType;
-import net.minecraftforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 
 public class EIOIngredientTypes {
-    private static final DeferredRegister<IngredientType<?>> INGREDIENT_TYPES = DeferredRegister
-            .create(NeoForgeRegistries.Keys.INGREDIENT_TYPES, EnderIO.MOD_ID);
+    public static void register(IEventBus bus) { bus.addListener(EIOIngredientTypes::registerSerializers); }
 
-    public static void register(IEventBus bus) {
-        INGREDIENT_TYPES.register("empty_soul_storage", () -> EmptySoulBindableIngredient.TYPE);
-        INGREDIENT_TYPES.register("filled_soul_storage", () -> FilledSoulStorageIngredient.TYPE);
-        INGREDIENT_TYPES.register("any_soul_storage", () -> AnySoulBindableIngredient.TYPE);
-        INGREDIENT_TYPES.register("conduit", () -> ConduitIngredient.TYPE);
-
-        INGREDIENT_TYPES.register(bus);
+    private static void registerSerializers(RegisterEvent event) {
+        if (!event.getRegistryKey().equals(ForgeRegistries.Keys.RECIPE_SERIALIZERS)) return;
+        CraftingHelper.register(EnderIOAPI.rl("empty_soul_storage"), EmptySoulBindableIngredient.TYPE);
+        CraftingHelper.register(EnderIOAPI.rl("filled_soul_storage"), FilledSoulStorageIngredient.TYPE);
+        CraftingHelper.register(EnderIOAPI.rl("any_soul_storage"), AnySoulBindableIngredient.TYPE);
+        CraftingHelper.register(EnderIOAPI.rl("conduit"), ConduitIngredient.TYPE);
     }
 }

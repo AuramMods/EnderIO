@@ -5,7 +5,6 @@ import com.enderio.enderio.api.soul.SoulBoundUtils;
 import com.enderio.enderio.foundation.util.EntityCaptureUtils;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -13,24 +12,27 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.common.crafting.ICustomIngredient;
-import net.neoforged.neoforge.common.crafting.IngredientType;
+import net.minecraftforge.common.crafting.AbstractIngredient;
+import com.enderio.core.common.serialization.CodecIngredientSerializer;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.google.gson.JsonElement;
 
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public class FilledSoulStorageIngredient implements ICustomIngredient {
+public class FilledSoulStorageIngredient extends AbstractIngredient {
 
     public static final MapCodec<FilledSoulStorageIngredient> CODEC = RecordCodecBuilder.mapCodec(
         inst -> inst.group(BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(i -> i.item)).apply(inst, FilledSoulStorageIngredient::new));
 
-    public static final IngredientType<FilledSoulStorageIngredient> TYPE = new IngredientType<>(CODEC);
+    public static final CodecIngredientSerializer<FilledSoulStorageIngredient> TYPE = new CodecIngredientSerializer<>(CODEC.codec(),
+        PacketCodecs.registry(BuiltInRegistries.ITEM).map(FilledSoulStorageIngredient::new, ingredient -> ingredient.item));
 
     private final Item item;
     private final ItemStack[] itemStacks;
 
     public static Ingredient of(ItemLike item) {
-        return new FilledSoulStorageIngredient(item.asItem()).toVanilla();
+        return new FilledSoulStorageIngredient(item.asItem());
     }
 
     public FilledSoulStorageIngredient(Item item) {
@@ -40,7 +42,7 @@ public class FilledSoulStorageIngredient implements ICustomIngredient {
         var defaultStack = item.getDefaultInstance();
         if (!SoulBoundUtils.canBindSoul(defaultStack)) {
             var errorStack = new ItemStack(Blocks.BARRIER);
-            errorStack.set(DataComponents.CUSTOM_NAME, Component.literal("Item cannot be bound: " + defaultStack.getHoverName()));
+            errorStack.setHoverName(Component.literal("Item cannot be bound: " + defaultStack.getHoverName()));
             itemStacks = new ItemStack[] {errorStack};
         } else {
             itemStacks = EntityCaptureUtils.getCapturableEntityTypes().stream().map(entityType -> {
@@ -56,12 +58,12 @@ public class FilledSoulStorageIngredient implements ICustomIngredient {
 
     @Override
     public boolean test(ItemStack itemStack) {
-        return itemStack.is(item) && SoulBoundUtils.isBound(itemStack);
+        return itemStack != null && itemStack.is(item) && SoulBoundUtils.isBound(itemStack);
     }
 
     @Override
-    public Stream<ItemStack> getItems() {
-        return Stream.of(itemStacks);
+    public ItemStack[] getItems() {
+        return itemStacks;
     }
 
     @Override
@@ -70,7 +72,13 @@ public class FilledSoulStorageIngredient implements ICustomIngredient {
     }
 
     @Override
-    public IngredientType<?> getType() {
+    public CodecIngredientSerializer<FilledSoulStorageIngredient> getSerializer() {
         return TYPE;
     }
+
+    @Override
+    public boolean isEmpty() { return false; }
+
+    @Override
+    public JsonElement toJson() { return TYPE.toJson(this); }
 }

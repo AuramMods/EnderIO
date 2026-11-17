@@ -36,18 +36,42 @@ public class ConduitBlockItem extends BlockItem implements ICustomCreativeTabEnt
 
     public static ItemStack getStackFor(Holder<Conduit<?, ?>> conduit, int count) {
         var stack = new ItemStack(EIOItems.CONDUIT.get(), count);
-        stack.set(EnderIODataComponents.CONDUIT, conduit);
+        EnderIODataComponents.CONDUIT.set(stack, conduit);
+        return stack;
+    }
+
+    public static ItemStack getStackFor(net.minecraft.resources.ResourceLocation conduitId, int count) {
+        var stack = new ItemStack(EIOItems.CONDUIT.get(), count);
+        EnderIODataComponents.CONDUIT.setId(stack, conduitId);
         return stack;
     }
 
     @Override
     public Component getName(ItemStack stack) {
-        Holder<Conduit<?, ?>> conduit = stack.get(EnderIODataComponents.CONDUIT);
+        Holder<Conduit<?, ?>> conduit = getDisplayConduit(stack);
         if (conduit == null) {
             return super.getName(stack);
         }
 
         return conduit.value().description();
+    }
+
+    /** Item.getName has no level argument. Resolve only its live logical-side presentation context. */
+    private static @Nullable Holder<Conduit<?, ?>> getDisplayConduit(ItemStack stack) {
+        if (net.minecraftforge.fml.util.thread.EffectiveSide.get().isServer()) {
+            var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+            return server == null ? null : EnderIODataComponents.CONDUIT.get(stack, server.registryAccess());
+        }
+        return net.minecraftforge.fml.DistExecutor.unsafeCallWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
+            () -> () -> ClientDisplay.conduit(stack));
+    }
+
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    private static final class ClientDisplay {
+        private static @Nullable Holder<Conduit<?, ?>> conduit(ItemStack stack) {
+            var level = net.minecraft.client.Minecraft.getInstance().level;
+            return level == null ? null : EnderIODataComponents.CONDUIT.get(stack, level.registryAccess());
+        }
     }
 
     // Do not use block description, as that is Conduit Bundle.
@@ -66,12 +90,9 @@ public class ConduitBlockItem extends BlockItem implements ICustomCreativeTabEnt
 
         // Allow placing from the edge of an adjacent block
         BlockState blockState = level.getBlockState(blockpos);
-        if (!blockState.canBeReplaced()) {
+        if (!blockState.canBeReplaced(context)) {
             // noinspection DataFlowIssue
-            return blockState
-                    .useItemOn(context.getItemInHand(), level, player, context.getHand(),
-                            context.getHitResult().withPosition(blockpos))
-                    .result();
+            return blockState.use(level, player, context.getHand(), context.getHitResult().withPosition(blockpos));
         }
 
         return super.place(context);
@@ -81,7 +102,7 @@ public class ConduitBlockItem extends BlockItem implements ICustomCreativeTabEnt
     protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
         // Ensure the originalStack being used is valid for placement.
         var stack = context.getItemInHand();
-        if (!stack.has(EnderIODataComponents.CONDUIT)) {
+        if (EnderIODataComponents.CONDUIT.get(stack, context.getLevel().registryAccess()) == null) {
             var facadeProvider = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
             if (facadeProvider == null || !facadeProvider.isValid()) {
                 return false;
@@ -115,16 +136,16 @@ public class ConduitBlockItem extends BlockItem implements ICustomCreativeTabEnt
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents,
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents,
             TooltipFlag tooltipFlag) {
-        Holder<Conduit<?, ?>> conduit = stack.get(EnderIODataComponents.CONDUIT);
+        Holder<Conduit<?, ?>> conduit = level == null ? null : EnderIODataComponents.CONDUIT.get(stack, level.registryAccess());
         if (conduit != null) {
-            conduit.value().addToTooltip(context, tooltipComponents::add, tooltipFlag);
+            conduit.value().addToTooltip(level, tooltipComponents::add, tooltipFlag);
 
-            boolean showDetailTooltip = !tooltipFlag.hasShiftDown()
+            boolean showDetailTooltip = !TooltipUtil.hasShiftDown()
                     && (conduit.value().hasAdvancedTooltip() || conduit.value().showDebugTooltip());
 
-            if (conduit.value().showDebugTooltip() && tooltipFlag.hasShiftDown()) {
+            if (conduit.value().showDebugTooltip() && TooltipUtil.hasShiftDown()) {
                 if (conduit.value().type().ticker() != null) {
                     tooltipComponents.add(TooltipUtil.styledWithArgs(ConduitLang.GRAPH_TICK_RATE_TOOLTIP,
                         20 / conduit.value().type().getTickRate(conduit)));
@@ -136,7 +157,7 @@ public class ConduitBlockItem extends BlockItem implements ICustomCreativeTabEnt
             }
         }
 
-        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        super.appendHoverText(stack, level, tooltipComponents, tooltipFlag);
     }
 
     @Override

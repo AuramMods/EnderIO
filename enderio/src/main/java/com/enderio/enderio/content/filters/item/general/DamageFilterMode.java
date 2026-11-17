@@ -1,7 +1,7 @@
 package com.enderio.enderio.content.filters.item.general;
 
 import com.enderio.core.common.lang.EnumLangMap;
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.mojang.serialization.Codec;
 import net.minecraft.network.chat.MutableComponent;
 import com.enderio.core.common.network.codec.PacketCodecs;
@@ -31,7 +31,7 @@ public enum DamageFilterMode implements StringRepresentable {
             ByIdMap.OutOfBoundsStrategy.ZERO);
     public static final PacketCodec<DamageFilterMode> STREAM_CODEC = PacketCodecs.idMapper(BY_ID, v -> v.id);
 
-    private static final EnumLangMap<DamageFilterMode> LANG_MAP = new EnumLangMap<>(DamageFilterMode.class, EnderIO.MOD_ID,
+    private static final EnumLangMap<DamageFilterMode> LANG_MAP = new EnumLangMap<>(DamageFilterMode.class, EnderIOAPI.MOD_ID,
         "damage_filter_mode");
 
     private final int id;

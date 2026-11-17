@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.conduits.bundle;
 
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.common.blockentity.EnderBlockEntity;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.core.annotations.UseOnly;
@@ -1768,7 +1769,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
                 Codec.unboundedMap(Direction.CODEC, ConduitConnection.CODEC)
                         .fieldOf("connections")
                         .forGetter(i -> i.connections),
-                ItemStack.OPTIONAL_CODEC.optionalFieldOf("facade", ItemStack.EMPTY).forGetter(i -> i.facadeItem),
+                StackDataCodecs.OPTIONAL_ITEM.optionalFieldOf("facade", ItemStack.EMPTY).forGetter(i -> i.facadeItem),
                 Codec.unboundedMap(Conduit.CODEC, ConduitNodeImpl.CODEC).fieldOf("nodes").forGetter(i -> i.conduitNodes))
                 .apply(instance, LegacyConduitBundle::new));
 

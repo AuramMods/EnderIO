@@ -8,6 +8,17 @@ import net.minecraft.resources.ResourceLocation;
 
 public class TooltipUtil {
 
+    /** Tooltip generation can also run on a dedicated server, where no keyboard state exists. */
+    public static boolean hasShiftDown() {
+        return net.minecraftforge.fml.DistExecutor.unsafeRunForDist(
+            () -> ClientKeys::hasShiftDown, () -> () -> false);
+    }
+
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    private static final class ClientKeys {
+        private static boolean hasShiftDown() { return net.minecraft.client.gui.screens.Screen.hasShiftDown(); }
+    }
+
     /**
      * Style a component italic and gray
      */

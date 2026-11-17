@@ -169,7 +169,7 @@ public abstract class MachineMenu<T extends MachineBlockEntity> extends BaseBloc
                     if (!(slot instanceof MachineSlot machineSlot) || machineSlot.canQuickInsertStack()) {
 
                         ItemStack itemstack = slot.getItem();
-                        if (!itemstack.isEmpty() && ItemStack.isSameItemSameComponents(stack, itemstack)) {
+                        if (!itemstack.isEmpty() && ItemStack.isSameItemSameTags(stack, itemstack)) {
                             int j = itemstack.getCount() + stack.getCount();
                             int maxSize = Math.min(slot.getMaxStackSize(), stack.getMaxStackSize());
                             if (j <= maxSize) {
