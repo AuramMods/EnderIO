@@ -12,10 +12,7 @@ import net.minecraftforge.fluids.FluidStack;
 import java.util.function.Supplier;
 
 public class ExperienceWidget extends EIOWidget {
-    protected static final ResourceLocation EXPERIENCE_BAR_BACKGROUND_SPRITE = ResourceLocation
-            .withDefaultNamespace("hud/experience_bar_background");
-    protected static final ResourceLocation EXPERIENCE_BAR_PROGRESS_SPRITE = ResourceLocation
-            .withDefaultNamespace("hud/experience_bar_progress");
+    private static final ResourceLocation GUI_ICONS = ResourceLocation.withDefaultNamespace("textures/gui/icons.png");
 
     private final Supplier<FluidStack> getFluid;
 
@@ -34,8 +31,8 @@ public class ExperienceWidget extends EIOWidget {
         int fill = (int) ((((float) expLevel.experience()) / ExperienceUtil.getXpNeededForNextLevel(expLevel.level()))
                 * this.width) - 1;
 
-        guiGraphics.blitSprite(EXPERIENCE_BAR_BACKGROUND_SPRITE, this.x, this.y, this.width, this.height);
-        guiGraphics.blitSprite(EXPERIENCE_BAR_PROGRESS_SPRITE, 182, 5, 0, 0, this.x, this.y, fill, 5);
+        guiGraphics.blit(GUI_ICONS, this.x, this.y, this.width, this.height, 0, 64, 182, 5, 256, 256);
+        if (fill > 0) guiGraphics.blit(GUI_ICONS, this.x, this.y, 0, 69, fill, 5);
 
         var font = Minecraft.getInstance().font;
         String text = "" + expLevel.level();

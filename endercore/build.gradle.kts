@@ -111,6 +111,8 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
 tasks.named<JavaCompile>(sourceSets.test.get().compileJavaTaskName) {
     source(rootProject.file("enderio/src/main/java/com/enderio/enderio/client/foundation/model/ModelRenderUtil.java"))
     source(rootProject.file("enderio/src/test/java/com/enderio/enderio/client/ModelRenderUtilTests.java"))
+    source(rootProject.file("enderio/src/main/java/com/enderio/enderio/client/foundation/renderer/PreviewLayerBuffer.java"))
+    source(rootProject.file("enderio/src/test/java/com/enderio/enderio/client/PreviewLayerBufferTests.java"))
 }
 
 dependencies {

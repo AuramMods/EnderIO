@@ -108,8 +108,8 @@ public class EnderSkullRenderer implements BlockEntityRenderer<EnderSkullBlockEn
         }
 
         @Override
-        public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int packedColor) {
-            this.root.render(poseStack, buffer, packedLight, packedOverlay, packedColor);
+        public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+            this.root.render(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
         }
     }
 }

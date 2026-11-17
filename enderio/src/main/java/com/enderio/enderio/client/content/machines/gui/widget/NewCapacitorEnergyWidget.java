@@ -1,5 +1,6 @@
 package com.enderio.enderio.client.content.machines.gui.widget;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.machines.MachinesLang;
 import com.enderio.enderio.foundation.io.energy.IMachineEnergyStorage;
@@ -28,7 +29,7 @@ public class NewCapacitorEnergyWidget extends NewEnergyWidget {
     @Override
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         if (!cap.get()) {
-            guiGraphics.blitSprite(ENERGY_BAR_ERROR_SPRITE, x, y, width, height);
+            GuiSprites.blit(guiGraphics, ENERGY_BAR_ERROR_SPRITE, x, y, width, height);
 
             if (isHoveredOrFocused()) {
                 renderCapacitorTooltip(guiGraphics, mouseX, mouseY);

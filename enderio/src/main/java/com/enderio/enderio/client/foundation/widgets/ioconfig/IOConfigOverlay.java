@@ -1,24 +1,22 @@
 package com.enderio.enderio.client.foundation.widgets.ioconfig;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.core.client.gui.screen.BaseOverlay;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.client.foundation.model.ModelRenderUtil;
 import com.enderio.enderio.config.machines.MachinesConfig;
-import com.enderio.enderio.foundation.block.entity.legacy.LegacyMachineBlockEntity;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import com.enderio.enderio.foundation.network.packets.ServerboundCycleIOConfigPacket;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -62,7 +60,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.SequencedMap;
+import java.util.LinkedHashMap;
 
 /**
  * Thanks XFactHD for help and providing a demo for a preview widget and raycast example
@@ -137,7 +135,7 @@ public class IOConfigOverlay extends BaseOverlay {
         pitch = MINECRAFT.player.getXRot();
         yaw = MINECRAFT.player.getYRot();
 
-        initBuffers(MINECRAFT.renderBuffers().bufferSource());
+        initBuffers();
         neighBtnRect = new Rect2i(getX() + getWidth() - 2 - 16, getY() + getHeight() - 2 - 16, 16, 16);
     }
 
@@ -164,18 +162,13 @@ public class IOConfigOverlay extends BaseOverlay {
     private record RestoreData(boolean isVisible, float yaw, float pitch, float scale) {
     }
 
-    private void initBuffers(MultiBufferSource.BufferSource original) {
-        ByteBufferBuilder fallback = original.sharedBuffer;
-        SequencedMap<RenderType, ByteBufferBuilder> layerBuffers = original.fixedBuffers;
-        SequencedMap<RenderType, ByteBufferBuilder> ghostLayers = new Object2ObjectLinkedOpenHashMap<>();
-        SequencedMap<RenderType, ByteBufferBuilder> solidLayers = new Object2ObjectLinkedOpenHashMap<>();
-
-        for (Map.Entry<RenderType, ByteBufferBuilder> e : layerBuffers.entrySet()) {
-            ghostLayers.put(GhostRenderLayer.remap(e.getKey()), e.getValue());
-            solidLayers.put(SolidRenderLayer.remap(e.getKey()), e.getValue());
+    private static void initBuffers() {
+        // Forge 1.20.1 builders own their batch state as well as their memory.
+        // Reuse separate preview pools instead of borrowing active GUI builders.
+        if (ghostBuffers == null) {
+            ghostBuffers = new GhostBuffers();
+            solidBuffers = new SolidBuffers();
         }
-        ghostBuffers = new GhostBuffers(fallback, ghostLayers);
-        solidBuffers = new SolidBuffers(fallback, solidLayers);
     }
 
     private static Vec3 transform(Vec3 vec, Matrix4f transform) {
@@ -223,13 +216,8 @@ public class IOConfigOverlay extends BaseOverlay {
                 if (selection.isPresent()) {
                     var selectedFace = selection.get();
                     BlockEntity entity = MINECRAFT.level.getBlockEntity(selectedFace.blockPos);
-                    if (entity instanceof LegacyMachineBlockEntity machine) {
-                        machine.cycleIOMode(selectedFace.side);
-                        this.playDownSound(MINECRAFT.getSoundManager());
-                        return true;
-                    } else if (entity instanceof IOConfigurable) {
-                        PacketDistributor
-                                .sendToServer(new ServerboundCycleIOConfigPacket(selectedFace.blockPos, selectedFace.side));
+                    if (entity instanceof IOConfigurable) {
+                        EIONetwork.sendToServer(new ServerboundCycleIOConfigPacket(selectedFace.blockPos, selectedFace.side));
                         this.playDownSound(MINECRAFT.getSoundManager());
                         return true;
                     }
@@ -255,7 +243,7 @@ public class IOConfigOverlay extends BaseOverlay {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaY) {
         if (visible) {
             scale -= deltaY;
             scale = Math.min(40, Math.max(10, scale)); // clamp
@@ -333,6 +321,7 @@ public class IOConfigOverlay extends BaseOverlay {
 
     private void renderWorld(GuiGraphics guiGraphics, int centerX, int centerY, Quaternionf transform,
             float partialTick) {
+        guiGraphics.flush();
         Lighting.setupForFlatItems();
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(centerX, centerY, Z_OFFSET);
@@ -409,8 +398,8 @@ public class IOConfigOverlay extends BaseOverlay {
         guiGraphics.pose().scale(scale, scale, -scale);
         guiGraphics.pose().mulPose(transform);
 
-        BufferBuilder bufferbuilder = Tesselator.getInstance()
-                .begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        BufferBuilder bufferbuilder = Tesselator.getInstance().getBuilder();
+        bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
         RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
 
         TextureAtlasSprite tex = MINECRAFT.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(SELECTED_ICON);
@@ -424,19 +413,15 @@ public class IOConfigOverlay extends BaseOverlay {
                         blockPos.getZ() - worldOrigin.z());
         Vector3f[] vec = ModelRenderUtil.createQuadVerts(selectedFace.side, 0, 1, 1);
         Matrix4f matrix4f = guiGraphics.pose().last().pose();
-        bufferbuilder.addVertex(matrix4f, vec[0].x(), vec[0].y(), vec[0].z())
-                .setColor(1F, 1F, 1F, 1F)
-                .setUv(tex.getU0(), tex.getV0());
-        bufferbuilder.addVertex(matrix4f, vec[1].x(), vec[1].y(), vec[1].z())
-                .setColor(1F, 1F, 1F, 1F)
-                .setUv(tex.getU0(), tex.getV1());
-        bufferbuilder.addVertex(matrix4f, vec[2].x(), vec[2].y(), vec[2].z())
-                .setColor(1F, 1F, 1F, 1F)
-                .setUv(tex.getU1(), tex.getV1());
-        bufferbuilder.addVertex(matrix4f, vec[3].x(), vec[3].y(), vec[3].z())
-                .setColor(1F, 1F, 1F, 1F)
-                .setUv(tex.getU1(), tex.getV0());
-        BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
+        bufferbuilder.vertex(matrix4f, vec[0].x(), vec[0].y(), vec[0].z())
+                .uv(tex.getU0(), tex.getV0()).color(1F, 1F, 1F, 1F).endVertex();
+        bufferbuilder.vertex(matrix4f, vec[1].x(), vec[1].y(), vec[1].z())
+                .uv(tex.getU0(), tex.getV1()).color(1F, 1F, 1F, 1F).endVertex();
+        bufferbuilder.vertex(matrix4f, vec[2].x(), vec[2].y(), vec[2].z())
+                .uv(tex.getU1(), tex.getV1()).color(1F, 1F, 1F, 1F).endVertex();
+        bufferbuilder.vertex(matrix4f, vec[3].x(), vec[3].y(), vec[3].z())
+                .uv(tex.getU1(), tex.getV0()).color(1F, 1F, 1F, 1F).endVertex();
+        BufferUploader.drawWithShader(bufferbuilder.end());
 
         guiGraphics.pose().popPose();
     }
@@ -449,7 +434,7 @@ public class IOConfigOverlay extends BaseOverlay {
                 var ioMode = ioConfigurable.getIOMode(selectedFace.side);
                 IOModeMap map = IOModeMap.getMapFromMode(ioMode);
                 Rect2i iconBounds = map.getRect();
-                guiGraphics.blitSprite(IO_CONFIG_OVERLAY, 48, 16, iconBounds.getX(), iconBounds.getY(), getX() + 4,
+                GuiSprites.blit(guiGraphics, IO_CONFIG_OVERLAY, 48, 16, iconBounds.getX(), iconBounds.getY(), getX() + 4,
                         getY() + height - 4 - MINECRAFT.font.lineHeight - iconBounds.getHeight(), iconBounds.getWidth(),
                         iconBounds.getHeight());
                 guiGraphics.pose().pushPose();
@@ -462,7 +447,7 @@ public class IOConfigOverlay extends BaseOverlay {
     }
 
     private void renderNeighbourButton(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.blitSprite(NEIGHBOURS_BTN, neighBtnRect.getX(), neighBtnRect.getY(), 16, 16);
+        GuiSprites.blit(guiGraphics, NEIGHBOURS_BTN, neighBtnRect.getX(), neighBtnRect.getY(), 16, 16);
         if (neighBtnRect.contains(mouseX, mouseY)) {
             guiGraphics.renderTooltip(MINECRAFT.font, EIOCommonLang.TOGGLE_NEIGHBOUR.copy().withStyle(ChatFormatting.WHITE),
                     mouseX, mouseY);
@@ -477,24 +462,28 @@ public class IOConfigOverlay extends BaseOverlay {
     }
 
     private static class GhostBuffers extends MultiBufferSource.BufferSource {
-        private GhostBuffers(ByteBufferBuilder fallback, SequencedMap<RenderType, ByteBufferBuilder> layerBuffers) {
-            super(fallback, layerBuffers);
+        private GhostBuffers() {
+            super(new BufferBuilder(256), new LinkedHashMap<>());
         }
 
         @Override
         public VertexConsumer getBuffer(RenderType type) {
-            return super.getBuffer(GhostRenderLayer.remap(type));
+            RenderType remapped = GhostRenderLayer.remap(type);
+            fixedBuffers.computeIfAbsent(remapped, layer -> new BufferBuilder(layer.bufferSize()));
+            return super.getBuffer(remapped);
         }
     }
 
     private static class SolidBuffers extends MultiBufferSource.BufferSource {
-        private SolidBuffers(ByteBufferBuilder fallback, SequencedMap<RenderType, ByteBufferBuilder> layerBuffers) {
-            super(fallback, layerBuffers);
+        private SolidBuffers() {
+            super(new BufferBuilder(256), new LinkedHashMap<>());
         }
 
         @Override
         public VertexConsumer getBuffer(RenderType type) {
-            return super.getBuffer(SolidRenderLayer.remap(type));
+            RenderType remapped = SolidRenderLayer.remap(type);
+            fixedBuffers.computeIfAbsent(remapped, layer -> new BufferBuilder(layer.bufferSize()));
+            return super.getBuffer(remapped);
         }
     }
 

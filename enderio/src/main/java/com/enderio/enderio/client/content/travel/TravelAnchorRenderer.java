@@ -23,7 +23,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FastColor;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -32,32 +31,35 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.util.Lazy;
 import org.joml.Math;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 public class TravelAnchorRenderer implements TravelRenderer<AnchorTravelTarget> {
-    private static final Lazy<ArrayList<BakedQuad>> BACKDROP_QUADS = Lazy.of(() -> {
-        Minecraft minecraft = Minecraft.getInstance();
+    private static BakedModel backdropModel;
+    private static List<BakedQuad> backdropQuads = List.of();
 
-        BakedModel outlineBlockModel = minecraft.getModelManager()
+    private static List<BakedQuad> backdropQuads() {
+        BakedModel currentModel = Minecraft.getInstance().getModelManager()
             .getModel(EnderIOClient.TRAVEL_ANCHOR_BACKDROP_MODEL_LOCATION);
-
-        RandomSource randomSource = RandomSource.create(42L);
-
-        ArrayList<BakedQuad> bakedQuads = new ArrayList<>();
-        for (Direction dir : Direction.values()) {
-            // Should be exactly 1 quad per direction
-            bakedQuads.addAll(outlineBlockModel.getQuads(null, dir, randomSource));
+        if (currentModel != backdropModel) {
+            var randomSource = RandomSource.create(42L);
+            var quads = new ArrayList<BakedQuad>();
+            for (Direction direction : Direction.values()) {
+                quads.addAll(currentModel.getQuads(null, direction, randomSource));
+            }
+            // Resource reload replaces baked models and their atlas coordinates.
+            backdropModel = currentModel;
+            backdropQuads = List.copyOf(quads);
         }
-        return bakedQuads;
-    });
+        return backdropQuads;
+    }
 
     @Override
     public void render(AnchorTravelTarget travelData, LevelRenderer levelRenderer, PoseStack poseStack,
@@ -90,10 +92,8 @@ public class TravelAnchorRenderer implements TravelRenderer<AnchorTravelTarget> 
         }
 
         OutlineBuffer buffer = OutlineBuffer.INSTANCE;
-        int outlineColor = FastColor.ARGB32.color(255,
-            Integer.parseInt(active ? BaseConfig.CLIENT.ANCHORS_ACTIVE_COLOR.get() : BaseConfig.CLIENT.ANCHORS_BACKGROUND_COLOR.get(), 16));
-        int textColor = FastColor.ARGB32.color(255,
-            Integer.parseInt(active ? BaseConfig.CLIENT.ANCHORS_ACTIVE_COLOR.get() : "FFFFFF", 16));
+        int outlineColor = 0xFF000000 | Integer.parseInt(active ? BaseConfig.CLIENT.ANCHORS_ACTIVE_COLOR.get() : BaseConfig.CLIENT.ANCHORS_BACKGROUND_COLOR.get(), 16);
+        int textColor = 0xFF000000 | Integer.parseInt(active ? BaseConfig.CLIENT.ANCHORS_ACTIVE_COLOR.get() : "FFFFFF", 16);
         float outlineR = ((outlineColor >> 16) & 0xFF) / 255F;
         float outlineG = ((outlineColor >> 8) & 0xFF) / 255F;
         float outlineB = (outlineColor & 0xFF) / 255F;
@@ -148,7 +148,7 @@ public class TravelAnchorRenderer implements TravelRenderer<AnchorTravelTarget> 
                         b = (color & 0xFF) / 255F;
                     }
 
-                    renderBuffer.putBulkData(poseStack.last(), quad, r, g, b, 1.0F, packedLight, OverlayTexture.NO_OVERLAY);
+                    renderBuffer.putBulkData(poseStack.last(), quad, r, g, b, 1.0F, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
             }
 
@@ -163,8 +163,8 @@ public class TravelAnchorRenderer implements TravelRenderer<AnchorTravelTarget> 
                 poseStack.translate(offset.x, offset.y, offset.z);
                 poseStack.scale(scale, scale, scale);
 
-                for (BakedQuad quad : BACKDROP_QUADS.get()) {
-                    renderBuffer.putBulkData(poseStack.last(), quad, outlineR, outlineG, outlineB, 1, packedLight, OverlayTexture.NO_OVERLAY);
+                for (BakedQuad quad : backdropQuads()) {
+                    renderBuffer.putBulkData(poseStack.last(), quad, outlineR, outlineG, outlineB, 1, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
 
                 poseStack.popPose();
@@ -200,8 +200,8 @@ public class TravelAnchorRenderer implements TravelRenderer<AnchorTravelTarget> 
             poseStack.translate(-0.5, -0.5, -2);
             poseStack.rotateAround(Axis.ZN.rotationDegrees(45), 0.5F, 0.5F, 0.5F);
 
-            for (BakedQuad quad : BACKDROP_QUADS.get()) {
-                renderBuffer.putBulkData(poseStack.last(), quad, outlineR, outlineG, outlineB, 1, packedLight, OverlayTexture.NO_OVERLAY);
+            for (BakedQuad quad : backdropQuads()) {
+                renderBuffer.putBulkData(poseStack.last(), quad, outlineR, outlineG, outlineB, 1, packedLight, OverlayTexture.NO_OVERLAY, false);
             }
 
             poseStack.popPose();

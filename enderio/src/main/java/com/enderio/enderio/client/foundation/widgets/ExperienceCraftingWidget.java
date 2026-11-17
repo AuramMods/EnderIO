@@ -13,10 +13,8 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.function.Supplier;
 
 public class ExperienceCraftingWidget extends EIOWidget {
-    protected static final ResourceLocation EXPERIENCE_BAR_BACKGROUND_SPRITE = ResourceLocation
-            .withDefaultNamespace("hud/experience_bar_background");
-    protected static final ResourceLocation EXPERIENCE_BAR_PROGRESS_SPRITE = ResourceLocation
-            .withDefaultNamespace("hud/experience_bar_progress");
+    private static final ResourceLocation GUI_ICONS = ResourceLocation.withDefaultNamespace("textures/gui/icons.png");
+
     private final Supplier<FluidStorageInfo> fluidStorageSupplier;
     private final Supplier<Integer> maxXP;
 
@@ -41,8 +39,8 @@ public class ExperienceCraftingWidget extends EIOWidget {
             }
         }
 
-        guiGraphics.blitSprite(EXPERIENCE_BAR_BACKGROUND_SPRITE, this.x, this.y, this.width, this.height);
-        guiGraphics.blitSprite(EXPERIENCE_BAR_PROGRESS_SPRITE, 182, 5, 0, 0, this.x, this.y, k, 5);
+        guiGraphics.blit(GUI_ICONS, this.x, this.y, this.width, this.height, 0, 64, 182, 5, 256, 256);
+        if (k > 0) guiGraphics.blit(GUI_ICONS, this.x, this.y, 0, 69, k, 5);
 
         var font = Minecraft.getInstance().font;
         String s = "" + maxXP.get();

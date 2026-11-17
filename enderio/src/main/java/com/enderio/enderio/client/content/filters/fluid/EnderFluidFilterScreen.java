@@ -138,7 +138,7 @@ public class EnderFluidFilterScreen extends EnderContainerScreen<EnderFluidFilte
         if (this.menu.getCarried().isEmpty() && this.hoveredSlot instanceof FluidFilterSlot fluidFilterSlot) {
             FluidStack value = fluidFilterSlot.getResource();
             if (!value.isEmpty()) {
-                guiGraphics.renderTooltip(this.font, value.getHoverName(), x, y);
+                guiGraphics.renderTooltip(this.font, value.getDisplayName(), x, y);
                 return true;
             }
         }

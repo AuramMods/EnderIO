@@ -1,5 +1,6 @@
 package com.enderio.enderio.client.foundation.widgets;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.compat.ModCompatHelper;
 import com.enderio.enderio.content.machines.MachinesLang;
@@ -98,7 +99,7 @@ public class NewProgressWidget extends AbstractWidget {
         default -> throw new NotImplementedException();
         }
 
-        guiGraphics.blitSprite(sprite, width, height, u, v, x, y, uWidth, vHeight);
+        GuiSprites.blit(guiGraphics, sprite, width, height, u, v, x, y, uWidth, vHeight);
 
         // Update the contents of the tooltip whenever its hovered, don't waste any time
         // doing it when not hovered.

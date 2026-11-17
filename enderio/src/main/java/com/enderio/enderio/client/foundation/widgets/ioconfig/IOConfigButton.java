@@ -1,5 +1,6 @@
 package com.enderio.enderio.client.foundation.widgets.ioconfig;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.core.client.gui.widgets.EnderButton;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
@@ -30,7 +31,7 @@ public class IOConfigButton extends EnderButton {
 
     @Override
     public void renderButtonFace(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        guiGraphics.blitSprite(IO_CONFIG, getX(), getY(), width, height);
+        GuiSprites.blit(guiGraphics, IO_CONFIG, getX(), getY(), width, height);
     }
 
     @Override

@@ -8,9 +8,8 @@ import com.enderio.enderio.content.machines.MachinesLang;
 import com.enderio.enderio.content.machines.obelisks.xp.XPObeliskMenu;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.ImageButton;
+import com.enderio.core.client.gui.widgets.SpriteButton;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -31,7 +30,7 @@ public class XPObeliskScreen extends MachineScreen<XPObeliskMenu> {
     private static final ResourceLocation XP_REMOVE_MULTI = EnderIO.rl("buttons/xp_remove_multi");
     private static final ResourceLocation XP_REMOVE_ALL = EnderIO.rl("buttons/xp_remove_all");
 
-    private final List<ImageButton> xpButtons = new ArrayList<>();
+    private final List<SpriteButton> xpButtons = new ArrayList<>();
 
     public XPObeliskScreen(XPObeliskMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -75,8 +74,8 @@ public class XPObeliskScreen extends MachineScreen<XPObeliskMenu> {
         guiGraphics.blit(BG, leftPos, topPos, 0, 0, imageWidth, imageHeight);
     }
 
-    private ImageButton makeButton(int x, int y, int size, int id, ResourceLocation SPRITE, Component tooltip) {
-        ImageButton button = new ImageButton(x, y, size, size, new WidgetSprites(SPRITE, SPRITE),
+    private SpriteButton makeButton(int x, int y, int size, int id, ResourceLocation SPRITE, Component tooltip) {
+        SpriteButton button = new SpriteButton(x, y, size, size, SPRITE,
                 (press) -> handleButtonPress(id));
         button.setTooltip(Tooltip.create(tooltip));
         xpButtons.add(button);

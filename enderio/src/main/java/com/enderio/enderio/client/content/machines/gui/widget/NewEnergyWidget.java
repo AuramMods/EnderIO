@@ -1,5 +1,6 @@
 package com.enderio.enderio.client.content.machines.gui.widget;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.core.client.gui.widgets.EIOWidget;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.EnderIO;
@@ -43,7 +44,7 @@ public class NewEnergyWidget extends EIOWidget {
         int renderableHeight = (int)(filledVolume * height);
         int hiddenHeight = height - renderableHeight;
 
-        guiGraphics.blitSprite(ENERGY_BAR_FILL_SPRITE, width, height, 0, hiddenHeight, x, y + hiddenHeight, width, renderableHeight);
+        GuiSprites.blit(guiGraphics, ENERGY_BAR_FILL_SPRITE, width, height, 0, hiddenHeight, x, y + hiddenHeight, width, renderableHeight);
 
         RenderSystem.disableDepthTest();
 

@@ -16,18 +16,23 @@ import net.minecraftforge.client.event.InputEvent;
 public class ConduitProbeScrollListener {
     @SubscribeEvent
     public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
+        // Forge folds horizontal scrolling into this delta on macOS.
+        if (event.getScrollDelta() != 0 && switchProbeState()) event.setCanceled(true);
+    }
+
+    public static boolean switchProbeState() {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) {
-            return;
+            return false;
         }
 
-        // Supports vertical and horizontal scrolling
-        if ((event.getScrollDeltaX() != 0 || event.getScrollDeltaY() != 0) && player.isShiftKeyDown()) {
+        if (player.isShiftKeyDown()) {
             ItemStack mainHandStack = player.getMainHandItem();
-            if (mainHandStack.is(EIOItems.CONDUIT_PROBE)) {
+            if (mainHandStack.is(EIOItems.CONDUIT_PROBE.get())) {
                 ConduitProbeItem.switchState(player, mainHandStack);
-                event.setCanceled(true);
+                return true;
             }
         }
+        return false;
     }
 }

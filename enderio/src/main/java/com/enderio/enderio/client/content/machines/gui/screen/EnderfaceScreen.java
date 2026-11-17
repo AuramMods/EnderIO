@@ -1,13 +1,13 @@
 package com.enderio.enderio.client.content.machines.gui.screen;
 
 import com.enderio.enderio.config.machines.MachinesConfig;
+import com.enderio.enderio.client.foundation.renderer.PreviewLayerBuffer;
+import net.minecraftforge.client.model.data.ModelData;
 import com.enderio.enderio.content.enderface.EnderfaceBlockEntity;
 import com.enderio.enderio.foundation.network.packets.ServerboundEnderfaceInteractPacket;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -49,7 +49,7 @@ import java.util.List;
 
 public class EnderfaceScreen extends Screen {
     private static final Quaternionf ROT_180_Z = Axis.ZP.rotation((float) Math.PI);
-    private static final Object2ObjectOpenHashMap<RenderType, ByteBufferBuilder> ENDERFACE_BUFFERS = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectOpenHashMap<RenderType, PreviewLayerBuffer> ENDERFACE_BUFFERS = new Object2ObjectOpenHashMap<>();
     private static final List<RenderType> LAYERS_BEFORE_BLOCK_ENTITIES = RenderType.chunkBufferLayers()
             .stream()
             .filter(l -> l != RenderType.translucent())
@@ -93,9 +93,8 @@ public class EnderfaceScreen extends Screen {
 
     private Vec3 eyePosition;
 
-    private final Object2ObjectOpenHashMap<RenderType, BufferBuilder> worldBufferBuilders = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<RenderType, PreviewLayerBuffer> worldBufferBuilders = new Object2ObjectOpenHashMap<>();
     private final Object2ObjectOpenHashMap<RenderType, VertexBuffer> worldGeometry = new Object2ObjectOpenHashMap<>();
-    private final Object2ObjectOpenHashMap<RenderType, MeshData.SortState> worldSortStates = new Object2ObjectOpenHashMap<>();
 
     private boolean worldNeedsRebuild = true;
     private final List<BlockEntity> worldBlockEntities = new ArrayList<>();
@@ -105,7 +104,7 @@ public class EnderfaceScreen extends Screen {
         this.enderfacePos = pos;
         this.world = world;
 
-        range = MachinesConfig.COMMON.ENDERFACE_RANGE.getAsInt();
+        range = MachinesConfig.COMMON.ENDERFACE_RANGE.get();
         distance = 20;
 
         BlockEntity blockEntity = world.getBlockEntity(enderfacePos);
@@ -130,6 +129,16 @@ public class EnderfaceScreen extends Screen {
             enderface.setLastUiYaw(yaw);
             enderface.setLastUiDistance(distance);
         }
+    }
+
+    @Override
+    public void removed() {
+        worldGeometry.values().forEach(VertexBuffer::close);
+        worldGeometry.clear();
+        worldBufferBuilders.clear();
+        worldBlockEntities.clear();
+        worldNeedsRebuild = true;
+        super.removed();
     }
 
     /**
@@ -176,7 +185,7 @@ public class EnderfaceScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaY) {
         distance += deltaY;
         distance = Math.min(40, Math.max(10, distance)); // clamp
         return true;
@@ -188,32 +197,17 @@ public class EnderfaceScreen extends Screen {
     }
 
     private BufferBuilder getBuilderForLayer(RenderType renderType) {
-        var builder = worldBufferBuilders.get(renderType);
-
-        if (builder != null) {
-            return builder;
-        }
-
-        var byteBuilder = ENDERFACE_BUFFERS.computeIfAbsent(renderType, k -> new ByteBufferBuilder(2097152));
-        builder = new BufferBuilder(byteBuilder, renderType.mode(), renderType.format());
-        worldBufferBuilders.put(renderType, builder);
-        return builder;
+        return worldBufferBuilders.computeIfAbsent(renderType, (RenderType type) -> ENDERFACE_BUFFERS.computeIfAbsent(type,
+            (RenderType layer) -> new PreviewLayerBuffer(layer.mode(), layer.format(), layer.bufferSize()))).builder();
     }
 
     private void uploadCompiledLayer(RenderType type) {
         var builder = worldBufferBuilders.get(type);
-        MeshData meshdata = builder != null ? builder.build() : null;
-        if (meshdata != null) {
-            if (type.sortOnUpload()) {
-                var sortState = meshdata.sortQuads(ENDERFACE_BUFFERS.get(type), RenderSystem.getVertexSorting());
-
-                worldSortStates.put(type, sortState);
-            }
-
+        var mesh = builder.finish(type.sortOnUpload ? RenderSystem.getVertexSorting() : null);
+        if (mesh != null) {
             VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
             buffer.bind();
-            buffer.upload(meshdata);
-
+            buffer.upload(mesh);
             worldGeometry.put(type, buffer);
         }
     }
@@ -222,18 +216,12 @@ public class EnderfaceScreen extends Screen {
         var vertexBuffer = worldGeometry.get(type);
 
         if (vertexBuffer != null) {
-            var sortState = worldSortStates.get(type);
             vertexBuffer.bind();
 
-            if (sortState != null) {
-                // Resort
-                // TODO not working properly, eye position is probably wrong
-                var byteBuilder = ENDERFACE_BUFFERS.get(type);
-                var indexBuffer = sortState.buildSortedIndexBuffer(byteBuilder,
-                        VertexSorting.byDistance((float) eyePosition.x, (float) eyePosition.y, (float) eyePosition.z));
-                vertexBuffer.uploadIndexBuffer(indexBuffer);
-                byteBuilder.clear();
-            }
+            // Geometry is relative to origin, so the sorting camera must be too.
+            var indices = worldBufferBuilders.get(type).resort(VertexSorting.byDistance(
+                (float) (eyePosition.x - origin.x), (float) (eyePosition.y - origin.y), (float) (eyePosition.z - origin.z)));
+            if (indices != null) vertexBuffer.upload(indices);
 
             type.setupRenderState();
             var chunkOffset = RenderSystem.getShader().CHUNK_OFFSET;
@@ -283,6 +271,7 @@ public class EnderfaceScreen extends Screen {
         if (worldNeedsRebuild) {
             worldGeometry.values().forEach(VertexBuffer::close);
             worldGeometry.clear();
+            worldBufferBuilders.clear();
             worldBlockEntities.clear();
 
             var pose = new PoseStack();
@@ -294,7 +283,8 @@ public class EnderfaceScreen extends Screen {
                     randomSource.setSeed(42L);
 
                     var model = dispatcher.getBlockModel(state);
-                    var data = model.getModelData(world, pos, state, world.getModelData(pos));
+                    var existingData = world.getModelDataManager().getAt(pos);
+                    var data = model.getModelData(world, pos, state, existingData == null ? ModelData.EMPTY : existingData);
                     for (RenderType type : model.getRenderTypes(state, randomSource, data)) {
                         randomSource.setSeed(42L);
                         var buffer = getBuilderForLayer(type);
@@ -318,8 +308,8 @@ public class EnderfaceScreen extends Screen {
                     var buffer = new VertexConsumerWrapper(
                             getBuilderForLayer(ItemBlockRenderTypes.getRenderLayer(fluidState))) {
                         @Override
-                        public VertexConsumer addVertex(float x, float y, float z) {
-                            parent.addVertex(offset, x - xTransform, y - yTransform, z - zTransform);
+                        public VertexConsumer vertex(double x, double y, double z) {
+                            parent.vertex(offset.pose(), (float) x - xTransform, (float) y - yTransform, (float) z - zTransform);
                             return this;
                         }
                     };
@@ -335,9 +325,6 @@ public class EnderfaceScreen extends Screen {
             });
 
             worldBufferBuilders.keySet().forEach(this::uploadCompiledLayer);
-            worldBufferBuilders.clear();
-
-            ENDERFACE_BUFFERS.values().forEach(ByteBufferBuilder::clear);
 
             worldNeedsRebuild = false;
         }
@@ -469,7 +456,7 @@ public class EnderfaceScreen extends Screen {
      */
     @Override
     public void render(GuiGraphics graphics, int par1, int par2, float partialTick) {
-        renderBackground(graphics, par1, par2, partialTick);
+        renderBackground(graphics);
 
         drawEnderfaceBackground(graphics);
 

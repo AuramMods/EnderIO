@@ -1,5 +1,6 @@
 package com.enderio.enderio.client.content.glass;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.enderio.client.foundation.icon.EIOEnumIcons;
 import com.enderio.enderio.content.glass.FusedQuartzBlock;
 import net.minecraft.client.gui.Font;
@@ -23,12 +24,12 @@ public class GlassIconDecorator implements IItemDecorator {
 
                 ResourceLocation collisionSprite = EIOEnumIcons.GLASS_COLLISION_PREDICATE.get(block.getCollisionPredicate());
                 if (collisionSprite != null) {
-                    guiGraphics.blitSprite(collisionSprite, 0, 0, 16, 16);
+                    GuiSprites.blit(guiGraphics, collisionSprite, 0, 0, 16, 16);
                 }
                 
                 ResourceLocation lightingSprite = EIOEnumIcons.GLASS_LIGHTING.get(block.getGlassLighting());
                 if (lightingSprite != null) {
-                    guiGraphics.blitSprite(lightingSprite, 0, 0, 16, 16);
+                    GuiSprites.blit(guiGraphics, lightingSprite, 0, 0, 16, 16);
                 }
 
                 guiGraphics.pose().popPose();

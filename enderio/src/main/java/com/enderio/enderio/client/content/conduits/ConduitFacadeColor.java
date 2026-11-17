@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColor;
 import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.FastColor;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
@@ -24,7 +25,9 @@ public class ConduitFacadeColor implements BlockColor, ItemColor {
     @Override
     public int getColor(BlockState state, @Nullable BlockAndTintGetter level, @Nullable BlockPos pos, int tintIndex) {
         if (tintIndex >= 0) {
-            return DyeColor.values()[tintIndex].getTextureDiffuseColor();
+            if (tintIndex >= DyeColor.values().length) return 0xFFFFFF;
+            float[] color = DyeColor.values()[tintIndex].getTextureDiffuseColors();
+            return FastColor.ARGB32.color(255, Math.round(color[0] * 255), Math.round(color[1] * 255), Math.round(color[2] * 255));
         }
         tintIndex = unmoveTintIndex(tintIndex);
         if (level != null && pos != null) {

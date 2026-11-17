@@ -1,5 +1,6 @@
 package com.enderio.enderio.client.content.conduits.gui;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
@@ -76,7 +77,7 @@ public class ConduitSelectionButton extends AbstractButton {
                     "conduit_icon/" + conduitKey.getPath());
         }
 
-        guiGraphics.blitSprite(iconLocation, getX() + 3, getY() + 6, 12, 12);
+        GuiSprites.blit(guiGraphics, iconLocation, getX() + 3, getY() + 6, 12, 12);
 
         RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();

@@ -1,5 +1,6 @@
 package com.enderio.enderio.client.content.machines.gui.screen;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.EnderIOAPI;
@@ -98,7 +99,7 @@ public class SagMillScreen extends MachineScreen<SagMillMenu> {
 
             int yOffset = (int) Math.ceil(this.height * (1.0f - durability));
 
-            guiGraphics.blitSprite(BALL_DURABILITY_SPRITE, WIDTH, HEIGHT, 0, yOffset, getX(), getY() + yOffset, WIDTH, HEIGHT - yOffset);
+            GuiSprites.blit(guiGraphics, BALL_DURABILITY_SPRITE, WIDTH, HEIGHT, 0, yOffset, getX(), getY() + yOffset, WIDTH, HEIGHT - yOffset);
 
             if (this.isHoveredOrFocused() && (tooltipDataCache != data || tooltipDuraCache != durability)) {
                 tooltipDataCache = data;

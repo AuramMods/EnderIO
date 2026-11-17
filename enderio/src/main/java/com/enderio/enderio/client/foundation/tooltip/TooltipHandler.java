@@ -41,7 +41,7 @@ public class TooltipHandler {
         boolean advanced = Screen.hasShiftDown();
 
         // Misc tooltips.
-        addCapacitorTooltips(forItem, evt.getToolTip(), evt.getContext().registries());
+        addCapacitorTooltips(forItem, evt.getToolTip(), evt.getEntity() == null ? null : evt.getEntity().level().registryAccess());
         addGrindingBallTooltips(forItem, evt.getToolTip(), advanced);
         addSoulBindableTooltips(forItem, evt.getToolTip(), advanced);
 

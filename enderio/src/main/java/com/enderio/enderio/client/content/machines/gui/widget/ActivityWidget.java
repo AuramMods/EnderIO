@@ -1,5 +1,6 @@
 package com.enderio.enderio.client.content.machines.gui.widget;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.enderio.client.foundation.icon.MachineEnumIcons;
 import com.enderio.enderio.content.machines.MachinesLang;
 import com.enderio.enderio.foundation.state.MachineState;
@@ -49,10 +50,10 @@ public class ActivityWidget extends AbstractWidget {
         }
 
         if (useNewIcons) {
-            guiGraphics.blitSprite(Objects.requireNonNull(MachineEnumIcons.NEW_MACHINE_STATE_TYPE.get(prio.type())),
+            GuiSprites.blit(guiGraphics, Objects.requireNonNull(MachineEnumIcons.NEW_MACHINE_STATE_TYPE.get(prio.type())),
                     getX(), getY(), 16, 16);
         } else {
-            guiGraphics.blitSprite(Objects.requireNonNull(MachineEnumIcons.MACHINE_STATE_TYPE.get(prio.type())), getX(),
+            GuiSprites.blit(guiGraphics, Objects.requireNonNull(MachineEnumIcons.MACHINE_STATE_TYPE.get(prio.type())), getX(),
                     getY(), 16, 16);
         }
 
@@ -75,7 +76,7 @@ public class ActivityWidget extends AbstractWidget {
             if (list.isEmpty()) {
                 component = MachinesLang.STATUS_IDLE;
             } else {
-                component = MutableComponent.create(list.getFirst().getContents());
+                component = MutableComponent.create(list.get(0).getContents());
 
                 for (int i = 1; i < list.size(); i++) {
                     component = component.append("\n").append(list.get(i));

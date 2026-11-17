@@ -1,5 +1,6 @@
 package com.enderio.enderio.client.content.machines.gui.screen;
 
+import com.enderio.core.client.GuiSprites;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.client.content.machines.gui.screen.base.MachineScreen;
 import com.enderio.enderio.client.content.machines.gui.widget.ActivityWidget;
@@ -13,9 +14,8 @@ import com.enderio.enderio.content.machines.vat.VatMenu;
 import com.enderio.enderio.foundation.io.fluid.MachineFluidTank;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.ImageButton;
+import com.enderio.core.client.gui.widgets.SpriteButton;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -33,8 +33,6 @@ public class VatScreen extends MachineScreen<VatMenu> {
     public static final ResourceLocation MOVE_FLUID = EnderIO.rl("buttons/move_fluid");
     public static final ResourceLocation VOID_FLUID = EnderIO.rl("buttons/void_fluid");
 
-    private static final WidgetSprites MOVE_SPRITES = new WidgetSprites(MOVE_FLUID, MOVE_FLUID);
-    private static final WidgetSprites VOID_SPRITES = new WidgetSprites(VOID_FLUID, VOID_FLUID);
 
     public VatScreen(VatMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -60,10 +58,10 @@ public class VatScreen extends MachineScreen<VatMenu> {
 
         addRenderableWidget(new ActivityWidget(leftPos + imageWidth - 6 - 16, topPos + 16 * 4, menu::getMachineStates));
 
-        ImageButton transfer = new ImageButton(leftPos + 29, topPos + 62, 16, 16, MOVE_SPRITES, (b) -> handleButtonPress(VatMenu.MOVE_TO_OUTPUT_TANK_BUTTON_ID));
+        SpriteButton transfer = new SpriteButton(leftPos + 29, topPos + 62, 16, 16, MOVE_FLUID, (b) -> handleButtonPress(VatMenu.MOVE_TO_OUTPUT_TANK_BUTTON_ID));
         transfer.setTooltip(Tooltip.create(MachinesLang.VAT_TRANSFER_TANK));
         addRenderableWidget(transfer);
-        ImageButton dump = new ImageButton(leftPos + 131, topPos + 62, 16, 16, VOID_SPRITES, (b) -> handleButtonPress(VatMenu.DUMP_OUTPUT_TANK_BUTTON_ID));
+        SpriteButton dump = new SpriteButton(leftPos + 131, topPos + 62, 16, 16, VOID_FLUID, (b) -> handleButtonPress(VatMenu.DUMP_OUTPUT_TANK_BUTTON_ID));
         dump.setTooltip(Tooltip.create(MachinesLang.VAT_DUMP_TANK));
         addRenderableWidget(dump);
 
@@ -75,7 +73,7 @@ public class VatScreen extends MachineScreen<VatMenu> {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
 
-        guiGraphics.blitSprite(VAT_COVER, 76 + leftPos, 34 + topPos, 26, 28);
+        GuiSprites.blit(guiGraphics, VAT_COVER, 76 + leftPos, 34 + topPos, 26, 28);
         drawModifierStrings(guiGraphics);
     }
 

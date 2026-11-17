@@ -3,8 +3,7 @@ package com.enderio.enderio.client.foundation.widgets;
 import com.enderio.core.client.gui.widgets.ToggleIconButton;
 import com.enderio.enderio.EnderIO;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.ImageButton;
-import net.minecraft.client.gui.components.WidgetSprites;
+import com.enderio.core.client.gui.widgets.SpriteButton;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -17,8 +16,6 @@ public class EIOCommonWidgets {
 
     private static final ResourceLocation PLUS = EnderIO.rl("buttons/plus_small");
     private static final ResourceLocation MINUS = EnderIO.rl("buttons/minus_small");
-    private static final WidgetSprites RANGE_PLUS_SPRITES = new WidgetSprites(PLUS, PLUS);
-    private static final WidgetSprites RANGE_MINUS_SPRITES = new WidgetSprites(MINUS, MINUS);
 
     public static ToggleIconButton createRange(int x, int y, Supplier<Boolean> getter, Consumer<Boolean> setter) {
         return new ToggleIconButton(x, y, 16, 16, isChecked -> isChecked ? ICON_RANGE_ENABLE : ICON_RANGE_DISABLE, null,
@@ -31,11 +28,11 @@ public class EIOCommonWidgets {
                 isChecked -> isChecked ? checkedTooltip : uncheckedTooltip, getter, setter);
     }
 
-    public static ImageButton createRangeIncrease(int x, int y, Button.OnPress onPress) {
-        return new ImageButton(x, y, 8, 8, RANGE_PLUS_SPRITES, onPress);
+    public static SpriteButton createRangeIncrease(int x, int y, Button.OnPress onPress) {
+        return new SpriteButton(x, y, 8, 8, PLUS, onPress);
     }
 
-    public static ImageButton createRangeDecrease(int x, int y, Button.OnPress onPress) {
-        return new ImageButton(x, y, 8, 8, RANGE_MINUS_SPRITES, onPress);
+    public static SpriteButton createRangeDecrease(int x, int y, Button.OnPress onPress) {
+        return new SpriteButton(x, y, 8, 8, MINUS, onPress);
     }
 }

@@ -15,6 +15,8 @@ import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -101,6 +103,12 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
 
     public CapacitorBankNetwork getNetwork() {
         return node.getNetwork();
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        BlockPos pos = getBlockPos();
+        return AABB.ofSize(new Vec3(pos.getX(), pos.getY(), pos.getZ()), 32, 32, 32);
     }
 
     @Override
