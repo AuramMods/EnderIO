@@ -28,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
@@ -131,7 +131,7 @@ public class TravelHandler {
                     player.playNotifySound(SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1F, 1F);
 
                 }else if(sendToServer){
-                    PacketDistributor.sendToServer(new ServerboundRequestShortTravelPacket());
+                    EIONetwork.sendToServer(new ServerboundRequestShortTravelPacket());
                 }else{
                     return false;
                 }
@@ -184,7 +184,7 @@ public class TravelHandler {
                 serverPlayer.connection.resetPosition();
                 player.playNotifySound(SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.75F, 1F);
             } else if (sendToServer) {
-                PacketDistributor.sendToServer(new ServerboundRequestTravelPacket(target.pos()));
+                EIONetwork.sendToServer(new ServerboundRequestTravelPacket(target.pos()));
             }
 
             player.resetFallDistance();

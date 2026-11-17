@@ -13,7 +13,7 @@ import mezz.jei.api.neoforge.NeoForgeTypes;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +69,7 @@ public class FilterGhostIngredientHandler implements IGhostIngredientHandler<End
         @Override
         public void accept(I ingredient) {
             slot.setResource((ItemStack) ingredient);
-            PacketDistributor.sendToServer(new ServerboundSetItemFilterSlotPacket(containerId, slotIndex, (ItemStack) ingredient));
+            EIONetwork.sendToServer(new ServerboundSetItemFilterSlotPacket(containerId, slotIndex, (ItemStack) ingredient));
         }
     }
 
@@ -83,7 +83,7 @@ public class FilterGhostIngredientHandler implements IGhostIngredientHandler<End
         @Override
         public void accept(I ingredient) {
             slot.safeInsert((ItemStack) ingredient);
-            PacketDistributor.sendToServer(new ServerboundSetItemFilterSlotPacket(containerId, slotIndex, (ItemStack) ingredient));
+            EIONetwork.sendToServer(new ServerboundSetItemFilterSlotPacket(containerId, slotIndex, (ItemStack) ingredient));
         }
     }
 
@@ -97,7 +97,7 @@ public class FilterGhostIngredientHandler implements IGhostIngredientHandler<End
         @Override
         public void accept(I ingredient) {
             slot.setResource((FluidStack) ingredient);
-            PacketDistributor.sendToServer(new ServerboundSetFluidFilterSlotPacket(containerId, slotIndex, (FluidStack) ingredient));
+            EIONetwork.sendToServer(new ServerboundSetFluidFilterSlotPacket(containerId, slotIndex, (FluidStack) ingredient));
         }
     }
 

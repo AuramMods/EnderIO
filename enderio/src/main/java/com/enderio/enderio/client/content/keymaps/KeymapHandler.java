@@ -12,7 +12,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.util.Lazy;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 
 @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
 public class KeymapHandler {
@@ -48,7 +48,7 @@ public class KeymapHandler {
 
         // Magnet
         if(TOGGLE_MAGNET_KEY.get().consumeClick()){
-            PacketDistributor.sendToServer(new ServerboundToggleMagnetPacket());
+            EIONetwork.sendToServer(new ServerboundToggleMagnetPacket());
         }
 
 

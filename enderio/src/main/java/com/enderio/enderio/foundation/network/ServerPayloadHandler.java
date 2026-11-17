@@ -21,7 +21,6 @@ import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.Optional;
 
@@ -32,96 +31,88 @@ public class ServerPayloadHandler {
         return INSTANCE;
     }
 
-    public void handleCoordinateSelectionName(ServerboundUpdateCoordinateSelectionNameMenuPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer serverPlayer) {
-                packet.getMenu(context).updateName(packet.name(), serverPlayer);
-            }
-        });
+    public void handleCoordinateSelectionName(ServerboundUpdateCoordinateSelectionNameMenuPacket packet, Player player) {
+        if (player instanceof ServerPlayer serverPlayer && !player.isSpectator()
+                && player.containerMenu.containerId == packet.containerId()
+                && packet.menuClass().isInstance(player.containerMenu) && player.containerMenu.stillValid(player)
+                && packet.name().length() <= 50) {
+            packet.menuClass().cast(player.containerMenu).updateName(packet.name(), serverPlayer);
+        }
     }
 
-    public void handleTravelRequest(ServerboundRequestTravelPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            var player = context.player();
-            // For keybind anchor teleports
-            ItemStack travelItemStack = TravelHandler.findTravelItem(player);
+    public void handleTravelRequest(ServerboundRequestTravelPacket packet, Player player) {
+        if (player.isSpectator()) return;
+        // For keybind anchor teleports
+        ItemStack travelItemStack = TravelHandler.findTravelItem(player);
 
-            Optional<TravelTarget> target = TravelTargetApi.INSTANCE.get(player.level(), packet.pos());
+        Optional<TravelTarget> target = TravelTargetApi.INSTANCE.get(player.level(), packet.pos());
 
-            boolean canBlockTeleport = TravelHandler.canBlockTeleport(player);
+        boolean canBlockTeleport = TravelHandler.canBlockTeleport(player);
 
-            // These errors should only ever be triggered if there's some form of desync
-            if (!canBlockTeleport && travelItemStack.isEmpty()) {
-                player.displayClientMessage(EIOCommonLang.ERROR_CANNOT_TELEPORT, true);
-                return;
-            }
-            if (target.isEmpty()) {
-                player.displayClientMessage(EIOCommonLang.ERROR_INVALID_DESTINATION, true);
-                return;
-            }
-            // Eventually change the packet structure to include what teleport method was
-            // used so this range can be selected correctly
-            int range = Math.max(target.get().block2BlockRange(), target.get().item2BlockRange());
-            if (packet.pos().distSqr(player.getOnPos()) > range * range) {
-                player.displayClientMessage(EIOCommonLang.ERROR_TOO_FAR, true);
-                return;
-            }
+        // These errors should only ever be triggered if there's some form of desync
+        if (!canBlockTeleport && travelItemStack.isEmpty()) {
+            player.displayClientMessage(EIOCommonLang.ERROR_CANNOT_TELEPORT, true);
+            return;
+        }
+        if (target.isEmpty()) {
+            player.displayClientMessage(EIOCommonLang.ERROR_INVALID_DESTINATION, true);
+            return;
+        }
+        // Eventually change the packet structure to include what teleport method was
+        // used so this range can be selected correctly
+        int range = Math.max(target.get().block2BlockRange(), target.get().item2BlockRange());
+        if (packet.pos().distSqr(player.getOnPos()) > (double) range * range) {
+            player.displayClientMessage(EIOCommonLang.ERROR_TOO_FAR, true);
+            return;
+        }
 
-            // Try to do teleport
-            boolean successfulTeleport = TravelHandler.blockTeleportTo(player.level(), player, target.get(), false);
-            if(successfulTeleport && !canBlockTeleport && !travelItemStack.isEmpty()){
-                TravelHandler.consumeResources(travelItemStack);
-                player.getCooldowns().addCooldown(travelItemStack.getItem(), BaseConfig.COMMON.ITEMS.TRAVELLING_BLINK_DISABLED_TIME.get());
-            }
-        });
+        // Try to do teleport
+        boolean successfulTeleport = TravelHandler.blockTeleportTo(player.level(), player, target.get(), false);
+        if(successfulTeleport && !canBlockTeleport && !travelItemStack.isEmpty()){
+            TravelHandler.consumeResources(travelItemStack);
+            player.getCooldowns().addCooldown(travelItemStack.getItem(), BaseConfig.COMMON.ITEMS.TRAVELLING_BLINK_DISABLED_TIME.get());
+        }
     }
 
-    public void handleShortTravelRequest(ServerboundRequestShortTravelPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            var player = context.player();
-            if(player == null)
-                return;
+    public void handleShortTravelRequest(ServerboundRequestShortTravelPacket packet, Player player) {
+        if(player.isSpectator())
+            return;
 
-            // For keybind anchor teleports
-            ItemStack travelItemStack = TravelHandler.findTravelItem(player);
+        // For keybind anchor teleports
+        ItemStack travelItemStack = TravelHandler.findTravelItem(player);
 
-            // These errors should only ever be triggered if there's some form of desync
-            if (travelItemStack.isEmpty()) {
-                player.displayClientMessage(EIOCommonLang.ERROR_CANNOT_TELEPORT, true);
-                return;
-            }
+        // These errors should only ever be triggered if there's some form of desync
+        if (travelItemStack.isEmpty()) {
+            player.displayClientMessage(EIOCommonLang.ERROR_CANNOT_TELEPORT, true);
+            return;
+        }
 
-            if(TravelHandler.shortTeleport(player.level(), player, false)){
-                TravelHandler.consumeResources(travelItemStack);
-                player.getCooldowns().addCooldown(travelItemStack.getItem(), BaseConfig.COMMON.ITEMS.TRAVELLING_BLINK_DISABLED_TIME.get());
-            }
-        });
+        if(TravelHandler.shortTeleport(player.level(), player, false)){
+            TravelHandler.consumeResources(travelItemStack);
+            player.getCooldowns().addCooldown(travelItemStack.getItem(), BaseConfig.COMMON.ITEMS.TRAVELLING_BLINK_DISABLED_TIME.get());
+        }
     }
 
     /**
      * Toggles first magnet it finds and displays message on action bar based on new active/inactive status of magnet
      */
-    public void handleMagnetToggle(ServerboundToggleMagnetPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            var player = context.player();
+    public void handleMagnetToggle(ServerboundToggleMagnetPacket packet, Player player) {
 
-            var curios = CuriosCompat.getActiveCurios(player, stack -> stack.getItem() instanceof ElectromagnetItem);
-            if(curios.isPresent()){
-                for(ItemStack curioStack : curios.get()){
-                    toggleMagnet(curioStack, player);
-                    return;
-                }
+        var curios = CuriosCompat.getActiveCurios(player, stack -> stack.getItem() instanceof ElectromagnetItem);
+        if(curios.isPresent()){
+            for(ItemStack curioStack : curios.get()){
+                toggleMagnet(curioStack, player);
+                return;
             }
+        }
 
-            for(int i = 0; i < player.getInventory().getContainerSize(); i++){
-                ItemStack stack = player.getInventory().getItem(i);
-                if(stack.getItem() instanceof ElectromagnetItem){
-                    toggleMagnet(stack, player);
-                    return;
-                }
+        for(int i = 0; i < player.getInventory().getContainerSize(); i++){
+            ItemStack stack = player.getInventory().getItem(i);
+            if(stack.getItem() instanceof ElectromagnetItem){
+                toggleMagnet(stack, player);
+                return;
             }
-
-        });
+        }
     }
 
     private void toggleMagnet(ItemStack stack, Player player) {
@@ -135,49 +126,46 @@ public class ServerPayloadHandler {
         }
     }
 
-    public void handleSetItemFilterSlot(ServerboundSetItemFilterSlotPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            var currentMenu = context.player().containerMenu;
+    public void handleSetItemFilterSlot(ServerboundSetItemFilterSlotPacket packet, Player player) {
+        var currentMenu = player.containerMenu;
 
-            if (currentMenu == null || currentMenu.containerId != packet.containerId()
-                    || currentMenu.slots.size() <= packet.slotIndex()) {
-                return;
-            }
+        if (player.isSpectator() || currentMenu == null || !currentMenu.stillValid(player)
+                || currentMenu.containerId != packet.containerId() || packet.slotIndex() < 0
+                || currentMenu.slots.size() <= packet.slotIndex()) {
+            return;
+        }
 
-            if (currentMenu.getSlot(packet.slotIndex()) instanceof FilterSlot<?> filterSlot) {
-                filterSlot.safeInsert(packet.itemStack());
-            }
-        });
+        if (currentMenu.getSlot(packet.slotIndex()) instanceof FilterSlot<?> filterSlot) {
+            filterSlot.safeInsert(packet.itemStack());
+        }
     }
 
     //TODO should/can we have one general transfer packet?
-    public void handleSetGhostSlot(ServerboundSetGhostSlotPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            var currentMenu = context.player().containerMenu;
+    public void handleSetGhostSlot(ServerboundSetGhostSlotPacket packet, Player player) {
+        var currentMenu = player.containerMenu;
 
-            if (currentMenu == null || currentMenu.containerId != packet.containerId()
-                || currentMenu.slots.size() <= packet.slotIndex()) {
-                return;
-            }
+        if (player.isSpectator() || currentMenu == null || !currentMenu.stillValid(player)
+            || currentMenu.containerId != packet.containerId() || packet.slotIndex() < 0
+            || currentMenu.slots.size() <= packet.slotIndex()) {
+            return;
+        }
 
-            if (currentMenu.getSlot(packet.slotIndex()) instanceof GhostMachineSlot slot) {
-                slot.set(packet.itemStack());
-            }
-        });
+        if (currentMenu.getSlot(packet.slotIndex()) instanceof GhostMachineSlot slot) {
+            slot.set(packet.itemStack());
+        }
     }
 
-    public void handleSetFluidFilterSlot(ServerboundSetFluidFilterSlotPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            var currentMenu = context.player().containerMenu;
+    public void handleSetFluidFilterSlot(ServerboundSetFluidFilterSlotPacket packet, Player player) {
+        var currentMenu = player.containerMenu;
 
-            if (currentMenu == null || currentMenu.containerId != packet.containerId()
-                    || currentMenu.slots.size() <= packet.slotIndex()) {
-                return;
-            }
+        if (player.isSpectator() || currentMenu == null || !currentMenu.stillValid(player)
+                || currentMenu.containerId != packet.containerId() || packet.slotIndex() < 0
+                || currentMenu.slots.size() <= packet.slotIndex()) {
+            return;
+        }
 
-            if (currentMenu.getSlot(packet.slotIndex()) instanceof FluidFilterSlot filterSlot) {
-                filterSlot.setResource(packet.fluidStack());
-            }
-        });
+        if (currentMenu.getSlot(packet.slotIndex()) instanceof FluidFilterSlot filterSlot) {
+            filterSlot.setResource(packet.fluidStack());
+        }
     }
 }

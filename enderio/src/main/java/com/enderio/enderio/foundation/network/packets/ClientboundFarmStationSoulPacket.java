@@ -1,31 +1,25 @@
 package com.enderio.enderio.foundation.network.packets;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.enderio.foundation.souldata.FarmSoul;
 import net.minecraft.network.FriendlyByteBuf;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public record ClientboundFarmStationSoulPacket(Map<ResourceLocation, FarmSoul.SoulData> map) implements CustomPacketPayload {
+public record ClientboundFarmStationSoulPacket(Map<ResourceLocation, FarmSoul.SoulData> map) {
 
-    public static final Type<ClientboundFarmStationSoulPacket> TYPE = new Type<>(EnderIO.rl("farm_soul"));
+    public static final ResourceLocation ID = EnderIOAPI.rl("farm_soul");
 
     public static final PacketCodec<ClientboundFarmStationSoulPacket> STREAM_CODEC = PacketCodec.composite(
             PacketCodec.map(HashMap::new, PacketCodecs.RESOURCE_LOCATION, FarmSoul.STREAM_CODEC),
             ClientboundFarmStationSoulPacket::map, ClientboundFarmStationSoulPacket::new);
 
     public ClientboundFarmStationSoulPacket(FriendlyByteBuf buf) {
-        this(buf.readMap(FriendlyByteBuf::readResourceLocation,
-                buff -> new FarmSoul.SoulData(buff.readResourceLocation(), buff.readFloat(), buff.readInt(),
-                        buff.readFloat())));
+        this(STREAM_CODEC.decode(buf).map());
     }
 
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 }

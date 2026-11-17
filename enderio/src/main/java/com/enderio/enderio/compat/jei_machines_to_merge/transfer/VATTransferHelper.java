@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraftforge.fluids.FluidStack;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -76,7 +76,7 @@ public class VATTransferHelper implements IRecipeTransferHandler<VatMenu, Recipe
         }
 
         if (doTransfer) {
-            PacketDistributor.sendToServer(new ServerboundTransferItemsPacket(List.of(left, right), VatMenu.INPUTS_INDEX,VatMenu.LAST_INDEX + 1, maxTransfer));
+            EIONetwork.sendToServer(new ServerboundTransferItemsPacket(container.containerId, List.of(left, right), VatMenu.INPUTS_INDEX,VatMenu.LAST_INDEX + 1, maxTransfer));
         }
         return null;
     }

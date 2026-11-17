@@ -19,7 +19,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -75,7 +75,7 @@ public class TravelTargetSavedData extends SavedData {
     // Adds or updates.
     public void setTravelTarget(Level level, TravelTarget target) {
         if (level instanceof ServerLevel serverLevel) {
-            PacketDistributor.sendToPlayersInDimension(serverLevel, new ClientboundTravelTargetUpdatedPacket(target));
+            EIONetwork.sendToPlayersInDimension(serverLevel, new ClientboundTravelTargetUpdatedPacket(target));
         }
 
         travelTargets.put(target.pos(), target);
@@ -83,7 +83,7 @@ public class TravelTargetSavedData extends SavedData {
 
     public void removeTravelTargetAt(Level level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
-            PacketDistributor.sendToPlayersInDimension(serverLevel, new ClientboundTravelTargetRemovedPacket(pos));
+            EIONetwork.sendToPlayersInDimension(serverLevel, new ClientboundTravelTargetRemovedPacket(pos));
         }
 
         travelTargets.remove(pos);
@@ -128,7 +128,7 @@ public class TravelTargetSavedData extends SavedData {
         if (player instanceof ServerPlayer serverPlayer) {
             var savedData = TravelTargetSavedData.getTravelData(serverPlayer.level());
             var serializedData = savedData.save(new CompoundTag(), serverPlayer.level().registryAccess());
-            PacketDistributor.sendToPlayer(serverPlayer, new ClientboundSyncTravelDataPacket(serializedData));
+            EIONetwork.sendToPlayer(serverPlayer, new ClientboundSyncTravelDataPacket(serializedData));
         }
     }
 
@@ -138,7 +138,7 @@ public class TravelTargetSavedData extends SavedData {
         if (player instanceof ServerPlayer serverPlayer) {
             var savedData = TravelTargetSavedData.getTravelData(serverPlayer.level());
             var serializedData = savedData.save(new CompoundTag(), serverPlayer.level().registryAccess());
-            PacketDistributor.sendToPlayer(serverPlayer, new ClientboundSyncTravelDataPacket(serializedData));
+            EIONetwork.sendToPlayer(serverPlayer, new ClientboundSyncTravelDataPacket(serializedData));
         }
     }
 }

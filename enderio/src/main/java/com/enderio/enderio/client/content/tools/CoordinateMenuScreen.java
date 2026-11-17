@@ -12,7 +12,7 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 
 public class CoordinateMenuScreen extends EnderContainerScreen<CoordinateMenu> {
 
@@ -78,6 +78,6 @@ public class CoordinateMenuScreen extends EnderContainerScreen<CoordinateMenu> {
     }
 
     private void onNameChanged(String name) {
-        PacketDistributor.sendToServer(new ServerboundUpdateCoordinateSelectionNameMenuPacket(getMenu().containerId, name));
+        EIONetwork.sendToServer(new ServerboundUpdateCoordinateSelectionNameMenuPacket(getMenu().containerId, name));
     }
 }

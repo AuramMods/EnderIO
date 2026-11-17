@@ -1,19 +1,20 @@
 package com.enderio.enderio.foundation.network.packets;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.List;
 
-public record ServerboundTransferItemsPacket(List<Ingredient> stacks, int startslot, int endslot, boolean maxTransfer) implements CustomPacketPayload {
+public record ServerboundTransferItemsPacket(int containerId, List<Ingredient> stacks, int startslot, int endslot, boolean maxTransfer) {
 
-    public static final Type<ServerboundTransferItemsPacket> TYPE = new Type<>(EnderIO.rl("transfer_items"));
+    public static final ResourceLocation ID = EnderIOAPI.rl("transfer_items");
 
     public static final PacketCodec<ServerboundTransferItemsPacket> STREAM_CODEC = PacketCodec.composite(
-        PacketCodecs.INGREDIENT.list(),
+        PacketCodecs.INT, ServerboundTransferItemsPacket::containerId,
+        PacketCodecs.INGREDIENT.list(4),
         ServerboundTransferItemsPacket::stacks,
         PacketCodecs.INT,
         ServerboundTransferItemsPacket::startslot,
@@ -24,8 +25,4 @@ public record ServerboundTransferItemsPacket(List<Ingredient> stacks, int starts
         ServerboundTransferItemsPacket::new
     );
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 }

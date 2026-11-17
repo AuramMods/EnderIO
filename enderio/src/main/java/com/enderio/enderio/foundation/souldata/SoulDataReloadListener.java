@@ -26,7 +26,6 @@ import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -35,7 +34,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.OnDatapackSyncEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -92,14 +91,9 @@ public class SoulDataReloadListener<T extends SoulData> extends SimpleJsonResour
         Map<ResourceLocation, T> newMap = new HashMap<>();
 
         for (Map.Entry<ResourceLocation, JsonElement> element : object.entrySet()) {
-            codec.decode(JsonOps.INSTANCE, element.getValue())
-                    .ifSuccess(result -> newMap.put(result.getFirst().getKey(), result.getFirst())) // store the key
-                                                                                                    // from the
-                                                                                                    // ISoulData
-                                                                                                    // interface. Makes
-                                                                                                    // the look faster.
-                    .ifError(partial -> LOGGER.error("Failed to parse data json for {} due to: {}", element.getKey(),
-                            partial.message()));
+            var result = codec.parse(JsonOps.INSTANCE, element.getValue());
+            result.error().ifPresent(error -> LOGGER.error("Failed to parse data json for {} due to: {}", element.getKey(), error.message()));
+            result.result().ifPresent(value -> newMap.put(value.getKey(), value));
         }
 
         this.map = newMap;
@@ -113,23 +107,23 @@ public class SoulDataReloadListener<T extends SoulData> extends SimpleJsonResour
      * @param packetFactory  A packet constructor or factory method that converts the given map to a packet object to send on the given channel
      * @return this manager object
      */
-    public <P extends CustomPacketPayload> SoulDataReloadListener<T> subscribeAsSyncable(
+    public <P> SoulDataReloadListener<T> subscribeAsSyncable(
             final Function<Map<ResourceLocation, T>, P> packetFactory) {
         MinecraftForge.EVENT_BUS.addListener(this.getDatapackSyncListener(packetFactory));
         return this;
     }
 
     /** Generate an event listener function for the on-datapack-sync event **/
-    private <P extends CustomPacketPayload> Consumer<OnDatapackSyncEvent> getDatapackSyncListener(
+    private <P> Consumer<OnDatapackSyncEvent> getDatapackSyncListener(
             final Function<Map<ResourceLocation, T>, P> packetFactory) {
         return event -> {
             ServerPlayer player = event.getPlayer();
             P packet = packetFactory.apply(this.map);
 
             if (player == null) {
-                PacketDistributor.sendToAllPlayers(packet);
+                event.getPlayerList().getPlayers().forEach(target -> EIONetwork.sendToPlayer(target, packet));
             } else {
-                PacketDistributor.sendToPlayer(player, packet);
+                EIONetwork.sendToPlayer(player, packet);
             }
         };
     }
@@ -148,7 +142,7 @@ public class SoulDataReloadListener<T extends SoulData> extends SimpleJsonResour
      * Returns an optional ISoulData implementation.
      */
     public Optional<T> matches(EntityType<?> entitytype) {
-        var id = BuiltInRegistries.ENTITY_TYPE.getKeyOrNull(entitytype);
+        var id = BuiltInRegistries.ENTITY_TYPE.getKey(entitytype);
         if (id != null) {
             return matches(id);
         }

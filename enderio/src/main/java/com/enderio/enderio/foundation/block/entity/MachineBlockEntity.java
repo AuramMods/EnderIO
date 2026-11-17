@@ -49,7 +49,7 @@ import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.data.ModelProperty;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
@@ -519,7 +519,7 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
         } else {
             if (level.isClientSide()) {
                 if (isIOConfigMutable()) {
-                    PacketDistributor.sendToServer(new ServerboundCycleIOConfigPacket(worldPosition, context.getClickedFace()));
+                    EIONetwork.sendToServer(new ServerboundCycleIOConfigPacket(worldPosition, context.getClickedFace()));
                 }
             }
 

@@ -13,7 +13,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.event.TickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -83,7 +83,7 @@ public class CapacitorBankSavedData extends SavedData {
     private void onNetworkDiscarded(CapacitorBankNetwork network, ServerLevel serverLevel) {
         // Allow empty or discarded networks here
         networks.remove(network);
-        PacketDistributor.sendToPlayersInDimension(serverLevel,
+        EIONetwork.sendToPlayersInDimension(serverLevel,
             new ClientBoundRemoveCapacitorBankPacket(network.getUuid()));
     }
 

@@ -31,7 +31,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -170,7 +170,7 @@ public class ConduitMenu extends BaseEnderMenu {
             // Prevent editing while player is in spectator mode.
             if (!localPlayer.isSpectator()) {
                 connectionAccessor.setConnectionConfig(conduit, side, config);
-                PacketDistributor.sendToServer(new SetConduitConnectionConfigPacket(containerId, config));
+                EIONetwork.sendToServer(new SetConduitConnectionConfigPacket(containerId, config));
             }
         } else {
             connectionAccessor.setConnectionConfig(conduit, side, config);
@@ -178,7 +178,9 @@ public class ConduitMenu extends BaseEnderMenu {
     }
 
     public void handleConnectionConfigUpdate(SetConduitConnectionConfigPacket packet) {
-        connectionAccessor.setConnectionConfig(conduit, side, packet.connectionConfig());
+        if (packet.connectionConfig().type() == connectionConfigType()) {
+            connectionAccessor.setConnectionConfig(conduit, side, packet.connectionConfig());
+        }
     }
 
     @Nullable
@@ -222,6 +224,7 @@ public class ConduitMenu extends BaseEnderMenu {
     }
 
     public void tryOpenFilterMenu(int slot) {
+        if (conduitInventory == null || slot < 0 || slot >= conduitInventory.getSlots()) return;
         if (getPlayerInventory().player instanceof ServerPlayer serverPlayer) {
             var stack = conduitInventory.getStackInSlot(slot);
             var menuProvider = stack.getCapability(EnderIOCapabilities.FILTER_MENU_PROVIDER).orElse(null);
@@ -230,7 +233,7 @@ public class ConduitMenu extends BaseEnderMenu {
                         (ConduitBundleBlockEntity) connectionAccessor, side, conduit));
             }
         } else {
-            PacketDistributor.sendToServer(new ServerboundOpenConduitFilterMenu(containerId, slot));
+            EIONetwork.sendToServer(new ServerboundOpenConduitFilterMenu(containerId, slot));
         }
     }
 
@@ -241,21 +244,21 @@ public class ConduitMenu extends BaseEnderMenu {
         // Belt & Braces check to ensure the menu is in a valid state before accessing connections
         if (getPlayerInventory().player instanceof ServerPlayer serverPlayer && stillValid(serverPlayer)) {
             if (!Objects.equals(connectionConfig(), remoteConnectionConfig)) {
-                PacketDistributor.sendToPlayer(serverPlayer,
+                EIONetwork.sendToPlayer(serverPlayer,
                         new SetConduitConnectionConfigPacket(containerId, connectionConfig()));
                 this.remoteConnectionConfig = connectionConfig();
             }
 
             var extraGuiData = extraGuiData();
             if (!Objects.equals(extraGuiData, remoteExtraGuiData)) {
-                PacketDistributor.sendToPlayer(serverPlayer,
+                EIONetwork.sendToPlayer(serverPlayer,
                         new ClientboundConduitExtraGuiDataPacket(containerId, extraGuiData));
                 this.remoteExtraGuiData = extraGuiData;
             }
 
             var conduitList = connectionAccessor.getAllOpenableConduits(side);
             if (conduitListHashCode != conduitList.hashCode()) {
-                PacketDistributor.sendToPlayer(serverPlayer, new ClientboundConduitListPacket(containerId, conduitList));
+                EIONetwork.sendToPlayer(serverPlayer, new ClientboundConduitListPacket(containerId, conduitList));
                 conduitListHashCode = conduitList.hashCode();
             }
         }

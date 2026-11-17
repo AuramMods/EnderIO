@@ -1,17 +1,17 @@
 package com.enderio.enderio.foundation.network.packets;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity;
 import net.minecraft.core.BlockPos;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 import java.util.UUID;
 
-public record ClientBoundSyncCapacitorBankPacket(UUID uuid, long storedEnergy, long capacity, long added, long send, List<BlockPos> nodes) implements CustomPacketPayload {
-    public static final Type<ClientBoundSyncCapacitorBankPacket> TYPE = new Type<>(EnderIO.rl("sync_capacitor_bank"));
+public record ClientBoundSyncCapacitorBankPacket(UUID uuid, long storedEnergy, long capacity, long added, long send, List<BlockPos> nodes) {
+    public static final ResourceLocation ID = EnderIOAPI.rl("sync_capacitor_bank");
 
     public static final PacketCodec<ClientBoundSyncCapacitorBankPacket> STREAM_CODEC = PacketCodec.composite(
         PacketCodecs.UUID,
@@ -29,8 +29,4 @@ public record ClientBoundSyncCapacitorBankPacket(UUID uuid, long storedEnergy, l
         ClientBoundSyncCapacitorBankPacket::new
     );
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 }

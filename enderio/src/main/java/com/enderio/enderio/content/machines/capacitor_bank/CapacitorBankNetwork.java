@@ -12,7 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -199,7 +199,7 @@ public class CapacitorBankNetwork extends Network<CapacitorBankNetwork, Capacito
 
         //Update client IO
         if (serverLevel.getGameTime() % AVERAGE_IO_OVER_X_TICKS == 0) {
-            PacketDistributor.sendToPlayersInDimension(serverLevel,
+            EIONetwork.sendToPlayersInDimension(serverLevel,
                 new ClientBoundSyncCapacitorBankPacket(this.getUuid(), this.getTotalEnergyStored(),
                     this.getTotalMaxEnergyStored(), this.getAddedEnergy()  / AVERAGE_IO_OVER_X_TICKS,
                     this.getSendEnergy() / AVERAGE_IO_OVER_X_TICKS, this.positions()));
@@ -307,7 +307,7 @@ public class CapacitorBankNetwork extends Network<CapacitorBankNetwork, Capacito
             CapacitorBankNode n = it.next();
 
             if (n.getBlockEntity().getLevel() instanceof ServerLevel level) {
-                PacketDistributor.sendToPlayersTrackingChunk(level, new ChunkPos(n.getPos()),
+                EIONetwork.sendToPlayersTrackingChunk(level, new ChunkPos(n.getPos()),
                     new ClientBoundRemoveCapacitorBankPacket(n.getNetwork().getUuid())
                 );
             }

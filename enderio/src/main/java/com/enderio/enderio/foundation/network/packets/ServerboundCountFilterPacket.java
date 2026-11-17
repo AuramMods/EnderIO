@@ -1,14 +1,14 @@
 package com.enderio.enderio.foundation.network.packets;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 
-public record ServerboundCountFilterPacket(DyeColor channel1, int maxCount, int count, boolean active) implements CustomPacketPayload {
+public record ServerboundCountFilterPacket(DyeColor channel1, int maxCount, int count, boolean active) {
 
-    public static final Type<ServerboundCountFilterPacket> TYPE = new Type<>(EnderIO.rl("count_filter_packet"));
+    public static final ResourceLocation ID = EnderIOAPI.rl("count_filter_packet");
 
     public static final PacketCodec<ServerboundCountFilterPacket> STREAM_CODEC = PacketCodec.composite(
         PacketCodecs.DYE_COLOR,
@@ -22,8 +22,4 @@ public record ServerboundCountFilterPacket(DyeColor channel1, int maxCount, int 
         ServerboundCountFilterPacket::new
     );
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 }

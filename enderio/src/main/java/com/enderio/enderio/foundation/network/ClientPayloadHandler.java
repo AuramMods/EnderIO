@@ -8,7 +8,7 @@ import com.enderio.enderio.foundation.network.packets.ClientBoundSyncCapacitorBa
 import com.enderio.enderio.foundation.network.packets.ClientboundSyncTravelDataPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundTravelTargetRemovedPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundTravelTargetUpdatedPacket;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraft.world.entity.player.Player;
 
 public class ClientPayloadHandler {
     private static final ClientPayloadHandler INSTANCE = new ClientPayloadHandler();
@@ -17,36 +17,26 @@ public class ClientPayloadHandler {
         return INSTANCE;
     }
 
-    public void handleSyncTravelDataPacket(ClientboundSyncTravelDataPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            TravelTargetSavedData travelData = TravelTargetSavedData.getTravelData(context.player().level());
-            travelData.loadNBT(context.player().registryAccess(), packet.data());
-        });
+    public void handleSyncTravelDataPacket(ClientboundSyncTravelDataPacket packet, Player player) {
+        TravelTargetSavedData travelData = TravelTargetSavedData.getTravelData(player.level());
+        travelData.loadNBT(player.level().registryAccess(), packet.data());
     }
 
-    public void handleAddTravelTarget(ClientboundTravelTargetUpdatedPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            var level = context.player().level();
-            TravelTargetApi.INSTANCE.set(level, packet.target());
-        });
+    public void handleAddTravelTarget(ClientboundTravelTargetUpdatedPacket packet, Player player) {
+        var level = player.level();
+        TravelTargetApi.INSTANCE.set(level, packet.target());
     }
 
-    public void handleRemoveTravelTarget(ClientboundTravelTargetRemovedPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            var level = context.player().level();
-            TravelTargetApi.INSTANCE.removeAt(level, packet.pos());
-        });
+    public void handleRemoveTravelTarget(ClientboundTravelTargetRemovedPacket packet, Player player) {
+        var level = player.level();
+        TravelTargetApi.INSTANCE.removeAt(level, packet.pos());
     }
 
-    public void handleSyncCapacitorBankPacket(ClientBoundSyncCapacitorBankPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            CapacitorBankManager.addData(packet.uuid(), packet.storedEnergy(), packet.capacity(), packet.added(), packet.send(), packet.nodes());
-        });
+    public void handleSyncCapacitorBankPacket(ClientBoundSyncCapacitorBankPacket packet, Player player) {
+        CapacitorBankManager.addData(packet.uuid(), packet.storedEnergy(), packet.capacity(), packet.added(), packet.send(), packet.nodes());
     }
 
-    public void handleRemoveCapacitorBankPacket(ClientBoundRemoveCapacitorBankPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            CapacitorBankManager.removeData(packet.uuid());
-        });
+    public void handleRemoveCapacitorBankPacket(ClientBoundRemoveCapacitorBankPacket packet, Player player) {
+        CapacitorBankManager.removeData(packet.uuid());
     }
 }

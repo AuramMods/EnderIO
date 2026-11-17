@@ -2,19 +2,17 @@ package com.enderio.enderio.foundation.network;
 
 import com.enderio.enderio.content.conduits.menu.ConduitMenu;
 import com.enderio.enderio.foundation.network.packets.SetConduitConnectionConfigPacket;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraft.world.entity.player.Player;
 
 public class ConduitCommonPayloadHandler {
     private static final ConduitCommonPayloadHandler INSTANCE = new ConduitCommonPayloadHandler();
 
-    public void handle(SetConduitConnectionConfigPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            if (packet.containerId() == context.player().containerMenu.containerId) {
-                if (!context.player().isSpectator() && context.player().containerMenu instanceof ConduitMenu menu) {
-                    menu.handleConnectionConfigUpdate(packet);
-                }
+    public void handle(SetConduitConnectionConfigPacket packet, Player player) {
+        if (packet.containerId() == player.containerMenu.containerId) {
+            if (!player.isSpectator() && player.containerMenu instanceof ConduitMenu menu && menu.stillValid(player)) {
+                menu.handleConnectionConfigUpdate(packet);
             }
-        });
+        }
     }
 
     public static ConduitCommonPayloadHandler getInstance() {

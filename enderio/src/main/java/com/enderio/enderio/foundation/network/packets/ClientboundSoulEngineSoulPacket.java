@@ -1,20 +1,19 @@
 package com.enderio.enderio.foundation.network.packets;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.enderio.foundation.souldata.EngineSoul;
 import net.minecraft.network.FriendlyByteBuf;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public record ClientboundSoulEngineSoulPacket(Map<ResourceLocation, EngineSoul.SoulData> map)
-    implements CustomPacketPayload {
+    {
 
-    public static final Type<ClientboundSoulEngineSoulPacket> TYPE = new Type<>(EnderIO.rl("soul_engine_soul"));
+    public static final ResourceLocation ID = EnderIOAPI.rl("soul_engine_soul");
 
     public static final PacketCodec<ClientboundSoulEngineSoulPacket> STREAM_CODEC = PacketCodec.composite(
         PacketCodec.map(HashMap::new, PacketCodecs.RESOURCE_LOCATION, EngineSoul.STREAM_CODEC),
@@ -30,8 +29,4 @@ public record ClientboundSoulEngineSoulPacket(Map<ResourceLocation, EngineSoul.S
         );
     }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 }

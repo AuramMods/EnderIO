@@ -18,7 +18,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -97,7 +97,7 @@ public class CrafterRecipeTransferHandler implements IRecipeTransferHandler<Craf
         }
 
         if (doTransfer) {
-            PacketDistributor.sendToServer(new ServerboundUpdateCrafterTemplatePacket(placedStacks));
+            EIONetwork.sendToServer(new ServerboundUpdateCrafterTemplatePacket(container.containerId, placedStacks));
         }
 
         return null;

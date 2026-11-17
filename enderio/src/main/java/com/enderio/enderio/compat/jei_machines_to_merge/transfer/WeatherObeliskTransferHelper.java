@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -71,7 +71,7 @@ public class WeatherObeliskTransferHelper implements IRecipeTransferHandler<Weat
         }
 
         if (doTransfer) {
-            PacketDistributor.sendToServer(new ServerboundTransferItemsPacket(List.of(Ingredient.of(fireWork)), WeatherObeliskMenu.INPUTS_INDEX,WeatherObeliskMenu.LAST_INDEX + 1, maxTransfer));
+            EIONetwork.sendToServer(new ServerboundTransferItemsPacket(container.containerId, List.of(Ingredient.of(fireWork)), WeatherObeliskMenu.INPUTS_INDEX,WeatherObeliskMenu.LAST_INDEX + 1, maxTransfer));
         }
         return null;
     }

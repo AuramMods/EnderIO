@@ -9,7 +9,7 @@ import mezz.jei.api.gui.handlers.IGhostIngredientHandler;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,7 @@ public class MachinesGhostSlotHandler implements IGhostIngredientHandler<Machine
                         @Override
                         public void accept(I ingredient) {
                             ghostSlot.set((ItemStack) ingredient);
-                            PacketDistributor.sendToServer(new ServerboundSetGhostSlotPacket(gui.getMenu().containerId, slot.index, (ItemStack) ingredient));
+                            EIONetwork.sendToServer(new ServerboundSetGhostSlotPacket(gui.getMenu().containerId, slot.index, (ItemStack) ingredient));
                         }
                     });
                 }

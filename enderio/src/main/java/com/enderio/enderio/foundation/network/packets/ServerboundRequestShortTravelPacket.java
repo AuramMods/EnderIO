@@ -1,21 +1,17 @@
 package com.enderio.enderio.foundation.network.packets;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import net.minecraft.core.BlockPos;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
-public record ServerboundRequestShortTravelPacket() implements CustomPacketPayload {
+public record ServerboundRequestShortTravelPacket() {
 
-    public static final Type<ServerboundRequestShortTravelPacket> TYPE = new Type<>(EnderIO.rl("request_short_travel"));
+    public static final ResourceLocation ID = EnderIOAPI.rl("request_short_travel");
 
     public static final PacketCodec<ServerboundRequestShortTravelPacket> STREAM_CODEC =
         PacketCodec.unit(new ServerboundRequestShortTravelPacket());
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 }

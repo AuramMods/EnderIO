@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 011 ports packet serialization to native Forge buffers and explicit dynamic registry context. EnderCore passes 39 unit tests and 51 headless GameTests and reobfuscates successfully. Main compilation still fails at the normal 400-error cap; supplemental direct Java 17 compilation reports 2,095 source errors. Main transport remains pending. No client has been launched.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 012 ports main transport to Forge SimpleChannel with explicit directions, current registry context and server-side validation. EnderCore passes 39 unit tests and 58 headless GameTests and reobfuscates successfully. Main compilation still fails at the normal 400-error cap; supplemental direct Java 17 compilation reports 1,796 source errors. Full main networking/gameplay remains unverified. No client has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -72,7 +72,7 @@ Prefer Forge-native adapters and shared utilities in this project's namespaces. 
 | --- | --- | --- |
 | Preparation | Record source references, create local branch, write tracker and goal | Complete |
 | Inventory and build | Expand parity/dependency matrix; establish Forge 1.20.1 toolchain, metadata, artifacts and silent test profiles | In progress: EnderCore compiles/reobfuscates and main-module Minecraft artifacts rebuild; full packaging and non-activating client launch pending |
-| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | In progress: core passes 39 unit/51 GameTests; native capabilities, registration aliases, main item NBT, energy/fluid storage, soul and packet codecs added. Machine item-state hooks, main transport conversion and gameplay validation pending |
+| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | In progress: core passes 39 unit/58 GameTests; native capabilities, registration aliases, item NBT, energy/fluid storage, codecs and main Forge transport added. Remaining serialization, machine item-state hooks and full gameplay validation pending |
 | Core content | Port every implemented block/item/entity, machine, conduit, filter, tool, soul and travel feature | Pending |
 | Assets and client | Data generation, recipes/tags, models, textures, rendering, screens, particles, input, mixins | In progress: core sprite atlas, slot-rendering hook and native vertex/UI APIs compile; all visual/runtime checks pending |
 | Integrations | Adapt each supported integration and modded conduit; test with dependencies present and absent | Pending |
@@ -144,7 +144,8 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 | 009: registration and item NBT | Native item/block handles and aliases; typed NBT defaults/removals/copies; live powered-item energy storage | Core passes 36 unit/33 headless GameTests and jar/reobf; main fails at 400-error cap, supplemental Java 17 compile reports 3,140 errors. [Evidence](porting/1.20.1/cycle-009.md) | `7e9bd93db` |
 | 010: main item state, fluids and souls | Typed NBT consumers/defaults, native fluid storage, soul codecs/views, spawn-egg NBT and item filtering | Core passes 36 unit/47 headless GameTests and jar/reobf; main fails at 400-error cap, supplemental Java 17 compile reports 2,966 errors. [Evidence](porting/1.20.1/cycle-010.md) | `5e98ee139` |
 
-| 011: packet serialization | Native packet codecs, explicit current-world registry buffers, strict registry IDs/holders, native menu extra-data buffers | Core passes 39 unit/51 headless GameTests and jar/reobf; main fails at 400-error cap, supplemental Java 17 compile reports 2,095 errors. Main transport remains pending. [Evidence](porting/1.20.1/cycle-011.md) | Commit containing cycle 011 |
+| 011: packet serialization | Native packet codecs, explicit current-world registry buffers, strict registry IDs/holders, native menu extra-data buffers | Core passes 39 unit/51 headless GameTests and jar/reobf; main fails at 400-error cap, supplemental Java 17 compile reports 2,095 errors. Main transport remains pending. [Evidence](porting/1.20.1/cycle-011.md) | `0169e5a47` |
+| 012: main Forge transport | Native channel/directions, deferred registry decoding, packet senders/handlers, server authority and recipe-transfer accounting | Core passes 39 unit/58 headless GameTests and jar/reobf; main fails at 400-error cap, supplemental Java 17 compile reports 1,796 errors. Full main/client networking remains unverified. [Evidence](porting/1.20.1/cycle-012.md) | Commit containing cycle 012 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

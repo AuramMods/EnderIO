@@ -15,6 +15,10 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
     source(listOf(
         "api/soul/Soul.java",
         "api/attachment/CoordinateSelection.java",
+        "api/EnderIOAPI.java",
+        "foundation/network/packets/ServerboundTimerFilterPacket.java",
+        "foundation/network/packets/ServerboundTransferItemsPacket.java",
+        "foundation/network/packets/ServerboundUpdateCrafterTemplatePacket.java",
         "api/soul/binding/SoulBindable.java",
         "api/soul/binding/ComponentSoulBindable.java",
         "api/soul/binding/ReadOnlyComponentSoulBindable.java",

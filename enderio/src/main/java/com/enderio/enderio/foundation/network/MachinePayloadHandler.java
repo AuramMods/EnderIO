@@ -3,7 +3,11 @@ package com.enderio.enderio.foundation.network;
 import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.content.enderface.EnderfaceBlockEntity;
 import com.enderio.enderio.content.storage.crafter.CrafterMenu;
-import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
+import com.enderio.core.common.menu.MenuRecipeTransfer;
+import com.enderio.enderio.content.machines.vat.VatMenu;
+import com.enderio.enderio.content.storage.fluid_tank.FluidTankMenu;
+import com.enderio.enderio.content.machines.obelisks.weather.WeatherObeliskMenu;
+import net.minecraft.world.InteractionHand;
 import com.enderio.enderio.foundation.network.packets.ClientboundFarmStationSoulPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundPoweredSpawnerSoulPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundSolarSoulPacket;
@@ -20,7 +24,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraft.world.entity.player.Player;
 
 public class MachinePayloadHandler {
     public static class Client {
@@ -30,20 +34,20 @@ public class MachinePayloadHandler {
             return INSTANCE;
         }
 
-        public void handlePoweredSpawnerSoul(ClientboundPoweredSpawnerSoulPacket packet, IPayloadContext context) {
-            context.enqueueWork(() -> SpawnerSoul.SPAWNER.map = packet.map());
+        public void handlePoweredSpawnerSoul(ClientboundPoweredSpawnerSoulPacket packet, Player player) {
+            SpawnerSoul.SPAWNER.map = packet.map();
         }
 
-        public void handleSoulEngineSoul(ClientboundSoulEngineSoulPacket packet, IPayloadContext context) {
-            context.enqueueWork(() -> EngineSoul.ENGINE.map = packet.map());
+        public void handleSoulEngineSoul(ClientboundSoulEngineSoulPacket packet, Player player) {
+            EngineSoul.ENGINE.map = packet.map();
         }
 
-        public void handleFarmingStationSoul(ClientboundFarmStationSoulPacket packet, IPayloadContext context) {
-            context.enqueueWork(() -> FarmSoul.FARM.map = packet.map());
+        public void handleFarmingStationSoul(ClientboundFarmStationSoulPacket packet, Player player) {
+            FarmSoul.FARM.map = packet.map();
         }
 
-        public void handleSolarSoul(ClientboundSolarSoulPacket packet, IPayloadContext context) {
-            context.enqueueWork(() -> SolarSoul.SOLAR.map = packet.map());
+        public void handleSolarSoul(ClientboundSolarSoulPacket packet, Player player) {
+            SolarSoul.SOLAR.map = packet.map();
         }
     }
 
@@ -54,76 +58,55 @@ public class MachinePayloadHandler {
             return INSTANCE;
         }
 
-        public void updateCrafterTemplate(ServerboundUpdateCrafterTemplatePacket packet, IPayloadContext context) {
-            context.enqueueWork(() -> {
-                if (context.player().containerMenu instanceof CrafterMenu crafterMenu) {
-                    for (int i = 0; i < packet.recipeInputs().size(); i++) {
-                        crafterMenu.slots.get(CrafterMenu.INPUTS_INDEX + i).set(packet.recipeInputs().get(i));
-                    }
+        public void updateCrafterTemplate(ServerboundUpdateCrafterTemplatePacket packet, Player player) {
+            if (!player.isSpectator() && player.containerMenu instanceof CrafterMenu crafterMenu
+                    && crafterMenu.containerId == packet.containerId() && crafterMenu.stillValid(player)
+                    && packet.recipeInputs().size() == CrafterMenu.INPUT_COUNT) {
+                for (int i = 0; i < packet.recipeInputs().size(); i++) {
+                    crafterMenu.slots.get(CrafterMenu.INPUTS_INDEX + i).set(packet.recipeInputs().get(i).copyWithCount(1));
                 }
-            });
+            }
         }
 
-        public void handleCycleIOConfigPacket(ServerboundCycleIOConfigPacket packet, IPayloadContext context) {
-            context.enqueueWork(() -> {
-                var level = context.player().level();
-                BlockEntity be = level.getBlockEntity(packet.pos());
+        public void handleCycleIOConfigPacket(ServerboundCycleIOConfigPacket packet, Player player) {
+            var level = player.level();
+            if (player.isSpectator() || !level.hasChunkAt(packet.pos()) || !player.canReach(packet.pos(), 1)
+                    || !level.mayInteract(player, packet.pos())) return;
+            BlockEntity be = level.getBlockEntity(packet.pos());
 
-                if (be instanceof IOConfigurable ioConfigurable) {
-                    ioConfigurable.cycleIOMode(packet.side());
-                }
-            });
+            if (be instanceof IOConfigurable ioConfigurable) {
+                ioConfigurable.cycleIOMode(packet.side());
+            }
         }
 
-        public void handleEnderfaceInteract(ServerboundEnderfaceInteractPacket packet, IPayloadContext context) {
-            context.enqueueWork(() -> {
-                var pos = packet.getHitResult().getBlockPos();
-                var level = context.player().level();
-                if (EnderfaceBlockEntity.canPlayerInteractWithBlock(context.player(), level, pos)) {
-                    var state = level.getBlockState(pos);
-                    state.useWithoutItem(level, context.player(), packet.getHitResult());
-                }
-            });
+        public void handleEnderfaceInteract(ServerboundEnderfaceInteractPacket packet, Player player) {
+            var pos = packet.getHitResult().getBlockPos();
+            var level = player.level();
+            if (!player.isSpectator() && level.hasChunkAt(pos) && level.mayInteract(player, pos)
+                    && EnderfaceBlockEntity.canPlayerInteractWithBlock(player, level, pos)) {
+                var state = level.getBlockState(pos);
+                state.use(level, player, InteractionHand.MAIN_HAND, packet.getHitResult());
+            }
         }
 
-        public void handleTransferItems(ServerboundTransferItemsPacket packet, IPayloadContext context) {
-            context.enqueueWork(() -> {
-                AbstractContainerMenu menu = context.player().containerMenu;
-                for (int i = packet.endslot(); i < menu.slots.size(); i++) {
-                    for (int j = packet.startslot(); j < packet.endslot(); j++) {
-                        int relative = j - packet.startslot();
-                        Slot recipeSlot = menu.getSlot(j);
-                        Slot invSlot = menu.getSlot(i);
-
-                        if (recipeSlot.getItem().isEmpty()) {
-                            continue;
-                        }
-
-                        if ((recipeSlot.getItem().isEmpty() && packet.stacks().get(relative).test(invSlot.getItem()))
-                                || ItemStack.isSameItemSameComponents(invSlot.getItem(), recipeSlot.getItem())) {
-                            if (packet.maxTransfer()) {
-                                int toTransfer = invSlot.getItem().getMaxStackSize() - recipeSlot.getItem().getCount();
-                                int actual = Math.min(invSlot.getItem().getCount(), toTransfer);
-
-                                if (actual == 0) {
-                                    break;
-                                }
-
-                                recipeSlot.set(invSlot.getItem().copyWithCount(actual +  recipeSlot.getItem().getCount()));
-                                invSlot.getItem().shrink(actual);
-
-                                if (actual == toTransfer) {
-                                    break;
-                                }
-                            } else if (recipeSlot.getItem().isEmpty()) {
-                                recipeSlot.set(invSlot.getItem().copyWithCount(1));
-                                invSlot.getItem().shrink(1);
-                                break;
-                            }
-                        }
-                    }
-                }
-            });
+        public void handleTransferItems(ServerboundTransferItemsPacket packet, Player player) {
+            AbstractContainerMenu menu = player.containerMenu;
+            if (menu.containerId != packet.containerId()) return;
+            int first, end;
+            if (menu instanceof VatMenu) {
+                first = VatMenu.INPUTS_INDEX;
+                end = VatMenu.LAST_INDEX + 1;
+            } else if (menu instanceof WeatherObeliskMenu) {
+                first = WeatherObeliskMenu.INPUTS_INDEX;
+                end = WeatherObeliskMenu.LAST_INDEX + 1;
+            } else if (menu instanceof FluidTankMenu) {
+                first = 0;
+                end = 4;
+            } else {
+                return;
+            }
+            if (packet.startslot() != first || packet.endslot() != end) return;
+            MenuRecipeTransfer.transfer(player, menu, packet.stacks(), first, end, packet.maxTransfer());
         }
     }
 }

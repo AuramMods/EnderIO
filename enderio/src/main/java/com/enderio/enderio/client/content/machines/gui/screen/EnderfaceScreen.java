@@ -36,7 +36,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -495,7 +495,7 @@ public class EnderfaceScreen extends Screen {
                 System.out.println(world.getBlockState(selectedPos));
             }
             // Open menu here
-            PacketDistributor.sendToServer(new ServerboundEnderfaceInteractPacket(
+            EIONetwork.sendToServer(new ServerboundEnderfaceInteractPacket(
                     new BlockHitResult(selectedLocation, selectedSide, selectedPos, false)));
             return true;
         }

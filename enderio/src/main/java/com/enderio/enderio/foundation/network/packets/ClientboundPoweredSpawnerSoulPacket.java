@@ -1,20 +1,19 @@
 package com.enderio.enderio.foundation.network.packets;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.enderio.content.machines.powered_spawner.MobSpawnMode;
 import com.enderio.enderio.foundation.souldata.SpawnerSoul;
 import net.minecraft.network.FriendlyByteBuf;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public record ClientboundPoweredSpawnerSoulPacket(Map<ResourceLocation, SpawnerSoul.SoulData> map) implements CustomPacketPayload {
+public record ClientboundPoweredSpawnerSoulPacket(Map<ResourceLocation, SpawnerSoul.SoulData> map) {
 
-    public static final Type<ClientboundPoweredSpawnerSoulPacket> TYPE = new Type<>(EnderIO.rl("powered_spawner_soul"));
+    public static final ResourceLocation ID = EnderIOAPI.rl("powered_spawner_soul");
 
     public static final PacketCodec<ClientboundPoweredSpawnerSoulPacket> STREAM_CODEC = PacketCodec.composite(
             PacketCodec.map(HashMap::new, PacketCodecs.RESOURCE_LOCATION, SpawnerSoul.STREAM_CODEC),
@@ -26,8 +25,4 @@ public record ClientboundPoweredSpawnerSoulPacket(Map<ResourceLocation, SpawnerS
                         buff.readEnum(MobSpawnMode.class))));
     }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 }

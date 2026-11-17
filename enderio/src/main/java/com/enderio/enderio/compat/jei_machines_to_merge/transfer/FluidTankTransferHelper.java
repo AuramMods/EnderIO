@@ -17,7 +17,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -81,7 +81,7 @@ public class FluidTankTransferHelper implements IRecipeTransferHandler<FluidTank
             } else {
                 toSend.set(2, item);
             }
-            PacketDistributor.sendToServer(new ServerboundTransferItemsPacket(toSend, 0,3 + 1, maxTransfer));
+            EIONetwork.sendToServer(new ServerboundTransferItemsPacket(container.containerId, toSend, 0,3 + 1, maxTransfer));
         }
         return null;
     }
