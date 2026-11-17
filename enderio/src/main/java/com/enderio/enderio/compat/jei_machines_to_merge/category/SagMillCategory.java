@@ -77,8 +77,7 @@ public class SagMillCategory extends MachineRecipeCategory<SagMillingRecipe> {
 
         IRecipeSlotBuilder gridingBallSlot = builder.addSlot(CATALYST, 74, 12).addItemStack(new ItemStack(Items.AIR));
         if (recipe.bonusType().useGrindingBall()) {
-            List<ItemStack> grindingBalls = BuiltInRegistries.ITEM
-                .getDataMap(GrindingBallData.DATA_MAP_TYPE)
+            List<ItemStack> grindingBalls = com.enderio.core.common.datamap.ClientDataMaps.values(GrindingBallData.DATA_MAP_TYPE)
                 .keySet()
                 .stream()
                 .map(BuiltInRegistries.ITEM::get)
@@ -155,7 +154,7 @@ public class SagMillCategory extends MachineRecipeCategory<SagMillingRecipe> {
         GrindingBallData data = recipeSlotsView.getSlotViews()
                 .get(1)
                 .getDisplayedItemStack()
-                .map(i -> i.getItemHolder().getData(GrindingBallData.DATA_MAP_TYPE))
+                .map(i -> com.enderio.core.common.datamap.ClientDataMaps.get(GrindingBallData.DATA_MAP_TYPE, i.getItem()))
                 .orElse(GrindingBallData.IDENTITY);
 
         if (data == null) {

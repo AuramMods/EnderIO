@@ -1,6 +1,7 @@
 package com.enderio.enderio.api.components;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.core.common.datamap.RegistryDataMap;
+import net.minecraft.resources.ResourceLocation;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -12,7 +13,7 @@ import net.minecraft.nbt.Tag;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.Item;
-import net.neoforged.neoforge.registries.datamaps.DataMapType;
+
 import org.slf4j.Logger;
 
 import java.util.Optional;
@@ -40,11 +41,8 @@ public record GrindingBallData(float outputMultiplier, float bonusMultiplier, fl
         GrindingBallData::new
     );
 
-    public static final DataMapType<Item, GrindingBallData> DATA_MAP_TYPE = DataMapType.builder(
-        EnderIO.rl("grinding_ball"),
-        Registries.ITEM,
-        GrindingBallData.CODEC
-    ).synced(GrindingBallData.CODEC, true).build();
+    public static final RegistryDataMap<Item, GrindingBallData> DATA_MAP_TYPE = new RegistryDataMap<>(
+        ResourceLocation.fromNamespaceAndPath("enderio", "grinding_ball"), Registries.ITEM, CODEC, false);
 
     public static final GrindingBallData IDENTITY = new GrindingBallData(1.0f, 1.0f, 1.0f, 0);
 
@@ -58,16 +56,16 @@ public record GrindingBallData(float outputMultiplier, float bonusMultiplier, fl
         if (this.isIdentity()) {
             throw new IllegalStateException("Cannot encode identity GrindingBallData");
         } else {
-            return CODEC.encodeStart(lookupProvider.createSerializationContext(NbtOps.INSTANCE), this).getOrThrow();
+            return CODEC.encodeStart(net.minecraft.resources.RegistryOps.create(NbtOps.INSTANCE, lookupProvider), this).getOrThrow(false, message -> {});
         }
     }
 
     public Tag saveOptional(HolderLookup.Provider lookupProvider) {
-        return this.isIdentity() ? save(lookupProvider) : new CompoundTag();
+        return this.isIdentity() ? new CompoundTag() : save(lookupProvider);
     }
 
     public static Optional<GrindingBallData> parse(HolderLookup.Provider lookupProvider, Tag tag) {
-        return CODEC.parse(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag)
+        return CODEC.parse(net.minecraft.resources.RegistryOps.create(NbtOps.INSTANCE, lookupProvider), tag)
             .resultOrPartial(error -> LOGGER.error("Tried to load invalid GrindingBallData: '{}'", error));
     }
 

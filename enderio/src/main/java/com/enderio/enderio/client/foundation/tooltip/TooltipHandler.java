@@ -75,7 +75,7 @@ public class TooltipHandler {
     }
 
     private static void addGrindingBallTooltips(ItemStack itemStack, List<Component> components, boolean showAdvanced) {
-        GrindingBallData data = itemStack.getItemHolder().getData(GrindingBallData.DATA_MAP_TYPE);
+        GrindingBallData data = com.enderio.core.common.datamap.ClientDataMaps.get(GrindingBallData.DATA_MAP_TYPE, itemStack.getItem());
         if (data != null) {
             components.add(TooltipUtil.styledWithArgs(EIOCommonLang.GRINDINGBALL_MAIN_OUTPUT, (int) (data.outputMultiplier() * 100)));
             components.add(TooltipUtil.styledWithArgs(EIOCommonLang.GRINDINGBALL_BONUS_OUTPUT, (int) (data.bonusMultiplier() * 100)));

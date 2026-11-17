@@ -3,7 +3,8 @@ package com.enderio.enderio.content.machines.vat;
 import com.enderio.core.common.recipes.OutputStack;
 import com.enderio.enderio.foundation.MachineRecipe;
 import com.enderio.enderio.foundation.datamap.VatReagent;
-import com.enderio.enderio.init.EIORecipes;
+import com.enderio.core.common.recipes.RecipeRegistry;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -47,11 +48,11 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
         // Build modifier, ensure we use the correct item for each reagent
         double modifier;
         if (firstInput.is(firstReagent) && secondInput.is(secondReagent)) {
-            modifier = getModifier(firstInput, firstReagent);
-            modifier *= getModifier(secondInput, secondReagent);
+            modifier = getModifier(input.level(), firstInput, firstReagent);
+            modifier *= getModifier(input.level(), secondInput, secondReagent);
         } else {
-            modifier = getModifier(secondInput, firstReagent);
-            modifier *= getModifier(firstInput, secondReagent);
+            modifier = getModifier(input.level(), secondInput, firstReagent);
+            modifier *= getModifier(input.level(), firstInput, secondReagent);
         }
 
         return List.of(OutputStack.of(new FluidStack(output.getFluid(), (int) (output.getAmount() * modifier))));
@@ -84,8 +85,8 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
             Ingredient.of(secondReagent));
     }
 
-    public static double getModifier(ItemStack stack, TagKey<Item> reagent) {
-        var map = stack.getItemHolder().getData(VatReagent.DATA_MAP);
+    public static double getModifier(Level level, ItemStack stack, TagKey<Item> reagent) {
+        var map = VatReagent.DATA_MAP.get(level, stack.getItem());
         if (map != null) {
             return map.getOrDefault(reagent, 1D);
         }
@@ -94,15 +95,15 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return EIORecipes.VAT_FERMENTING.serializer().get();
+        return RecipeRegistry.serializer(EnderIOAPI.rl("vat_fermenting"));
     }
 
     @Override
     public RecipeType<?> getType() {
-        return EIORecipes.VAT_FERMENTING.type().get();
+        return RecipeRegistry.type(EnderIOAPI.rl("vat_fermenting"));
     }
 
-    public record Input(ItemStack firstReagent, ItemStack secondReagent, FluidStack inputFluid)
+    public record Input(ItemStack firstReagent, ItemStack secondReagent, FluidStack inputFluid, Level level)
             implements RecipeInput {
 
         @Override

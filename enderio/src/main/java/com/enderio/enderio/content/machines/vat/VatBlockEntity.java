@@ -137,7 +137,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
 
     private FermentingRecipe.Input createRecipeInput() {
         List<ItemStack> reagents = REAGENTS.getItemStacks(getInventory());
-        return new FermentingRecipe.Input(reagents.get(0), reagents.get(1), INPUT_TANK.getFluid(this));
+        return new FermentingRecipe.Input(reagents.get(0), reagents.get(1), INPUT_TANK.getFluid(this), level);
     }
 
     @Override

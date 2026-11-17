@@ -103,6 +103,7 @@ public class EnderIO {
         EIOFluids.register(modEventBus);
         EIOMenus.register(modEventBus);
         EIORecipes.register(modEventBus);
+        com.enderio.enderio.init.EIODataMaps.register();
         EIOLootModifiers.register(modEventBus);
         EIOParticles.register(modEventBus);
         EIOEntities.register(modEventBus);

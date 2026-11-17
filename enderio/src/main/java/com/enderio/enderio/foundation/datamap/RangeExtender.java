@@ -1,22 +1,18 @@
 package com.enderio.enderio.foundation.datamap;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.core.common.datamap.RegistryDataMap;
+import net.minecraft.resources.ResourceLocation;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
-import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.registries.datamaps.AdvancedDataMapType;
-import net.neoforged.neoforge.registries.datamaps.DataMapValueRemover;
 
 import java.util.Map;
 
 public class RangeExtender {
-    public static final ExtraCodecs.StrictUnboundedMapCodec<TagKey<Block>, Integer> CODEC = ExtraCodecs
-            .strictUnboundedMap(TagKey.hashedCodec(Registries.BLOCK), Codec.INT);
+    public static final Codec<Map<TagKey<Block>, Integer>> CODEC = Codec.unboundedMap(
+        TagKey.hashedCodec(Registries.BLOCK), Codec.INT);
 
-    public static final AdvancedDataMapType<Block, Map<TagKey<Block>, Integer>, DataMapValueRemover.Default<Map<TagKey<Block>, Integer>, Block>> DATA_MAP = AdvancedDataMapType
-            .builder(EnderIO.rl("range_extender"), Registries.BLOCK, CODEC)
-            .synced(CODEC, true)
-            .build();
+    public static final RegistryDataMap<Block, Map<TagKey<Block>, Integer>> DATA_MAP = new RegistryDataMap<>(
+        ResourceLocation.fromNamespaceAndPath("enderio", "range_extender"), Registries.BLOCK, CODEC, true);
 }

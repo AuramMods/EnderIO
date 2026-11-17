@@ -83,7 +83,7 @@ public class VATCategory extends MachineRecipeCategory<FermentingRecipe> {
     }
 
     public static double getModifier(ItemStack stack, TagKey<Item> reagent) {
-        var map = stack.getItemHolder().getData(VatReagent.DATA_MAP);
+        var map = com.enderio.core.common.datamap.ClientDataMaps.get(VatReagent.DATA_MAP, stack.getItem());
         if (map != null) {
             return map.getOrDefault(reagent, 1D);
         }
@@ -95,7 +95,7 @@ public class VATCategory extends MachineRecipeCategory<FermentingRecipe> {
             double mouseX, double mouseY) {
         // left modifier
         ItemStack item = recipeSlotsView.getSlotViews().get(0).getDisplayedItemStack().get();
-        double modifier = FermentingRecipe.getModifier(item, recipe.firstReagent());
+        double modifier = FermentingRecipe.getModifier(Minecraft.getInstance().level, item, recipe.firstReagent());
         String text = "x" + modifier;
         Font font = Minecraft.getInstance().font;
         int x = 28 + 8 - font.width(text) / 2;
@@ -103,7 +103,7 @@ public class VATCategory extends MachineRecipeCategory<FermentingRecipe> {
 
         // right modifier
         item = recipeSlotsView.getSlotViews().get(1).getDisplayedItemStack().get();
-        modifier = FermentingRecipe.getModifier(item, recipe.secondReagent());
+        modifier = FermentingRecipe.getModifier(Minecraft.getInstance().level, item, recipe.secondReagent());
         text = "x" + modifier;
         x = 77 + 8 - font.width(text) / 2;
         guiGraphics.drawString(font, text, x, 22, 4210752, false);

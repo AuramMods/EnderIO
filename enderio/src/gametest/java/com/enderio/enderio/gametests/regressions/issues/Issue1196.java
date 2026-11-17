@@ -54,7 +54,7 @@ public class Issue1196 {
                     long storedInTank = helper.getAmountInHandler(0, 1, 1, EIOFluids.CLOUD_SEED.source().get());
 
                     // Determine how much Cloud Seed is created per craft
-                    var recipeInput = new FermentingRecipe.Input(new ItemStack(Items.DIRT, 1), new ItemStack(Items.COBBLESTONE, 1), new FluidStack(Fluids.WATER, 1000));
+                    var recipeInput = new FermentingRecipe.Input(new ItemStack(Items.DIRT, 1), new ItemStack(Items.COBBLESTONE, 1), new FluidStack(Fluids.WATER, 1000), helper.getLevel());
                     var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.VAT_FERMENTING.type().get(), recipeInput, helper.getLevel()).orElseThrow();
                     var outputs = recipe.value().craft(recipeInput, helper.getLevel().registryAccess());
                     int amountCreated = outputs.getFirst().getFluid().getAmount();

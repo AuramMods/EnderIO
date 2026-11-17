@@ -140,7 +140,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
                 .slotAccess(INPUT)
                 .outputSlot(4)
                 .slotAccess(OUTPUT)
-                .inputSlot((slot, stack) -> stack.getItemHolder().getData(GrindingBallData.DATA_MAP_TYPE) != null)
+                .inputSlot((slot, stack) -> GrindingBallData.DATA_MAP_TYPE.get(level, stack.getItem()) != null)
                 .slotAccess(GRINDING_BALL)
                 .capacitor()
                 .build();
@@ -186,7 +186,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
                 if (recipe.bonusType().useGrindingBall() && grindingBallData.isIdentity()) {
                     ItemStack ball = GRINDING_BALL.getItemStack(inv);
                     if (!ball.isEmpty()) {
-                        GrindingBallData data = ball.getItemHolder().getData(GrindingBallData.DATA_MAP_TYPE);
+                        GrindingBallData data = GrindingBallData.DATA_MAP_TYPE.get(level, ball.getItem());
                         if (data == null) {
                             data = GrindingBallData.IDENTITY;
                         }

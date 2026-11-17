@@ -52,6 +52,7 @@ public class WirelessChargerBlockEntity extends PoweredMachineBlockEntity implem
 
     private ActionRange actionRange;
     private int maxRange;
+    private @Nullable com.enderio.core.common.datamap.DataMaps.Snapshot rangeData;
 
     private @Nullable AABB bounds;
 
@@ -129,6 +130,7 @@ public class WirelessChargerBlockEntity extends PoweredMachineBlockEntity implem
 
     @Override
     public void serverTick() {
+        refreshRangeData();
         super.serverTick();
         if (isActive()) {
             getEnergyStorage().consumeEnergy(energyUpkeep.get());
@@ -138,6 +140,7 @@ public class WirelessChargerBlockEntity extends PoweredMachineBlockEntity implem
 
     @Override
     public void clientTick() {
+        refreshRangeData();
         if (level instanceof ClientLevel clientLevel) {
             getActionRange().addClientParticle(clientLevel, getBlockPos(),
                     MachinesConfig.CLIENT.BLOCKS.WIRELESS_CHARGER_RANGE_COLOR.get());
@@ -148,6 +151,7 @@ public class WirelessChargerBlockEntity extends PoweredMachineBlockEntity implem
     @Override
     public void onLoad() {
         super.onLoad();
+        if (level != null) rangeData = com.enderio.core.common.datamap.DataMaps.snapshot(level.getRecipeManager());
         calculateMaxRange();
         if (level != null && !level.isClientSide() && actionRange.range() > this.maxRange) {
             setActionRange(new ActionRange(maxRange, actionRange.isVisible()));
@@ -206,6 +210,21 @@ public class WirelessChargerBlockEntity extends PoweredMachineBlockEntity implem
         }
     }
 
+    private void refreshRangeData() {
+        if (level == null) return;
+        var current = com.enderio.core.common.datamap.DataMaps.snapshot(level.getRecipeManager());
+        if (current == rangeData) return;
+        rangeData = current;
+        int oldMaximum = maxRange;
+        calculateMaxRange();
+        var updated = new ActionRange(actionRange.range() == oldMaximum ? maxRange : Math.min(actionRange.range(), maxRange),
+            actionRange.isVisible());
+        if (level.isClientSide()) {
+            actionRange = updated;
+            updateBounds();
+        } else setActionRange(updated);
+    }
+
     private void updateBounds() {
         bounds = new AABB(getBlockPos()).inflate(getRange());
     }
@@ -220,7 +239,7 @@ public class WirelessChargerBlockEntity extends PoweredMachineBlockEntity implem
         if (level != null) {
             BlockState bs = level.getBlockState(getBlockPos().above());
             if (bs.is(EIOTags.Blocks.RANGE_EXTENDER)) {
-                Map<TagKey<Block>, Integer> map = bs.getBlockHolder().getData(RangeExtender.DATA_MAP);
+                Map<TagKey<Block>, Integer> map = RangeExtender.DATA_MAP.get(level, bs.getBlock());
                 if (map != null) {
                     rangeExtension = map.getOrDefault(EIOTags.Blocks.RANGE_EXTENDER, 0);
                 }
