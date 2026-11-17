@@ -2,16 +2,19 @@ package com.enderio.core.common.blockentity;
 
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.core.common.network.ClientboundDataSlotChange;
+import com.enderio.core.common.network.CoreNetwork;
 import com.enderio.core.common.network.NetworkDataSlot;
 import com.enderio.core.common.network.ServerboundCDataSlotUpdate;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
@@ -20,17 +23,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.capabilities.BlockCapability;
-import net.minecraftforge.capabilities.BlockCapabilityCache;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -45,8 +43,7 @@ public class EnderBlockEntity extends BlockEntity {
     private final List<NetworkDataSlot<?>> dataSlots = new CopyOnWriteArrayList<>();
     private final List<Runnable> afterDataSync = new CopyOnWriteArrayList<>();
 
-    private final Map<BlockCapability<?, ?>, EnumMap<Direction, BlockCapabilityCache<?, ?>>> selfCapabilities = new HashMap<>();
-    private final Map<BlockCapability<?, ?>, EnumMap<Direction, BlockCapabilityCache<?, ?>>> neighbourCapabilities = new HashMap<>();
+    private final List<NetworkDataSlot<?>> clientUpdatableDataSlots = new ArrayList<>();
 
     public EnderBlockEntity(BlockEntityType<?> type, BlockPos worldPosition, BlockState blockState) {
         super(type, worldPosition, blockState);
@@ -103,8 +100,9 @@ public class EnderBlockEntity extends BlockEntity {
      * This is the initial packet sent to a client loading the block (or when it is placed).
      */
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag data = super.getUpdateTag(registries);
+    public CompoundTag getUpdateTag() {
+        CompoundTag data = super.getUpdateTag();
+        HolderLookup.Provider registries = registryLookup();
 
         ListTag dataList = new ListTag();
         for (int i = 0; i < dataSlots.size(); i++) {
@@ -121,18 +119,19 @@ public class EnderBlockEntity extends BlockEntity {
         data.put(DATA, dataList);
 
         // NEW: Add synced data properties.
-        saveAdditionalSynced(data, registries);
+        saveAdditionalSynced(data);
 
         return data;
     }
 
     /**
      * This is the client handling the tag above.
-     * @param syncData The {@link CompoundTag} sent from {@link BlockEntity#getUpdateTag(HolderLookup.Provider)}
+     * @param syncData The {@link CompoundTag} sent from {@link BlockEntity#getUpdateTag()}
      */
     @Override
-    public void handleUpdateTag(CompoundTag syncData, HolderLookup.Provider lookupProvider) {
-        super.handleUpdateTag(syncData, lookupProvider);
+    public void handleUpdateTag(CompoundTag syncData) {
+        super.handleUpdateTag(syncData);
+        HolderLookup.Provider lookupProvider = registryLookup();
 
         if (syncData.contains(DATA, Tag.TAG_LIST)) {
             ListTag dataList = syncData.getList(DATA, Tag.TAG_COMPOUND);
@@ -140,7 +139,9 @@ public class EnderBlockEntity extends BlockEntity {
             for (Tag dataEntry : dataList) {
                 if (dataEntry instanceof CompoundTag slotData) {
                     int slotIdx = slotData.getInt(INDEX);
-                    dataSlots.get(slotIdx).parse(lookupProvider, Objects.requireNonNull(slotData.get(DATA)));
+                    if (slotIdx >= 0 && slotIdx < dataSlots.size() && slotData.contains(DATA)) {
+                        dataSlots.get(slotIdx).parse(lookupProvider, Objects.requireNonNull(slotData.get(DATA)));
+                    }
                 }
             }
 
@@ -163,7 +164,7 @@ public class EnderBlockEntity extends BlockEntity {
         }
 
         // Fine to use a normal byte buf here, we're not using codecs in here.
-        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), level.registryAccess());
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
         try{
             buf.writeInt(needsUpdate.size());
             needsUpdate.forEach(i -> {
@@ -184,6 +185,14 @@ public class EnderBlockEntity extends BlockEntity {
         return slot;
     }
 
+    /** Explicitly permits this legacy slot to be edited from its open block-entity menu. */
+    @Deprecated(forRemoval = true, since = "7.1")
+    public <T extends NetworkDataSlot<?>> T addUpdatableDataSlot(T slot) {
+        addDataSlot(slot);
+        clientUpdatableDataSlots.add(slot);
+        return slot;
+    }
+
     @Deprecated(forRemoval = true, since = "7.1")
     public void addAfterSyncRunnable(Runnable runnable) {
         afterDataSync.add(runnable);
@@ -198,14 +207,14 @@ public class EnderBlockEntity extends BlockEntity {
             return;
         }
 
-        if (dataSlots.contains(slot)) {
-            RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), level.registryAccess());
+        if (clientUpdatableDataSlots.contains(slot)) {
+            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             try{
                 buf.writeInt(dataSlots.indexOf(slot));
                 slot.write(buf, value);
                 byte[] data = new byte[buf.readableBytes()];
                 buf.readBytes(data);
-                PacketDistributor.sendToServer(new ClientboundDataSlotChange(getBlockPos(), data));
+                CoreNetwork.sendToServer(new ClientboundDataSlotChange(getBlockPos(), data));
             }finally {
                 buf.release(); // release the buffer safely
             }
@@ -222,15 +231,18 @@ public class EnderBlockEntity extends BlockEntity {
         var syncData = createBufferSlotUpdate();
         if (syncData != null && level instanceof ServerLevel serverLevel) {
             setChanged();
-            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(getBlockPos()),
+            CoreNetwork.sendToPlayersTrackingChunk(serverLevel, new ChunkPos(getBlockPos()),
                     new ServerboundCDataSlotUpdate(getBlockPos(), syncData));
         }
     }
 
     @Deprecated(forRemoval = true, since = "7.1")
-    public void clientHandleBufferSync(RegistryFriendlyByteBuf buf) {
-        for (int amount = buf.readInt(); amount > 0; amount--) {
+    public void clientHandleBufferSync(FriendlyByteBuf buf) {
+        int count = buf.readInt();
+        if (count < 0 || count > dataSlots.size()) throw new DecoderException("Invalid data slot count: " + count);
+        for (int i = 0; i < count; i++) {
             int index = buf.readInt();
+            if (index < 0 || index >= dataSlots.size()) throw new DecoderException("Invalid data slot index: " + index);
             dataSlots.get(index).read(buf);
         }
 
@@ -240,7 +252,7 @@ public class EnderBlockEntity extends BlockEntity {
     }
 
     @Deprecated(forRemoval = true, since = "7.1")
-    public void serverHandleBufferChange(RegistryFriendlyByteBuf buf) {
+    public void serverHandleBufferChange(FriendlyByteBuf buf) {
         int index;
         try {
             index = buf.readInt();
@@ -248,75 +260,49 @@ public class EnderBlockEntity extends BlockEntity {
             throw new IllegalStateException("Invalid buffer was passed over the network to the server.");
         }
 
-        dataSlots.get(index).read(buf);
+        if (index < 0 || index >= dataSlots.size()) throw new DecoderException("Invalid data slot index: " + index);
+        var slot = dataSlots.get(index);
+        if (!clientUpdatableDataSlots.contains(slot)) throw new DecoderException("Data slot is server-owned: " + index);
+        slot.read(buf);
     }
 
     // New Sync
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        saveAdditionalSynced(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        saveAdditionalSynced(tag);
     }
 
     /**
      * Override this to write data which should be synced over the network.
      * Must be opted-in by overriding {@link BlockEntity#getUpdatePacket}.
      */
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
+    protected void saveAdditionalSynced(CompoundTag tag) {
     }
 
     // endregion
 
+    private HolderLookup.Provider registryLookup() {
+        return level == null ? RegistryAccess.EMPTY : level.registryAccess();
+    }
+
     // region Neighboring Capabilities
 
-    // TODO: NEO-PORT: We might want handling for Void contexts.
-    // However cannot have two methods with same method name and different context
-    // type params :(
-
     @Nullable
-    protected <T> T getSelfCapability(BlockCapability<T, Direction> capability, Direction side) {
-        if (level == null) {
-            return null;
-        }
-
-        if (!selfCapabilities.containsKey(capability)) {
-            // We've not seen this capability before, time to register it!
-            selfCapabilities.put(capability, new EnumMap<>(Direction.class));
-
-            for (Direction direction : Direction.values()) {
-                populateSelfCachesFor(direction, capability);
-            }
-        }
-
-        if (!selfCapabilities.get(capability).containsKey(side)) {
-            return null;
-        }
-
-        // noinspection unchecked
-        return (T) selfCapabilities.get(capability).get(side).getCapability();
+    protected <T> T getSelfCapability(Capability<T> capability, @Nullable Direction side) {
+        if (!(level instanceof ServerLevel)) return null;
+        return getCapability(capability, side).orElse(null);
     }
 
-    private void populateSelfCachesFor(Direction direction, BlockCapability<?, Direction> capability) {
-        if (level instanceof ServerLevel serverLevel) {
-            selfCapabilities.get(capability)
-                    .put(direction, BlockCapabilityCache.create(capability, serverLevel, getBlockPos(), direction));
-        }
-    }
-
-    // TODO: Ensure SERVER usage sometime.
+    /** Resolve the current native provider, so unload, replacement and invalidation cannot leave a stale cache. */
     @Nullable
-    protected <T> T getNeighbouringCapability(BlockCapability<T, Direction> capability, Direction side) {
-        if (level == null || !(level instanceof ServerLevel serverLevel)) {
-            return null;
-        }
-
-        var sidedCaches = neighbourCapabilities.computeIfAbsent(capability, c -> new EnumMap<>(Direction.class));
-        var cache = sidedCaches.computeIfAbsent(side,
-                s -> BlockCapabilityCache.create(capability, serverLevel, getBlockPos().relative(s), s.getOpposite()));
-
-        // noinspection unchecked
-        return (T) cache.getCapability();
+    protected <T> T getNeighbouringCapability(Capability<T> capability, Direction side) {
+        if (!(level instanceof ServerLevel serverLevel)) return null;
+        BlockPos target = getBlockPos().relative(side);
+        if (!serverLevel.hasChunkAt(target)) return null;
+        BlockEntity neighbour = serverLevel.getBlockEntity(target);
+        return neighbour == null ? null : neighbour.getCapability(capability, side.getOpposite()).orElse(null);
     }
 
     // endregion

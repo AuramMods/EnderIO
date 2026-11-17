@@ -5,10 +5,10 @@ import com.enderio.core.common.menu.BaseEnderMenu;
 import com.enderio.core.common.network.menu.ClientboundSyncSlotDataPacket;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.network.handling.IPayloadContext;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
+/** Invoked on the client game thread by CoreNetwork. */
 public class ClientPayloadHandler {
     private static final ClientPayloadHandler INSTANCE = new ClientPayloadHandler();
 
@@ -16,49 +16,37 @@ public class ClientPayloadHandler {
         return INSTANCE;
     }
 
-    public void handleEmitParticle(final EmitParticlePacket packet, final IPayloadContext context) {
-        context.enqueueWork(() -> clientAddParticle(packet));
+    public void handleEmitParticle(EmitParticlePacket packet, NetworkEvent.Context context) {
+        clientAddParticle(packet);
     }
 
-    public void handleEmitParticles(final EmitParticlesPacket packet, final IPayloadContext context) {
-        context.enqueueWork(() -> {
-            for (var particle : packet.particles()) {
-                clientAddParticle(particle);
-            }
-        });
+    public void handleEmitParticles(EmitParticlesPacket packet, NetworkEvent.Context context) {
+        packet.particles().forEach(this::clientAddParticle);
     }
 
     private void clientAddParticle(EmitParticlePacket packet) {
-        Minecraft.getInstance().level.addParticle(packet.particleOptions(), packet.x(), packet.y(), packet.z(),
-                packet.xSpeed(), packet.ySpeed(), packet.zSpeed());
+        var level = Minecraft.getInstance().level;
+        if (level != null) level.addParticle(packet.particleOptions(), packet.x(), packet.y(), packet.z(),
+            packet.xSpeed(), packet.ySpeed(), packet.zSpeed());
     }
 
-    public void handleDataSlotUpdate(ServerboundCDataSlotUpdate update, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            var level = context.player().level();
-            BlockEntity be = level.getBlockEntity(update.pos());
-            if (be instanceof EnderBlockEntity enderBlockEntity) {
-                var buf = new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(update.slotData()),
-                        level.registryAccess());
-                try{
-                    enderBlockEntity.clientHandleBufferSync(buf);
-                } finally {
-                    buf.release(); // release the buffer safely
-                }
+    public void handleDataSlotUpdate(ServerboundCDataSlotUpdate update, NetworkEvent.Context context) {
+        var level = Minecraft.getInstance().level;
+        if (level != null && level.getBlockEntity(update.pos()) instanceof EnderBlockEntity entity) {
+            var buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(update.slotData()));
+            try {
+                entity.clientHandleBufferSync(buffer);
+            } finally {
+                buffer.release();
             }
-        });
+        }
     }
 
-    public void handleSyncSlotDataPacket(ClientboundSyncSlotDataPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            if (context.player().containerMenu.containerId == packet.containerId()) {
-                if (context.player().containerMenu instanceof BaseEnderMenu enderMenu) {
-                    for (var pair : packet.payloads()) {
-                        enderMenu.clientHandleIncomingPayload(pair.index(), pair.payload());
-                    }
-                }
-            }
-
-        });
+    public void handleSyncSlotDataPacket(ClientboundSyncSlotDataPacket packet, NetworkEvent.Context context) {
+        var player = Minecraft.getInstance().player;
+        if (player != null && player.containerMenu.containerId == packet.containerId()
+                && player.containerMenu instanceof BaseEnderMenu menu) {
+            for (var pair : packet.payloads()) menu.clientHandleIncomingPayload(pair.index(), pair.payload());
+        }
     }
 }

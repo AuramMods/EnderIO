@@ -1,12 +1,12 @@
 package com.enderio.core.common.network.menu.payload;
 
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
 import net.minecraftforge.fluids.FluidStack;
 
 public record FluidStackSlotPayload(FluidStack value) implements SlotPayload {
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, FluidStackSlotPayload> STREAM_CODEC = FluidStack.OPTIONAL_STREAM_CODEC
+    public static final PacketCodec<FluidStackSlotPayload> STREAM_CODEC = PacketCodecs.FLUID_STACK
             .map(FluidStackSlotPayload::new, FluidStackSlotPayload::value);
 
     @Override

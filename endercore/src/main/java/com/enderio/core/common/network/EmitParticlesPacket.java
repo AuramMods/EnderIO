@@ -1,24 +1,18 @@
 package com.enderio.core.common.network;
 
-import com.enderio.core.EnderCore;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import java.util.ArrayList;
 import java.util.List;
 
 // TODO: Not a big fan of this..
-public record EmitParticlesPacket(List<EmitParticlePacket> particles) implements CustomPacketPayload {
-
-    public static final Type<EmitParticlesPacket> TYPE = new Type<>(EnderCore.loc("emit_particles"));
+public record EmitParticlesPacket(List<EmitParticlePacket> particles) {
 
     // @formatter:off
-    public static final StreamCodec<RegistryFriendlyByteBuf, EmitParticlesPacket> STREAM_CODEC =
-        EmitParticlePacket.STREAM_CODEC.apply(ByteBufCodecs.list())
+    public static final PacketCodec<EmitParticlesPacket> STREAM_CODEC =
+        EmitParticlePacket.STREAM_CODEC.list()
             .map(EmitParticlesPacket::new, EmitParticlesPacket::particles);
     // @formatter:on
 
@@ -26,10 +20,6 @@ public record EmitParticlesPacket(List<EmitParticlePacket> particles) implements
         this(new ArrayList<>());
     }
 
-    @Override
-    public Type<EmitParticlesPacket> type() {
-        return TYPE;
-    }
 
     public void add(EmitParticlePacket particlePacket) {
         particles.add(particlePacket);

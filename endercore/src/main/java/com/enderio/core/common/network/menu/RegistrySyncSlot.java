@@ -79,7 +79,7 @@ public abstract class RegistrySyncSlot<T> implements SyncSlot {
     @Override
     public ChangeType detectChanges() {
         var currentValue = get();
-        var changeType = Objects.equals(currentValue, lastValue) ? ChangeType.FULL : ChangeType.NONE;
+        var changeType = Objects.equals(currentValue, lastValue) ? ChangeType.NONE : ChangeType.FULL;
         lastValue = currentValue;
         return changeType;
     }

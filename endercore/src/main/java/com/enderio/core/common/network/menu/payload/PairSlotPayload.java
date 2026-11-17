@@ -1,11 +1,10 @@
 package com.enderio.core.common.network.menu.payload;
 
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 
 public record PairSlotPayload(SlotPayload left, SlotPayload right) implements SlotPayload {
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, PairSlotPayload> STREAM_CODEC = StreamCodec.composite(
+    public static final PacketCodec<PairSlotPayload> STREAM_CODEC = PacketCodec.composite(
             SlotPayload.STREAM_CODEC, PairSlotPayload::left, SlotPayload.STREAM_CODEC, PairSlotPayload::right,
             PairSlotPayload::new);
 

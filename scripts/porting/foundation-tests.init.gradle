@@ -10,7 +10,18 @@ allprojects {
                     'src/main/java/com/enderio/core/common/serialization/OrderedListCodec.java',
                     'src/test/java/com/enderio/core/serialization/OrderedListCodecTests.java'
                 )
-                classpath = configurations.testRuntimeClasspath
+                source fileTree('src/main/java') {
+                    include 'com/enderio/core/common/network/codec/*.java'
+                    include 'com/enderio/core/common/network/menu/payload/*.java'
+                    include 'com/enderio/core/common/network/menu/*SyncSlot.java'
+                    include 'com/enderio/core/common/network/menu/SyncSlot.java'
+                    include 'com/enderio/core/common/network/menu/ClientboundSyncSlotDataPacket.java'
+                    include 'com/enderio/core/common/network/menu/ServerboundSetSyncSlotDataPacket.java'
+                    include 'com/enderio/core/common/network/NetworkDataSlot.java'
+                    include 'com/enderio/core/common/network/EmitParticlePacket.java'
+                }
+                source fileTree('src/test/java') { include 'com/enderio/core/network/*.java' }
+                classpath = configurations.compileClasspath + configurations.testRuntimeClasspath
                 destinationDirectory = classes
                 javaCompiler = javaToolchains.compilerFor(java.toolchain)
                 options.encoding = 'UTF-8'
@@ -20,8 +31,13 @@ allprojects {
                 testClassesDirs = files(classes)
                 classpath = files(classes) + configurations.testRuntimeClasspath
                 javaLauncher = javaToolchains.launcherFor(java.toolchain)
+                workingDir = layout.buildDirectory.dir('port-foundation-tests/runtime').get().asFile
+                doFirst { workingDir.mkdirs() }
                 useJUnitPlatform()
-                filter { includeTestsMatching 'com.enderio.core.serialization.OrderedListCodecTests' }
+                filter {
+                    includeTestsMatching 'com.enderio.core.serialization.OrderedListCodecTests'
+                    includeTestsMatching 'com.enderio.core.network.*'
+                }
             }
         }
     }

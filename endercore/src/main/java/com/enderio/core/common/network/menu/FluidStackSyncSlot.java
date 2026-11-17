@@ -6,7 +6,6 @@ import com.enderio.core.common.network.menu.payload.SlotPayload;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -67,11 +66,11 @@ public abstract class FluidStackSyncSlot implements SyncSlot {
     @Override
     public ChangeType detectChanges() {
         var currentValue = get();
-        if (Objects.equals(currentValue, lastValue)) {
+        if (currentValue.isFluidStackIdentical(lastValue)) {
             return ChangeType.NONE;
         }
 
-        var changeType = currentValue.getFluid().isSame(lastValue.getFluid()) ? ChangeType.PARTIAL : ChangeType.FULL;
+        var changeType = currentValue.isFluidEqual(lastValue) ? ChangeType.PARTIAL : ChangeType.FULL;
         lastValue = currentValue.copy();
         return changeType;
     }
@@ -88,7 +87,9 @@ public abstract class FluidStackSyncSlot implements SyncSlot {
     @Override
     public void unpackPayload(Level level, SlotPayload payload) {
         if (payload instanceof IntSlotPayload intSlotPayload) {
-            set(get().copyWithAmount(intSlotPayload.value()));
+            FluidStack updated = get().copy();
+            updated.setAmount(intSlotPayload.value());
+            set(updated);
         } else if (payload instanceof FluidStackSlotPayload fluidStackSlotPayload) {
             set(fluidStackSlotPayload.value());
         }

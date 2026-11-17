@@ -1,8 +1,7 @@
 package com.enderio.core.common.menu;
 
 import com.enderio.core.common.network.menu.BlockEntityMenuHelper;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.world.Container;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
@@ -29,7 +28,7 @@ public abstract class BaseBlockEntityMenu<T extends BlockEntity> extends BaseEnd
      */
     @SafeVarargs
     protected BaseBlockEntityMenu(@Nullable MenuType<?> menuType, int containerId, Inventory playerInventory,
-            RegistryFriendlyByteBuf buf, BlockEntityType<? extends T>... blockEntityTypes) {
+            FriendlyByteBuf buf, BlockEntityType<? extends T>... blockEntityTypes) {
         super(menuType, containerId, playerInventory);
         this.blockEntity = BlockEntityMenuHelper.getBlockEntityFrom(buf, playerInventory.player.level(),
                 blockEntityTypes);
@@ -41,6 +40,9 @@ public abstract class BaseBlockEntityMenu<T extends BlockEntity> extends BaseEnd
 
     @Override
     public boolean stillValid(Player player) {
-        return Container.stillValidBlockEntity(getBlockEntity(), player);
+        var level = blockEntity.getLevel();
+        var pos = blockEntity.getBlockPos();
+        return level != null && level.getBlockEntity(pos) == blockEntity
+            && player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 64.0;
     }
 }

@@ -1,14 +1,14 @@
 package com.enderio.core.common.network.menu.payload;
 
+import com.enderio.core.common.network.codec.PacketCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
 
 public record BlockPosSlotPayload(BlockPos value) implements SlotPayload {
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, BlockPosSlotPayload> STREAM_CODEC = BlockPos.STREAM_CODEC
+    public static final PacketCodec<BlockPosSlotPayload> STREAM_CODEC = PacketCodecs.BLOCK_POS
             .map(BlockPosSlotPayload::new, BlockPosSlotPayload::value)
-            .cast();
+            ;
 
     @Override
     public SlotPayloadType type() {

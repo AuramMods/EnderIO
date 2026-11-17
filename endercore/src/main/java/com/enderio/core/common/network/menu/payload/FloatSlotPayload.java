@@ -1,14 +1,13 @@
 package com.enderio.core.common.network.menu.payload;
 
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
 
 public class FloatSlotPayload implements SlotPayload {
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, FloatSlotPayload> STREAM_CODEC = ByteBufCodecs.FLOAT
+    public static final PacketCodec<FloatSlotPayload> STREAM_CODEC = PacketCodecs.FLOAT
             .map(FloatSlotPayload::new, FloatSlotPayload::value)
-            .cast();
+            ;
 
     private final float value;
 

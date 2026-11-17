@@ -1,10 +1,9 @@
 package com.enderio.core.common.util;
 
+import com.enderio.core.common.network.codec.PacketCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.serialization.Codec;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.HashMap;
@@ -12,12 +11,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public record NamedFluidContents(ImmutableMap<String, FluidStack> fluidMap) {
-    public static final Codec<NamedFluidContents> CODEC = Codec.unboundedMap(Codec.STRING, FluidStack.OPTIONAL_CODEC)
+    public static final Codec<NamedFluidContents> CODEC = Codec.unboundedMap(Codec.STRING, FluidStack.CODEC)
             .xmap(contents -> new NamedFluidContents(ImmutableMap.copyOf(contents)), NamedFluidContents::fluidMap);
 
     // @formatter:off
-    public static final StreamCodec<RegistryFriendlyByteBuf, NamedFluidContents> STREAM_CODEC = ByteBufCodecs.map(
-        HashMap::new, ByteBufCodecs.STRING_UTF8, FluidStack.OPTIONAL_STREAM_CODEC)
+    public static final PacketCodec<NamedFluidContents> STREAM_CODEC = PacketCodec.map( PacketCodecs.STRING_UTF8, PacketCodecs.FLUID_STACK)
         .map(contents -> new NamedFluidContents(ImmutableMap.copyOf(contents)), i -> new HashMap<>(i.fluidMap()));
     // @formatter:on
 

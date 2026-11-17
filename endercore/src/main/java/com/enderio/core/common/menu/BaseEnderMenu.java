@@ -1,13 +1,13 @@
 package com.enderio.core.common.menu;
 
-import com.enderio.core.common.network.menu.ClientboundSyncSlotDataPacket;
+import com.enderio.core.common.network.CoreNetwork;
 import com.enderio.core.common.network.menu.ClientboundSyncSlotDataPacket.PayloadPair;
+import com.enderio.core.common.network.menu.ClientboundSyncSlotDataPacket;
 import com.enderio.core.common.network.menu.ContainerSyncData;
 import com.enderio.core.common.network.menu.ServerboundSetSyncSlotDataPacket;
-import com.enderio.core.common.network.menu.SyncSlot;
 import com.enderio.core.common.network.menu.SyncSlot.ChangeType;
+import com.enderio.core.common.network.menu.SyncSlot;
 import com.enderio.core.common.network.menu.payload.SlotPayload;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
@@ -15,7 +15,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -118,13 +117,13 @@ public abstract class BaseEnderMenu extends AbstractContainerMenu {
             throw new IllegalArgumentException("This slot is not client updatable!");
         }
 
-        if (playerInventory.player instanceof LocalPlayer) {
+        if (playerInventory.player.level().isClientSide) {
             short slotIndex = (short) clientUpdateSyncSlots.indexOf(syncSlot);
             ChangeType changeType = syncSlot.detectChanges();
 
             if (changeType != ChangeType.NONE) {
                 var payload = syncSlot.createPayload(playerInventory.player.level(), ChangeType.FULL);
-                PacketDistributor.sendToServer(new ServerboundSetSyncSlotDataPacket(containerId, slotIndex, payload));
+                CoreNetwork.sendToServer(new ServerboundSetSyncSlotDataPacket(containerId, slotIndex, payload));
             }
         }
     }
@@ -175,7 +174,7 @@ public abstract class BaseEnderMenu extends AbstractContainerMenu {
             }
 
             if (!payloads.isEmpty()) {
-                PacketDistributor.sendToPlayer(player, new ClientboundSyncSlotDataPacket(containerId, payloads));
+                CoreNetwork.sendToPlayer(player, new ClientboundSyncSlotDataPacket(containerId, payloads));
             }
         }
     }
@@ -199,7 +198,7 @@ public abstract class BaseEnderMenu extends AbstractContainerMenu {
             }
 
             if (!payloads.isEmpty()) {
-                PacketDistributor.sendToPlayer(player, new ClientboundSyncSlotDataPacket(containerId, payloads));
+                CoreNetwork.sendToPlayer(player, new ClientboundSyncSlotDataPacket(containerId, payloads));
             }
         }
     }

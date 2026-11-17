@@ -1,24 +1,14 @@
 package com.enderio.core.common.network.menu;
 
-import com.enderio.core.EnderCore;
+import com.enderio.core.common.network.codec.PacketCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.menu.payload.SlotPayload;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record ServerboundSetSyncSlotDataPacket(int containerId, short index, SlotPayload payload)
-        implements CustomPacketPayload {
+public record ServerboundSetSyncSlotDataPacket(int containerId, short index, SlotPayload payload) {
 
-    public static final Type<ServerboundSetSyncSlotDataPacket> TYPE = new Type<>(EnderCore.loc("set_slot_data"));
-
-    public static final StreamCodec<RegistryFriendlyByteBuf, ServerboundSetSyncSlotDataPacket> STREAM_CODEC = StreamCodec
-            .composite(ByteBufCodecs.INT, ServerboundSetSyncSlotDataPacket::containerId, ByteBufCodecs.SHORT,
+    public static final PacketCodec<ServerboundSetSyncSlotDataPacket> STREAM_CODEC = PacketCodec
+            .composite(PacketCodecs.INT, ServerboundSetSyncSlotDataPacket::containerId, PacketCodecs.SHORT,
                     ServerboundSetSyncSlotDataPacket::index, SlotPayload.STREAM_CODEC,
                     ServerboundSetSyncSlotDataPacket::payload, ServerboundSetSyncSlotDataPacket::new);
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 }

@@ -1,37 +1,67 @@
 package com.enderio.core.common.network;
 
 import com.enderio.core.EnderCore;
+import com.enderio.core.common.network.codec.PacketCodec;
 import com.enderio.core.common.network.menu.ClientboundSyncSlotDataPacket;
 import com.enderio.core.common.network.menu.ServerboundSetSyncSlotDataPacket;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.network.event.RegisterPayloadHandlersEvent;
-import net.minecraftforge.network.registration.PayloadRegistrar;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.simple.SimpleChannel;
 
-@EventBusSubscriber(modid = EnderCore.MOD_ID)
-public class CoreNetwork {
-    private static final String PROTOCOL_VERSION = "1.0";
+import java.util.function.BiConsumer;
 
-    @SubscribeEvent
-    public static void register(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
+public final class CoreNetwork {
+    private static final String PROTOCOL_VERSION = "forge-1";
+    private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(EnderCore.loc("main"),
+        () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals, PROTOCOL_VERSION::equals);
 
-        registrar.playToClient(EmitParticlePacket.TYPE, EmitParticlePacket.STREAM_CODEC,
-                ClientPayloadHandler.getInstance()::handleEmitParticle);
+    private CoreNetwork() {}
 
-        registrar.playToClient(EmitParticlesPacket.TYPE, EmitParticlesPacket.STREAM_CODEC,
-                ClientPayloadHandler.getInstance()::handleEmitParticles);
+    public static void register() {
+        client(0, EmitParticlePacket.class, EmitParticlePacket.STREAM_CODEC,
+            (packet, context) -> ClientPayloadHandler.getInstance().handleEmitParticle(packet, context));
+        client(1, EmitParticlesPacket.class, EmitParticlesPacket.STREAM_CODEC,
+            (packet, context) -> ClientPayloadHandler.getInstance().handleEmitParticles(packet, context));
+        client(2, ServerboundCDataSlotUpdate.class, ServerboundCDataSlotUpdate.STREAM_CODEC,
+            (packet, context) -> ClientPayloadHandler.getInstance().handleDataSlotUpdate(packet, context));
+        register(3, ClientboundDataSlotChange.class, ClientboundDataSlotChange.STREAM_CODEC,
+            NetworkDirection.PLAY_TO_SERVER, ServerPayloadHandler.getInstance()::handleDataSlotChange);
+        client(4, ClientboundSyncSlotDataPacket.class, ClientboundSyncSlotDataPacket.STREAM_CODEC,
+            (packet, context) -> ClientPayloadHandler.getInstance().handleSyncSlotDataPacket(packet, context));
+        register(5, ServerboundSetSyncSlotDataPacket.class, ServerboundSetSyncSlotDataPacket.STREAM_CODEC,
+            NetworkDirection.PLAY_TO_SERVER, ServerPayloadHandler.getInstance()::handleSetSyncSlotDataPacket);
+    }
 
-        registrar.playToClient(ServerboundCDataSlotUpdate.TYPE, ServerboundCDataSlotUpdate.STREAM_CODEC,
-                ClientPayloadHandler.getInstance()::handleDataSlotUpdate);
+    private static <T> void client(int id, Class<T> type, PacketCodec<T> codec, BiConsumer<T, NetworkEvent.Context> handler) {
+        register(id, type, codec, NetworkDirection.PLAY_TO_CLIENT, (packet, context) ->
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handler.accept(packet, context)));
+    }
 
-        registrar.playToServer(ClientboundDataSlotChange.TYPE, ClientboundDataSlotChange.STREAM_CODEC,
-                ServerPayloadHandler.getInstance()::handleDataSlotChange);
+    private static <T> void register(int id, Class<T> type, PacketCodec<T> codec, NetworkDirection direction,
+            BiConsumer<T, NetworkEvent.Context> handler) {
+        CHANNEL.messageBuilder(type, id, direction)
+            .encoder((packet, buffer) -> codec.encode(buffer, packet))
+            .decoder(codec::decode)
+            .consumerMainThread((packet, context) -> handler.accept(packet, context.get()))
+            .add();
+    }
 
-        registrar.playToClient(ClientboundSyncSlotDataPacket.TYPE, ClientboundSyncSlotDataPacket.STREAM_CODEC,
-                ClientPayloadHandler.getInstance()::handleSyncSlotDataPacket);
+    public static void sendToServer(Object packet) {
+        CHANNEL.sendToServer(packet);
+    }
 
-        registrar.playToServer(ServerboundSetSyncSlotDataPacket.TYPE, ServerboundSetSyncSlotDataPacket.STREAM_CODEC,
-                ServerPayloadHandler.getInstance()::handleSetSyncSlotDataPacket);
+    public static void sendToPlayer(ServerPlayer player, Object packet) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+    }
+
+    public static void sendToPlayersTrackingChunk(ServerLevel level, ChunkPos pos, Object packet) {
+        CHANNEL.send(PacketDistributor.TRACKING_CHUNK.with(() -> level.getChunk(pos.x, pos.z)), packet);
     }
 }

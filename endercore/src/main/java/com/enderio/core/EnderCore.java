@@ -1,5 +1,6 @@
 package com.enderio.core;
 
+import com.enderio.core.common.network.CoreNetwork;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
 
@@ -10,6 +11,10 @@ public class EnderCore {
     // Stored here just to make sure its the same.
     // This definition is used *everywhere* else.
     public static final String MOD_ID = "endercore";
+
+    public EnderCore() {
+        CoreNetwork.register();
+    }
 
     public static ResourceLocation loc(String name) {
         return new ResourceLocation(MOD_ID, name);
