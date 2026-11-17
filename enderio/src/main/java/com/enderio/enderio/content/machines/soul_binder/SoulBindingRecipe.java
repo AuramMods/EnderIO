@@ -34,7 +34,12 @@ import java.util.Optional;
 
 public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, int experience,
         Optional<ResourceLocation> entityType, Optional<MobCategory> mobCategory, Optional<String> soulData,
-        boolean copyInputComponents) implements MachineRecipe<SoulBindingRecipe.Input> {
+        boolean copyInputComponents, ResourceLocation id) implements MachineRecipe<SoulBindingRecipe.Input> {
+
+    public SoulBindingRecipe(ItemStack output, Ingredient input, int energy, int experience, Optional<ResourceLocation> entityType, Optional<MobCategory> mobCategory, Optional<String> soulData, boolean copyInputComponents) { this(output, input, energy, experience, entityType, mobCategory, soulData, copyInputComponents, null); }
+
+    public SoulBindingRecipe withId(ResourceLocation id) { return new SoulBindingRecipe(output, input, energy, experience, entityType, mobCategory, soulData, copyInputComponents, java.util.Objects.requireNonNull(id)); }
+
 
     public Ingredient getInput() {
         return input;
@@ -50,10 +55,13 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
         ItemStack vial = input.getItem(0);
 
         List<OutputStack> results = getResultStacks(registryAccess);
-        ItemStack result = results.getFirst().getItem();
+        ItemStack result = results.get(0).getItem();
 
         if (copyInputComponents) {
-            result.applyComponents(input.itemToBind.getComponents());
+            if (input.itemToBind.hasTag()) {
+                result.getOrCreateTag().merge(input.itemToBind.getTag().copy());
+                com.enderio.core.common.capability.ItemCapabilityRegistry.refresh(result);
+            }
         }
 
         var vialSoulBindable = vial.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
@@ -161,11 +169,11 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
         }
     }
 
-    public static class Serializer implements RecipeSerializer<SoulBindingRecipe> {
+    public static class Serializer extends com.enderio.core.common.recipes.CodecRecipeSerializer<SoulBindingRecipe> {
 
         private static final MapCodec<SoulBindingRecipe> CODEC = RecordCodecBuilder.<SoulBindingRecipe>mapCodec(instance -> instance
-                .group(ItemStack.CODEC.fieldOf("output").forGetter(SoulBindingRecipe::output),
-                        Ingredient.CODEC_NONEMPTY.fieldOf("input").forGetter(SoulBindingRecipe::input),
+                .group(com.enderio.core.common.recipes.RecipeStackCodecs.ITEM.fieldOf("output").forGetter(SoulBindingRecipe::output),
+                        com.enderio.core.common.recipes.IngredientCodecs.REQUIRED.fieldOf("input").forGetter(SoulBindingRecipe::input),
                         Codec.INT.fieldOf("energy").forGetter(SoulBindingRecipe::energy),
                         Codec.INT.fieldOf("experience").forGetter(SoulBindingRecipe::experience),
                         ResourceLocation.CODEC.optionalFieldOf("entity_type").forGetter(SoulBindingRecipe::entityType),
@@ -196,6 +204,9 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
                         SoulBindingRecipe::mobCategory, PacketCodecs.STRING_UTF8.optional(),
                         SoulBindingRecipe::soulData, PacketCodecs.BOOL, SoulBindingRecipe::copyInputComponents,
                         SoulBindingRecipe::new);
+
+        @Override
+        protected SoulBindingRecipe withId(SoulBindingRecipe recipe, ResourceLocation id) { return recipe.withId(id); }
 
         @Override
         public MapCodec<SoulBindingRecipe> codec() {

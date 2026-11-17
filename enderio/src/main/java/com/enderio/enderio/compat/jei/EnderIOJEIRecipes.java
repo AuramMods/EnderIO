@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import com.enderio.core.common.recipes.SizedIngredient;
 
 import java.util.List;
 import java.util.Objects;

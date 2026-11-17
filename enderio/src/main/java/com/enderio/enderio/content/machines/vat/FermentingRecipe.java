@@ -17,17 +17,22 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeInput;
+import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
+import com.enderio.core.common.recipes.SizedFluidIngredient;
 
 import java.util.List;
 
 public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstReagent, TagKey<Item> secondReagent,
-        FluidStack output, int ticks) implements MachineRecipe<FermentingRecipe.Input> {
+        FluidStack output, int ticks, ResourceLocation id) implements MachineRecipe<FermentingRecipe.Input> {
+
+    public FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstReagent, TagKey<Item> secondReagent, FluidStack output, int ticks) { this(input, firstReagent, secondReagent, output, ticks, null); }
+
+    public FermentingRecipe withId(ResourceLocation id) { return new FermentingRecipe(input, firstReagent, secondReagent, output, ticks, java.util.Objects.requireNonNull(id)); }
+
 
     @Override
     public int getBaseEnergyCost() {
@@ -115,7 +120,7 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
         }
     }
 
-    public static class Serializer implements RecipeSerializer<FermentingRecipe> {
+    public static class Serializer extends com.enderio.core.common.recipes.CodecRecipeSerializer<FermentingRecipe> {
         private static final PacketCodec<TagKey<Item>> ITEM_TAG_STREAM_CODEC = PacketCodecs.RESOURCE_LOCATION
                 .map(loc -> TagKey.create(Registries.ITEM, loc), TagKey::location);
 
@@ -124,7 +129,7 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
                 SizedFluidIngredient.FLAT_CODEC.fieldOf("input").forGetter(FermentingRecipe::input),
                 TagKey.codec(Registries.ITEM).fieldOf("left_reagent").forGetter(FermentingRecipe::firstReagent),
                 TagKey.codec(Registries.ITEM).fieldOf("right_reagent").forGetter(FermentingRecipe::secondReagent),
-                FluidStack.CODEC.fieldOf("output").forGetter(FermentingRecipe::output),
+                com.enderio.core.common.recipes.RecipeStackCodecs.FLUID.fieldOf("output").forGetter(FermentingRecipe::output),
                 Codec.INT.fieldOf("ticks").forGetter(FermentingRecipe::ticks)).apply(instance, FermentingRecipe::new));
 
         public static final PacketCodec<FermentingRecipe> STREAM_CODEC = PacketCodec.composite(
@@ -132,6 +137,9 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
                 FermentingRecipe::firstReagent, ITEM_TAG_STREAM_CODEC, FermentingRecipe::secondReagent,
                 PacketCodecs.FLUID_STACK, FermentingRecipe::output, PacketCodecs.INT, FermentingRecipe::ticks,
                 FermentingRecipe::new);
+
+        @Override
+        protected FermentingRecipe withId(FermentingRecipe recipe, ResourceLocation id) { return recipe.withId(id); }
 
         @Override
         public MapCodec<FermentingRecipe> codec() {

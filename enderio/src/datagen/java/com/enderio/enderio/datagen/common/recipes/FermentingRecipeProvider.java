@@ -13,7 +13,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
+import com.enderio.core.common.recipes.SizedFluidIngredient;
 
 public class FermentingRecipeProvider extends SubRecipeProvider {
 

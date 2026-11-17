@@ -23,7 +23,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import com.enderio.core.common.recipes.SizedIngredient;
 
 import java.util.Arrays;
 import java.util.List;

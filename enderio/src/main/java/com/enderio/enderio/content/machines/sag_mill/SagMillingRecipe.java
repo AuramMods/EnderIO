@@ -21,7 +21,7 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeInput;
+import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -32,8 +32,13 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.function.IntFunction;
 
-public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int energy, BonusType bonusType)
+public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int energy, BonusType bonusType, ResourceLocation id)
         implements MachineRecipe<SagMillingRecipe.Input> {
+
+    public SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int energy, BonusType bonusType) { this(input, outputs, energy, bonusType, null); }
+
+    public SagMillingRecipe withId(ResourceLocation id) { return new SagMillingRecipe(input, outputs, energy, bonusType, java.util.Objects.requireNonNull(id)); }
+
 
     private static final Random RANDOM = new Random();
 
@@ -170,7 +175,7 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
     public record OutputItem(Either<ItemStack, SizedTagOutput> output, float chance, boolean isOptional) {
 
         public static final Codec<OutputItem> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.either(ItemStack.CODEC, SizedTagOutput.CODEC).fieldOf("item").forGetter(OutputItem::output),
+                Codec.either(com.enderio.core.common.recipes.RecipeStackCodecs.ITEM, SizedTagOutput.CODEC).fieldOf("item").forGetter(OutputItem::output),
                 Codec.FLOAT.optionalFieldOf("chance", 1f).forGetter(OutputItem::chance),
                 Codec.BOOL.optionalFieldOf("optional", false).forGetter(OutputItem::isOptional))
                 .apply(instance, OutputItem::new));
@@ -234,11 +239,11 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
         }
     }
 
-    public static class Serializer implements RecipeSerializer<SagMillingRecipe> {
+    public static class Serializer extends com.enderio.core.common.recipes.CodecRecipeSerializer<SagMillingRecipe> {
 
         public static final MapCodec<SagMillingRecipe> CODEC = RecordCodecBuilder
                 .mapCodec(instance -> instance
-                        .group(Ingredient.CODEC_NONEMPTY.fieldOf("input").forGetter(SagMillingRecipe::input),
+                        .group(com.enderio.core.common.recipes.IngredientCodecs.REQUIRED.fieldOf("input").forGetter(SagMillingRecipe::input),
                                 OutputItem.CODEC.listOf().fieldOf("outputs").forGetter(SagMillingRecipe::outputs),
                                 Codec.INT.fieldOf("energy").forGetter(SagMillingRecipe::energy),
                                 BonusType.CODEC.optionalFieldOf("bonus", BonusType.MULTIPLY_OUTPUT)
@@ -249,6 +254,9 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
                 PacketCodecs.INGREDIENT, SagMillingRecipe::input,
                 OutputItem.STREAM_CODEC.list(), SagMillingRecipe::outputs, PacketCodecs.INT,
                 SagMillingRecipe::energy, BonusType.STREAM_CODEC, SagMillingRecipe::bonusType, SagMillingRecipe::new);
+
+        @Override
+        protected SagMillingRecipe withId(SagMillingRecipe recipe, ResourceLocation id) { return recipe.withId(id); }
 
         @Override
         public MapCodec<SagMillingRecipe> codec() {

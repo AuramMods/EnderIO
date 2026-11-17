@@ -2,7 +2,7 @@ package com.enderio.enderio.foundation.util;
 
 import com.enderio.enderio.EnderIO;
 import net.minecraftforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
+import com.enderio.core.common.recipes.SizedFluidIngredient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,7 @@ public class SizedFluidIngredientHelper {
         List<FluidStack> others = new ArrayList<>(stacks.length);
         
         for (FluidStack stack : stacks) {
-            if (stack.getFluid().builtInRegistryHolder().getKey().location().getNamespace().equals(EnderIO.MOD_ID)) {
+            if (net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(stack.getFluid()).getNamespace().equals(EnderIO.MOD_ID)) {
                 preferred.add(stack);
             } else {
                 others.add(stack);

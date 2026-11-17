@@ -1,9 +1,11 @@
 package com.enderio.enderio.content.machines.slicer;
 
+import net.minecraft.resources.ResourceLocation;
 import com.enderio.core.common.recipes.OutputStack;
 import com.enderio.enderio.foundation.MachineRecipe;
 import com.enderio.enderio.foundation.util.ValidatingListCodec;
-import com.enderio.enderio.init.EIORecipes;
+import com.enderio.enderio.api.EnderIOAPI;
+import com.enderio.core.common.recipes.RecipeRegistry;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -13,15 +15,20 @@ import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeInput;
+import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-public record SlicingRecipe(ItemStack output, List<Ingredient> inputs, int energy)
+public record SlicingRecipe(ItemStack output, List<Ingredient> inputs, int energy, ResourceLocation id)
         implements MachineRecipe<SlicingRecipe.Input> {
+
+    public SlicingRecipe(ItemStack output, List<Ingredient> inputs, int energy) { this(output, inputs, energy, null); }
+
+    public SlicingRecipe withId(ResourceLocation id) { return new SlicingRecipe(output, inputs, energy, java.util.Objects.requireNonNull(id)); }
+
 
     @Override
     public int getBaseEnergyCost() {
@@ -55,12 +62,12 @@ public record SlicingRecipe(ItemStack output, List<Ingredient> inputs, int energ
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return EIORecipes.SLICING.serializer().get();
+        return RecipeRegistry.serializer(EnderIOAPI.rl("slicing"));
     }
 
     @Override
     public RecipeType<?> getType() {
-        return EIORecipes.SLICING.type().get();
+        return RecipeRegistry.type(EnderIOAPI.rl("slicing"));
     }
 
     public record Input(List<ItemStack> inputs) implements RecipeInput {
@@ -80,10 +87,10 @@ public record SlicingRecipe(ItemStack output, List<Ingredient> inputs, int energ
         }
     }
 
-    public static class Serializer implements RecipeSerializer<SlicingRecipe> {
+    public static class Serializer extends com.enderio.core.common.recipes.CodecRecipeSerializer<SlicingRecipe> {
         public static final MapCodec<SlicingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance
-                .group(ItemStack.CODEC.fieldOf("output").forGetter(SlicingRecipe::output),
-                        new ValidatingListCodec<>(Ingredient.LIST_CODEC, 6).fieldOf("inputs")
+                .group(com.enderio.core.common.recipes.RecipeStackCodecs.ITEM.fieldOf("output").forGetter(SlicingRecipe::output),
+                        new ValidatingListCodec<>(com.enderio.core.common.recipes.IngredientCodecs.OPTIONAL.listOf(), 6).fieldOf("inputs")
                                 .forGetter(SlicingRecipe::inputs),
                         Codec.INT.fieldOf("energy").forGetter(SlicingRecipe::energy))
                 .apply(instance, SlicingRecipe::new));
@@ -92,6 +99,9 @@ public record SlicingRecipe(ItemStack output, List<Ingredient> inputs, int energ
                 PacketCodecs.REQUIRED_ITEM_STACK, SlicingRecipe::output,
                 PacketCodecs.INGREDIENT.list(), SlicingRecipe::inputs, PacketCodecs.INT,
                 SlicingRecipe::energy, SlicingRecipe::new);
+
+        @Override
+        protected SlicingRecipe withId(SlicingRecipe recipe, ResourceLocation id) { return recipe.withId(id); }
 
         @Override
         public MapCodec<SlicingRecipe> codec() {

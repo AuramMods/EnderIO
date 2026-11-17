@@ -1,8 +1,10 @@
 package com.enderio.enderio.content.machines.alloy;
 
+import net.minecraft.resources.ResourceLocation;
 import com.enderio.core.common.recipes.OutputStack;
 import com.enderio.enderio.foundation.MachineRecipe;
-import com.enderio.enderio.init.EIORecipes;
+import com.enderio.enderio.api.EnderIOAPI;
+import com.enderio.core.common.recipes.RecipeRegistry;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -12,15 +14,16 @@ import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeInput;
+import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import com.enderio.core.common.recipes.SizedIngredient;
 
 import java.util.List;
 
 public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.Input> {
+    private final ResourceLocation id;
     private final List<SizedIngredient> inputs;
     private final ItemStack output;
     private final int energy;
@@ -29,6 +32,12 @@ public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.In
 
     public AlloySmeltingRecipe(List<SizedIngredient> inputs, ItemStack output, int energy, float experience,
             boolean isSmelting) {
+        this(inputs, output, energy, experience, isSmelting, null);
+    }
+
+    public AlloySmeltingRecipe(List<SizedIngredient> inputs, ItemStack output, int energy, float experience,
+            boolean isSmelting, ResourceLocation id) {
+        this.id = id;
         if (isSmelting && inputs.size() > 1) {
             throw new IllegalArgumentException("More than one smelting ingredient given");
         }
@@ -42,6 +51,13 @@ public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.In
 
     public AlloySmeltingRecipe(List<SizedIngredient> inputs, ItemStack output, int energy, float experience) {
         this(inputs, output, energy, experience, false);
+    }
+
+    @Override
+    public ResourceLocation id() { return id; }
+
+    public AlloySmeltingRecipe withId(ResourceLocation id) {
+        return new AlloySmeltingRecipe(inputs, output, energy, experience, isSmelting, java.util.Objects.requireNonNull(id));
     }
 
     public List<SizedIngredient> inputs() {
@@ -93,7 +109,7 @@ public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.In
                     continue;
                 }
 
-                if (!inputs.getFirst().test(slotItem)) {
+                if (!inputs.get(0).test(slotItem)) {
                     return false;
                 }
             }
@@ -154,12 +170,12 @@ public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.In
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return EIORecipes.ALLOY_SMELTING.serializer().get();
+        return RecipeRegistry.serializer(EnderIOAPI.rl("alloy_smelting"));
     }
 
     @Override
     public RecipeType<?> getType() {
-        return EIORecipes.ALLOY_SMELTING.type().get();
+        return RecipeRegistry.type(EnderIOAPI.rl("alloy_smelting"));
     }
 
     public record Input(List<ItemStack> inputs, int inputsConsumed) implements RecipeInput {
@@ -183,11 +199,11 @@ public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.In
         }
     }
 
-    public static class Serializer implements RecipeSerializer<AlloySmeltingRecipe> {
+    public static class Serializer extends com.enderio.core.common.recipes.CodecRecipeSerializer<AlloySmeltingRecipe> {
         // Uses optional field for isSmelting to avoid polluting recipe generation.
         public static final MapCodec<AlloySmeltingRecipe> CODEC = RecordCodecBuilder.mapCodec(inst -> inst
                 .group(SizedIngredient.FLAT_CODEC.listOf().fieldOf("inputs").forGetter(AlloySmeltingRecipe::inputs),
-                        ItemStack.CODEC.fieldOf("output").forGetter(AlloySmeltingRecipe::output),
+                        com.enderio.core.common.recipes.RecipeStackCodecs.ITEM.fieldOf("output").forGetter(AlloySmeltingRecipe::output),
                         Codec.INT.fieldOf("energy").forGetter(AlloySmeltingRecipe::energy),
                         Codec.FLOAT.fieldOf("experience").forGetter(AlloySmeltingRecipe::experience),
                         Codec.BOOL.optionalFieldOf("is_smelting", false).forGetter(AlloySmeltingRecipe::isSmelting))
@@ -198,6 +214,9 @@ public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.In
                         PacketCodecs.REQUIRED_ITEM_STACK, AlloySmeltingRecipe::output, PacketCodecs.INT,
                         AlloySmeltingRecipe::energy, PacketCodecs.FLOAT, AlloySmeltingRecipe::experience,
                         PacketCodecs.BOOL, AlloySmeltingRecipe::isSmelting, AlloySmeltingRecipe::new);
+
+        @Override
+        protected AlloySmeltingRecipe withId(AlloySmeltingRecipe recipe, ResourceLocation id) { return recipe.withId(id); }
 
         @Override
         public MapCodec<AlloySmeltingRecipe> codec() {

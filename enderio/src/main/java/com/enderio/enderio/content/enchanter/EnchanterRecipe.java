@@ -1,11 +1,12 @@
 package com.enderio.enderio.content.enchanter;
 
+import net.minecraft.resources.ResourceLocation;
 import com.enderio.enderio.config.machines.MachinesConfig;
 import com.enderio.enderio.init.EIORecipes;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistryAccess;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ExtraCodecs;
@@ -13,21 +14,26 @@ import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeInput;
+import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import net.minecraftforge.common.Tags;
+import com.enderio.core.common.recipes.SizedIngredient;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * A recipe for the enchanter.
  */
-public record EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplier, SizedIngredient input)
-        implements Recipe<EnchanterRecipe.Input> {
+public record EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplier, SizedIngredient input, ResourceLocation id)
+        implements com.enderio.core.common.recipes.IdentifiedRecipe<EnchanterRecipe.Input> {
+
+    public EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplier, SizedIngredient input) { this(enchantment, costMultiplier, input, null); }
+
+    public EnchanterRecipe withId(ResourceLocation id) { return new EnchanterRecipe(enchantment, costMultiplier, input, java.util.Objects.requireNonNull(id)); }
+
 
     // region Calculations
 
@@ -117,7 +123,7 @@ public record EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplie
     }
 
     @Override
-    public ItemStack assemble(Input recipeInput, HolderLookup.Provider lookupProvider) {
+    public ItemStack assemble(Input recipeInput, RegistryAccess lookupProvider) {
         return getBookForLevel(getEnchantmentLevel(recipeInput.getItem(1).getCount()));
     }
 
@@ -127,7 +133,7 @@ public record EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplie
     }
 
     @Override
-    public ItemStack getResultItem(HolderLookup.Provider lookupProvider) {
+    public ItemStack getResultItem(RegistryAccess lookupProvider) {
         return ItemStack.EMPTY;
     }
 
@@ -164,7 +170,7 @@ public record EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplie
         }
     }
 
-    public static class Serializer implements RecipeSerializer<EnchanterRecipe> {
+    public static class Serializer extends com.enderio.core.common.recipes.CodecRecipeSerializer<EnchanterRecipe> {
         public static final MapCodec<EnchanterRecipe> CODEC = RecordCodecBuilder
                 .mapCodec(inst -> inst
                         .group(net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.holderByNameCodec().fieldOf("enchantment").forGetter(EnchanterRecipe::enchantment),
@@ -178,6 +184,9 @@ public record EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplie
                         .map(net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT::wrapAsHolder, Holder::value), EnchanterRecipe::enchantment, PacketCodecs.INT,
                 EnchanterRecipe::costMultiplier, SizedIngredient.STREAM_CODEC, EnchanterRecipe::input,
                 EnchanterRecipe::new);
+
+        @Override
+        protected EnchanterRecipe withId(EnchanterRecipe recipe, ResourceLocation id) { return recipe.withId(id); }
 
         @Override
         public MapCodec<EnchanterRecipe> codec() {

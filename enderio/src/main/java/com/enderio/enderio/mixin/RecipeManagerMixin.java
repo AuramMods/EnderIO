@@ -13,7 +13,7 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.neoforged.neoforge.common.conditions.WithConditions;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import com.enderio.core.common.recipes.SizedIngredient;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;

@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.storage.fluid_tank;
 
+import net.minecraft.resources.ResourceLocation;
 import com.enderio.enderio.foundation.io.fluid.MachineFluidTank;
 import com.enderio.enderio.foundation.util.SizedFluidIngredientHelper;
 import com.enderio.enderio.init.EIOConduitTypes;
@@ -8,7 +9,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistryAccess;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ByIdMap;
@@ -16,20 +17,25 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeInput;
+import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
+import com.enderio.core.common.recipes.SizedFluidIngredient;
 import org.apache.commons.lang3.NotImplementedException;
 
 import java.util.List;
 import java.util.function.IntFunction;
 
-public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredient fluid, Mode mode)
-        implements Recipe<TankRecipe.Input> {
+public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredient fluid, Mode mode, ResourceLocation id)
+        implements com.enderio.core.common.recipes.IdentifiedRecipe<TankRecipe.Input> {
+
+    public TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredient fluid, Mode mode) { this(input, output, fluid, mode, null); }
+
+    public TankRecipe withId(ResourceLocation id) { return new TankRecipe(input, output, fluid, mode, java.util.Objects.requireNonNull(id)); }
+
 
     public enum Mode implements StringRepresentable {
         FILL(0, "fill"), EMPTY(1, "empty");
@@ -76,7 +82,7 @@ public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredien
             }
 
             for (FluidStack testFluid : possibleFluids) {
-                FluidStack testFill = testFluid.copyWithAmount(fluid.amount());
+                FluidStack testFill = new FluidStack(testFluid, fluid.amount());
                 if (recipeInput.fluidTank().fill(testFill, IFluidHandler.FluidAction.SIMULATE) == fluid.amount()) {
                     // We can fill this fluid type into the tank.
                     return true;
@@ -90,7 +96,7 @@ public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredien
     }
 
     @Override
-    public ItemStack assemble(Input recipeInput, HolderLookup.Provider lookupProvider) {
+    public ItemStack assemble(Input recipeInput, RegistryAccess lookupProvider) {
         return ItemStack.EMPTY;
     }
 
@@ -100,7 +106,7 @@ public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredien
     }
 
     @Override
-    public ItemStack getResultItem(HolderLookup.Provider lookupProvider) {
+    public ItemStack getResultItem(RegistryAccess lookupProvider) {
         return output.copy();
     }
 
@@ -136,12 +142,12 @@ public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredien
         }
     }
 
-    public static class Serializer implements RecipeSerializer<TankRecipe> {
+    public static class Serializer extends com.enderio.core.common.recipes.CodecRecipeSerializer<TankRecipe> {
 
         private static final MapCodec<TankRecipe> CODEC = RecordCodecBuilder
             .mapCodec(instance -> instance
-                    .group(Ingredient.CODEC_NONEMPTY.fieldOf("input").forGetter(TankRecipe::input),
-                            ItemStack.CODEC.fieldOf("output").forGetter(TankRecipe::output),
+                    .group(com.enderio.core.common.recipes.IngredientCodecs.REQUIRED.fieldOf("input").forGetter(TankRecipe::input),
+                            com.enderio.core.common.recipes.RecipeStackCodecs.ITEM.fieldOf("output").forGetter(TankRecipe::output),
                             SizedFluidIngredient.FLAT_CODEC.fieldOf("fluid").forGetter(TankRecipe::fluid),
                             Mode.CODEC.fieldOf("mode").forGetter(TankRecipe::mode))
                     .apply(instance, TankRecipe::new));
@@ -149,6 +155,9 @@ public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredien
         public static final PacketCodec<TankRecipe> STREAM_CODEC = PacketCodec.composite(
                 PacketCodecs.INGREDIENT, TankRecipe::input, PacketCodecs.REQUIRED_ITEM_STACK, TankRecipe::output,
                 SizedFluidIngredient.STREAM_CODEC, TankRecipe::fluid, Mode.STREAM_CODEC, TankRecipe::mode, TankRecipe::new);
+
+        @Override
+        protected TankRecipe withId(TankRecipe recipe, ResourceLocation id) { return recipe.withId(id); }
 
         @Override
         public MapCodec<TankRecipe> codec() {

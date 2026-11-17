@@ -20,7 +20,6 @@ import com.enderio.enderio.init.EIORecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
@@ -113,11 +112,11 @@ public class WeatherObeliskBlockEntity extends MachineBlockEntity implements Flu
                     Calendar calendar = Calendar.getInstance();
                     int month = calendar.get(Calendar.MONTH);
                     if (month == Calendar.JUNE) {
-                        FIREWORK.set(DataComponents.FIREWORKS, WeatherChangeRecipe.WeatherMode.SURPRISE);
+                        FIREWORK.getOrCreateTag().put("Fireworks", WeatherChangeRecipe.WeatherMode.SURPRISE.copy());
                     } else if (month == Calendar.MARCH && calendar.get(Calendar.DAY_OF_MONTH) == 31) {
-                        FIREWORK.set(DataComponents.FIREWORKS, WeatherChangeRecipe.WeatherMode.SURPRISE_2);
+                        FIREWORK.getOrCreateTag().put("Fireworks", WeatherChangeRecipe.WeatherMode.SURPRISE_2.copy());
                     } else {
-                        FIREWORK.set(DataComponents.FIREWORKS, getRecipe().mode().getFireworks());
+                        FIREWORK.getOrCreateTag().put("Fireworks", getRecipe().mode().getFireworks());
                     }
                     server.addFreshEntity(new FireworkRocketEntity(server, null, getBlockPos().getX() + 0.5,
                             getBlockPos().getY() + 1.1, getBlockPos().getZ() + 0.5, FIREWORK));

@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.painting;
 
+import net.minecraft.resources.ResourceLocation;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.recipes.OutputStack;
 import com.enderio.enderio.config.machines.MachinesConfig;
@@ -9,14 +10,13 @@ import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIORecipes;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeInput;
+import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -24,7 +24,12 @@ import net.minecraft.world.level.Level;
 import java.util.ArrayList;
 import java.util.List;
 
-public record PaintingRecipe(Ingredient input, ItemStack output) implements MachineRecipe<PaintingRecipe.Input> {
+public record PaintingRecipe(Ingredient input, ItemStack output, ResourceLocation id) implements MachineRecipe<PaintingRecipe.Input> {
+
+    public PaintingRecipe(Ingredient input, ItemStack output) { this(input, output, null); }
+
+    public PaintingRecipe withId(ResourceLocation id) { return new PaintingRecipe(input, output, java.util.Objects.requireNonNull(id)); }
+
 
     @Override
     public NonNullList<Ingredient> getIngredients() {
@@ -64,12 +69,12 @@ public record PaintingRecipe(Ingredient input, ItemStack output) implements Mach
     }
 
     @Override
-    public ItemStack assemble(Input recipeInput, HolderLookup.Provider lookupProvider) {
-        return null;
+    public ItemStack assemble(Input recipeInput, RegistryAccess lookupProvider) {
+        return craft(recipeInput, lookupProvider).get(0).getItem();
     }
 
     @Override
-    public ItemStack getResultItem(HolderLookup.Provider lookupProvider) {
+    public ItemStack getResultItem(RegistryAccess lookupProvider) {
         return output.copy();
     }
 
@@ -100,16 +105,19 @@ public record PaintingRecipe(Ingredient input, ItemStack output) implements Mach
         }
     }
 
-    public static class Serializer implements RecipeSerializer<PaintingRecipe> {
+    public static class Serializer extends com.enderio.core.common.recipes.CodecRecipeSerializer<PaintingRecipe> {
 
         public static final MapCodec<PaintingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance
-                .group(Ingredient.CODEC.fieldOf("input").forGetter(PaintingRecipe::input),
-                        ItemStack.CODEC.fieldOf("output").forGetter(PaintingRecipe::output))
+                .group(com.enderio.core.common.recipes.IngredientCodecs.OPTIONAL.fieldOf("input").forGetter(PaintingRecipe::input),
+                        com.enderio.core.common.recipes.RecipeStackCodecs.ITEM.fieldOf("output").forGetter(PaintingRecipe::output))
                 .apply(instance, PaintingRecipe::new));
 
         public static final PacketCodec<PaintingRecipe> STREAM_CODEC = PacketCodec.composite(
                 PacketCodecs.INGREDIENT, PaintingRecipe::input, PacketCodecs.REQUIRED_ITEM_STACK, PaintingRecipe::output,
                 PaintingRecipe::new);
+
+        @Override
+        protected PaintingRecipe withId(PaintingRecipe recipe, ResourceLocation id) { return recipe.withId(id); }
 
         @Override
         public MapCodec<PaintingRecipe> codec() {

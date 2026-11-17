@@ -14,7 +14,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
+import com.enderio.core.common.recipes.SizedFluidIngredient;
 
 public class TankRecipeProvider extends SubRecipeProvider {
 
