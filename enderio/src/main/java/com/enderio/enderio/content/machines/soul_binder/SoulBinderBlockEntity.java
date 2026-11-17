@@ -41,7 +41,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
@@ -70,7 +69,7 @@ public class SoulBinderBlockEntity extends PoweredMachineBlockEntity implements 
 
     @UseOnly(LogicalSide.CLIENT)
     @Nullable
-    private RecipeHolder<SoulBindingRecipe> clientRecipe;
+    private SoulBindingRecipe clientRecipe;
 
     private final CraftingMachineTaskHost<SoulBindingRecipe, SoulBindingRecipe.Input> craftingTaskHost;
 
@@ -145,7 +144,10 @@ public class SoulBinderBlockEntity extends PoweredMachineBlockEntity implements 
     }
 
     private boolean isValidInput(int index, ItemStack stack) {
-        return MachineRecipeCaches.SOUL_BINDING.hasRecipe(List.of(stack));
+        if (level == null) {
+            return false;
+        }
+        return MachineRecipeCaches.SOUL_BINDING.hasRecipe(level.getRecipeManager(), List.of(stack));
     }
 
     @Override
@@ -183,12 +185,15 @@ public class SoulBinderBlockEntity extends PoweredMachineBlockEntity implements 
                     .orElse(null);
         }
 
-        return clientRecipe != null ? clientRecipe.value().experience() : 0;
+        return clientRecipe != null ? clientRecipe.experience() : 0;
     }
 
     private boolean hasValidRecipe() {
+        if (level == null) {
+            return false;
+        }
         return MachineRecipeCaches.SOUL_BINDING
-                .hasRecipe(List.of(INPUT_SOUL.getItemStack(getInventory()), INPUT_OTHER.getItemStack(getInventory())));
+                .hasRecipe(level.getRecipeManager(), List.of(INPUT_SOUL.getItemStack(getInventory()), INPUT_OTHER.getItemStack(getInventory())));
     }
 
     // region Fluid Storage
@@ -248,7 +253,7 @@ public class SoulBinderBlockEntity extends PoweredMachineBlockEntity implements 
     }
 
     protected PoweredCraftingMachineTask<SoulBindingRecipe, SoulBindingRecipe.Input> createTask(Level level,
-            SoulBindingRecipe.Input container, @Nullable RecipeHolder<SoulBindingRecipe> recipe) {
+            SoulBindingRecipe.Input container, @Nullable SoulBindingRecipe recipe) {
         return new PoweredCraftingMachineTask<>(level, getInventory(), getEnergyStorage(), container, OUTPUT, recipe) {
 
             @Override

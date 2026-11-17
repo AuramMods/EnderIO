@@ -34,7 +34,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -155,8 +154,11 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
     }
 
     protected boolean acceptSlotInput(int slot, ItemStack stack) {
+        if (level == null) {
+            return false;
+        }
         if (getMode().canAlloy()) {
-            if (MachineRecipeCaches.ALLOY_SMELTING_ONLY_ALLOY.hasValidRecipeIf(getInventory(), INPUTS, slot, stack)) {
+            if (MachineRecipeCaches.ALLOY_SMELTING_ONLY_ALLOY.hasValidRecipeIf(level.getRecipeManager(), getInventory(), INPUTS, slot, stack)) {
                 return true;
             }
         }
@@ -170,7 +172,7 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
                     .toList();
 
             if (currentStacks.stream().allMatch(i -> i.is(stack.getItem())) || currentStacks.size() == 1) {
-                return MachineRecipeCaches.ALLOY_SMELTING_ONLY_SMELTING.hasRecipe(List.of(stack));
+                return MachineRecipeCaches.ALLOY_SMELTING_ONLY_SMELTING.hasRecipe(level.getRecipeManager(), List.of(stack));
             }
         }
 
@@ -201,7 +203,7 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
     }
 
     protected AlloySmeltingMachineTask createTask(Level level, AlloySmeltingRecipe.Input recipeInput,
-            @Nullable RecipeHolder<AlloySmeltingRecipe> recipe) {
+            @Nullable AlloySmeltingRecipe recipe) {
         return new AlloySmeltingMachineTask(level, getInventory(), getEnergyStorage(), recipeInput, INPUTS, OUTPUT,
                 recipe);
     }
@@ -213,7 +215,7 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
 
         public AlloySmeltingMachineTask(@NotNull Level level, MachineInventory inventory,
                 IMachineEnergyStorage energyStorage, AlloySmeltingRecipe.Input recipeInput, MultiSlotAccess inputs,
-                SingleSlotAccess outputSlot, @Nullable RecipeHolder<AlloySmeltingRecipe> recipe) {
+                SingleSlotAccess outputSlot, @Nullable AlloySmeltingRecipe recipe) {
             super(level, inventory, energyStorage, recipeInput, outputSlot, recipe);
             this.inputs = inputs;
         }
@@ -315,7 +317,7 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
         }
 
         @Override
-        protected Optional<RecipeHolder<AlloySmeltingRecipe>> findRecipe() {
+        protected Optional<AlloySmeltingRecipe> findRecipe() {
             var level = getLevel();
             if (level == null) {
                 return Optional.empty();
@@ -326,7 +328,7 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
                 return Optional.empty();
             }
 
-            if (optionalRecipe.get().value().isSmelting() ? !getMode().canSmelt() : !getMode().canAlloy()) {
+            if (optionalRecipe.get().isSmelting() ? !getMode().canSmelt() : !getMode().canAlloy()) {
                 return Optional.empty();
             }
 

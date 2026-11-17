@@ -14,7 +14,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeType;
 import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +36,9 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
     protected final T recipeInput;
 
     @Nullable
-    private RecipeHolder<R> recipe;
+    private R recipe;
+    @Nullable
+    private final RecipeType<?> recipeType;
 
     private int progressMade;
     private int progressRequired;
@@ -51,28 +53,29 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public CraftingMachineTask(@NotNull Level level, MachineInventory inventory, T recipeInput,
-            @Nullable MultiSlotAccess outputSlots, @Nullable RecipeHolder<R> recipe) {
+            @Nullable MultiSlotAccess outputSlots, @Nullable R recipe) {
         this(level, inventory, null, recipeInput, outputSlots, recipe);
     }
 
     public CraftingMachineTask(@NotNull Level level, MachineInventory inventory,
-            @Nullable MachineFluidHandler fluidHandler, T recipeInput, @Nullable RecipeHolder<R> recipe) {
+            @Nullable MachineFluidHandler fluidHandler, T recipeInput, @Nullable R recipe) {
         this(level, inventory, fluidHandler, recipeInput, null, recipe);
     }
 
     public CraftingMachineTask(@NotNull Level level, MachineInventory inventory,
             @Nullable MachineFluidHandler fluidHandler, T recipeInput, @Nullable MultiSlotAccess outputSlots,
-            @Nullable RecipeHolder<R> recipe) {
+            @Nullable R recipe) {
         this.level = level;
         this.inventory = inventory;
         this.fluidHandler = fluidHandler;
         this.recipeInput = recipeInput;
         this.outputSlots = outputSlots;
         this.recipe = recipe;
+        this.recipeType = recipe == null ? null : recipe.getType();
         inventory.updateMachineState(MachineState.FULL_OUTPUT, false);
 
         if (recipe != null) {
-            inventory.updateMachineState(MachineState.EMPTY_INPUT, !recipe.value().matches(recipeInput, level));
+            inventory.updateMachineState(MachineState.EMPTY_INPUT, !recipe.matches(recipeInput, level));
         } else {
             inventory.updateMachineState(MachineState.EMPTY_INPUT, true);
         }
@@ -83,19 +86,13 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
     }
 
     @Nullable
-    public RecipeHolder<R> getRecipeHolder() {
-        return recipe;
-    }
-
-    // TODO: NEO-PORT: Should this return the holder?
-    @Nullable
     public R getRecipe() {
-        return recipe.value();
+        return recipe;
     }
 
     @Nullable
     public ResourceLocation getRecipeId() {
-        return recipe.id();
+        return recipe == null ? null : recipe.getId();
     }
 
     // region Abstract Implementation
@@ -137,17 +134,17 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
         // Get the outputs list.
         if (!hasDeterminedOutputs) {
             hasDeterminedOutputs = true;
-            T processedRecipeInput = prepareToDetermineOutputs(recipe.value(), recipeInput);
-            outputs = recipe.value().craft(processedRecipeInput, level.registryAccess());
+            T processedRecipeInput = prepareToDetermineOutputs(recipe, recipeInput);
+            outputs = recipe.craft(processedRecipeInput, level.registryAccess());
 
             // TODO: Compact any items that are the same into singular stacks?
 
             // Store the recipe energy cost.
-            progressRequired = getProgressRequired(recipe.value());
+            progressRequired = getProgressRequired(recipe);
         }
 
         // If we don't have a recipe match, complete the task and wait for a new one.
-        if (!recipe.value().matches(recipeInput, level)) {
+        if (!recipe.matches(recipeInput, level)) {
             inventory.updateMachineState(MachineState.EMPTY_INPUT, true);
             isComplete = true;
             return;
@@ -166,7 +163,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
             inventory.updateMachineState(MachineState.FULL_OUTPUT, !placeOutputs);
             if (placeOutputs) {
                 // Take the inputs
-                consumeInputs(recipe.value());
+                consumeInputs(recipe);
 
                 // The receiver was able to take the outputs, task complete.
                 isComplete = true;
@@ -250,7 +247,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
             return tag;
         }
 
-        tag.putString(KEY_RECIPE_ID, recipe.id().toString());
+        tag.putString(KEY_RECIPE_ID, recipe.getId().toString());
         tag.putInt(KEY_PROGRESS_MADE, progressMade);
         tag.putInt(KEY_PROGRESS_REQUIRED, progressRequired);
         tag.putBoolean(KEY_HAS_COLLECTED_INPUTS, hasConsumedInputs);
@@ -272,7 +269,8 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
     @Override
     public void deserializeNBT(HolderLookup.Provider lookupProvider, CompoundTag nbt) {
         // TODO: Exception handling
-        recipe = loadRecipe(ResourceLocation.parse(nbt.getString(KEY_RECIPE_ID)));
+        var savedId = ResourceLocation.tryParse(nbt.getString(KEY_RECIPE_ID));
+        recipe = savedId == null ? null : loadRecipe(savedId);
         progressMade = nbt.getInt(KEY_PROGRESS_MADE);
         progressRequired = nbt.getInt(KEY_PROGRESS_REQUIRED);
         hasConsumedInputs = nbt.getBoolean(KEY_HAS_COLLECTED_INPUTS);
@@ -289,10 +287,11 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
     }
 
     @Nullable
-    protected RecipeHolder<R> loadRecipe(ResourceLocation id) {
+    protected R loadRecipe(ResourceLocation id) {
         try {
             // noinspection unchecked
-            return (RecipeHolder<R>) level.getRecipeManager().byKey(id).orElse(null);
+            return (R) level.getRecipeManager().byKey(id)
+                .filter(found -> recipeType != null && found.getType() == recipeType).orElse(null);
         } catch (ClassCastException ex) {
             // Can occur when loading a world with the old smelting recipe system.
             LOGGER.warn("Failed to cast recipe '{}' to the correct type, not loading in-progress recipe.", id);

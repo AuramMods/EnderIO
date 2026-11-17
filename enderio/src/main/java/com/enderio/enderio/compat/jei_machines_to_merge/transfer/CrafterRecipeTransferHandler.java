@@ -15,7 +15,6 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import com.enderio.enderio.foundation.network.EIONetwork;
@@ -26,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class CrafterRecipeTransferHandler implements IRecipeTransferHandler<CrafterMenu, RecipeHolder<CraftingRecipe>> {
+public class CrafterRecipeTransferHandler implements IRecipeTransferHandler<CrafterMenu, CraftingRecipe> {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -47,17 +46,17 @@ public class CrafterRecipeTransferHandler implements IRecipeTransferHandler<Craf
     }
 
     @Override
-    public RecipeType<RecipeHolder<CraftingRecipe>> getRecipeType() {
+    public RecipeType<CraftingRecipe> getRecipeType() {
         return RecipeTypes.CRAFTING;
     }
 
     @Override
-    public @Nullable IRecipeTransferError transferRecipe(CrafterMenu container, RecipeHolder<CraftingRecipe> recipe,
+    public @Nullable IRecipeTransferError transferRecipe(CrafterMenu container, CraftingRecipe recipe,
             IRecipeSlotsView recipeSlots, Player player, boolean maxTransfer, boolean doTransfer) {
 
         List<ItemStack> placedStacks = new ArrayList<>();
-        var ingredients = recipe.value().getIngredients();
-        if (recipe.value() instanceof ShapedRecipe shapedRecipe) {
+        var ingredients = recipe.getIngredients();
+        if (recipe instanceof ShapedRecipe shapedRecipe) {
             // Order matters, this makes indices go in 1,2,3 order.
             for (int y = 0; y < 3; y++) {
                 for (int x = 0; x < 3; x++) {
@@ -77,7 +76,7 @@ public class CrafterRecipeTransferHandler implements IRecipeTransferHandler<Craf
                     }
                 }
             }
-        } else if (recipe.value() instanceof ShapelessRecipe) {
+        } else if (recipe instanceof ShapelessRecipe) {
             // order still matters
             for (int y = 0; y < 3; y++) {
                 for (int x = 0; x < 3; x++) {

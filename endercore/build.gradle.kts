@@ -19,6 +19,8 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
         "foundation/MachineRecipe.java",
         "foundation/util/ValidatingListCodec.java",
         "content/machines/alloy/AlloySmeltingRecipe.java",
+        "content/machines/alloy/SmeltingRecipeInheritance.java",
+        "content/machines/slicer/SlicerRecipeManager.java",
         "content/machines/slicer/SlicingRecipe.java",
         "content/fire_crafting/FireCraftingRecipe.java",
         "content/machines/obelisks/weather/WeatherChangeRecipe.java",

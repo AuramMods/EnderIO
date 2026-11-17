@@ -12,7 +12,7 @@ import mezz.jei.api.recipe.IFocus;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.category.extensions.vanilla.crafting.ICraftingCategoryExtension;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,13 +22,16 @@ import java.util.Optional;
 import static mezz.jei.api.recipe.RecipeIngredientRole.INPUT;
 import static mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT;
 
-public class ShapedEntityStorageCategoryExtension implements ICraftingCategoryExtension<ShapedEntityStorageRecipe> {
+public class ShapedEntityStorageCategoryExtension implements ICraftingCategoryExtension {
 
-    public ShapedEntityStorageCategoryExtension() {
+    private final ShapedEntityStorageRecipe recipe;
+
+    public ShapedEntityStorageCategoryExtension(ShapedEntityStorageRecipe recipe) {
+        this.recipe = recipe;
     }
 
     @Override
-    public void setRecipe(RecipeHolder<ShapedEntityStorageRecipe> recipeHolder, IRecipeLayoutBuilder builder,
+    public void setRecipe(IRecipeLayoutBuilder builder,
             ICraftingGridHelper craftingGridHelper, IFocusGroup focuses) {
 
         Optional<IFocus<ItemStack>> output = focuses.getItemStackFocuses(OUTPUT).findFirst();
@@ -36,7 +39,6 @@ public class ShapedEntityStorageCategoryExtension implements ICraftingCategoryEx
                 .filter(f -> SoulBoundUtils.canBindSoul(f.getTypedValue().getIngredient()))
                 .findFirst();
 
-        ShapedEntityStorageRecipe recipe = recipeHolder.value();
         ItemStack resultItem = EnderIOJEI.getResultItem(recipe);
         List<List<ItemStack>> inputs = recipe.getIngredients()
                 .stream()
@@ -119,16 +121,21 @@ public class ShapedEntityStorageCategoryExtension implements ICraftingCategoryEx
         }
 
         craftingGridHelper.createAndSetOutputs(builder, results);
-        craftingGridHelper.createAndSetInputs(builder, inputs, getWidth(recipeHolder), getHeight(recipeHolder));
+        craftingGridHelper.createAndSetInputs(builder, inputs, getWidth(), getHeight());
     }
 
     @Override
-    public int getWidth(RecipeHolder<ShapedEntityStorageRecipe> recipeHolder) {
-        return recipeHolder.value().getWidth();
+    public ResourceLocation getRegistryName() {
+        return recipe.getId();
     }
 
     @Override
-    public int getHeight(RecipeHolder<ShapedEntityStorageRecipe> recipeHolder) {
-        return recipeHolder.value().getHeight();
+    public int getWidth() {
+        return recipe.getWidth();
+    }
+
+    @Override
+    public int getHeight() {
+        return recipe.getHeight();
     }
 }

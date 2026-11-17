@@ -1,66 +1,25 @@
 package com.enderio.enderio.mixin;
 
-import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.config.machines.MachinesConfig;
-import com.enderio.enderio.content.machines.alloy.AlloySmeltingRecipe;
-import com.enderio.enderio.init.EIORecipes;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
+import com.enderio.enderio.content.machines.alloy.SmeltingRecipeInheritance;
+import com.google.gson.JsonElement;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SmeltingRecipe;
-import net.neoforged.neoforge.common.conditions.WithConditions;
-import com.enderio.core.common.recipes.SizedIngredient;
-import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
-@Mixin(value = RecipeManager.class)
+@Mixin(RecipeManager.class)
 public abstract class RecipeManagerMixin {
-
-    private static Logger LOGGER;
-
-    @Inject(method = "lambda$apply$0", at = @At("TAIL"))
-    private static void collectRecipe(ResourceLocation recipeId,
-            ImmutableMultimap.Builder<RecipeType<?>, RecipeHolder<?>> byType,
-            ImmutableMap.Builder<ResourceLocation, RecipeHolder<?>> byName,
-            WithConditions<Recipe<?>> recipeWithConditions, CallbackInfo ci) {
-        if (recipeWithConditions.carrier() instanceof SmeltingRecipe smeltingRecipe) {
-
-            enderio$convertSmeltingRecipe(recipeId, smeltingRecipe).ifPresent(convertedHolder -> {
-                byType.put(EIORecipes.ALLOY_SMELTING.type().get(), convertedHolder);
-                byName.put(convertedHolder.id(), convertedHolder);
-            });
-        }
-    }
-
-    @Unique
-    private static Optional<RecipeHolder<AlloySmeltingRecipe>> enderio$convertSmeltingRecipe(
-            ResourceLocation originalId, SmeltingRecipe smeltingRecipe) {
-        AbstractCookingRecipeAccessor accessor = (AbstractCookingRecipeAccessor) smeltingRecipe;
-
-        if (accessor.getResult().isEmpty()) {
-            LOGGER.warn("[EnderIO] Unable to inherit the cooking recipe with ID: {}. Reason: The result item is empty.",
-                    originalId);
-            return Optional.empty();
-        }
-
-        SizedIngredient input = new SizedIngredient(accessor.getIngredient(), 1);
-        int energy = MachinesConfig.COMMON.ENERGY.ALLOY_SMELTER_VANILLA_ITEM_ENERGY.get();
-        AlloySmeltingRecipe recipe = new AlloySmeltingRecipe(List.of(input), accessor.getResult(), energy,
-                accessor.getExperience(), true);
-
-        String path = "smelting/" + originalId.getNamespace() + "/" + originalId.getPath();
-        ResourceLocation id = EnderIO.rl(path);
-        return Optional.of(new RecipeHolder<>(id, recipe));
+    @Inject(method = "apply(Ljava/util/Map;Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/util/profiling/ProfilerFiller;)V", at = @At("TAIL"))
+    private void enderio$inheritSmeltingRecipes(Map<ResourceLocation, JsonElement> recipes,
+            ResourceManager resources, ProfilerFiller profiler, CallbackInfo ci) {
+        SmeltingRecipeInheritance.inherit((RecipeManager) (Object) this,
+            MachinesConfig.COMMON.ENERGY.ALLOY_SMELTER_VANILLA_ITEM_ENERGY.get());
     }
 }

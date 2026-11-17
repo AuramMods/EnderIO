@@ -5,7 +5,6 @@ import com.enderio.enderio.foundation.inventory.MachineInventory;
 import com.enderio.enderio.foundation.inventory.MultiSlotAccess;
 import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
 import com.enderio.enderio.foundation.io.energy.IMachineEnergyStorage;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -19,14 +18,14 @@ public abstract class PoweredCraftingMachineTask<R extends MachineRecipe<C>, C e
 
     public PoweredCraftingMachineTask(@NotNull Level level, MachineInventory inventory,
             IMachineEnergyStorage energyStorage, C container, MultiSlotAccess outputSlots,
-            @Nullable RecipeHolder<R> recipe) {
+            @Nullable R recipe) {
         super(level, inventory, container, outputSlots, recipe);
         this.energyStorage = energyStorage;
     }
 
     public PoweredCraftingMachineTask(@NotNull Level level, MachineInventory inventory,
             IMachineEnergyStorage energyStorage, C container, SingleSlotAccess outputSlot,
-            @Nullable RecipeHolder<R> recipe) {
+            @Nullable R recipe) {
         this(level, inventory, energyStorage, container, outputSlot.wrapToMulti(), recipe);
     }
 

@@ -10,8 +10,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
+import com.enderio.core.common.recipes.RecipeCache;
+import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -26,7 +26,6 @@ import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.TickEvent;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +38,8 @@ public class FireCraftingManager {
 
     private final ConcurrentMap<BlockPos, Long> fireTracker = new ConcurrentHashMap<>();
 
-    private WeakReference<RecipeManager> cachedRecipeManager = new WeakReference<>(null);
-    private static List<RecipeHolder<FireCraftingRecipe>> cachedRecipes = List.of();
+    private static final RecipeCache<RecipeInput, FireCraftingRecipe, List<FireCraftingRecipe>> RECIPES =
+        new RecipeCache<>(EIORecipes.FIRE_CRAFTING.type(), List::copyOf);
 
     public FireCraftingManager() {
     }
@@ -62,7 +61,7 @@ public class FireCraftingManager {
         BlockState blockBelow = level.getBlockState(pos.below());
 
         for (var recipeHolder : getRecipes(level)) {
-            var recipe = recipeHolder.value();
+            var recipe = recipeHolder;
             if (recipe.isBaseValid(blockBelow.getBlock()) && recipe.isDimensionValid(level.dimension())) {
                 return recipe;
             }
@@ -71,13 +70,8 @@ public class FireCraftingManager {
         return null;
     }
 
-    public List<RecipeHolder<FireCraftingRecipe>> getRecipes(Level level) {
-        if (level.getRecipeManager() != cachedRecipeManager.get()) {
-            cachedRecipeManager = new WeakReference<>(level.getRecipeManager());
-            cachedRecipes = level.getRecipeManager().getAllRecipesFor(EIORecipes.FIRE_CRAFTING.type().get());
-        }
-
-        return cachedRecipes;
+    public List<FireCraftingRecipe> getRecipes(Level level) {
+        return RECIPES.get(level.getRecipeManager());
     }
 
     private static void spawnInfinityDrops(Level level, BlockPos pos, FireCraftingRecipe recipe) {

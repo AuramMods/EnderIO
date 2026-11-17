@@ -97,7 +97,7 @@ public class VatScreen extends MachineScreen<VatMenu> {
             return FluidStack.EMPTY;
         }
 
-        return menu.getRecipe().value().output();
+        return menu.getRecipe().output();
     }
 
     /**
@@ -115,7 +115,7 @@ public class VatScreen extends MachineScreen<VatMenu> {
                 int reduced = 0;
                 var recipe = menu.getRecipe();
                 if (isCrafting() && recipe != null) {
-                    reduced = recipe.value().input().amount();
+                    reduced = recipe.input().amount();
                 }
 
                 return Math.max(menu.getInputTank().contents().getAmount() - reduced, 0);
@@ -136,14 +136,14 @@ public class VatScreen extends MachineScreen<VatMenu> {
 
         // left modifier
         ItemStack item = getMenu().getSlot(0).getItem();
-        double modifier = FermentingRecipe.getModifier(item, recipe.value().firstReagent());
+        double modifier = FermentingRecipe.getModifier(item, recipe.firstReagent());
         String text = "x" + modifier;
         int x = getGuiLeft() + 63 - minecraft.font.width(text) / 2;
         guiGraphics.drawString(minecraft.font, text, x, getGuiTop() + 32, 4210752, false);
 
         // right modifier
         item = getMenu().getSlot(1).getItem();
-        modifier = FermentingRecipe.getModifier(item, recipe.value().secondReagent());
+        modifier = FermentingRecipe.getModifier(item, recipe.secondReagent());
         text = "x" + modifier;
         x = getGuiLeft() + 113 - minecraft.font.width(text) / 2;
         guiGraphics.drawString(minecraft.font, text, x, getGuiTop() + 32, 4210752, false);

@@ -48,7 +48,7 @@ public class EnderIOJEI implements IModPlugin {
     @Override
     public void registerVanillaCategoryExtensions(IVanillaCategoryExtensionRegistration registration) {
         registration.getCraftingCategory()
-                .addExtension(ShapedEntityStorageRecipe.class, new ShapedEntityStorageCategoryExtension());
+                .addCategoryExtension(ShapedEntityStorageRecipe.class, ShapedEntityStorageCategoryExtension::new);
     }
 
     @Override

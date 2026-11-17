@@ -38,7 +38,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -150,7 +149,10 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     }
 
     private boolean isValidInput(int index, ItemStack stack) {
-        return MachineRecipeCaches.SAG_MILLING.hasRecipe(List.of(stack));
+        if (level == null) {
+            return false;
+        }
+        return MachineRecipeCaches.SAG_MILLING.hasRecipe(level.getRecipeManager(), List.of(stack));
     }
 
     @Override
@@ -175,7 +177,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     }
 
     protected PoweredCraftingMachineTask<SagMillingRecipe, SagMillingRecipe.Input> createTask(Level level,
-            SagMillingRecipe.Input container, @Nullable RecipeHolder<SagMillingRecipe> recipe) {
+            SagMillingRecipe.Input container, @Nullable SagMillingRecipe recipe) {
         return new PoweredCraftingMachineTask<>(level, getInventory(), getEnergyStorage(), container, OUTPUT, recipe) {
             @Override
             protected void consumeInputs(SagMillingRecipe recipe) {

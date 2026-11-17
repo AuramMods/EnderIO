@@ -27,7 +27,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -99,7 +98,10 @@ public class PaintingMachineBlockEntity extends PoweredMachineBlockEntity {
     }
 
     private boolean isValidInput(int index, ItemStack stack) {
-        return MachineRecipeCaches.PAINTING.hasRecipe(List.of(stack));
+        if (level == null) {
+            return false;
+        }
+        return MachineRecipeCaches.PAINTING.hasRecipe(level.getRecipeManager(), List.of(stack));
     }
 
     private boolean isValidPaint(int index, ItemStack stack) {
@@ -138,7 +140,7 @@ public class PaintingMachineBlockEntity extends PoweredMachineBlockEntity {
     }
 
     protected PoweredCraftingMachineTask<PaintingRecipe, PaintingRecipe.Input> createTask(Level level,
-            PaintingRecipe.Input recipeInput, @Nullable RecipeHolder<PaintingRecipe> recipe) {
+            PaintingRecipe.Input recipeInput, @Nullable PaintingRecipe recipe) {
         return new PoweredCraftingMachineTask<>(level, getInventory(), getEnergyStorage(), recipeInput, OUTPUT,
                 recipe) {
             @Override

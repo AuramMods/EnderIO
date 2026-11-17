@@ -40,7 +40,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.LogicalSide;
@@ -113,7 +112,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     }
 
     protected VatCraftingMachineTask createTask(Level level, FermentingRecipe.Input input,
-            @Nullable RecipeHolder<FermentingRecipe> recipe) {
+            @Nullable FermentingRecipe recipe) {
         return new VatCraftingMachineTask(level, getInventory(), getFluidHandler(), input, recipe);
     }
 
@@ -126,7 +125,10 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     }
 
     protected boolean acceptSlotInput(int slot, ItemStack stack) {
-        return MachineRecipeCaches.FERMENTING.hasValidRecipeIf(getInventory(), REAGENTS, slot, stack);
+        if (level == null) {
+            return false;
+        }
+        return MachineRecipeCaches.FERMENTING.hasValidRecipeIf(level.getRecipeManager(), getInventory(), REAGENTS, slot, stack);
     }
 
     @Override
@@ -178,9 +180,9 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     }
 
     @Nullable
-    public RecipeHolder<FermentingRecipe> getRecipe() {
+    public FermentingRecipe getRecipe() {
         if (craftingTaskHost.hasTask()) {
-            return craftingTaskHost.getCurrentTask().getRecipeHolder();
+            return craftingTaskHost.getCurrentTask().getRecipe();
         }
 
         return null;
@@ -204,7 +206,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
 
         public VatCraftingMachineTask(@NotNull Level level, MachineInventory inventory,
                 MachineFluidHandler fluidHandler, FermentingRecipe.Input input,
-                @Nullable RecipeHolder<FermentingRecipe> recipe) {
+                @Nullable FermentingRecipe recipe) {
             super(level, inventory, fluidHandler, input, recipe);
         }
 

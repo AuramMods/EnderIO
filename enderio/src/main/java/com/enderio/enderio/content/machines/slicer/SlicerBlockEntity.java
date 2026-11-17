@@ -36,7 +36,6 @@ import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.item.Tiers;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.LogicalSide;
@@ -138,7 +137,10 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
     }
 
     private boolean isValidInput(int index, ItemStack stack) {
-        return SlicerRecipeManager.isSlicerValid(stack, index);
+        if (level == null) {
+            return false;
+        }
+        return SlicerRecipeManager.isSlicerValid(level.getRecipeManager(), stack, index);
     }
 
     private boolean validAxe(int slot, ItemStack stack) {
@@ -172,7 +174,7 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
     }
 
     protected PoweredCraftingMachineTask<SlicingRecipe, SlicingRecipe.Input> createTask(Level level,
-            SlicingRecipe.Input recipeInput, @Nullable RecipeHolder<SlicingRecipe> recipe) {
+            SlicingRecipe.Input recipeInput, @Nullable SlicingRecipe recipe) {
         return new PoweredCraftingMachineTask<>(level, getInventory(), getEnergyStorage(), recipeInput, OUTPUT,
                 recipe) {
             @Override

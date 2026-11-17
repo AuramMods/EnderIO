@@ -12,7 +12,6 @@ import com.enderio.enderio.init.EIORecipes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
 public class VatMenu extends MachineMenu<VatBlockEntity> {
@@ -71,7 +70,7 @@ public class VatMenu extends MachineMenu<VatBlockEntity> {
     }
 
     @Nullable
-    public RecipeHolder<FermentingRecipe> getRecipe() {
+    public FermentingRecipe getRecipe() {
         return recipeSlot.get();
     }
 

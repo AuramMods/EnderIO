@@ -17,9 +17,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingInput;
+import com.enderio.core.common.recipes.CraftingRecipeInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +40,7 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
     public static final SingleSlotAccess PREVIEW = new SingleSlotAccess();
 
     @Nullable
-    private RecipeHolder<CraftingRecipe> recipe;
+    private CraftingRecipe recipe;
     private final Queue<ItemStack> outputBuffer = new ArrayDeque<>();
 
     public CrafterBlockEntity(BlockPos worldPosition, BlockState blockState) {
@@ -49,8 +48,8 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
                 EnergyIOMode.Input, ENERGY_CAPACITY, ENERGY_USAGE);
     }
 
-    private CraftingInput getCraftingInput(MultiSlotAccess sourceSlots) {
-        return CraftingInput.of(3, 3, sourceSlots.getItemStacks(getInventory()));
+    private CraftingRecipeInput getCraftingInput(MultiSlotAccess sourceSlots) {
+        return new CraftingRecipeInput(3, 3, sourceSlots.getItemStacks(getInventory()));
     }
 
     @Override
@@ -68,7 +67,7 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
         PREVIEW.setStackInSlot(this, ItemStack.EMPTY);
 
         if (recipe != null) {
-            PREVIEW.setStackInSlot(this, recipe.value().getResultItem(getLevel().registryAccess()));
+            PREVIEW.setStackInSlot(this, recipe.getResultItem(getLevel().registryAccess()));
         }
     }
 
@@ -168,8 +167,8 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
 
     private Optional<ItemStack> getRecipeResult() {
         var input = getCraftingInput(INPUT);
-        if (recipe != null && recipe.value().matches(input, getLevel())) {
-            return Optional.of(recipe.value().assemble(input, getLevel().registryAccess()));
+        if (recipe != null && recipe.matches(input, getLevel())) {
+            return Optional.of(recipe.assemble(input, getLevel().registryAccess()));
         }
         return Optional.empty();
     }
@@ -190,14 +189,14 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
         var input = getCraftingInput(INPUT);
         // craft
         clearInput();
-        outputBuffer.add(recipe.value().assemble(input, getLevel().registryAccess()));
-        outputBuffer.addAll(recipe.value().getRemainingItems(input));
+        outputBuffer.add(recipe.assemble(input, getLevel().registryAccess()));
+        outputBuffer.addAll(recipe.getRemainingItems(input));
         // clean buffer
         outputBuffer.removeIf(ItemStack::isEmpty);
         // consume power
         getEnergyStorage().consumeEnergy(MachinesConfig.COMMON.ENERGY.CRAFTING_RECIPE_COST.get(), false);
         // check resource reload
-        if (level.getRecipeManager().byKey(recipe.id()).orElse(null) != recipe) {
+        if (level.getRecipeManager().byKey(recipe.getId()).orElse(null) != recipe) {
             recipe = null;
         }
     }

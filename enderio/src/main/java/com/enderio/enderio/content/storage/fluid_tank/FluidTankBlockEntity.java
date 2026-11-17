@@ -24,7 +24,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -76,7 +75,7 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
     public static final TankAccess TANK = new TankAccess();
 
     // TODO: Swap from optional to nullable?
-    private Optional<RecipeHolder<TankRecipe>> currentRecipe = Optional.empty();
+    private Optional<TankRecipe> currentRecipe = Optional.empty();
 
     public static final SingleSlotAccess FLUID_FILL_INPUT = new SingleSlotAccess();
     public static final SingleSlotAccess FLUID_FILL_OUTPUT = new SingleSlotAccess();
@@ -122,11 +121,11 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
 
         // fill recipes
         if (level != null) {
-            List<RecipeHolder<TankRecipe>> allRecipes = level.getRecipeManager()
+            List<TankRecipe> allRecipes = level.getRecipeManager()
                     .getAllRecipesFor(EIORecipes.TANK.type().get());
             return allRecipes.stream()
-                    .anyMatch((recipe) -> recipe.value().mode() == TankRecipe.Mode.EMPTY
-                            && recipe.value().input().test(item));
+                    .anyMatch((recipe) -> recipe.mode() == TankRecipe.Mode.EMPTY
+                            && recipe.input().test(item));
         }
 
         return false;
@@ -154,11 +153,11 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
 
         // drain recipes
         if (level != null) {
-            List<RecipeHolder<TankRecipe>> allRecipes = level.getRecipeManager()
+            List<TankRecipe> allRecipes = level.getRecipeManager()
                     .getAllRecipesFor(EIORecipes.TANK.type().get());
             return allRecipes.stream()
-                    .anyMatch((recipe) -> recipe.value().mode() == TankRecipe.Mode.FILL
-                            && recipe.value().input().test(item));
+                    .anyMatch((recipe) -> recipe.mode() == TankRecipe.Mode.FILL
+                            && recipe.input().test(item));
         }
 
         return false;
@@ -234,13 +233,13 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
         currentRecipe.ifPresent(recipe -> {
             // Ensure the recipe is still valid.
             // Fixes GH-1302.
-            if (!recipe.value().matches(createRecipeInput(), level)) {
+            if (!recipe.matches(createRecipeInput(), level)) {
                 return;
             }
 
-            ItemStack recipeResultStack = recipe.value().output().copy();
+            ItemStack recipeResultStack = recipe.output().copy();
 
-            switch (recipe.value().mode()) {
+            switch (recipe.mode()) {
             case EMPTY -> {
                 ItemStack outputStack = FLUID_FILL_OUTPUT.getItemStack(this);
 
@@ -248,11 +247,11 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
                         && outputStack.getCount() < outputStack.getMaxStackSize())) {
 
                     // Get the first matching fluid from the ingredient (for EMPTY mode, we're adding fluid to tank)
-                    List<FluidStack> possibleFluids = SizedFluidIngredientHelper.getFluidStacksInPreferredOrder(recipe.value().fluid());
+                    List<FluidStack> possibleFluids = SizedFluidIngredientHelper.getFluidStacksInPreferredOrder(recipe.fluid());
                     FluidStack fluidToFill = FluidStack.EMPTY;
                     for (FluidStack fluidToTry : possibleFluids) {
                         int filled = TANK.fill(this, fluidToTry, IFluidHandler.FluidAction.SIMULATE);
-                        if (filled == recipe.value().fluid().amount()) {
+                        if (filled == recipe.fluid().amount()) {
                             fluidToFill = fluidToTry;
                             break;
                         }
@@ -279,12 +278,12 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
                         && outputStack.getCount() < outputStack.getMaxStackSize())) {
 
                     // For FILL mode, we drain from tank - need to check what's actually in the tank
-                    var drained = TANK.drain(this, (int) recipe.value().fluid().amount(), IFluidHandler.FluidAction.SIMULATE);
-                    if (!recipe.value().fluid().test(drained) || drained.getAmount() != recipe.value().fluid().amount()) {
+                    var drained = TANK.drain(this, (int) recipe.fluid().amount(), IFluidHandler.FluidAction.SIMULATE);
+                    if (!recipe.fluid().test(drained) || drained.getAmount() != recipe.fluid().amount()) {
                         return;
                     }
 
-                    TANK.drain(this, (int) recipe.value().fluid().amount(), IFluidHandler.FluidAction.EXECUTE);
+                    TANK.drain(this, (int) recipe.fluid().amount(), IFluidHandler.FluidAction.EXECUTE);
                     FLUID_DRAIN_INPUT.getItemStack(this).shrink(1);
 
                     if (outputStack.isEmpty()) {

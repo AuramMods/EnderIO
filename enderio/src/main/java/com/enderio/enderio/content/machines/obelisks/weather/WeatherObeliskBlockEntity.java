@@ -28,7 +28,6 @@ import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -71,8 +70,8 @@ public class WeatherObeliskBlockEntity extends MachineBlockEntity implements Flu
 
     private CraftingMachineTask<WeatherChangeRecipe, WeatherChangeRecipe.Input> createTask(Level level,
             WeatherChangeRecipe.Input input,
-            @Nullable RecipeHolder<WeatherChangeRecipe> weatherChangeRecipeRecipeHolder) {
-        return new CraftingMachineTask<>(level, getInventory(), input, null, weatherChangeRecipeRecipeHolder) {
+            @Nullable WeatherChangeRecipe recipe) {
+        return new CraftingMachineTask<>(level, getInventory(), input, null, recipe) {
 
             @Override
             protected void consumeInputs(WeatherChangeRecipe recipe) {

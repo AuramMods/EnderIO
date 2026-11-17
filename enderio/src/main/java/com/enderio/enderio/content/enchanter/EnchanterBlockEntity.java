@@ -21,15 +21,14 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemContainerContents;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.Nullable;
 
 public class EnchanterBlockEntity extends EnderBlockEntity implements MenuProvider {
 
     @Nullable
-    private RecipeHolder<EnchanterRecipe> currentRecipe;
+    private EnchanterRecipe currentRecipe;
     public static final SingleSlotAccess BOOK = new SingleSlotAccess();
     public static final SingleSlotAccess CATALYST = new SingleSlotAccess();
     public static final SingleSlotAccess LAPIS = new SingleSlotAccess();
@@ -98,7 +97,7 @@ public class EnchanterBlockEntity extends EnderBlockEntity implements MenuProvid
                 if (!OUTPUT.isSlot(slot)) {
                     if (currentRecipe != null) {
                         OUTPUT.setStackInSlot(this,
-                                currentRecipe.value().assemble(recipeInput, level.registryAccess()));
+                                currentRecipe.assemble(recipeInput, level.registryAccess()));
                     } else {
                         OUTPUT.setStackInSlot(this, ItemStack.EMPTY);
                     }
@@ -126,7 +125,7 @@ public class EnchanterBlockEntity extends EnderBlockEntity implements MenuProvid
             return null;
         }
 
-        return currentRecipe.value();
+        return currentRecipe;
     }
 
     // endregion
