@@ -1,6 +1,7 @@
 package com.enderio.enderio.foundation.task;
 
 import com.enderio.core.common.recipes.OutputStack;
+import com.enderio.core.common.recipes.RecipeSnapshot;
 import com.enderio.enderio.foundation.MachineRecipe;
 import com.enderio.enderio.foundation.inventory.MachineInventory;
 import com.enderio.enderio.foundation.inventory.MultiSlotAccess;
@@ -8,7 +9,6 @@ import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
 import com.enderio.enderio.foundation.io.fluid.MachineFluidHandler;
 import com.enderio.enderio.foundation.state.MachineState;
 import com.mojang.logging.LogUtils;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -126,7 +126,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
         }
 
         // If the recipe failed to load somehow, cancel
-        if (recipe == null) {
+        if (recipe == null || level.getRecipeManager().byKey(recipe.getId()).orElse(null) != recipe) {
             isComplete = true;
             return;
         }
@@ -173,11 +173,11 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
 
     @Override
     public float getProgress() {
-        if (recipe == null) {
+        if (recipe == null || progressRequired <= 0) {
             return 0.0f;
         }
 
-        return progressMade / (float) progressRequired;
+        return Math.min(1.0f, progressMade / (float) progressRequired);
     }
 
     @Override
@@ -200,7 +200,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
         // See that we can add all the outputs
         MachineInventory snapshot = getInventory().snapshot(outputSlots); // Snapshot for chained simulations.
         for (OutputStack output : outputs) {
-            ItemStack item = output.getItem();
+            ItemStack item = output.getItem().copy();
 
             for (SingleSlotAccess outputAccess : outputSlots.getAccesses()) {
                 item = outputAccess.insertItem(snapshot, item, false); // Don't simulate, we are using a snapshot copy
@@ -215,7 +215,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
         // If we're not simulating, go for it
         if (!simulate) {
             for (OutputStack output : outputs) {
-                ItemStack item = output.getItem();
+                ItemStack item = output.getItem().copy();
 
                 for (SingleSlotAccess outputAccess : outputSlots.getAccesses()) {
                     item = outputAccess.insertItem(inventory, item, false);
@@ -231,6 +231,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
     // region Serialization
 
     private static final String KEY_RECIPE_ID = "RecipeId";
+    private static final String KEY_RECIPE_DATA = "RecipeData";
     private static final String KEY_PROGRESS_MADE = "ProgressMade";
     private static final String KEY_PROGRESS_REQUIRED = "ProgressRequired";
     private static final String KEY_HAS_COLLECTED_INPUTS = "HasCollectedInputs";
@@ -239,7 +240,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
     private static final String KEY_OUTPUTS = "Outputs";
 
     @Override
-    public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
+    public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
 
         // If the recipe is null, we aren't going to keep the task
@@ -248,6 +249,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
         }
 
         tag.putString(KEY_RECIPE_ID, recipe.getId().toString());
+        tag.putByteArray(KEY_RECIPE_DATA, RecipeSnapshot.encode(recipe, level.registryAccess()));
         tag.putInt(KEY_PROGRESS_MADE, progressMade);
         tag.putInt(KEY_PROGRESS_REQUIRED, progressRequired);
         tag.putBoolean(KEY_HAS_COLLECTED_INPUTS, hasConsumedInputs);
@@ -257,7 +259,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
         if (hasDeterminedOutputs) {
             ListTag outputsNbt = new ListTag();
             for (OutputStack stack : outputs) {
-                outputsNbt.add(stack.serializeNBT(lookupProvider));
+                outputsNbt.add(stack.serializeNBT());
             }
             tag.put(KEY_OUTPUTS, outputsNbt);
         }
@@ -267,21 +269,31 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
 
     // TODO: 20.6: Swap tasks to use Codecs.
     @Override
-    public void deserializeNBT(HolderLookup.Provider lookupProvider, CompoundTag nbt) {
+    public void deserializeNBT(CompoundTag nbt) {
         // TODO: Exception handling
         var savedId = ResourceLocation.tryParse(nbt.getString(KEY_RECIPE_ID));
         recipe = savedId == null ? null : loadRecipe(savedId);
-        progressMade = nbt.getInt(KEY_PROGRESS_MADE);
-        progressRequired = nbt.getInt(KEY_PROGRESS_REQUIRED);
+        progressMade = Math.max(0, nbt.getInt(KEY_PROGRESS_MADE));
+        progressRequired = Math.max(0, nbt.getInt(KEY_PROGRESS_REQUIRED));
         hasConsumedInputs = nbt.getBoolean(KEY_HAS_COLLECTED_INPUTS);
         isComplete = nbt.getBoolean(KEY_IS_COMPLETE);
 
         hasDeterminedOutputs = nbt.getBoolean(KEY_HAS_DETERMINED_OUTPUTS);
+        outputs = List.of();
+        if (recipe == null || nbt.contains(KEY_RECIPE_DATA, Tag.TAG_BYTE_ARRAY)
+                && !java.util.Arrays.equals(nbt.getByteArray(KEY_RECIPE_DATA), RecipeSnapshot.encode(recipe, level.registryAccess()))) {
+            // Inputs are consumed only after outputs can be placed; cancelling leaves them in storage.
+            isComplete = true;
+            return;
+        }
         if (hasDeterminedOutputs) {
+            if (!nbt.contains(KEY_OUTPUTS, Tag.TAG_LIST)) {
+                throw new IllegalArgumentException("Saved machine task has no determined output list");
+            }
             ListTag outputsNbt = nbt.getList(KEY_OUTPUTS, Tag.TAG_COMPOUND);
             outputs = new ArrayList<>();
             for (Tag tag : outputsNbt) {
-                outputs.add(OutputStack.fromNBT(lookupProvider, (CompoundTag) tag));
+                outputs.add(OutputStack.fromNBT((CompoundTag) tag));
             }
         }
     }

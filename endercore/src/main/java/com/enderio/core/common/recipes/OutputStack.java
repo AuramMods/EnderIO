@@ -1,6 +1,7 @@
 package com.enderio.core.common.recipes;
 
 import com.enderio.core.CoreNBTKeys;
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -81,11 +82,15 @@ public record OutputStack(Either<ItemStack, FluidStack> stack) {
      * Write to NBT.
      */
     public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
+        return serializeNBT();
+    }
+
+    public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         if (isItem()) {
-            tag.put(CoreNBTKeys.ITEM, stack.left().get().save(new CompoundTag()));
+            tag.put(CoreNBTKeys.ITEM, StackDataCodecs.saveItem(stack.left().get()));
         } else if (isFluid()) {
-            tag.put(CoreNBTKeys.FLUID, stack.right().get().writeToNBT(new CompoundTag()));
+            tag.put(CoreNBTKeys.FLUID, StackDataCodecs.saveFluid(stack.right().get()));
         }
         return tag;
     }
@@ -94,10 +99,14 @@ public record OutputStack(Either<ItemStack, FluidStack> stack) {
      * Read from NBT.
      */
     public static OutputStack fromNBT(HolderLookup.Provider lookupProvider, CompoundTag tag) {
+        return fromNBT(tag);
+    }
+
+    public static OutputStack fromNBT(CompoundTag tag) {
         if (tag.contains(CoreNBTKeys.ITEM)) {
-            return OutputStack.of(ItemStack.of(tag.getCompound(CoreNBTKeys.ITEM)));
+            return OutputStack.of(StackDataCodecs.loadItem(tag.getCompound(CoreNBTKeys.ITEM)));
         } else if (tag.contains(CoreNBTKeys.FLUID)) {
-            return OutputStack.of(FluidStack.loadFluidStackFromNBT(tag.getCompound(CoreNBTKeys.FLUID)));
+            return OutputStack.of(StackDataCodecs.loadFluid(tag.getCompound(CoreNBTKeys.FLUID)));
         }
         return OutputStack.EMPTY;
     }

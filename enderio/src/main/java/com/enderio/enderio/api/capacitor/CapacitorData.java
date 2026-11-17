@@ -1,6 +1,8 @@
 package com.enderio.enderio.api.capacitor;
 
 import com.mojang.serialization.Codec;
+import com.enderio.core.common.item.ItemDataKey;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
@@ -35,6 +37,8 @@ public record CapacitorData(float base, Map<CapacitorModifier, Float> modifiers)
         CapacitorData::modifiers,
         CapacitorData::new
     );
+
+    public static final ItemDataKey<CapacitorData> ITEM_DATA = new ItemDataKey<>(EnderIOAPI.rl("capacitor_data"), CODEC);
 
     public static final CapacitorData NONE = simple(0.0f);
 

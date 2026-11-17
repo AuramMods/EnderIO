@@ -126,7 +126,7 @@ public abstract class MachineTaskHost {
 
     public final void onLevelReady() {
         // If load() hasn't been called yet, don't
-        if (!hasLoaded) {
+        if (!hasLoaded || getLevel() == null) {
             return;
         }
 
@@ -149,25 +149,21 @@ public abstract class MachineTaskHost {
     private static final String KEY_TASK = "Task";
 
     public void save(HolderLookup.Provider lookupProvider, CompoundTag tag) {
-        if (hasTask()) {
+        if (pendingTask != null) {
+            tag.put(KEY_TASK, pendingTask.copy());
+        } else if (hasTask()) {
             tag.put(KEY_TASK, getCurrentTask().serializeNBT(lookupProvider));
+        } else {
+            tag.remove(KEY_TASK);
         }
     }
 
     public void load(HolderLookup.Provider lookupProvider, CompoundTag tag) {
         hasLoaded = true;
-
-        if (levelSupplier.get() == null) {
-            if (tag.contains(KEY_TASK)) {
-                pendingTask = tag.getCompound(KEY_TASK).copy();
-            }
-        } else {
-            if (tag.contains(KEY_TASK)) {
-                currentTask = loadTask(lookupProvider, tag.getCompound(KEY_TASK));
-            } else {
-                currentTask = getNewTask();
-            }
-        }
+        currentTask = null;
+        pendingTask = tag.contains(KEY_TASK, net.minecraft.nbt.Tag.TAG_COMPOUND) ? tag.getCompound(KEY_TASK).copy() : null;
+        isNewTaskAvailable = false;
+        onLevelReady();
     }
 
     // endregion

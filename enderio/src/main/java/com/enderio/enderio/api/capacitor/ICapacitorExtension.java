@@ -1,6 +1,8 @@
 package com.enderio.enderio.api.capacitor;
 
-import com.enderio.enderio.init.EIODataComponents;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
@@ -14,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.AvailableSince("8.1.0")
 @ApiStatus.Experimental
 public interface ICapacitorExtension {
+    Capability<ICapacitorExtension> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
+
     /**
      * Called whenever a task completes an operation.
      * Only called on the server.
@@ -30,6 +34,6 @@ public interface ICapacitorExtension {
      */
     @Nullable
     default CapacitorData getCapacitorData(ItemStack capacitorStack, @Nullable HolderLookup.Provider registries) {
-        return EIODataComponents.CAPACITOR_DATA.get(capacitorStack);
+        return CapacitorData.ITEM_DATA.get(capacitorStack);
     }
 }

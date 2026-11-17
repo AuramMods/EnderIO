@@ -1,6 +1,6 @@
 package com.enderio.enderio.content.machines;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -119,6 +119,6 @@ public class MachinesLang {
     }
 
     private static MutableComponent create(String type, String path) {
-        return Component.translatable(Util.makeDescriptionId(type, EnderIO.rl("machine/" + path)));
+        return Component.translatable(Util.makeDescriptionId(type, EnderIOAPI.rl("machine/" + path)));
     }
 }

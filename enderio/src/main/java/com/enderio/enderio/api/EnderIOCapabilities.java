@@ -23,7 +23,7 @@ public class EnderIOCapabilities {
 
     public static final Capability<SideConfig> SIDE_CONFIG = CapabilityManager.get(new CapabilityToken<>() {});
 
-    public static final Capability<ICapacitorExtension> CAPACITOR_EXTENSION = CapabilityManager.get(new CapabilityToken<>() {});
+    public static final Capability<ICapacitorExtension> CAPACITOR_EXTENSION = ICapacitorExtension.CAPABILITY;
 
     public static final Capability<FilterMenuProvider> FILTER_MENU_PROVIDER = CapabilityManager.get(new CapabilityToken<>() {});
 

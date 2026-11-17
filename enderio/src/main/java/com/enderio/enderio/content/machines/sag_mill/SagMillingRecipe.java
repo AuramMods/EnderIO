@@ -181,7 +181,7 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
                 .apply(instance, OutputItem::new));
 
         public static final PacketCodec<OutputItem> STREAM_CODEC = PacketCodec.composite(
-                PacketCodecs.either(PacketCodecs.REQUIRED_ITEM_STACK, SizedTagOutput.STREAM_CODEC), OutputItem::output,
+                PacketCodecs.either(PacketCodecs.REQUIRED_ITEM_STACK_DATA, SizedTagOutput.STREAM_CODEC), OutputItem::output,
                 PacketCodecs.FLOAT, OutputItem::chance, PacketCodecs.BOOL, OutputItem::isOptional, OutputItem::new);
 
         public static OutputItem of(Item item, int count, float chance, boolean optional) {

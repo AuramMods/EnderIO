@@ -225,7 +225,7 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
                 AlloySmeltingRecipe.Input recipeInput) {
             // This handles the output multiplication for vanilla smelting recipes.
             if (recipe.isSmelting()) {
-                SizedIngredient input = recipe.inputs().getFirst();
+                SizedIngredient input = recipe.inputs().get(0);
 
                 int inputCount = 0;
                 for (int i = inputs.size() - 1; i >= 0; i--) {
@@ -294,14 +294,14 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
         }
 
         @Override
-        public void deserializeNBT(HolderLookup.Provider lookupProvider, CompoundTag nbt) {
-            super.deserializeNBT(lookupProvider, nbt);
+        public void deserializeNBT(CompoundTag nbt) {
+            super.deserializeNBT(nbt);
             inputsConsumed = nbt.getInt(MachineNBTKeys.PROCESSED_INPUTS);
         }
 
         @Override
-        public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
-            var tag = super.serializeNBT(lookupProvider);
+        public CompoundTag serializeNBT() {
+            var tag = super.serializeNBT();
             tag.putInt(MachineNBTKeys.PROCESSED_INPUTS, inputsConsumed);
             return tag;
         }

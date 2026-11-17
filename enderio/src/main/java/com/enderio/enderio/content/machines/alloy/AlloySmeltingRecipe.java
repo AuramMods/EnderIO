@@ -211,7 +211,7 @@ public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.In
 
         public static final PacketCodec<AlloySmeltingRecipe> STREAM_CODEC = PacketCodec
                 .composite(SizedIngredient.STREAM_CODEC.list(), AlloySmeltingRecipe::inputs,
-                        PacketCodecs.REQUIRED_ITEM_STACK, AlloySmeltingRecipe::output, PacketCodecs.INT,
+                        PacketCodecs.REQUIRED_ITEM_STACK_DATA, AlloySmeltingRecipe::output, PacketCodecs.INT,
                         AlloySmeltingRecipe::energy, PacketCodecs.FLOAT, AlloySmeltingRecipe::experience,
                         PacketCodecs.BOOL, AlloySmeltingRecipe::isSmelting, AlloySmeltingRecipe::new);
 

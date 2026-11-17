@@ -113,7 +113,7 @@ public record PaintingRecipe(Ingredient input, ItemStack output, ResourceLocatio
                 .apply(instance, PaintingRecipe::new));
 
         public static final PacketCodec<PaintingRecipe> STREAM_CODEC = PacketCodec.composite(
-                PacketCodecs.INGREDIENT, PaintingRecipe::input, PacketCodecs.REQUIRED_ITEM_STACK, PaintingRecipe::output,
+                PacketCodecs.INGREDIENT, PaintingRecipe::input, PacketCodecs.REQUIRED_ITEM_STACK_DATA, PaintingRecipe::output,
                 PaintingRecipe::new);
 
         @Override

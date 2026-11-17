@@ -153,7 +153,7 @@ public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredien
                     .apply(instance, TankRecipe::new));
 
         public static final PacketCodec<TankRecipe> STREAM_CODEC = PacketCodec.composite(
-                PacketCodecs.INGREDIENT, TankRecipe::input, PacketCodecs.REQUIRED_ITEM_STACK, TankRecipe::output,
+                PacketCodecs.INGREDIENT, TankRecipe::input, PacketCodecs.REQUIRED_ITEM_STACK_DATA, TankRecipe::output,
                 SizedFluidIngredient.STREAM_CODEC, TankRecipe::fluid, Mode.STREAM_CODEC, TankRecipe::mode, TankRecipe::new);
 
         @Override

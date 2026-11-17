@@ -1,6 +1,7 @@
 package com.enderio.enderio.foundation.io.fluid;
 
 import com.enderio.core.CoreNBTKeys;
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.enderio.api.io.IOConfigurable;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -8,7 +9,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,7 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
     private final MachineTankLayout layout;
     private final Map<Integer, MachineFluidTank> tanks = new HashMap<>();
     private final List<FluidStack> stacks;
+    private ListTag overflowTanks = new ListTag();
 
     // Not sure if we need this but might be useful to update recipe/task if tank is
     // filled.
@@ -57,7 +59,7 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
     // tanks
     @Deprecated
     public final MachineFluidTank getTank(int tank) {
-        if (tank > getTanks()) {
+        if (tank < 0 || tank >= getTanks()) {
             throw new IndexOutOfBoundsException("No tank found for index " + tank + " in range" + getTanks() + ".");
         }
         return tanks.computeIfAbsent(tank, i -> new MachineFluidTank(i, this));
@@ -74,7 +76,12 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
     }
 
     public void setFluidInTank(int tank, FluidStack fluid) {
-        stacks.set(tank, fluid);
+        var stored = fluid.isEmpty() ? FluidStack.EMPTY : fluid.copy();
+        if (!StackDataCodecs.fluidsEqual(stacks.get(tank), stored)) {
+            stacks.set(tank, stored);
+            onContentsChanged(tank);
+            changeListener.accept(tank);
+        }
     }
 
     @Override
@@ -109,148 +116,78 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
     }
 
     public int fill(int tank, FluidStack resource, FluidAction action) {
-        FluidStack fluid = getFluidInTank(tank);
-        int capacity = getTankCapacity(tank);
-        if (resource.isEmpty()) {
+        var current = getFluidInTank(tank);
+        if (resource.isEmpty() || !isFluidValid(tank, resource)
+                || !current.isEmpty() && !current.isFluidEqual(resource)) {
             return 0;
         }
-
-        if (!isFluidValid(tank, resource)) {
-            return 0;
+        int accepted = Math.min(resource.getAmount(), Math.max(0, getTankCapacity(tank) - current.getAmount()));
+        if (action.execute() && accepted > 0) {
+            setFluidInTank(tank, new FluidStack(resource, current.getAmount() + accepted));
         }
-
-        if (action.simulate()) {
-            if (fluid.isEmpty()) {
-                return Math.min(capacity, resource.getAmount());
-            }
-
-            if (!FluidStack.isSameFluidSameComponents(fluid, resource)) {
-                return 0;
-            }
-
-            return Math.min(capacity - fluid.getAmount(), resource.getAmount());
-        }
-
-        if (fluid.isEmpty()) {
-            fluid = resource.copyWithAmount(Math.min(capacity, resource.getAmount()));
-            setFluidInTank(tank, fluid);
-            onContentsChanged(tank);
-            return fluid.getAmount();
-        }
-
-        if (!FluidStack.isSameFluidSameComponents(fluid, resource)) {
-            return 0;
-        }
-
-        int filled = capacity - fluid.getAmount();
-
-        if (resource.getAmount() < filled) {
-            fluid.grow(resource.getAmount());
-            filled = resource.getAmount();
-        } else {
-            fluid.setAmount(capacity);
-        }
-
-        if (filled > 0) {
-            onContentsChanged(tank);
-        }
-
-        return filled;
+        return accepted;
     }
 
     @Override
     public int fill(FluidStack resource, FluidAction action) {
-        // Don't waste any time.
         if (resource.isEmpty()) {
             return 0;
         }
-
-        // Copy the fluid originalStack and prepare to distribute it across all tanks
-        FluidStack resourceLeft = resource.copy();
-        int totalFilled = 0;
-
-        for (int index = 0; index < getTanks(); index++) {
-            if (!canInsert(index)) {
-                continue;
+        var remaining = resource.copy();
+        int filled = 0;
+        for (int tank = 0; tank < getTanks() && !remaining.isEmpty(); tank++) {
+            if (canInsert(tank)) {
+                int accepted = fill(tank, remaining, action);
+                remaining.shrink(accepted);
+                filled += accepted;
             }
-
-            // Attempt to fill the tank
-            int filled = fill(index, resourceLeft, action);
-            resourceLeft.shrink(filled);
-            totalFilled += filled;
-
-            if (filled > 0) {
-                onContentsChanged(index);
-            }
-
-            // If we used up all the resource, stop trying.
-            if (resourceLeft.isEmpty()) {
-                break;
-            }
-
         }
-        return totalFilled;
+        return filled;
     }
 
     public FluidStack drain(int tank, int maxDrain, FluidAction action) {
-        FluidStack fluid = getFluidInTank(tank);
-        int drained = maxDrain;
-        if (fluid.getAmount() < drained) {
-            drained = fluid.getAmount();
+        var current = getFluidInTank(tank);
+        if (maxDrain <= 0 || current.isEmpty()) {
+            return FluidStack.EMPTY;
         }
-        FluidStack stack = fluid.copyWithAmount(drained);
-        if (action.execute() && drained > 0) {
-            fluid.shrink(drained);
-            onContentsChanged(tank);
+        int amount = Math.min(maxDrain, current.getAmount());
+        var drained = new FluidStack(current, amount);
+        if (action.execute()) {
+            setFluidInTank(tank, new FluidStack(current, current.getAmount() - amount));
         }
-        return stack;
+        return drained;
     }
 
     public FluidStack drain(int tank, FluidStack resource, FluidAction action) {
-        if (resource.isEmpty() || !isFluidValid(tank, resource)) {
+        if (resource.isEmpty() || !getFluidInTank(tank).isFluidEqual(resource)) {
             return FluidStack.EMPTY;
         }
-
-        if (!getFluidInTank(tank).isEmpty() && !getFluidInTank(tank).isFluidEqual(resource)) {
-            return FluidStack.EMPTY;
-        }
-
         return drain(tank, resource.getAmount(), action);
     }
 
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action) {
-        for (int index = 0; index < getTanks(); index++) {
-            if (canExtract(index)) {
-                if (drain(index, resource, FluidAction.SIMULATE) != FluidStack.EMPTY) {
-                    FluidStack drained = drain(index, resource, action);
-                    if (!drained.isEmpty()) {
-                        onContentsChanged(index);
-                        changeListener.accept(index);
-                    }
+        for (int tank = 0; tank < getTanks(); tank++) {
+            if (canExtract(tank)) {
+                var drained = drain(tank, resource, action);
+                if (!drained.isEmpty()) {
                     return drained;
                 }
             }
         }
-
         return FluidStack.EMPTY;
     }
 
     @Override
     public FluidStack drain(int maxDrain, FluidAction action) {
-        for (int index = 0; index < getTanks(); index++) {
-            if (canExtract(index)) {
-                if (drain(index, maxDrain, FluidAction.SIMULATE) != FluidStack.EMPTY) {
-                    FluidStack drained = drain(index, maxDrain, action);
-                    if (!drained.isEmpty()) {
-                        onContentsChanged(index);
-                        changeListener.accept(index);
-                    }
+        for (int tank = 0; tank < getTanks(); tank++) {
+            if (canExtract(tank)) {
+                var drained = drain(tank, maxDrain, action);
+                if (!drained.isEmpty()) {
                     return drained;
                 }
             }
         }
-
         return FluidStack.EMPTY;
     }
 
@@ -258,27 +195,58 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
     }
 
     @Override
-    public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
-        ListTag nbtTagList = new ListTag();
-        for (int i = 0; i < getTanks(); i++) {
-            CompoundTag tankTag = new CompoundTag();
-            tankTag.putInt(TANK_INDEX, i);
-            tankTag.put(TANK_CONTENTS, stacks.get(i).saveOptional(lookupProvider));
-            nbtTagList.add(tankTag);
+    public CompoundTag serializeNBT() {
+        var tanks = new ListTag();
+        for (int tank = 0; tank < getTanks(); tank++) {
+            var entry = new CompoundTag();
+            entry.putInt(TANK_INDEX, tank);
+            entry.put(TANK_CONTENTS, StackDataCodecs.saveFluid(stacks.get(tank)));
+            tanks.add(entry);
         }
-        CompoundTag nbt = new CompoundTag();
-        nbt.put(CoreNBTKeys.TANKS, nbtTagList);
-        return nbt;
+        overflowTanks.forEach(tank -> tanks.add(tank.copy()));
+        var tag = new CompoundTag();
+        tag.put(CoreNBTKeys.TANKS, tanks);
+        return tag;
     }
 
     @Override
-    public void deserializeNBT(HolderLookup.Provider lookupProvider, CompoundTag nbt) {
-        ListTag tagList = nbt.getList(CoreNBTKeys.TANKS, Tag.TAG_COMPOUND);
-        for (int i = 0; i < tagList.size(); i++) {
-            CompoundTag tankTag = tagList.getCompound(i);
-            int index = tankTag.getInt(TANK_INDEX);
-            stacks.set(index, FluidStack.parseOptional(lookupProvider, tankTag.getCompound(TANK_CONTENTS)));
+    public void deserializeNBT(CompoundTag tag) {
+        var loaded = NonNullList.withSize(getTanks(), FluidStack.EMPTY);
+        var overflow = new ListTag();
+        var seen = new java.util.HashSet<Integer>();
+        var tanks = tag.getList(CoreNBTKeys.TANKS, Tag.TAG_COMPOUND);
+        for (int i = 0; i < tanks.size(); i++) {
+            var entry = tanks.getCompound(i);
+            int tank = entry.getInt(TANK_INDEX);
+            if (!seen.add(tank)) {
+                throw new IllegalArgumentException("Duplicate machine tank index: " + tank);
+            }
+            if (tank < 0 || tank >= getTanks()) {
+                overflow.add(entry.copy());
+            } else {
+                loaded.set(tank, StackDataCodecs.loadFluid(entry.getCompound(TANK_CONTENTS)));
+            }
         }
+        boolean[] changed = new boolean[getTanks()];
+        for (int tank = 0; tank < getTanks(); tank++) {
+            changed[tank] = !StackDataCodecs.fluidsEqual(stacks.get(tank), loaded.get(tank));
+            stacks.set(tank, loaded.get(tank));
+        }
+        overflowTanks = overflow;
+        for (int tank = 0; tank < getTanks(); tank++) {
+            if (changed[tank]) {
+                onContentsChanged(tank);
+                changeListener.accept(tank);
+            }
+        }
+    }
+
+    public CompoundTag serializeNBT(HolderLookup.Provider registries) {
+        return serializeNBT();
+    }
+
+    public void deserializeNBT(HolderLookup.Provider registries, CompoundTag tag) {
+        deserializeNBT(tag);
     }
 
     // Sided capability access

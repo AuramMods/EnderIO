@@ -1,7 +1,7 @@
 package com.enderio.enderio.foundation.inventory;
 
-import com.enderio.enderio.api.EnderIOCapabilities;
-import com.enderio.enderio.init.EIODataComponents;
+import com.enderio.enderio.api.capacitor.ICapacitorExtension;
+import com.enderio.enderio.api.capacitor.CapacitorData;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -345,7 +345,7 @@ public class MachineInventoryLayout {
                 .insert()
                 .guiInsert()
                 .guiExtract()
-                .filter((i, s) -> EIODataComponents.CAPACITOR_DATA.has(s) || s.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION).orElse(null) != null)
+                .filter((i, s) -> CapacitorData.ITEM_DATA.has(s) || s.getCapability(ICapacitorExtension.CAPABILITY).orElse(null) != null)
                 .stackLimit(1));
             capacitorSlot = slots.size() - 1;
             return this;

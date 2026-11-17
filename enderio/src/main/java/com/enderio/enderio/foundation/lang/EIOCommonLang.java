@@ -1,7 +1,7 @@
 package com.enderio.enderio.foundation.lang;
 
 import com.enderio.core.common.util.TooltipUtil;
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
@@ -97,6 +97,6 @@ public class EIOCommonLang {
     }
 
     private static MutableComponent create(String type, String path) {
-        return Component.translatable(Util.makeDescriptionId(type, EnderIO.rl(path)));
+        return Component.translatable(Util.makeDescriptionId(type, EnderIOAPI.rl(path)));
     }
 }

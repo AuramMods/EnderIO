@@ -96,7 +96,7 @@ public record SlicingRecipe(ItemStack output, List<Ingredient> inputs, int energ
                 .apply(instance, SlicingRecipe::new));
 
         public static final PacketCodec<SlicingRecipe> STREAM_CODEC = PacketCodec.composite(
-                PacketCodecs.REQUIRED_ITEM_STACK, SlicingRecipe::output,
+                PacketCodecs.REQUIRED_ITEM_STACK_DATA, SlicingRecipe::output,
                 PacketCodecs.INGREDIENT.list(), SlicingRecipe::inputs, PacketCodecs.INT,
                 SlicingRecipe::energy, SlicingRecipe::new);
 

@@ -73,6 +73,16 @@ public final class PacketCodecs {
         if (count < 0) throw new DecoderException("Negative item data count");
         return count == 0 ? ItemStack.EMPTY : REQUIRED_ITEM_STACK.decode(buffer).copyWithCount(count);
     });
+
+    /** Nonempty logical recipe output, including counts above a physical stack's byte range. */
+    public static final PacketCodec<ItemStack> REQUIRED_ITEM_STACK_DATA = PacketCodec.of((buffer, stack) -> {
+        if (stack.isEmpty()) throw new EncoderException("Required recipe output is empty");
+        ITEM_STACK_DATA.encode(buffer, stack);
+    }, buffer -> {
+        var stack = ITEM_STACK_DATA.decode(buffer);
+        if (stack.isEmpty()) throw new DecoderException("Required recipe output is empty");
+        return stack;
+    });
     public static final PacketCodec<FluidStack> FLUID_STACK = PacketCodec.of((buffer, stack) -> stack.writeToPacket(buffer),
         FluidStack::readFromPacket);
     public static final PacketCodec<ParticleOptions> PARTICLE = PacketCodec.of((buffer, particle) -> {

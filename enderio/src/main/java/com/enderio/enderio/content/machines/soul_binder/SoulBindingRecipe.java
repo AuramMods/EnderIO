@@ -193,7 +193,7 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
                 });
 
         public static final PacketCodec<SoulBindingRecipe> STREAM_CODEC = MassiveStreamCodec
-                .composite(PacketCodecs.REQUIRED_ITEM_STACK, SoulBindingRecipe::output, PacketCodecs.INGREDIENT,
+                .composite(PacketCodecs.REQUIRED_ITEM_STACK_DATA, SoulBindingRecipe::output, PacketCodecs.INGREDIENT,
                         SoulBindingRecipe::input, PacketCodecs.INT, SoulBindingRecipe::energy, PacketCodecs.INT,
                         SoulBindingRecipe::experience, PacketCodecs.RESOURCE_LOCATION.optional(),
                         SoulBindingRecipe::entityType,

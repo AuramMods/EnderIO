@@ -153,7 +153,7 @@ public record FireCraftingRecipe(List<Result> results, List<Block> bases, List<T
                         .apply(resultInstance, Result::new));
 
         public static final PacketCodec<Result> STREAM_CODEC = PacketCodec.composite(
-                PacketCodecs.REQUIRED_ITEM_STACK, Result::result, PacketCodecs.INT, Result::minCount, PacketCodecs.INT,
+                PacketCodecs.REQUIRED_ITEM_STACK_DATA, Result::result, PacketCodecs.INT, Result::minCount, PacketCodecs.INT,
                 Result::maxCount, PacketCodecs.FLOAT, Result::chance, Result::new);
     }
 }

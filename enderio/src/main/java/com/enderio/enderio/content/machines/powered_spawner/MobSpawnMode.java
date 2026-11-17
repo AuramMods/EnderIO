@@ -45,11 +45,19 @@ public enum MobSpawnMode implements StringRepresentable {
         return name;
     }
 
+    public Tag save() {
+        return CODEC.encodeStart(NbtOps.INSTANCE, this).result().orElseThrow();
+    }
+
+    public static MobSpawnMode parse(Tag tag) {
+        return CODEC.parse(NbtOps.INSTANCE, tag).result().orElseThrow(() -> new IllegalArgumentException("Invalid saved mob spawn mode"));
+    }
+
     public Tag save(HolderLookup.Provider lookupProvider) {
-        return CODEC.encodeStart(lookupProvider.createSerializationContext(NbtOps.INSTANCE), this).getOrThrow();
+        return save();
     }
 
     public static MobSpawnMode parse(HolderLookup.Provider lookupProvider, Tag tag) {
-        return CODEC.parse(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag).getOrThrow();
+        return parse(tag);
     }
 }

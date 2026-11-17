@@ -2,12 +2,11 @@ package com.enderio.enderio.foundation.io.energy;
 
 import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.api.io.energy.EnergyIOMode;
-import com.enderio.enderio.config.machines.MachinesConfig;
 import com.enderio.enderio.foundation.MachineNBTKeys;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,8 +57,11 @@ public class MachineEnergyStorage implements IMachineEnergyStorage, INBTSerializ
      * Set the energy stored in the storage.
      */
     public void setEnergyStored(int energy) {
-        energyStored = Math.min(energy, getMaxEnergyStored());
-        onContentsChanged();
+        int value = Math.max(0, energy);
+        if (energyStored != value) {
+            energyStored = value;
+            onContentsChanged();
+        }
     }
 
     @Override
@@ -69,27 +71,26 @@ public class MachineEnergyStorage implements IMachineEnergyStorage, INBTSerializ
 
     @Override
     public int addEnergy(int energy, boolean simulate) {
-        int energyBefore = getEnergyStored();
-        int newEnergyStored = Math.min(getEnergyStored() + energy, getMaxEnergyStored());
-        if (!simulate) {
-            setEnergyStored(newEnergyStored);
-            onContentsChanged();
+        int accepted = Math.min(Math.max(0, energy), Math.max(0, getMaxEnergyStored() - energyStored));
+        if (!simulate && accepted > 0) {
+            setEnergyStored(energyStored + accepted);
         }
-        return newEnergyStored - energyBefore;
+        return accepted;
     }
 
     @Override
     public int takeEnergy(int energy) {
-        int energyBefore = getEnergyStored();
-        setEnergyStored(Math.max(getEnergyStored() - energy, 0));
-        onContentsChanged();
-        return energyBefore - getEnergyStored();
+        int taken = Math.min(Math.max(0, energy), getEnergyStored());
+        if (taken > 0) {
+            setEnergyStored(energyStored - taken);
+        }
+        return taken;
     }
 
     @Override
     public int consumeEnergy(int energy, boolean simulate) {
         // Cap rate
-        int usableEnergy = Math.min(getEnergyStored(), Math.min(energy, getMaxEnergyUse()));
+        int usableEnergy = Math.min(getEnergyStored(), Math.min(Math.max(0, energy), getMaxEnergyUse()));
         if (!simulate) {
             return takeEnergy(usableEnergy);
         }
@@ -98,12 +99,12 @@ public class MachineEnergyStorage implements IMachineEnergyStorage, INBTSerializ
 
     @Override
     public int getMaxEnergyStored() {
-        return capacity.get();
+        return Math.max(0, capacity.get());
     }
 
     @Override
     public int getMaxEnergyUse() {
-        return usageRate.get();
+        return Math.max(0, usageRate.get());
     }
 
     @Override
@@ -122,12 +123,7 @@ public class MachineEnergyStorage implements IMachineEnergyStorage, INBTSerializ
             return 0;
         }
 
-        int energyReceived = Math.min(getMaxEnergyStored() - getEnergyStored(), maxReceive);
-        if (!simulate) {
-            addEnergy(energyReceived);
-        }
-
-        return energyReceived;
+        return addEnergy(maxReceive, simulate);
     }
 
     @Override
@@ -136,7 +132,7 @@ public class MachineEnergyStorage implements IMachineEnergyStorage, INBTSerializ
             return 0;
         }
 
-        int energyExtracted = Math.min(getEnergyStored(), maxExtract);
+        int energyExtracted = Math.min(getEnergyStored(), Math.max(0, maxExtract));
         if (!simulate) {
             takeEnergy(energyExtracted);
         }
@@ -158,15 +154,24 @@ public class MachineEnergyStorage implements IMachineEnergyStorage, INBTSerializ
     }
 
     @Override
-    public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
+    public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt(MachineNBTKeys.ENERGY_STORED, getEnergyStored());
+        // Capacitor capacity may not be initialized yet; retain the actual stored charge.
+        tag.putInt(MachineNBTKeys.ENERGY_STORED, energyStored);
         return tag;
     }
 
     @Override
-    public void deserializeNBT(HolderLookup.Provider lookupProvider, CompoundTag nbt) {
-        energyStored = nbt.getInt(MachineNBTKeys.ENERGY_STORED);
+    public void deserializeNBT(CompoundTag nbt) {
+        energyStored = Math.max(0, nbt.getInt(MachineNBTKeys.ENERGY_STORED));
+    }
+
+    public CompoundTag serializeNBT(HolderLookup.Provider registries) {
+        return serializeNBT();
+    }
+
+    public void deserializeNBT(HolderLookup.Provider registries, CompoundTag tag) {
+        deserializeNBT(tag);
     }
 
     private record Sided(MachineEnergyStorage wrapped, Direction side) implements IEnergyStorage {
@@ -201,6 +206,9 @@ public class MachineEnergyStorage implements IMachineEnergyStorage, INBTSerializ
 
         @Override
         public boolean canExtract() {
+            if (!wrapped.getConfig().getIOMode(side).canConnect()) {
+                return false;
+            }
             if (wrapped.getIOMode().respectIOConfig() && !wrapped.getConfig().getIOMode(side).canOutput()) {
                 return false;
             }
@@ -210,6 +218,9 @@ public class MachineEnergyStorage implements IMachineEnergyStorage, INBTSerializ
 
         @Override
         public boolean canReceive() {
+            if (!wrapped.getConfig().getIOMode(side).canConnect()) {
+                return false;
+            }
             if (wrapped.getIOMode().respectIOConfig() && !wrapped.getConfig().getIOMode(side).canInput()) {
                 return false;
             }

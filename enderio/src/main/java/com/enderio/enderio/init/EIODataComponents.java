@@ -43,7 +43,7 @@ public class EIODataComponents {
 
     // region Capacitors
 
-    public static final ItemDataKey<CapacitorData> CAPACITOR_DATA = new ItemDataKey<>(EnderIO.rl("capacitor_data"), CapacitorData.CODEC);
+    public static final ItemDataKey<CapacitorData> CAPACITOR_DATA = CapacitorData.ITEM_DATA;
 
     // endregion
 

@@ -8,7 +8,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemContainerContents;
+import com.enderio.core.common.serialization.StackDataCodecs;
+import net.minecraft.core.NonNullList;
+import net.minecraft.nbt.Tag;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +28,7 @@ public class MachineInventory extends ItemStackHandler {
 
     private final IOConfigurable ioConfigurable;
     private final MachineInventoryLayout layout;
+    private ListTag overflowItems = new ListTag();
     private IntConsumer changeListener = i -> {
     };
 
@@ -79,44 +82,40 @@ public class MachineInventory extends ItemStackHandler {
 
     @Override
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-        boolean wasEmpty = !simulate && getStackInSlot(slot).isEmpty();
-        ItemStack itemStack = super.insertItem(slot, stack, simulate);
-        if (wasEmpty && itemStack.getCount() != stack.getCount()) {
+        ItemStack before = getStackInSlot(slot).copy();
+        ItemStack remainder = super.insertItem(slot, stack, simulate);
+        if (!simulate && !ItemStack.matches(before, getStackInSlot(slot))) {
             changeListener.accept(slot);
         }
-
-        return itemStack;
+        return remainder;
     }
 
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
-        ItemStack itemStack = super.extractItem(slot, amount, simulate);
-        if (!itemStack.isEmpty() && !simulate && getStackInSlot(slot).isEmpty()) {
+        ItemStack before = getStackInSlot(slot).copy();
+        ItemStack extracted = super.extractItem(slot, amount, simulate);
+        if (!simulate && !ItemStack.matches(before, getStackInSlot(slot))) {
             changeListener.accept(slot);
         }
-
-        return itemStack;
+        return extracted;
     }
 
     @Override
     public void setStackInSlot(int slot, ItemStack stack) {
-        boolean changed = stack.getItem() != getStackInSlot(slot).getItem();
+        ItemStack before = getStackInSlot(slot).copy();
         super.setStackInSlot(slot, stack);
-        if (changed) {
-            this.changeListener.accept(slot);
+        if (!ItemStack.matches(before, stack)) {
+            changeListener.accept(slot);
         }
     }
 
-    public void copyFromItem(ItemContainerContents contents) {
-        contents.copyInto(this.stacks);
-        for (int i = 0; i < getSlots(); i++) {
-            onContentsChanged(i);
-            this.changeListener.accept(i);
-        }
+    /** Native slot NBT used when carrying a machine inventory in an item. */
+    public void copyFromItem(CompoundTag contents) {
+        deserializeNBT(contents);
     }
 
-    public ItemContainerContents toItemContents() {
-        return ItemContainerContents.fromItems(this.stacks);
+    public CompoundTag toItemContents() {
+        return serializeNBT();
     }
 
     // TODO: not a fan of this pattern.
@@ -136,25 +135,64 @@ public class MachineInventory extends ItemStackHandler {
         return machineInventory;
     }
 
-    // Custom deserialize method that ignores the Size value in the tag.
-    // This is because if we changed the size of the inventory, it'd load it with
-    // the old size.
-    // For backward compatibility, we use the original serialize method that writes
-    // the Size.
-    // TODO: Ender IO 8 - Look at this again.
     @Override
-    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-        ListTag slotTags = tag.getList("Items", ListTag.TAG_COMPOUND);
-
-        for (int i = 0; i < slotTags.size(); i++) {
-            CompoundTag itemTags = slotTags.getCompound(i);
-            int slot = itemTags.getInt("Slot");
-            if (slot >= 0 && slot < layout.getSlotCount()) {
-                ItemStack.parse(provider, itemTags).ifPresent((stack) -> this.stacks.set(slot, stack));
-            } else {
-                LOGGER.warn("Skipping item from slot {}, as it is outside the bounds of the inventory.", slot);
+    public CompoundTag serializeNBT() {
+        var items = new ListTag();
+        for (int slot = 0; slot < getSlots(); slot++) {
+            if (!stacks.get(slot).isEmpty()) {
+                var item = StackDataCodecs.saveItem(stacks.get(slot));
+                item.putInt("Slot", slot);
+                items.add(item);
             }
         }
+        overflowItems.forEach(item -> items.add(item.copy()));
+        var tag = new CompoundTag();
+        tag.put("Items", items);
+        tag.putInt("Size", layout.getSlotCount());
+        return tag;
+    }
+
+    /** Keep the current layout, including when loading an older inventory size. */
+    @Override
+    public void deserializeNBT(CompoundTag tag) {
+        var loaded = NonNullList.withSize(layout.getSlotCount(), ItemStack.EMPTY);
+        var overflow = new ListTag();
+        var seen = new java.util.HashSet<Integer>();
+        var items = tag.getList("Items", Tag.TAG_COMPOUND);
+        for (int i = 0; i < items.size(); i++) {
+            var item = items.getCompound(i);
+            int slot = item.getInt("Slot");
+            if (!seen.add(slot)) {
+                throw new IllegalArgumentException("Duplicate machine inventory slot: " + slot);
+            }
+            if (slot < 0 || slot >= loaded.size()) {
+                // Preserve unavailable slots if a different layout is restored later.
+                overflow.add(item.copy());
+                LOGGER.warn("Preserving item from slot {} outside the current inventory layout", slot);
+            } else {
+                var stackData = item.copy();
+                stackData.remove("Slot");
+                loaded.set(slot, StackDataCodecs.loadItem(stackData));
+            }
+        }
+        var previous = stacks;
+        stacks = loaded;
+        overflowItems = overflow;
+        onLoad();
+        for (int slot = 0; slot < stacks.size(); slot++) {
+            if (slot >= previous.size() || !ItemStack.matches(previous.get(slot), stacks.get(slot))) {
+                onContentsChanged(slot);
+                changeListener.accept(slot);
+            }
+        }
+    }
+
+    public CompoundTag serializeNBT(HolderLookup.Provider registries) {
+        return serializeNBT();
+    }
+
+    public void deserializeNBT(HolderLookup.Provider registries, CompoundTag tag) {
+        deserializeNBT(tag);
     }
 
     private record Wrapped(MachineInventory master, @Nullable Direction side) implements IItemHandler {

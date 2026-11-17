@@ -7,6 +7,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
@@ -60,6 +61,26 @@ public final class StackDataCodecs {
         stack -> DataResult.success(stack.isEmpty() ? new CompoundTag() : stack.writeToNBT(new CompoundTag())));
 
     private StackDataCodecs() {}
+
+    public static CompoundTag saveItem(ItemStack stack) {
+        return (CompoundTag) require(OPTIONAL_ITEM.encodeStart(NbtOps.INSTANCE, stack));
+    }
+
+    public static ItemStack loadItem(CompoundTag tag) {
+        return require(OPTIONAL_ITEM.parse(NbtOps.INSTANCE, tag));
+    }
+
+    public static CompoundTag saveFluid(FluidStack stack) {
+        return (CompoundTag) require(OPTIONAL_FLUID.encodeStart(NbtOps.INSTANCE, stack));
+    }
+
+    public static FluidStack loadFluid(CompoundTag tag) {
+        return require(OPTIONAL_FLUID.parse(NbtOps.INSTANCE, tag));
+    }
+
+    private static <T> T require(DataResult<T> result) {
+        return result.result().orElseThrow(() -> new IllegalArgumentException(result.error().orElseThrow().message()));
+    }
 
     private static DataResult<ItemStack> readItem(CompoundTag tag) {
         if (tag.isEmpty()) return DataResult.success(ItemStack.EMPTY);
