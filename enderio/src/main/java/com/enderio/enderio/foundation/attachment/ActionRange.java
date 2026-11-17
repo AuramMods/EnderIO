@@ -59,10 +59,10 @@ public record ActionRange(int range, boolean isVisible) {
     }
 
     public Tag save(HolderLookup.Provider lookupProvider) {
-        return CODEC.encodeStart(lookupProvider.createSerializationContext(NbtOps.INSTANCE), this).getOrThrow();
+        return CODEC.encodeStart(NbtOps.INSTANCE, this).getOrThrow(false, message -> { throw new IllegalArgumentException(message); });
     }
 
     public static ActionRange parse(HolderLookup.Provider lookupProvider, Tag tag) {
-        return CODEC.parse(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag).getOrThrow();
+        return CODEC.parse(NbtOps.INSTANCE, tag).getOrThrow(false, message -> { throw new IllegalArgumentException(message); });
     }
 }

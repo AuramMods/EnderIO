@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:block",
+  "pools": [{
+    "rolls": 1,
+    "entries": [{
+      "type": "minecraft:item",
+      "name": "endercore_tests:stored_machine",
+      "functions": [{"function": "endercore:copy_block_entity_data"}]
+    }]
+  }]
+}

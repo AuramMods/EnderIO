@@ -100,16 +100,34 @@ public record IOConfig(Map<Direction, IOMode> modes) {
         return h;
     }
 
-    public Tag save(HolderLookup.Provider lookupProvider) {
-        return CODEC.encodeStart(lookupProvider.createSerializationContext(NbtOps.INSTANCE), this).getOrThrow();
+    public Tag save() {
+        return CODEC.encodeStart(NbtOps.INSTANCE, this).getOrThrow(false, message -> { throw new IllegalArgumentException(message); });
     }
 
-    public static Optional<IOConfig> parse(HolderLookup.Provider lookupProvider, Tag tag) {
-        return CODEC.parse(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag)
-                .resultOrPartial(error -> LOGGER.error("Tried to load invalid IOConfig: '{}'", error));
+    public static Optional<IOConfig> parse(Tag tag) {
+        if (tag instanceof CompoundTag compound && !compound.contains("Modes")) {
+            // Ender IO 6.x: numeric direction names mapped to mode ordinal bytes.
+            var modes = new EnumMap<Direction, IOMode>(Direction.class);
+            for (String key : compound.getAllKeys()) {
+                try {
+                    int direction = Integer.parseInt(key);
+                    int mode = compound.getByte(key);
+                    if (!compound.contains(key, Tag.TAG_BYTE) || direction < 0 || direction >= 6 || mode < 0 || mode >= IOMode.values().length) {
+                        return Optional.empty();
+                    }
+                    modes.put(Direction.from3DDataValue(direction), IOMode.BY_ID.apply(mode));
+                } catch (NumberFormatException e) { return Optional.empty(); }
+            }
+            return Optional.of(new IOConfig(modes));
+        }
+        return CODEC.parse(NbtOps.INSTANCE, tag).resultOrPartial(error -> LOGGER.error("Tried to load invalid IOConfig: '{}'", error));
     }
 
-    public static IOConfig parseOptional(HolderLookup.Provider lookupProvider, CompoundTag tag) {
-        return tag.isEmpty() ? empty() : parse(lookupProvider, tag).orElse(empty());
-    }
+    public static IOConfig parseOptional(CompoundTag tag) { return parse(tag).orElse(empty()); }
+
+    public Tag save(HolderLookup.Provider registries) { return save(); }
+
+    public static Optional<IOConfig> parse(HolderLookup.Provider registries, Tag tag) { return parse(tag); }
+
+    public static IOConfig parseOptional(HolderLookup.Provider registries, CompoundTag tag) { return parseOptional(tag); }
 }

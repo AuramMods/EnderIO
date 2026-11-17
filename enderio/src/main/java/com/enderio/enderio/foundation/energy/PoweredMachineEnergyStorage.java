@@ -2,14 +2,13 @@ package com.enderio.enderio.foundation.energy;
 
 import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.api.io.energy.EnergyIOMode;
-import com.enderio.enderio.config.machines.MachinesConfig;
 import com.enderio.enderio.foundation.block.entity.PoweredMachineBlockEntity;
 import com.enderio.enderio.foundation.io.energy.IMachineEnergyStorage;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.util.Mth;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
@@ -149,14 +148,17 @@ public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializ
     }
 
     @Override
-    public IntTag serializeNBT(HolderLookup.Provider provider) {
+    public IntTag serializeNBT() {
         return IntTag.valueOf(energyStored);
     }
 
     @Override
-    public void deserializeNBT(HolderLookup.Provider provider, IntTag intTag) {
-        energyStored = intTag.getAsInt();
+    public void deserializeNBT(IntTag intTag) {
+        energyStored = Math.max(0, intTag.getAsInt());
     }
+
+    public IntTag serializeNBT(HolderLookup.Provider registries) { return serializeNBT(); }
+    public void deserializeNBT(HolderLookup.Provider registries, IntTag tag) { deserializeNBT(tag); }
 
     // endregion
 

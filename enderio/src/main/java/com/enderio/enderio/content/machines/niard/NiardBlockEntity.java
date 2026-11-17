@@ -23,8 +23,6 @@ import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -239,42 +237,44 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
     // region Serialization
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
 
-        FluidStack storedFluid = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
+        FluidStack storedFluid = EIODataComponents.ITEM_FLUID_CONTENT.get(components);
         if (storedFluid != null) {
             var tank = TANK.getTank(this);
             tank.setFluid(storedFluid.copy());
         }
 
-        var actionRange = components.get(EIODataComponents.ACTION_RANGE);
+        var actionRange = EIODataComponents.ACTION_RANGE.get(components);
         if (actionRange != null) {
             this.actionRange = actionRange;
         }
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
 
         var tank = TANK.getTank(this);
         if (!tank.isEmpty()) {
-            components.set(EIODataComponents.ITEM_FLUID_CONTENT, tank.getFluid().copy());
+            EIODataComponents.ITEM_FLUID_CONTENT.set(components, tank.getFluid().copy());
         }
 
-        components.set(EIODataComponents.ACTION_RANGE, actionRange);
+        EIODataComponents.ACTION_RANGE.set(components, actionRange);
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.saveAdditional(tag, lookupProvider);
+    public void saveAdditional(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditional(tag);
         saveTank(lookupProvider, tag);
     }
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
+    protected void saveAdditionalSynced(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditionalSynced(tag);
         saveTank(registries, tag);
 
         if (!actionRange.equals(DEFAULT_RANGE)) {
@@ -283,8 +283,9 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.loadAdditional(tag, lookupProvider);
+    public void load(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.load(tag);
         loadTank(lookupProvider, tag);
 
         if (tag.contains(MachineNBTKeys.ACTION_RANGE)) {
@@ -295,8 +296,8 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
     }
 
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.ACTION_RANGE);
     }
 

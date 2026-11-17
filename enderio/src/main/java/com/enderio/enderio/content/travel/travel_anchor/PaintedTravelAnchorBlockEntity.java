@@ -68,8 +68,8 @@ public class PaintedTravelAnchorBlockEntity extends TravelAnchorBlockEntity impl
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.loadAdditional(tag, lookupProvider);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         readPaint(tag);
     }
 
@@ -80,8 +80,8 @@ public class PaintedTravelAnchorBlockEntity extends TravelAnchorBlockEntity impl
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider lookupProvider) {
-        CompoundTag nbt = super.getUpdateTag(lookupProvider);
+    public CompoundTag getUpdateTag() {
+        CompoundTag nbt = super.getUpdateTag();
         writePaint(nbt);
         return nbt;
     }
@@ -101,8 +101,8 @@ public class PaintedTravelAnchorBlockEntity extends TravelAnchorBlockEntity impl
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.saveAdditional(tag, lookupProvider);
+    public void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         writePaint(tag);
     }
 

@@ -19,13 +19,9 @@ import com.enderio.enderio.foundation.io.SidedIOConfigurable;
 import com.enderio.enderio.foundation.io.TransferUtil;
 import com.enderio.enderio.foundation.network.packets.ServerboundCycleIOConfigPacket;
 import com.enderio.enderio.foundation.state.MachineState;
-import com.enderio.enderio.init.EIOAttachments;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -36,7 +32,6 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -45,8 +40,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import java.util.function.BiFunction;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 import com.enderio.enderio.foundation.network.EIONetwork;
@@ -542,8 +537,9 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     // region Serialization
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditional(tag);
 
         if (supportsRedstoneControl()) {
             tag.put(MachineNBTKeys.REDSTONE_CONTROL, redstoneControl.save(registries));
@@ -561,8 +557,9 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     }
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
+    protected void saveAdditionalSynced(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditionalSynced(tag);
 
         if (isIoConfigMutable && ioConfig != null) {
             tag.put(MachineNBTKeys.IO_CONFIG, ioConfig.save(registries));
@@ -575,40 +572,21 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
 
     @SuppressWarnings("removal")
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        tag = com.enderio.enderio.foundation.io.LegacyMachineData.withNativeFields(tag);
+        super.load(tag);
 
         if (hasInventory() && tag.contains(MachineNBTKeys.ITEMS)) {
             inventory.deserializeNBT(registries, tag.getCompound(MachineNBTKeys.ITEMS));
         }
 
-        // Supports old attachments.
-        // We've been misusing attachments, they're intended for 3rd party data
-        // additions
-        // Reverting this will take some time
-
-        // Same for IO Config
-        // TODO: Ender IO 8 - remove.
-        if (hasData(EIOAttachments.IO_CONFIG)) {
-            ioConfig = getData(EIOAttachments.IO_CONFIG);
-            removeData(EIOAttachments.IO_CONFIG);
-        } else if (tag.contains(MachineNBTKeys.IO_CONFIG)) {
-            ioConfig = IOConfig.parseOptional(registries, tag.getCompound(MachineNBTKeys.IO_CONFIG));
-
-            if (level != null && level.isClientSide) {
-                clientIOConfigChanged();
-            }
+        if (tag.contains(MachineNBTKeys.IO_CONFIG)) {
+            ioConfig = IOConfig.parseOptional(tag.getCompound(MachineNBTKeys.IO_CONFIG));
+            if (level != null && level.isClientSide) clientIOConfigChanged();
         }
-
-        if (supportsRedstoneControl()) {
-            // TODO: Ender IO 8 - remove.
-            if (hasData(EIOAttachments.REDSTONE_CONTROL)) {
-                redstoneControl = getData(EIOAttachments.REDSTONE_CONTROL);
-                removeData(EIOAttachments.REDSTONE_CONTROL);
-            } else if (tag.contains(MachineNBTKeys.REDSTONE_CONTROL)) {
-                redstoneControl = RedstoneControl.parse(registries,
-                        Objects.requireNonNull(tag.get(MachineNBTKeys.REDSTONE_CONTROL)));
-            }
+        if (supportsRedstoneControl() && tag.contains(MachineNBTKeys.REDSTONE_CONTROL)) {
+            redstoneControl = RedstoneControl.parse(Objects.requireNonNull(tag.get(MachineNBTKeys.REDSTONE_CONTROL)));
         }
 
         if (tag.contains(MachineNBTKeys.OWNER)) {
@@ -617,20 +595,20 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput componentInput) {
-        super.applyImplicitComponents(componentInput);
+    protected void readItemData(ItemStack componentInput) {
+        super.readItemData(componentInput);
 
         if (hasInventory()) {
             this.inventory
-                    .copyFromItem(componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
+                    .copyFromItem(ITEM_INVENTORY.getOrDefault(componentInput, new CompoundTag()));
         }
 
         if (isIOConfigMutable()) {
-            ioConfig = componentInput.getOrDefault(EIODataComponents.IO_CONFIG, IOConfig.empty());
+            ioConfig = EIODataComponents.IO_CONFIG.getOrDefault(componentInput, IOConfig.empty());
         }
 
         if (supportsRedstoneControl()) {
-            var redstoneControl = componentInput.get(EIODataComponents.REDSTONE_CONTROL);
+            var redstoneControl = EIODataComponents.REDSTONE_CONTROL.get(componentInput);
             if (redstoneControl != null) {
                 this.redstoneControl = redstoneControl;
             }
@@ -638,29 +616,33 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
 
         if (hasInventory()) {
-            components.set(DataComponents.CONTAINER, this.inventory.toItemContents());
+            ITEM_INVENTORY.set(components, this.inventory.toItemContents());
         }
 
         if (isIOConfigMutable()) {
-            components.set(EIODataComponents.IO_CONFIG, ioConfig);
+            EIODataComponents.IO_CONFIG.set(components, ioConfig);
         }
 
         if (supportsRedstoneControl()) {
-            components.set(EIODataComponents.REDSTONE_CONTROL, redstoneControl);
+            EIODataComponents.REDSTONE_CONTROL.set(components, redstoneControl);
         }
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.ITEMS);
         tag.remove(MachineNBTKeys.IO_CONFIG);
         tag.remove(MachineNBTKeys.REDSTONE_CONTROL);
+        if (this instanceof com.enderio.enderio.foundation.attachment.FluidTankUser) {
+            // Item fluid capabilities may drain the carried stack before it is placed again.
+            tag.remove(MachineNBTKeys.FLUIDS);
+        }
     }
 
     // endregion

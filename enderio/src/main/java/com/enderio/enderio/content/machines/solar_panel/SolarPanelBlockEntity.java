@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.solar_panel;
 
+import net.minecraft.world.item.ItemStack;
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.api.soul.binding.SoulBindable;
 import com.enderio.enderio.foundation.MachineNBTKeys;
@@ -10,8 +11,6 @@ import com.enderio.enderio.init.EIODataComponents;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
@@ -339,7 +338,8 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
     // region Serialization
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
+    public void load(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         boundSoul = Soul.parseOptional(lookupProvider, tag.getCompound(MachineNBTKeys.ENTITY_STORAGE));
 
         // Old serialization format
@@ -352,37 +352,46 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
             this.node.setEnergyStored(tag.getInt(MachineNBTKeys.ENERGY_STORED));
         }
 
-        super.loadAdditional(tag, lookupProvider);
+        super.load(tag);
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
+    public void saveAdditional(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         tag.put(MachineNBTKeys.ENTITY_STORAGE, boundSoul.saveOptional(lookupProvider));
 
         // TODO: 26.1 - serialize the node instead?
         tag.putInt(MachineNBTKeys.ENERGY_STORED, node.getEnergyStored());
 
-        super.saveAdditional(tag, lookupProvider);
+        super.saveAdditional(tag);
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
-        boundSoul = components.getOrDefault(EIODataComponents.SOUL, Soul.EMPTY);
-        node.setEnergyStored(components.getOrDefault(EIODataComponents.ENERGY, 0));
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
+        boundSoul = EIODataComponents.SOUL.getOrDefault(components, Soul.EMPTY);
+        node.setEnergyStored(EIODataComponents.ENERGY.getOrDefault(components, 0));
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
 
         if (boundSoul.hasEntity()) {
-            components.set(EIODataComponents.SOUL, boundSoul);
+            EIODataComponents.SOUL.set(components, boundSoul);
         }
 
         if (node.getEnergyStored() != 0) {
-            components.set(EIODataComponents.ENERGY, node.getEnergyStored());
+            EIODataComponents.ENERGY.set(components, node.getEnergyStored());
         }
+    }
+
+    @Override
+    protected void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
+        tag.remove(MachineNBTKeys.ENTITY_STORAGE);
+        tag.remove(MachineNBTKeys.ENERGY_STORED);
+        tag.remove(MachineNBTKeys.ENERGY);
     }
 
     // endregion

@@ -25,8 +25,6 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -229,8 +227,9 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     private static final String KEY_GRINDING_BALL_DAMAGE = "GrindingBallDamage";
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.saveAdditional(tag, lookupProvider);
+    public void saveAdditional(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditional(tag);
         craftingTaskHost.save(lookupProvider, tag);
 
         if (!grindingBallData.isIdentity()) {
@@ -240,8 +239,9 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.loadAdditional(tag, lookupProvider);
+    public void load(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.load(tag);
         craftingTaskHost.load(lookupProvider, tag);
 
         if (tag.contains(KEY_GRINDING_BALL)) {
@@ -254,27 +254,27 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
 
-        grindingBallData = components.getOrDefault(EIODataComponents.SAG_MILL_GRINDING_BALL,
+        grindingBallData = EIODataComponents.SAG_MILL_GRINDING_BALL.getOrDefault(components,
                 GrindingBallData.IDENTITY);
-        grindingBallDamage = components.getOrDefault(EIODataComponents.SAG_MILL_GRINDING_BALL_DAMAGE, 0);
+        grindingBallDamage = EIODataComponents.SAG_MILL_GRINDING_BALL_DAMAGE.getOrDefault(components, 0);
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
 
         if (getGrindingBallDamage() > 0) {
-            components.set(EIODataComponents.SAG_MILL_GRINDING_BALL, grindingBallData);
-            components.set(EIODataComponents.SAG_MILL_GRINDING_BALL_DAMAGE, grindingBallDamage);
+            EIODataComponents.SAG_MILL_GRINDING_BALL.set(components, grindingBallData);
+            EIODataComponents.SAG_MILL_GRINDING_BALL_DAMAGE.set(components, grindingBallDamage);
         }
     }
 
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(KEY_GRINDING_BALL);
         tag.remove(KEY_GRINDING_BALL_DAMAGE);
     }

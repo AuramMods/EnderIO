@@ -13,13 +13,10 @@ import com.enderio.enderio.foundation.block.legacy.LegacyMachineBlock;
 import com.enderio.enderio.foundation.io.IOConfig;
 import com.enderio.enderio.foundation.network.packets.ServerboundCycleIOConfigPacket;
 import com.enderio.enderio.foundation.tag.EIOTags;
-import com.enderio.enderio.init.EIOAttachments;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -412,14 +409,13 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        tag = com.enderio.enderio.foundation.io.LegacyMachineData.withNativeFields(tag);
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.load(tag);
 
         // TODO: Ender IO 8 - remove.
-        if (hasData(EIOAttachments.IO_CONFIG)) {
-            ioConfig = getData(EIOAttachments.IO_CONFIG);
-            removeData(EIOAttachments.IO_CONFIG);
-        } else if (tag.contains(MachineNBTKeys.IO_CONFIG)) {
+        if (tag.contains(MachineNBTKeys.IO_CONFIG)) {
             ioConfig = IOConfig.parseOptional(registries, tag.getCompound(MachineNBTKeys.IO_CONFIG));
 
             if (level != null && level.isClientSide) {
@@ -446,10 +442,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
         }
 
         // TODO: Ender IO 8 - remove.
-        if (hasData(EIOAttachments.REDSTONE_CONTROL)) {
-            redstoneControl = getData(EIOAttachments.REDSTONE_CONTROL);
-            removeData(EIOAttachments.REDSTONE_CONTROL);
-        } else if (tag.contains(MachineNBTKeys.REDSTONE_CONTROL)) {
+        if (tag.contains(MachineNBTKeys.REDSTONE_CONTROL)) {
             redstoneControl = RedstoneControl.parse(registries,
                 Objects.requireNonNull(tag.get(MachineNBTKeys.REDSTONE_CONTROL)));
         }
@@ -467,8 +460,9 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
     }
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
+    protected void saveAdditionalSynced(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditionalSynced(tag);
 
         if (isIOConfigMutable() && ioConfig != null) {
             tag.put(MachineNBTKeys.IO_CONFIG, ioConfig.save(registries));
@@ -493,39 +487,39 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
 
         if (isIOConfigMutable()) {
-            ioConfig = components.getOrDefault(EIODataComponents.IO_CONFIG, IOConfig.empty());
+            ioConfig = EIODataComponents.IO_CONFIG.getOrDefault(components, IOConfig.empty());
         }
 
         if (this.node == null) { //Called before being placed, so a node needs to be made
             this.node = new CapacitorBankNode(this);
         }
 
-        getNetwork().receiveEnergy(this.getBlockPos(), null, components.getOrDefault(EIODataComponents.ENERGY, 0), false);
+        getNetwork().receiveEnergy(this.getBlockPos(), null, EIODataComponents.ENERGY.getOrDefault(components, 0), false);
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
 
         if (isIOConfigMutable()) {
-            components.set(EIODataComponents.IO_CONFIG, ioConfig);
+            EIODataComponents.IO_CONFIG.set(components, ioConfig);
         }
 
         if (oldNetwork != null) { //Network already kicked out the node, so we keep an old ref
             int energy = oldNetwork.getEnergyForNode(this.tier());
             if (energy != 0) {
-                components.set(EIODataComponents.ENERGY, energy);
+                EIODataComponents.ENERGY.set(components, energy);
             }
         }
     }
 
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.IO_CONFIG);
     }
 

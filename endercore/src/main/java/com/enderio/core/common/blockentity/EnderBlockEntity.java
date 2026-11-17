@@ -1,6 +1,9 @@
 package com.enderio.core.common.blockentity;
 
 import com.enderio.core.annotations.UseOnly;
+import com.enderio.core.common.item.ItemDataKey;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.BlockItem;
 import com.enderio.core.common.network.ClientboundDataSlotChange;
 import com.enderio.core.common.network.CoreNetwork;
 import com.enderio.core.common.network.NetworkDataSlot;
@@ -37,6 +40,38 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Handles data slot syncing and capability providers.
  */
 public class EnderBlockEntity extends BlockEntity {
+
+    public static final ItemDataKey<CompoundTag> ITEM_INVENTORY = new ItemDataKey<>(
+        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("enderio", "container"), CompoundTag.CODEC);
+
+    /** Called after native BlockEntityTag loading and before the block's placement callback. */
+    public final void applyItemData(ItemStack stack) {
+        if (ItemDataKey.hasStoredData(stack)) {
+            readItemData(stack);
+            setChanged();
+        }
+    }
+
+    /** Export only the state intended to survive an ordinary block drop. */
+    public final void copyItemDataTo(ItemStack stack, @Nullable java.util.Set<net.minecraft.resources.ResourceLocation> include) {
+        var exported = new ItemStack(stack.getItem());
+        writeItemData(exported);
+        ItemDataKey.copyStoredData(exported, stack, include);
+    }
+
+    protected void readItemData(ItemStack stack) {}
+
+    protected void writeItemData(ItemStack stack) {}
+
+    protected void removeItemDataFromTag(CompoundTag tag) {}
+
+    @Override
+    public void saveToItem(ItemStack stack) {
+        var tag = saveWithoutMetadata();
+        removeItemDataFromTag(tag);
+        BlockItem.setBlockEntityData(stack, getType(), tag);
+        writeItemData(stack);
+    }
 
     public static final String DATA = "Data";
     public static final String INDEX = "Index";

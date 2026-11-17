@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.obelisks;
 
+import net.minecraft.world.item.ItemStack;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.capacitor.CapacitorScalable;
@@ -16,12 +17,9 @@ import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
 import com.enderio.enderio.foundation.io.IOConfig;
 import com.enderio.enderio.foundation.state.MachineState;
 import com.enderio.enderio.foundation.state.MachineStateType;
-import com.enderio.enderio.init.EIOAttachments;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
@@ -219,8 +217,9 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
     }
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
+    protected void saveAdditionalSynced(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditionalSynced(tag);
 
         if (!actionRange.equals(DEFAULT_RANGE)) {
             tag.put(MachineNBTKeys.ACTION_RANGE, actionRange.save(registries));
@@ -228,14 +227,13 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        tag = com.enderio.enderio.foundation.io.LegacyMachineData.withNativeFields(tag);
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.load(tag);
 
         // TODO: Ender IO 8 - remove support for old attachment loading
-        if (hasData(EIOAttachments.ACTION_RANGE)) {
-            actionRange = getData(EIOAttachments.ACTION_RANGE);
-            removeData(EIOAttachments.ACTION_RANGE);
-        } else if (tag.contains(MachineNBTKeys.ACTION_RANGE)) {
+        if (tag.contains(MachineNBTKeys.ACTION_RANGE)) {
             actionRange = ActionRange.parse(registries, Objects.requireNonNull(tag.get(MachineNBTKeys.ACTION_RANGE)));
         } else {
             actionRange = DEFAULT_RANGE;
@@ -243,24 +241,24 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
 
-        var actionRange = components.get(EIODataComponents.ACTION_RANGE);
+        var actionRange = EIODataComponents.ACTION_RANGE.get(components);
         if (actionRange != null) {
             this.actionRange = actionRange;
         }
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
-        components.set(EIODataComponents.ACTION_RANGE, actionRange);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
+        EIODataComponents.ACTION_RANGE.set(components, actionRange);
     }
 
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.ACTION_RANGE);
     }
 }

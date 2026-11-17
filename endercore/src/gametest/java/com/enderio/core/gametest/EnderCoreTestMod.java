@@ -14,6 +14,7 @@ public class EnderCoreTestMod {
     public EnderCoreTestMod() throws ParserConfigurationException {
         SerializationTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         MachineTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
+        MachineLifecycleTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         RecipeTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         CapabilityTestBlocks.register(FMLJavaModLoadingContext.get().getModEventBus());
         ItemDataTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());

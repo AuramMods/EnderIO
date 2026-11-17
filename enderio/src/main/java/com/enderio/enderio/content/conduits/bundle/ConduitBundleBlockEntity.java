@@ -1163,8 +1163,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag updateTag = super.getUpdateTag(registries);
+    public CompoundTag getUpdateTag() {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        CompoundTag updateTag = super.getUpdateTag();
 
         // TODO: Do not use saveAdditional, sync less data than it does...
 
@@ -1342,8 +1343,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditional(tag);
 
         var serializationContext = registries.createSerializationContext(NbtOps.INSTANCE);
 
@@ -1367,8 +1369,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
+    protected void saveAdditionalSynced(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditionalSynced(tag);
 
         if (!conduits.isEmpty()) {
             ListTag conduitList = new ListTag();
@@ -1428,8 +1431,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.load(tag);
 
         if (tag.contains(EIONBTKeys.CONDUIT_BUNDLE)) {
             // Convert the legacy bundle to the new format

@@ -17,13 +17,9 @@ import com.enderio.enderio.foundation.io.IOConfig;
 import com.enderio.enderio.foundation.io.SidedIOConfigurable;
 import com.enderio.enderio.foundation.io.TransferUtil;
 import com.enderio.enderio.foundation.state.MachineState;
-import com.enderio.enderio.init.EIOAttachments;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -33,7 +29,6 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -43,8 +38,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import java.util.function.BiFunction;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
@@ -94,6 +89,9 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
 
     // endregion
 
+    private IOConfig ioConfig;
+    private RedstoneControl redstoneControl = RedstoneControl.ALWAYS_ACTIVE;
+
     private Set<MachineState> states = new HashSet<>();
 
     public LegacyMachineBlockEntity(BlockEntityType<?> type, BlockPos worldPosition, BlockState blockState) {
@@ -102,9 +100,7 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
         // Create IO Config.
         this.defaultIOConfig = getDefaultIOConfig();
 
-        if (!this.hasData(EIOAttachments.IO_CONFIG)) {
-            this.setData(EIOAttachments.IO_CONFIG, defaultIOConfig);
-        }
+        this.ioConfig = IOConfig.copyOf(defaultIOConfig);
 
         // If the machine declares an inventory layout, use it to create a handler
         inventoryLayout = createInventoryLayout();
@@ -147,7 +143,7 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
 
     private IOConfig getIOConfig() {
         if (isIOConfigMutable()) {
-            return getData(EIOAttachments.IO_CONFIG);
+            return ioConfig;
         }
 
         return defaultIOConfig;
@@ -205,7 +201,7 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
             throw new IllegalStateException("Cannot set IO config when isIOConfigMutable is false.");
         }
 
-        setData(EIOAttachments.IO_CONFIG, config);
+        ioConfig = config;
 
         if (level == null) {
             return;
@@ -286,7 +282,7 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
             throw new IllegalStateException("This machine does not support redstone control.");
         }
 
-        return getData(EIOAttachments.REDSTONE_CONTROL);
+        return redstoneControl;
     }
 
     public void setRedstoneControl(RedstoneControl redstoneControl) {
@@ -302,7 +298,7 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
     }
 
     private void internalSetRedstoneControl(RedstoneControl redstoneControl) {
-        setData(EIOAttachments.REDSTONE_CONTROL, redstoneControl);
+        this.redstoneControl = redstoneControl;
         setChanged();
         updateRedstone();
     }
@@ -452,8 +448,11 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.saveAdditional(tag, lookupProvider);
+    public void saveAdditional(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditional(tag);
+        if (isIOConfigMutable()) tag.put(MachineNBTKeys.IO_CONFIG, ioConfig.save());
+        if (supportsRedstoneControl()) tag.put(MachineNBTKeys.REDSTONE_CONTROL, redstoneControl.save());
 
         if (this.inventory != null) {
             tag.put(MachineNBTKeys.ITEMS, inventory.serializeNBT(lookupProvider));
@@ -461,7 +460,11 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
+    public void load(CompoundTag tag) {
+        tag = com.enderio.enderio.foundation.io.LegacyMachineData.withNativeFields(tag);
+        if (tag.contains(MachineNBTKeys.IO_CONFIG)) ioConfig = IOConfig.parseOptional(tag.getCompound(MachineNBTKeys.IO_CONFIG));
+        if (tag.contains(MachineNBTKeys.REDSTONE_CONTROL)) redstoneControl = RedstoneControl.parse(tag.get(MachineNBTKeys.REDSTONE_CONTROL));
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         if (this.inventory != null) {
             inventory.deserializeNBT(lookupProvider, tag.getCompound(MachineNBTKeys.ITEMS));
         }
@@ -471,42 +474,44 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
             onIOConfigChanged();
         }
 
-        super.loadAdditional(tag, lookupProvider);
+        super.load(tag);
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
+        if (supportsRedstoneControl()) redstoneControl = EIODataComponents.REDSTONE_CONTROL.getOrDefault(components, RedstoneControl.ALWAYS_ACTIVE);
 
         if (this.inventory != null) {
-            this.inventory.copyFromItem(components.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
+            this.inventory.copyFromItem(ITEM_INVENTORY.getOrDefault(components, new CompoundTag()));
         }
 
         if (isIOConfigMutable()) {
-            setData(EIOAttachments.IO_CONFIG,
-                    components.getOrDefault(EIODataComponents.IO_CONFIG, IOConfig.empty()));
+            ioConfig = EIODataComponents.IO_CONFIG.getOrDefault(components, IOConfig.empty());
         }
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
+        if (supportsRedstoneControl()) EIODataComponents.REDSTONE_CONTROL.set(components, redstoneControl);
 
         if (this.inventory != null) {
-            components.set(DataComponents.CONTAINER, this.inventory.toItemContents());
+            ITEM_INVENTORY.set(components, this.inventory.toItemContents());
         }
 
         if (isIOConfigMutable()) {
-            components.set(EIODataComponents.IO_CONFIG, getData(EIOAttachments.IO_CONFIG));
+            EIODataComponents.IO_CONFIG.set(components, ioConfig);
         }
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.ITEMS);
-        removeData(EIOAttachments.IO_CONFIG);
+        tag.remove(MachineNBTKeys.IO_CONFIG);
+        tag.remove(MachineNBTKeys.REDSTONE_CONTROL);
     }
 
     // endregion

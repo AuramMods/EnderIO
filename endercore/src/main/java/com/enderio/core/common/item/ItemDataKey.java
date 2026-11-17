@@ -30,6 +30,24 @@ public final class ItemDataKey<T> {
     private static final String DATA_TAG = "enderio:data";
     private static final String REMOVED_TAG = "enderio:removed_data";
 
+    public static boolean hasStoredData(ItemStack stack) {
+        return stack.getTag() != null && (stack.getTag().contains(DATA_TAG) || stack.getTag().contains(REMOVED_TAG));
+    }
+
+    /** Copy explicitly stored values, optionally selecting IDs, without sharing mutable NBT. */
+    public static void copyStoredData(ItemStack source, ItemStack target, @Nullable java.util.Set<ResourceLocation> include) {
+        if (source.getTag() == null || !source.getTag().contains(DATA_TAG)) return;
+        var data = source.getTag().getCompound(DATA_TAG);
+        for (String key : data.getAllKeys()) {
+            if (include == null || include.contains(ResourceLocation.parse(key))) {
+                target.getOrCreateTagElement(DATA_TAG).put(key, data.get(key).copy());
+                var removed = target.getTagElement(REMOVED_TAG);
+                if (removed != null) removed.remove(key);
+            }
+        }
+        ItemCapabilityRegistry.refresh(target);
+    }
+
     private final ResourceLocation id;
     private final Codec<T> codec;
     private final boolean refreshCapabilities;

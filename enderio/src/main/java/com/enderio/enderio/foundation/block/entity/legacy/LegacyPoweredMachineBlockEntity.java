@@ -17,12 +17,9 @@ import com.enderio.enderio.foundation.io.energy.IMachineEnergyStorage;
 import com.enderio.enderio.foundation.io.energy.ImmutableMachineEnergyStorage;
 import com.enderio.enderio.foundation.io.energy.MachineEnergyStorage;
 import com.enderio.enderio.foundation.state.MachineState;
-import com.enderio.enderio.init.EIOAttachments;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
@@ -326,8 +323,9 @@ public abstract class LegacyPoweredMachineBlockEntity extends LegacyMachineBlock
     // region Serialization
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.saveAdditional(tag, lookupProvider);
+    public void saveAdditional(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditional(tag);
 
         var energyStorage = getEnergyStorage();
         if (energyStorage instanceof MachineEnergyStorage storage) {
@@ -336,13 +334,14 @@ public abstract class LegacyPoweredMachineBlockEntity extends LegacyMachineBlock
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
+    public void load(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         var energyStorage = getEnergyStorage();
         if (energyStorage instanceof MachineEnergyStorage storage && tag.contains(MachineNBTKeys.ENERGY)) {
             storage.deserializeNBT(lookupProvider, tag.getCompound(MachineNBTKeys.ENERGY));
         }
 
-        super.loadAdditional(tag, lookupProvider);
+        super.load(tag);
 
         cacheCapacitorData();
 
@@ -351,25 +350,24 @@ public abstract class LegacyPoweredMachineBlockEntity extends LegacyMachineBlock
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
-        energyStorage.setEnergyStored(components.getOrDefault(EIODataComponents.ENERGY, 0));
-        setData(EIOAttachments.REDSTONE_CONTROL,
-                components.getOrDefault(EIODataComponents.REDSTONE_CONTROL, RedstoneControl.ALWAYS_ACTIVE));
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
+        energyStorage.setEnergyStored(EIODataComponents.ENERGY.getOrDefault(components, 0));
+
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
-        components.set(EIODataComponents.ENERGY, energyStorage.getEnergyStored());
-        components.set(EIODataComponents.REDSTONE_CONTROL, getData(EIOAttachments.REDSTONE_CONTROL));
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
+        EIODataComponents.ENERGY.set(components, energyStorage.getEnergyStored());
+
     }
 
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.ENERGY);
-        removeData(EIOAttachments.REDSTONE_CONTROL);
+        tag.remove(MachineNBTKeys.REDSTONE_CONTROL);
     }
 
     // endregion

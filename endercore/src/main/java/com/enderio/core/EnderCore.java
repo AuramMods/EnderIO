@@ -13,6 +13,7 @@ public class EnderCore {
     public static final String MOD_ID = "endercore";
 
     public EnderCore() {
+        com.enderio.core.common.loot.CoreLootFunctions.register(net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext.get().getModEventBus());
         CoreNetwork.register();
     }
 

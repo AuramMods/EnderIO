@@ -23,14 +23,12 @@ import com.enderio.enderio.foundation.state.MachineStateType;
 import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.foundation.task.MachineTask;
 import com.enderio.enderio.foundation.task.host.MachineTaskHost;
-import com.enderio.enderio.init.EIOAttachments;
 import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOItems;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -323,14 +321,16 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
     // region Serialization
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.saveAdditional(tag, lookupProvider);
+    public void saveAdditional(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditional(tag);
         taskHost.save(lookupProvider, tag);
     }
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
+    protected void saveAdditionalSynced(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditionalSynced(tag);
 
         // Sync entity storage in case we want to render the entity or something in
         // future :)
@@ -346,8 +346,10 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.loadAdditional(tag, lookupProvider);
+    public void load(CompoundTag tag) {
+        tag = com.enderio.enderio.foundation.io.LegacyMachineData.withNativeFields(tag);
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.load(tag);
         boundSoul = Soul.parseOptional(lookupProvider, tag.getCompound(MachineNBTKeys.ENTITY_STORAGE));
 
         if (tag.contains(MachineNBTKeys.MACHINE_MODE)) {
@@ -356,11 +358,6 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
         }
 
         // TODO: Ender IO 8 - remove support for old attachment loading
-        if (hasData(EIOAttachments.ACTION_RANGE)) {
-            var actionRange = getData(EIOAttachments.ACTION_RANGE);
-            isRangeVisible = actionRange.isVisible();
-            removeData(EIOAttachments.ACTION_RANGE);
-        }
 
         isRangeVisible = tag.contains(MachineNBTKeys.IS_RANGE_VISIBLE)
                 && tag.getBoolean(MachineNBTKeys.IS_RANGE_VISIBLE);
@@ -370,39 +367,39 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
-        boundSoul = components.getOrDefault(EIODataComponents.SOUL, Soul.EMPTY);
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
+        boundSoul = EIODataComponents.SOUL.getOrDefault(components, Soul.EMPTY);
 
         // TODO: Ender IO 8 - remove.
-        var actionRange = components.get(EIODataComponents.ACTION_RANGE);
+        var actionRange = EIODataComponents.ACTION_RANGE.get(components);
         if (actionRange != null) {
             this.isRangeVisible = actionRange.isVisible();
         }
 
-        Boolean isVisible = components.get(EIODataComponents.IS_RANGE_VISIBLE);
+        Boolean isVisible = EIODataComponents.IS_RANGE_VISIBLE.get(components);
         if (isVisible != null) {
             this.isRangeVisible = isVisible;
         }
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
 
         // Only if unchanged.
         if (isRangeVisible) {
-            components.set(EIODataComponents.IS_RANGE_VISIBLE, true);
+            EIODataComponents.IS_RANGE_VISIBLE.set(components, true);
         }
 
         if (boundSoul.hasEntity()) {
-            components.set(EIODataComponents.SOUL, boundSoul);
+            EIODataComponents.SOUL.set(components, boundSoul);
         }
     }
 
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.IS_RANGE_VISIBLE);
         tag.remove(MachineNBTKeys.ENTITY_STORAGE);
     }

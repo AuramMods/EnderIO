@@ -15,8 +15,6 @@ import com.enderio.enderio.foundation.state.MachineState;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.Tag;
@@ -277,14 +275,16 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
     // region Serialization
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditional(tag);
         tag.put(MachineNBTKeys.ENERGY_STORED, energyStorage.serializeNBT(registries));
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.load(tag);
 
         if (tag.contains(MachineNBTKeys.ENERGY_STORED, Tag.TAG_INT)) {
             energyStorage.deserializeNBT(registries, (IntTag) tag.get(MachineNBTKeys.ENERGY_STORED));
@@ -301,21 +301,21 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput componentInput) {
-        super.applyImplicitComponents(componentInput);
-        energyStorage.setEnergyStored(componentInput.getOrDefault(EIODataComponents.ENERGY, 0));
+    protected void readItemData(ItemStack componentInput) {
+        super.readItemData(componentInput);
+        energyStorage.setEnergyStored(EIODataComponents.ENERGY.getOrDefault(componentInput, 0));
         updateCapacitorData();
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
-        components.set(EIODataComponents.ENERGY, energyStorage.getEnergyStored());
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
+        EIODataComponents.ENERGY.set(components, energyStorage.getEnergyStored());
     }
 
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.ENERGY_STORED);
     }
 

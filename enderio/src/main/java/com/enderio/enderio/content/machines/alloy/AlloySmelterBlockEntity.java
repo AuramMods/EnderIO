@@ -23,8 +23,6 @@ import com.enderio.enderio.init.EIORecipes;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvents;
@@ -341,14 +339,16 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
     // region Serialization
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
+    public void saveAdditional(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         craftingTaskHost.save(lookupProvider, tag);
         tag.putInt(MachineNBTKeys.MACHINE_MODE, this.mode.ordinal());
-        super.saveAdditional(tag, lookupProvider);
+        super.saveAdditional(tag);
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
+    public void load(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         craftingTaskHost.load(lookupProvider, tag);
 
         // TODO: EnderIO 8 - swap to serializing the enum name.
@@ -357,26 +357,26 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
         } catch (IndexOutOfBoundsException ex) { // In case something happens in the future.
             LOGGER.error("Invalid alloy smelter mode loaded from NBT. Ignoring.");
         }
-        super.loadAdditional(tag, lookupProvider);
+        super.load(tag);
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
 
         // TODO: 1.21: Write crafting host into the item components.
-        mode = components.getOrDefault(EIODataComponents.ALLOY_SMELTER_MODE, AlloySmelterMode.ALL);
+        mode = EIODataComponents.ALLOY_SMELTER_MODE.getOrDefault(components, AlloySmelterMode.ALL);
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
-        components.set(EIODataComponents.ALLOY_SMELTER_MODE, mode);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
+        EIODataComponents.ALLOY_SMELTER_MODE.set(components, mode);
     }
 
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.MACHINE_MODE);
     }
 

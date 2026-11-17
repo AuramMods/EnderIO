@@ -9,7 +9,6 @@ import com.enderio.enderio.foundation.block.EIOBlockEntity;
 import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIOFeatureFlags;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
@@ -35,8 +34,8 @@ public class EnderfaceBlockEntity extends EIOBlockEntity {
     }
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
+    protected void saveAdditionalSynced(CompoundTag tag) {
+        super.saveAdditionalSynced(tag);
         // TODO save ui pitch, etc
     }
 

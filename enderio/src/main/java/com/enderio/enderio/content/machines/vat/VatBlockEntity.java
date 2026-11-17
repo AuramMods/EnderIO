@@ -29,8 +29,6 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -249,10 +247,10 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
-        super.applyImplicitComponents(components);
+    protected void readItemData(ItemStack components) {
+        super.readItemData(components);
 
-        NamedFluidContents fluidContents = components.get(EIODataComponents.NAMED_FLUID_CONTENTS);
+        NamedFluidContents fluidContents = EIODataComponents.NAMED_FLUID_CONTENTS.get(components);
         if (fluidContents != null) {
             INPUT_TANK.setFluid(this, fluidContents.copy("input_tank"));
             OUTPUT_TANK.setFluid(this, fluidContents.copy("output_tank"));
@@ -260,27 +258,29 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     }
 
     @Override
-    protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        super.collectImplicitComponents(components);
+    protected void writeItemData(ItemStack components) {
+        super.writeItemData(components);
 
         var inputTank = INPUT_TANK.getTank(this);
         var outputTank = OUTPUT_TANK.getTank(this);
         if (!inputTank.isEmpty() || !outputTank.isEmpty()) {
-            components.set(EIODataComponents.NAMED_FLUID_CONTENTS, NamedFluidContents
+            EIODataComponents.NAMED_FLUID_CONTENTS.set(components, NamedFluidContents
                     .copyOf(Map.of("input_tank", inputTank.getFluid(), "output_tank", outputTank.getFluid())));
         }
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.saveAdditional(tag, lookupProvider);
+    public void saveAdditional(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.saveAdditional(tag);
         saveTank(lookupProvider, tag);
         craftingTaskHost.save(lookupProvider, tag);
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        super.loadAdditional(tag, lookupProvider);
+    public void load(CompoundTag tag) {
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        super.load(tag);
         loadTank(lookupProvider, tag);
         craftingTaskHost.load(lookupProvider, tag);
     }

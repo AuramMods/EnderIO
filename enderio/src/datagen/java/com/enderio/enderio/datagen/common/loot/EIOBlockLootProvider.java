@@ -7,7 +7,8 @@ import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOFeatureFlags;
 import net.minecraft.advancements.critereon.StatePropertiesPredicate;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponents;
+import com.enderio.core.common.blockentity.EnderBlockEntity;
+import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
@@ -19,7 +20,7 @@ import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
-import net.minecraft.world.level.storage.loot.functions.CopyComponentsFunction;
+import com.enderio.core.common.loot.CopyBlockEntityDataFunction;
 import net.minecraft.world.level.storage.loot.predicates.InvertedLootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
@@ -28,7 +29,7 @@ import java.util.Set;
 
 public class EIOBlockLootProvider extends BlockLootSubProvider {
     public EIOBlockLootProvider(HolderLookup.Provider registries) {
-        super(Set.of(), FeatureFlagSet.of(FeatureFlags.VANILLA, EIOFeatureFlags.ENDERFACE, EIOFeatureFlags.NIARD), registries);
+        super(Set.of(), FeatureFlagSet.of(FeatureFlags.VANILLA, EIOFeatureFlags.ENDERFACE, EIOFeatureFlags.NIARD));
     }
 
     @Override
@@ -182,19 +183,15 @@ public class EIOBlockLootProvider extends BlockLootSubProvider {
         add(block, LootTable
             .lootTable()
             .withPool(new LootPool.Builder().add(
-                LootItem.lootTableItem(block).apply(CopyComponentsFunction.copyComponents(CopyComponentsFunction.Source.BLOCK_ENTITY)))));
+                LootItem.lootTableItem(block).apply(CopyBlockEntityDataFunction.copyAll()))));
     }
 
-    private void copyStandardComponentsWith(Block block, net.minecraft.core.component.DataComponentType<?> componentType) {
+    private void copyStandardComponentsWith(Block block, ItemDataKey<?> componentType) {
         add(block, LootTable
             .lootTable()
             .withPool(new LootPool.Builder().add(
-                LootItem.lootTableItem(block).apply(CopyComponentsFunction.copyComponents(CopyComponentsFunction.Source.BLOCK_ENTITY)
-                    .include(componentType)
-                    .include(EIODataComponents.ENERGY)
-                    .include(EIODataComponents.IO_CONFIG)
-                    .include(EIODataComponents.REDSTONE_CONTROL)
-                    .include(DataComponents.CONTAINER)
+                LootItem.lootTableItem(block).apply(CopyBlockEntityDataFunction.copyOnly(componentType.id(), EIODataComponents.ENERGY.id(),
+                    EIODataComponents.IO_CONFIG.id(), EIODataComponents.REDSTONE_CONTROL.id(), EnderBlockEntity.ITEM_INVENTORY.id())
                 ))));
     }
 

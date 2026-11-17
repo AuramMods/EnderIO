@@ -1,7 +1,7 @@
 package com.enderio.enderio.api.io;
 
 import com.enderio.core.common.lang.EnumLangMap;
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.NbtOps;
@@ -28,7 +28,7 @@ public enum RedstoneControl implements StringRepresentable {
             ByIdMap.OutOfBoundsStrategy.ZERO);
     public static final PacketCodec<RedstoneControl> STREAM_CODEC = PacketCodecs.idMapper(BY_ID, v -> v.id);
 
-    private static final EnumLangMap<RedstoneControl> LANG_MAP = new EnumLangMap<>(RedstoneControl.class, EnderIO.MOD_ID,
+    private static final EnumLangMap<RedstoneControl> LANG_MAP = new EnumLangMap<>(RedstoneControl.class, EnderIOAPI.MOD_ID,
         "redstone_control");
 
     private final int id;
@@ -56,13 +56,23 @@ public enum RedstoneControl implements StringRepresentable {
         return name;
     }
 
-    public Tag save(HolderLookup.Provider lookupProvider) {
-        return CODEC.encodeStart(lookupProvider.createSerializationContext(NbtOps.INSTANCE), this).getOrThrow();
+    public Tag save() {
+        return CODEC.encodeStart(NbtOps.INSTANCE, this).getOrThrow(false, message -> { throw new IllegalArgumentException(message); });
     }
 
-    public static RedstoneControl parse(HolderLookup.Provider lookupProvider, Tag tag) {
-        return CODEC.parse(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag).getOrThrow();
+    public static RedstoneControl parse(Tag tag) {
+        // Ender IO 6.x stored these same four modes by ordinal.
+        if (tag instanceof net.minecraft.nbt.NumericTag number) {
+            int id = number.getAsInt();
+            if (id < 0 || id >= values().length) throw new IllegalArgumentException("Invalid legacy redstone mode: " + id);
+            return BY_ID.apply(id);
+        }
+        return CODEC.parse(NbtOps.INSTANCE, tag).getOrThrow(false, message -> { throw new IllegalArgumentException(message); });
     }
+
+    public Tag save(HolderLookup.Provider registries) { return save(); }
+
+    public static RedstoneControl parse(HolderLookup.Provider registries, Tag tag) { return parse(tag); }
 
     public MutableComponent getComponent() {
         return Objects.requireNonNull(LANG_MAP.get(this));
