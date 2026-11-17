@@ -1,6 +1,7 @@
 package com.enderio.enderio.init;
 
 import com.enderio.core.common.util.NamedFluidContents;
+import com.enderio.core.common.item.ItemDataKey;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.api.attachment.CoordinateSelection;
@@ -45,7 +46,7 @@ public class EIODataComponents {
     public static final DataComponentType<NamedFluidContents> NAMED_FLUID_CONTENTS = register("named_fluid_contents",
         builder -> builder.persistent(NamedFluidContents.CODEC).networkSynchronized(NamedFluidContents.STREAM_CODEC));
 
-    public static final DataComponentType<Integer> ENERGY = register("energy", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT));
+    public static final ItemDataKey<Integer> ENERGY = new ItemDataKey<>(EnderIO.rl("energy"), Codec.intRange(0, Integer.MAX_VALUE), false);
 
     public static final DataComponentType<Soul> SOUL = register("soul", builder -> builder.persistent(Soul.CODEC).networkSynchronized(Soul.STREAM_CODEC));
 

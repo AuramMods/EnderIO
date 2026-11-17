@@ -31,7 +31,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.conditions.ICondition;
 import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 
 import java.util.function.BiConsumer;
@@ -55,7 +55,7 @@ public class AE2ConduitsModule implements ConduitCommonModule {
     public static final DeferredRegister<NodeDataType<?>> CONDUIT_NODE_DATA_TYPES = DeferredRegister
             .create(EnderIORegistries.Keys.CONDUIT_NODE_DATA_TYPE, EnderIO.MOD_ID);
 
-    public static final DeferredHolder<ConduitType<?, ?>, ConduitType<MEConduit, MEConduitConnectionConfig>> AE2_CONDUIT = CONDUIT_TYPES.register(
+    public static final RegistryObject<ConduitType<MEConduit, MEConduitConnectionConfig>> AE2_CONDUIT = CONDUIT_TYPES.register(
             "me",
             () -> ConduitType.builder(MEConduit.CODEC, MEConduitConnectionConfig.TYPE)
                     .exposeCapability(AECapabilities.IN_WORLD_GRID_NODE_HOST)

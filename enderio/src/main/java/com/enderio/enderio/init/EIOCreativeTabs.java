@@ -14,10 +14,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -28,16 +30,16 @@ public class EIOCreativeTabs {
 
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, EnderIO.MOD_ID);
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = CREATIVE_MODE_TABS.register("enderio", () ->
+    public static final RegistryObject<CreativeModeTab> TAB = CREATIVE_MODE_TABS.register("enderio", () ->
         CreativeModeTab.builder()
             .title(EIOCommonLang.CREATIVE_TAB_TITLE)
             .icon(() -> new ItemStack(EIOItems.CREATIVE_ICON.get()))
             .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
             .withSearchBar()
             .displayItems((CreativeModeTab.ItemDisplayParameters parameters, CreativeModeTab.Output output) -> {
-                addAll(EIOItems.ITEMS, parameters, output);
-                addAll(EIOFluids.FLUIDS.itemsRegister(), parameters, output);
-                addAll(EIOBlocks.ITEMS, parameters, output);
+                addAll(EIOItems.ITEMS.getEntries(), parameters, output);
+                addAll(EIOFluids.FLUIDS.itemsRegister().getEntries(), parameters, output);
+                addAll(EIOBlocks.ITEMS.getEntries(), parameters, output);
                 addSoulItems(parameters, output);
             })
             .build());
@@ -64,11 +66,11 @@ public class EIOCreativeTabs {
         }
     }
 
-    private static void addAll(DeferredRegister<Item> items, CreativeModeTab.ItemDisplayParameters properties, CreativeModeTab.Output output) {
+    private static void addAll(Collection<? extends Supplier<? extends Item>> items, CreativeModeTab.ItemDisplayParameters properties, CreativeModeTab.Output output) {
         // TODO: Could we use an Ender IO-specific event to interject when adding items.
         //       for example in the modded conduits addon, insert chemical filter after EIO's normal filters
         //       or in endergy add ingots after EIO's normal ingots and so on...
-        for (var entry : items.getEntries()) {
+        for (var entry : items) {
             var item = entry.get();
 
             if (EXCLUSIONS_PREDICATE.stream().anyMatch(p -> p.test(item))) {

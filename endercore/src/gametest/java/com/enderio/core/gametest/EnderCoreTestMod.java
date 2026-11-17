@@ -13,6 +13,7 @@ import javax.xml.parsers.ParserConfigurationException;
 public class EnderCoreTestMod {
     public EnderCoreTestMod() throws ParserConfigurationException {
         CapabilityTestBlocks.register(FMLJavaModLoadingContext.get().getModEventBus());
+        ItemDataTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         File report = new File(System.getProperty("endercore.gametest.report", "gametest-results.xml"));
         report.getAbsoluteFile().getParentFile().mkdirs();
         GlobalTestReporter.replaceWith(new JUnitLikeTestReporter(report));

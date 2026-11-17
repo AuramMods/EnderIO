@@ -10,7 +10,7 @@ import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
@@ -24,17 +24,16 @@ public class EIOLootModifiers {
     private static final DeferredRegister<LootItemFunctionType<?>> FUNCTIONS = DeferredRegister
             .create(Registries.LOOT_FUNCTION_TYPE, EnderIO.MOD_ID);
 
-    // public static DeferredHolder<MapCodec<? extends IGlobalLootModifier>,
-    // MapCodec<AutoSmeltModifier>> AUTO_SMELT =
+    // public static RegistryObject<MapCodec<AutoSmeltModifier>> AUTO_SMELT =
     // SERIALIZERS.register("auto_smelt", () -> AutoSmeltModifier.CODEC);
 
-    public static DeferredHolder<MapCodec<? extends IGlobalLootModifier>, MapCodec<BrokenSpawnerLootModifier>> BROKEN_SPAWNER_SERIALIZER = SERIALIZERS
+    public static RegistryObject<MapCodec<BrokenSpawnerLootModifier>> BROKEN_SPAWNER_SERIALIZER = SERIALIZERS
             .register("broken_spawner", () -> BrokenSpawnerLootModifier.CODEC);
 
-    public static final DeferredHolder<LootItemFunctionType<?>, LootItemFunctionType<SetLootCapacitorFunction>> SET_LOOT_CAPACITOR = FUNCTIONS
+    public static final RegistryObject<LootItemFunctionType<SetLootCapacitorFunction>> SET_LOOT_CAPACITOR = FUNCTIONS
             .register("set_loot_capacitor", () -> new LootItemFunctionType<>(SetLootCapacitorFunction.CODEC));
 
-    public static final DeferredHolder<LootItemFunctionType<?>, LootItemFunctionType<CopyPaintFunction>> COPY_PAINT = FUNCTIONS
+    public static final RegistryObject<LootItemFunctionType<CopyPaintFunction>> COPY_PAINT = FUNCTIONS
             .register("copy_paint", () -> new LootItemFunctionType<>(CopyPaintFunction.CODEC));
 
     public static void register(IEventBus bus) {

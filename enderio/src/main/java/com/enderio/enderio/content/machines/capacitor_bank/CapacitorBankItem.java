@@ -7,25 +7,14 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import java.util.function.BiFunction;
-import net.neoforged.neoforge.energy.ComponentEnergyStorage;
+import com.enderio.core.common.energy.StackedNbtEnergyStorage;
 import net.minecraftforge.energy.IEnergyStorage;
 
 public class CapacitorBankItem extends BlockItem {
 
     public static final BiFunction<ItemStack, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER =
-        (stack, v) -> new ComponentEnergyStorage(stack, EIODataComponents.ENERGY, ((CapacitorBankItem)stack.getItem()).tier.getStorageCapacity()) {
-            @Override
-            public int extractEnergy(int toExtract, boolean simulate) {
-                int extract = toExtract / stack.getCount();
-                return super.extractEnergy(extract, simulate) * stack.getCount();
-            }
-
-            @Override
-            public int receiveEnergy(int toReceive, boolean simulate) {
-                int receive = toReceive / stack.getCount();
-                return super.receiveEnergy(receive, simulate) * stack.getCount();
-            }
-        };
+        (stack, v) -> new StackedNbtEnergyStorage(stack, EIODataComponents.ENERGY,
+            ((CapacitorBankItem) stack.getItem()).tier.getStorageCapacity());
 
     private final CapacityTier tier;
 

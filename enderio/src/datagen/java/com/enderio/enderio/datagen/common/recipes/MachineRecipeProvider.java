@@ -22,7 +22,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.registries.DeferredBlock;
+import com.enderio.core.common.registries.BlockDeferredHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -543,8 +543,8 @@ public class MachineRecipeProvider extends SubRecipeProvider {
         eraseRecipes(recipeOutput);
     }
 
-    private static final List<DeferredBlock<?>> MACHINES = Util.make(() -> {
-        List<DeferredBlock<?>> list = new ArrayList<>();
+    private static final List<BlockDeferredHolder<?>> MACHINES = Util.make(() -> {
+        List<BlockDeferredHolder<?>> list = new ArrayList<>();
         list.addAll(EIOBlocks.CAPACITOR_BANKS.values());
         list.add(EIOBlocks.FLUID_TANK);
         list.add(EIOBlocks.PRESSURIZED_FLUID_TANK);

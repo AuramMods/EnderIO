@@ -16,7 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraftforge.fml.LogicalSide;
 import java.util.function.BiFunction;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -63,10 +63,10 @@ public class EnderChemicalFilterItem extends AbstractFilterItem<EnderChemicalFil
     public enum Type {
         BASIC(() -> MekanismModule.CHEMICAL_FILTER_MENU, 1);
 
-        private final Supplier<DeferredHolder<MenuType<?>, MenuType<EnderChemicalFilterMenu>>> menuType;
+        private final Supplier<RegistryObject<MenuType<EnderChemicalFilterMenu>>> menuType;
         private final int rowCount;
 
-        Type(Supplier<DeferredHolder<MenuType<?>, MenuType<EnderChemicalFilterMenu>>> menuType, int rowCount) {
+        Type(Supplier<RegistryObject<MenuType<EnderChemicalFilterMenu>>> menuType, int rowCount) {
             this.menuType = menuType;
             this.rowCount = rowCount;
         }

@@ -19,7 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import java.util.function.BiFunction;
-import net.neoforged.neoforge.energy.ComponentEnergyStorage;
+import com.enderio.core.common.energy.NbtEnergyStorage;
 import net.minecraftforge.energy.IEnergyStorage;
 
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.List;
 public abstract class PoweredToggledItem extends Item implements AdvancedTooltipProvider, ICustomCreativeTabEntries {
 
     public static final BiFunction<ItemStack, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER =
-        (stack, v) -> new ComponentEnergyStorage(stack, EIODataComponents.ENERGY, ((PoweredToggledItem)stack.getItem()).getMaxEnergy());
+        (stack, v) -> new NbtEnergyStorage(stack, EIODataComponents.ENERGY, ((PoweredToggledItem)stack.getItem()).getMaxEnergy());
 
     public PoweredToggledItem(Properties properties) {
         super(properties

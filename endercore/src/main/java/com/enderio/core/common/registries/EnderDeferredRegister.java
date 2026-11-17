@@ -4,10 +4,15 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.RegisterEvent;
+import net.minecraftforge.registries.RegistryManager;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -15,6 +20,7 @@ import java.util.function.Supplier;
 public class EnderDeferredRegister<T> {
     private final DeferredRegister<T> delegate;
     private final String namespace;
+    private final Map<ResourceLocation, ResourceLocation> aliases = new LinkedHashMap<>();
 
     protected EnderDeferredRegister(ResourceKey<? extends Registry<T>> registryKey, String namespace) {
         delegate = DeferredRegister.create(registryKey, namespace);
@@ -26,11 +32,24 @@ public class EnderDeferredRegister<T> {
     }
 
     public <I extends T> RegistryObject<I> register(String name, Function<ResourceLocation, ? extends I> factory) {
-        return register(name, () -> factory.apply(new ResourceLocation(namespace, name)));
+        return register(name, () -> factory.apply(ResourceLocation.fromNamespaceAndPath(namespace, name)));
     }
 
     public void register(IEventBus bus) {
         delegate.register(bus);
+        bus.addListener(EventPriority.LOW, this::registerAliases);
+    }
+
+    /** Forge persists these aliases in registry snapshots and uses them for old saved IDs. */
+    public void addAlias(ResourceLocation oldId, ResourceLocation newId) {
+        aliases.put(oldId, newId);
+    }
+
+    private void registerAliases(RegisterEvent event) {
+        if (event.getRegistryKey().equals(getRegistryKey()) && !aliases.isEmpty()) {
+            var registry = RegistryManager.ACTIVE.getRegistry(getRegistryKey());
+            aliases.forEach(registry::addAlias);
+        }
     }
 
     public Collection<RegistryObject<T>> getEntries() {
