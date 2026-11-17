@@ -32,37 +32,33 @@ import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.data.metadata.PackMetadataGenerator;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.data.AdvancementProvider;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.common.data.ForgeAdvancementProvider;
+import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.data.event.GatherDataEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.common.data.DatapackBuiltinEntriesProvider;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-@Mod(EnderIOAPI.MOD_ID)
+@Mod.EventBusSubscriber(modid = EnderIOAPI.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class EnderIODataGen {
 
-    public EnderIODataGen(IEventBus eventBus) {
-        // Temp: Runs after Regilite.
-        eventBus.addListener(EventPriority.LOWEST, this::onGatherData);
-    }
-
-    public void onGatherData(GatherDataEvent event) {
-        // Create datapack registry objects
-        event.createDatapackRegistryObjects(createDatapackEntriesBuilder(), Set.of(EnderIO.MOD_ID));
-
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onGatherData(GatherDataEvent event) {
         DataGenerator generator = event.getGenerator();
         PackOutput packOutput = event.getGenerator().getPackOutput();
-        CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
+        var datapacks = new DatapackBuiltinEntriesProvider(packOutput, event.getLookupProvider(),
+            createDatapackEntriesBuilder(), Set.of(EnderIO.MOD_ID));
+        generator.addProvider(event.includeServer(), datapacks);
+        CompletableFuture<HolderLookup.Provider> lookupProvider = datapacks.getRegistryProvider();
         ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
 
         var b = new EIOBlockTagsProvider(packOutput, lookupProvider, existingFileHelper);
@@ -74,7 +70,7 @@ public class EnderIODataGen {
         generator.addProvider(event.includeServer(),
             new EIOEntityTagsProvider(packOutput, lookupProvider, existingFileHelper));
 
-        generator.addProvider(event.includeServer(), new AdvancementProvider(packOutput, lookupProvider,
+        generator.addProvider(event.includeServer(), new ForgeAdvancementProvider(packOutput, lookupProvider,
             existingFileHelper, List.of(new EIOAdvancementGenerator(), new MachinesAdvancementGenerator())));
 
         generator.addProvider(event.includeServer(), new EnderIORecipeProvider(packOutput, lookupProvider));
@@ -91,17 +87,17 @@ public class EnderIODataGen {
             new LootTableProvider(packOutput, Collections.emptySet(), List.of(
                 new LootTableProvider.SubProviderEntry(EIOBlockLootProvider::new, LootContextParamSets.BLOCK),
                 new LootTableProvider.SubProviderEntry(ChestLootProvider::new, LootContextParamSets.CHEST)
-            ), lookupProvider));
+            )));
 
         generator.addProvider(event.includeClient(), new EIOItemModelProvider(packOutput, existingFileHelper));
         generator.addProvider(event.includeClient(), new EIOBlockStateProvider(packOutput, existingFileHelper));
         generator.addProvider(event.includeClient(), new EIOLanguageProvider(packOutput));
         generator.addProvider(event.includeClient(), new EIOSoundDefinitionProvider(packOutput, existingFileHelper));
 
-        var athenaPack = generator.getPackGenerator(event.includeClient(), "enderio_athena", EnderIO.ATHENA_RESOURCE_PACK_PATH);
-        athenaPack.addProvider(output -> new AthenaCapacitorBankBlockStateProvider(output, existingFileHelper));
-        athenaPack.addProvider(AthenaProvider::new);
-        athenaPack.addProvider(output -> new PackMetadataGenerator(output).add(PackMetadataSection.TYPE,
+        var athenaOutput = generator.getPackOutput(EnderIO.ATHENA_RESOURCE_PACK_PATH);
+        generator.addProvider(event.includeClient(), new AthenaCapacitorBankBlockStateProvider(athenaOutput, existingFileHelper));
+        generator.addProvider(event.includeClient(), new AthenaProvider(athenaOutput));
+        generator.addProvider(event.includeClient(), new PackMetadataGenerator(athenaOutput).add(PackMetadataSection.TYPE,
             new PackMetadataSection(EIOCommonLang.RESOURCE_PACK_ATHENA,
                 DetectedVersion.BUILT_IN.getPackVersion(PackType.CLIENT_RESOURCES))));
     }

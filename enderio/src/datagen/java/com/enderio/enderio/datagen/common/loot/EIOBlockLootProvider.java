@@ -28,7 +28,7 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import java.util.Set;
 
 public class EIOBlockLootProvider extends BlockLootSubProvider {
-    public EIOBlockLootProvider(HolderLookup.Provider registries) {
+    public EIOBlockLootProvider() {
         super(Set.of(), FeatureFlagSet.of(FeatureFlags.VANILLA, EIOFeatureFlags.ENDERFACE, EIOFeatureFlags.NIARD));
     }
 
@@ -36,7 +36,7 @@ public class EIOBlockLootProvider extends BlockLootSubProvider {
     protected Iterable<Block> getKnownBlocks() {
         return EIOBlocks.BLOCKS.getEntries()
             .stream()
-            .map(e -> (Block) e.value())
+            .map(e -> e.get())
             .toList();
     }
 

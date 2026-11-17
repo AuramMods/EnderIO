@@ -7,11 +7,11 @@ import com.enderio.enderio.init.EIOItems;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.common.Tags;
 
 public class ItemRecipeProvider extends SubRecipeProvider {
 
@@ -28,7 +28,7 @@ public class ItemRecipeProvider extends SubRecipeProvider {
                 .pattern(" DL")
                 .pattern("DLL")
                 .define('D', EIOTags.Items.INGOTS_DARK_STEEL)
-                .define('L', Tags.Items.LEATHERS)
+                .define('L', Tags.Items.LEATHER)
                 .unlockedBy("has_ingredient",
                         InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.DARK_STEEL_INGOT.get()))
                 .save(recipeOutput);

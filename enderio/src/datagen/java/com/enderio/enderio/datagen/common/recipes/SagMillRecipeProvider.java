@@ -7,7 +7,7 @@ import com.enderio.enderio.content.machines.sag_mill.SagMillingRecipe.BonusType;
 import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.init.EIOItems;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -15,10 +15,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
-import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.common.conditions.ICondition;
-import net.neoforged.neoforge.common.conditions.NotCondition;
-import net.neoforged.neoforge.common.conditions.TagEmptyCondition;
+import net.minecraftforge.common.Tags;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.common.crafting.conditions.NotCondition;
+import net.minecraftforge.common.crafting.conditions.TagEmptyCondition;
 
 import java.util.List;
 
@@ -39,7 +39,7 @@ public class SagMillRecipeProvider extends SubRecipeProvider {
         build1toN("copper", Tags.Items.INGOTS_COPPER, POWDERED_COPPER.get(), 1, BonusType.NONE, recipeOutput);
         build1toN("iron", Tags.Items.INGOTS_IRON, POWDERED_IRON.get(), 1, BonusType.NONE, recipeOutput);
         build1toN("gold", Tags.Items.INGOTS_GOLD, POWDERED_GOLD.get(), 1, BonusType.NONE, recipeOutput);
-        build1toN("obsidian", Tags.Items.OBSIDIANS, POWDERED_OBSIDIAN.get(), 4, recipeOutput);
+        build1toN("obsidian", Tags.Items.OBSIDIAN, POWDERED_OBSIDIAN.get(), 4, recipeOutput);
 
         build1toN("precient_crystal", EIOTags.Items.GEMS_PRESCIENT_CRYSTAL, PRESCIENT_POWDER.get(), 1, BonusType.NONE,
                 recipeOutput);
@@ -52,14 +52,14 @@ public class SagMillRecipeProvider extends SubRecipeProvider {
 
         build1toN("ender_pearl", Tags.Items.ENDER_PEARLS, POWDERED_ENDER_PEARL.get(), 9, BonusType.NONE, recipeOutput);
         build1toN("blaze_powder", Tags.Items.RODS_BLAZE, BLAZE_POWDER, 4, recipeOutput);
-        build1toN("glass", Tags.Items.GLASS_BLOCKS, SAND, 1, BonusType.NONE, recipeOutput);
+        build1toN("glass", Tags.Items.GLASS, SAND, 1, BonusType.NONE, recipeOutput);
         build1toN("bone_block", BONE_BLOCK, BONE_MEAL, 9, BonusType.NONE, recipeOutput);
         build1toN("soularium", EIOTags.Items.INGOTS_SOULARIUM, SOUL_POWDER.get(), 1, BonusType.NONE, recipeOutput);
 
-        build1toN("stone", Tags.Items.STONES, COBBLESTONE, 1, BonusType.NONE, recipeOutput);
+        build1toN("stone", Tags.Items.STONE, COBBLESTONE, 1, BonusType.NONE, recipeOutput);
         build1toN("deepslate", Items.DEEPSLATE, Items.COBBLED_DEEPSLATE, 1, BonusType.NONE, recipeOutput);
 
-        build("cobbled_deepslate", Ingredient.of(Tags.Items.COBBLESTONES_DEEPSLATE),
+        build("cobbled_deepslate", Ingredient.of(Tags.Items.COBBLESTONE_DEEPSLATE),
                 List.of(output(COBBLESTONE), output(EIOItems.GRAINS_OF_INFINITY.get(), 0.12f)),
                 BASE_ENERGY_PER_OPERATION, BonusType.CHANCE_ONLY, recipeOutput);
 
@@ -78,21 +78,21 @@ public class SagMillRecipeProvider extends SubRecipeProvider {
                 List.of(output(POWDERED_QUARTZ.get(), 1), output(POWDERED_QUARTZ.get(), 0.1f)),
                 BASE_ENERGY_PER_OPERATION, BonusType.CHANCE_ONLY, recipeOutput);
 
-        build("cobblestone", Ingredient.of(Tags.Items.COBBLESTONES_NORMAL),
+        build("cobblestone", Ingredient.of(Tags.Items.COBBLESTONE_NORMAL),
                 List.of(output(GRAVEL, 0.7f), output(GRAVEL, 0.3f), output(SAND, 0.1f), output(FLINT, 0.05f)),
                 BASE_ENERGY_PER_OPERATION, recipeOutput);
 
-        build("mossy_cobblestone", Ingredient.of(Tags.Items.COBBLESTONES_MOSSY),
+        build("mossy_cobblestone", Ingredient.of(Tags.Items.COBBLESTONE_MOSSY),
                 List.of(output(COBBLESTONE), output(VINE, 0.7f)), BASE_ENERGY_PER_OPERATION, BonusType.NONE, recipeOutput);
 
-        build("gravel", Ingredient.of(Tags.Items.GRAVELS),
+        build("gravel", Ingredient.of(Tags.Items.GRAVEL),
                 List.of(output(SAND, 0.7f), output(SAND, 0.3f), output(FLINT, 0.1f)), BASE_ENERGY_PER_OPERATION,
                 recipeOutput);
 
-        build("sandstone", Ingredient.of(Tags.Items.SANDSTONE_BLOCKS), List.of(output(SAND, 2), output(SAND, 2, 0.4f)),
+        build("sandstone", Ingredient.of(Tags.Items.SANDSTONE), List.of(output(SAND, 2), output(SAND, 2, 0.4f)),
                 BASE_ENERGY_PER_OPERATION, BonusType.CHANCE_ONLY, recipeOutput);
 
-        build("sand", Ingredient.of(Tags.Items.SANDS), List.of(output(EIOTags.Items.SILICON, 0.5f)),
+        build("sand", Ingredient.of(Tags.Items.SAND), List.of(output(EIOTags.Items.SILICON, 0.5f)),
                 BASE_ENERGY_PER_OPERATION, recipeOutput);
 
         build("glowstone", Ingredient.of(GLOWSTONE), List.of(// swap with any:glowstone
@@ -343,7 +343,7 @@ public class SagMillRecipeProvider extends SubRecipeProvider {
         RecipeOutput recipeOutput, TagKey<Item>... neededTags) {
         ICondition[] conditions = new ICondition[neededTags.length];
         for (int i = 0; i < neededTags.length; i++) {
-            conditions[i] = new NotCondition(new TagEmptyCondition(neededTags[i]));
+            conditions[i] = new NotCondition(new TagEmptyCondition(neededTags[i].location()));
         }
         recipeOutput.accept(id, new SagMillingRecipe(input, outputs, energy, bonusType), null, conditions);
     }

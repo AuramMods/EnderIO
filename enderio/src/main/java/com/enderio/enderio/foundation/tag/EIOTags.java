@@ -23,6 +23,8 @@ public class EIOTags {
     public static final String COMMON = "c";
 
     public static class Items {
+        public static final TagKey<Item> CHAINS = commonTag("chains");
+        public static final TagKey<Item> SKULLS = ItemTags.create(new ResourceLocation("minecraft", "skulls"));
         public static final TagKey<Item> FERTILIZERS = commonTag("fertilizers");
         public static final TagKey<Item> HIDE_FACADES = tag("enderio/hide_facades");
 
@@ -163,6 +165,9 @@ public class EIOTags {
     }
 
     public static class Blocks {
+        public static final TagKey<Block> CHAINS = commonTag("chains");
+        public static final TagKey<Block> SKULLS = commonTag("skulls");
+        public static final TagKey<Block> RELOCATION_NOT_SUPPORTED = commonTag("relocation_not_supported");
         public static final TagKey<Block> FUSED_QUARTZ = commonTag("glass_blocks/fused_quartz");
         public static final TagKey<Block> ENLIGHTENED_FUSED_QUARTZ = commonTag("glass_blocks/enlighted_fused_quartz");
         public static final TagKey<Block> DARK_FUSED_QUARTZ = commonTag("glass_blocks/dark_fused_quartz");

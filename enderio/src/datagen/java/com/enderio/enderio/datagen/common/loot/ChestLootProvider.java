@@ -3,10 +3,8 @@ package com.enderio.enderio.datagen.common.loot;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.capacitors.SetLootCapacitorFunction;
 import com.enderio.enderio.init.EIOItems;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.data.loot.LootTableSubProvider;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -24,19 +22,17 @@ public class ChestLootProvider implements LootTableSubProvider {
     public static final String COMMON_LOOT_TABLE_NAME = "chests/common_loot";
     public static final String ALLOY_LOOT_TABLE_NAME = "chests/alloy_loot";
 
-    private final HolderLookup.Provider registries;
 
-    public ChestLootProvider(HolderLookup.Provider registries) {
-        this.registries = registries;
+    public ChestLootProvider() {
     }
 
     @Override
-    public void generate(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> writer) {
+    public void generate(BiConsumer<ResourceLocation, LootTable.Builder> writer) {
         generateCommonLoot(writer);
         generateAlloyLoot(writer);
     }
 
-    private void generateCommonLoot(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> writer) {
+    private void generateCommonLoot(BiConsumer<ResourceLocation, LootTable.Builder> writer) {
         var lootPool = LootPool
             .lootPool()
             .name("Ender IO")
@@ -65,10 +61,10 @@ public class ChestLootProvider implements LootTableSubProvider {
             .withPool(lootPool)
             .setParamSet(LootContextParamSet.builder().build());
 
-        writer.accept(ResourceKey.create(Registries.LOOT_TABLE, EnderIO.rl(COMMON_LOOT_TABLE_NAME)), lootTable);
+        writer.accept(EnderIO.rl(COMMON_LOOT_TABLE_NAME), lootTable);
     }
 
-    private void generateAlloyLoot(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> writer) {
+    private void generateAlloyLoot(BiConsumer<ResourceLocation, LootTable.Builder> writer) {
         var lootPool = LootPool
             .lootPool()
             .name("Ender IO")
@@ -107,6 +103,6 @@ public class ChestLootProvider implements LootTableSubProvider {
             .withPool(lootPool)
             .setParamSet(LootContextParamSet.builder().build());
 
-        writer.accept(ResourceKey.create(Registries.LOOT_TABLE, EnderIO.rl(ALLOY_LOOT_TABLE_NAME)), lootTable);
+        writer.accept(EnderIO.rl(ALLOY_LOOT_TABLE_NAME), lootTable);
     }
 }

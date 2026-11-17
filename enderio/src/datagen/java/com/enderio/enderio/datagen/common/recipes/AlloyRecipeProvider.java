@@ -14,7 +14,7 @@ import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
@@ -22,7 +22,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.common.Tags;
 import com.enderio.core.common.recipes.SizedIngredient;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,17 +61,17 @@ public class AlloyRecipeProvider extends SubRecipeProvider {
                 4800, 0.3f, recipeOutput);
         build(EnderIO.rl("dark_steel_ingot_with_coal"),
                 List.of(SizedIngredient.of(Tags.Items.INGOTS_IRON, 1), SizedIngredient.of(Items.COAL, 2),
-                        SizedIngredient.of(Tags.Items.OBSIDIANS, 1)),
+                        SizedIngredient.of(Tags.Items.OBSIDIAN, 1)),
                 new ItemStack(EIOItems.DARK_STEEL_INGOT.get(), 2), 3200, 0.3f, recipeOutput);
         build(new ItemStack(EIOItems.DARK_STEEL_INGOT.get(), 2), List.of(SizedIngredient.of(Tags.Items.INGOTS_IRON, 1),
-                SizedIngredient.of(EIOTags.Items.DUSTS_COAL, 1), SizedIngredient.of(Tags.Items.OBSIDIANS, 1)), 3200,
+                SizedIngredient.of(EIOTags.Items.DUSTS_COAL, 1), SizedIngredient.of(Tags.Items.OBSIDIAN, 1)), 3200,
                 0.3f, recipeOutput);
         build(new ItemStack(EIOItems.SOULARIUM_INGOT.get()),
                 List.of(new SizedIngredient(Ingredient.of(Items.SOUL_SAND, Items.SOUL_SOIL), 1),
                         SizedIngredient.of(Tags.Items.INGOTS_GOLD, 1)),
                 5600, 0.3f, recipeOutput);
         build(new ItemStack(EIOItems.END_STEEL_INGOT.get(), 2), List.of(SizedIngredient.of(Tags.Items.END_STONES, 1),
-                SizedIngredient.of(EIOTags.Items.INGOTS_DARK_STEEL, 1), SizedIngredient.of(Tags.Items.OBSIDIANS, 1)),
+                SizedIngredient.of(EIOTags.Items.INGOTS_DARK_STEEL, 1), SizedIngredient.of(Tags.Items.OBSIDIAN, 1)),
                 6400, 0.3f, recipeOutput);
 
         // endregion
@@ -115,7 +115,7 @@ public class AlloyRecipeProvider extends SubRecipeProvider {
             if (identifier.collisionPredicate() == GlassCollisionPredicate.NONE) {
                 FusedQuartzBlock clear = glassGroup.getValue().CLEAR.get();
                 var mainIngredient = identifier.explosionResistance() ? SizedIngredient.of(Tags.Items.GEMS_QUARTZ, 4)
-                        : SizedIngredient.of(Tags.Items.GLASS_BLOCKS_COLORLESS, 1);
+                        : SizedIngredient.of(Tags.Items.GLASS_COLORLESS, 1);
                 @Nullable
                 var altIngredient = identifier.explosionResistance()
                         ? SizedIngredient.of(EIOTags.Items.STORAGE_BLOCKS_QUARTZ, 1)

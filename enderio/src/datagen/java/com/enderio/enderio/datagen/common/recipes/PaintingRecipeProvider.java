@@ -6,7 +6,7 @@ import com.enderio.enderio.content.machines.painting.PaintingRecipe;
 import com.enderio.enderio.init.EIOBlocks;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;

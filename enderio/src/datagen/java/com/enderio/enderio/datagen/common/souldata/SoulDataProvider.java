@@ -45,13 +45,13 @@ public class SoulDataProvider implements DataProvider {
 
     public void buildSoulData(Consumer<FinshedSoulData<?>> finshedSoulDataConsumer) {
         addSpawnerData(EntityType.ALLAY, 12_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
-        addSpawnerData(EntityType.ARMADILLO, 12_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
+        addSpawnerData(ResourceLocation.withDefaultNamespace("armadillo"), 12_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
         addSpawnerData(EntityType.AXOLOTL, 10_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
         addSpawnerData(EntityType.BAT, 10_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
         addSpawnerData(EntityType.BEE, 10_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
         addSpawnerData(EntityType.BLAZE, 40_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
-        addSpawnerData(EntityType.BOGGED, 32_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
-        addSpawnerData(EntityType.BREEZE, 40_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
+        addSpawnerData(ResourceLocation.withDefaultNamespace("bogged"), 32_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
+        addSpawnerData(ResourceLocation.withDefaultNamespace("breeze"), 40_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
         addSpawnerData(EntityType.CAMEL, 15_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
         addSpawnerData(EntityType.CAT, 10_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
         addSpawnerData(EntityType.CAVE_SPIDER, 32_000, MobSpawnMode.NEW, finshedSoulDataConsumer);
@@ -164,7 +164,12 @@ public class SoulDataProvider implements DataProvider {
 
     private void addSpawnerData(EntityType<?> entityType, int power, MobSpawnMode type,
             Consumer<FinshedSoulData<?>> finshedSoulDataConsumer) {
-        ResourceLocation key = BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
+        addSpawnerData(BuiltInRegistries.ENTITY_TYPE.getKey(entityType), power, type, finshedSoulDataConsumer);
+    }
+
+    // Keep source presets by ID even when a vanilla entity is absent on 1.20.1.
+    private void addSpawnerData(ResourceLocation key, int power, MobSpawnMode type,
+            Consumer<FinshedSoulData<?>> finshedSoulDataConsumer) {
         SpawnerSoul.SoulData data = new SpawnerSoul.SoulData(key, power, type);
         finshedSoulDataConsumer.accept(new FinshedSoulData<>(SpawnerSoul.CODEC, data,
                 SpawnerSoul.NAME + "/" + key.getNamespace() + "_" + key.getPath()));
@@ -224,7 +229,7 @@ public class SoulDataProvider implements DataProvider {
 
         public JsonObject serializeData() {
             DataResult<JsonElement> element = codec.encodeStart(JsonOps.INSTANCE, data);
-            return element.getOrThrow().getAsJsonObject();
+            return element.getOrThrow(false, error -> { throw new IllegalArgumentException(error); }).getAsJsonObject();
         }
 
         public ResourceLocation getId() {

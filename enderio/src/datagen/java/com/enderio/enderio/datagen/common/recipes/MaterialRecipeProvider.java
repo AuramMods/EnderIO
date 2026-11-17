@@ -9,7 +9,7 @@ import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
@@ -21,7 +21,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.common.Tags;
 
 public class MaterialRecipeProvider extends SubRecipeProvider {
     @Override
@@ -150,8 +150,8 @@ public class MaterialRecipeProvider extends SubRecipeProvider {
                 .pattern("GCG")
                 .pattern("SGS")
                 .pattern("GCG")
-                .define('G', Tags.Items.GRAVELS)
-                .define('S', Tags.Items.SANDS)
+                .define('G', Tags.Items.GRAVEL)
+                .define('S', Tags.Items.SAND)
                 .define('C', Items.CLAY_BALL)
                 .unlockedBy("has_ingredient_gravel", InventoryChangeTrigger.TriggerInstance.hasItems(Items.GRAVEL))
                 .unlockedBy("has_ingredient_sand", InventoryChangeTrigger.TriggerInstance.hasItems(Items.SAND))
@@ -160,17 +160,17 @@ public class MaterialRecipeProvider extends SubRecipeProvider {
 
         SimpleCookingRecipeBuilder
                 .smelting(Ingredient.of(EIOItems.CONDUIT_BINDER_COMPOSITE.get()), RecipeCategory.MISC,
-                        new ItemStack(EIOItems.CONDUIT_BINDER.get(), 2), 0, 200)
+                        EIOItems.CONDUIT_BINDER.get(), 0, 200)
                 .unlockedBy("has_ingredient",
                         InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.CONDUIT_BINDER_COMPOSITE.get()))
-                .save(recipeOutput, EnderIO.rl(EIOItems.CONDUIT_BINDER.getId().getPath() + "_from_smelting"));
+                .save(recipeOutput.withResult(new ItemStack(EIOItems.CONDUIT_BINDER.get(), 2)), EnderIO.rl(EIOItems.CONDUIT_BINDER.getId().getPath() + "_from_smelting"));
 
         SimpleCookingRecipeBuilder
                 .blasting(Ingredient.of(EIOItems.CONDUIT_BINDER_COMPOSITE.get()), RecipeCategory.MISC,
-                        new ItemStack(EIOItems.CONDUIT_BINDER.get(), 2), 0, 100)
+                        EIOItems.CONDUIT_BINDER.get(), 0, 100)
                 .unlockedBy("has_ingredient",
                         InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.CONDUIT_BINDER_COMPOSITE.get()))
-                .save(recipeOutput, EnderIO.rl(EIOItems.CONDUIT_BINDER.getId().getPath() + "_from_blasting"));
+                .save(recipeOutput.withResult(new ItemStack(EIOItems.CONDUIT_BINDER.get(), 2)), EnderIO.rl(EIOItems.CONDUIT_BINDER.getId().getPath() + "_from_blasting"));
     }
 
     private void addCapacitors(RecipeOutput recipeOutput) {

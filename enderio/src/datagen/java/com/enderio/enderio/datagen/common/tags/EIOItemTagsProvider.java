@@ -11,8 +11,8 @@ import net.minecraft.data.tags.ItemTagsProvider;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraftforge.common.Tags;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -30,6 +30,8 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
     protected void addTags(HolderLookup.Provider provider) {
         tag(EIOTags.Items.FERTILIZERS).add(net.minecraft.world.item.Items.BONE_MEAL)
             .addOptionalTag(new net.minecraft.resources.ResourceLocation("forge", "fertilizers"));
+        tag(EIOTags.Items.SKULLS).add(Items.PLAYER_HEAD, Items.CREEPER_HEAD, Items.ZOMBIE_HEAD,
+            Items.SKELETON_SKULL, Items.WITHER_SKELETON_SKULL, Items.DRAGON_HEAD, Items.PIGLIN_HEAD);
         copy(EIOTags.Blocks.CLEAR_GLASS, EIOTags.Items.CLEAR_GLASS);
         copy(EIOTags.Blocks.FUSED_QUARTZ, EIOTags.Items.FUSED_QUARTZ);
 
@@ -197,7 +199,9 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
     private void addReagentTags() {
         tag(EIOTags.Items.CROPS).addTag(Tags.Items.CROPS);
         tag(EIOTags.Items.SEEDS).addTag(Tags.Items.SEEDS);
-        tag(EIOTags.Items.MEAT).addTag(ItemTags.MEAT);
+        tag(EIOTags.Items.MEAT).add(Items.BEEF, Items.CHICKEN, Items.COOKED_BEEF, Items.COOKED_CHICKEN,
+            Items.COOKED_MUTTON, Items.COOKED_PORKCHOP, Items.COOKED_RABBIT, Items.MUTTON,
+            Items.PORKCHOP, Items.RABBIT, Items.ROTTEN_FLESH);
         tag(EIOTags.Items.EXPLOSIVES).add(Items.TNT, Items.FIREWORK_STAR, Items.FIREWORK_ROCKET, Items.FIRE_CHARGE, Items.GUNPOWDER);
         tag(EIOTags.Items.NATURAL_LIGHTS).add(Items.GLOWSTONE_DUST, Items.GLOWSTONE, Items.SEA_LANTERN,
             Items.SEA_PICKLE, Items.GLOW_LICHEN, Items.GLOW_BERRIES, Items.GLOW_INK_SAC);
@@ -208,7 +212,7 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
         tag(EIOTags.Items.CLOUD_COLD).add(Items.SNOW, Items.SNOW_BLOCK, Items.SNOWBALL, Items.ICE, Items.PACKED_ICE,
             Items.BLUE_ICE);
         tag(EIOTags.Items.LIGHTNING_ROD).add(Items.LIGHTNING_ROD);
-        tag(EIOTags.Items.WIND_CHARGES).add(Items.WIND_CHARGE);
+        tag(EIOTags.Items.WIND_CHARGES).addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "wind_charge"));
     }
 
     private void addBlockItemTags() {
@@ -238,14 +242,14 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
             var tag = tag(EIOTags.Items.GLASS_TAGS.get(glassIdentifier));
 
             var glassItems = new ArrayList<>(glassBlocks.getAllBlocks()
-                .sorted(Comparator.comparing(DeferredHolder::getKey))
+                .sorted(Comparator.comparing(holder -> holder.getId()))
                 .map(i -> i.get().asItem())
                 .map(i -> BuiltInRegistries.ITEM.getResourceKey(i).orElseThrow())
                 .toList());
 
-            tag.addAll(glassItems);
+            glassItems.forEach(tag::add);
         }
 
-        tag(Tags.Items.CHAINS).add(EIOBlocks.SOUL_CHAIN.asItem());
+        tag(EIOTags.Items.CHAINS).add(Items.CHAIN, EIOBlocks.SOUL_CHAIN.asItem());
     }
 }

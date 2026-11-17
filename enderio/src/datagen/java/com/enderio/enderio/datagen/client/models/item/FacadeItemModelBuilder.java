@@ -3,9 +3,9 @@ package com.enderio.enderio.datagen.client.models.item;
 import com.enderio.enderio.EnderIO;
 import com.google.gson.JsonObject;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.client.model.generators.CustomLoaderBuilder;
-import net.neoforged.neoforge.client.model.generators.ModelBuilder;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraftforge.client.model.generators.CustomLoaderBuilder;
+import net.minecraftforge.client.model.generators.ModelBuilder;
+import net.minecraftforge.common.data.ExistingFileHelper;
 
 public class FacadeItemModelBuilder<T extends ModelBuilder<T>> extends CustomLoaderBuilder<T> {
 
@@ -17,7 +17,7 @@ public class FacadeItemModelBuilder<T extends ModelBuilder<T>> extends CustomLoa
     }
 
     protected FacadeItemModelBuilder(T parent, ExistingFileHelper existingFileHelper) {
-        super(EnderIO.rl("facades_item"), parent, existingFileHelper, false);
+        super(EnderIO.rl("facades_item"), parent, existingFileHelper);
     }
 
     public FacadeItemModelBuilder<T> model(String name) {

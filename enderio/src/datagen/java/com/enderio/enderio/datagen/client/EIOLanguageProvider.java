@@ -34,8 +34,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.DyeColor;
-import net.neoforged.neoforge.common.data.LanguageProvider;
-import net.neoforged.neoforge.fluids.FluidType;
+import net.minecraftforge.common.data.LanguageProvider;
+import net.minecraftforge.fluids.FluidType;
 
 import java.util.Locale;
 
@@ -776,6 +776,11 @@ public class EIOLanguageProvider extends LanguageProvider {
     private void addJadeLang() {
         final String configPrefix = "config.jade.plugin_";
         add(configPrefix + EIOJadePlugin.SOUL_BOUND_COMPONENT.toLanguageKey(), "Soul Bound");
+    }
+
+    private void add(net.minecraft.tags.TagKey<?> tag, String translation) {
+        add("tag." + tag.registry().location().getPath().replace('/', '.') + "."
+            + tag.location().toLanguageKey(), translation);
     }
 
     private void add(ResourceKey<Conduit<?, ?>> key, String translation) {

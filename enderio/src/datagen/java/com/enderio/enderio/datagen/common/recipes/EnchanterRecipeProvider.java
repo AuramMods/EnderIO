@@ -9,13 +9,13 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.common.Tags;
 import com.enderio.core.common.recipes.SizedIngredient;
 
 public class EnchanterRecipeProvider extends SubRecipeProvider {
@@ -26,15 +26,15 @@ public class EnchanterRecipeProvider extends SubRecipeProvider {
         HolderGetter<Enchantment> enchantmentRegistry = registries.lookupOrThrow(Registries.ENCHANTMENT);
 
         // vanilla
-        build(enchantmentRegistry, Enchantments.PROTECTION, SizedIngredient.of(EIOTags.Items.INGOTS_DARK_STEEL, 16), 1,
+        build(enchantmentRegistry, Enchantments.ALL_DAMAGE_PROTECTION, SizedIngredient.of(EIOTags.Items.INGOTS_DARK_STEEL, 16), 1,
                 recipeOutput);
         build(enchantmentRegistry, Enchantments.FIRE_PROTECTION, SizedIngredient.of(Items.MAGMA_CREAM, 16), 1,
                 recipeOutput); // TODO
-        build(enchantmentRegistry, Enchantments.FEATHER_FALLING, SizedIngredient.of(Tags.Items.FEATHERS, 1), 1,
+        build(enchantmentRegistry, Enchantments.FALL_PROTECTION, SizedIngredient.of(Tags.Items.FEATHERS, 1), 1,
                 recipeOutput);
         build(enchantmentRegistry, Enchantments.BLAST_PROTECTION, SizedIngredient.of(Items.GUNPOWDER, 16), 1,
                 recipeOutput);
-        build(enchantmentRegistry, Enchantments.PROJECTILE_PROTECTION, SizedIngredient.of(Tags.Items.LEATHERS, 16), 1,
+        build(enchantmentRegistry, Enchantments.PROJECTILE_PROTECTION, SizedIngredient.of(Tags.Items.LEATHER, 16), 1,
                 recipeOutput);// change arrow->leather?
         build(enchantmentRegistry, Enchantments.RESPIRATION, SizedIngredient.of(Items.GLASS_BOTTLE, 1), 1,
                 recipeOutput);
@@ -50,25 +50,25 @@ public class EnchanterRecipeProvider extends SubRecipeProvider {
                 recipeOutput);
         build(enchantmentRegistry, Enchantments.KNOCKBACK, SizedIngredient.of(Items.PISTON, 1), 1, recipeOutput);
         build(enchantmentRegistry, Enchantments.FIRE_ASPECT, SizedIngredient.of(Items.BLAZE_ROD, 8), 1, recipeOutput);
-        build(enchantmentRegistry, Enchantments.LOOTING, SizedIngredient.of(Items.SKELETON_SKULL, 1), 1, recipeOutput);
-        build(enchantmentRegistry, Enchantments.EFFICIENCY, SizedIngredient.of(Tags.Items.DUSTS_REDSTONE, 12), 1,
+        build(enchantmentRegistry, Enchantments.MOB_LOOTING, SizedIngredient.of(Items.SKELETON_SKULL, 1), 1, recipeOutput);
+        build(enchantmentRegistry, Enchantments.BLOCK_EFFICIENCY, SizedIngredient.of(Tags.Items.DUSTS_REDSTONE, 12), 1,
                 recipeOutput);
         build(enchantmentRegistry, Enchantments.SILK_TOUCH, SizedIngredient.of(Tags.Items.SLIMEBALLS, 1), 1,
                 recipeOutput);
-        build(enchantmentRegistry, Enchantments.UNBREAKING, SizedIngredient.of(Tags.Items.OBSIDIANS, 1), 1,
+        build(enchantmentRegistry, Enchantments.UNBREAKING, SizedIngredient.of(Tags.Items.OBSIDIAN, 1), 1,
                 recipeOutput);
         build(enchantmentRegistry, Enchantments.MENDING, SizedIngredient.of(EIOItems.VOID_VIAL.get(), 1), 1,
                 recipeOutput);
-        build(enchantmentRegistry, Enchantments.FORTUNE, SizedIngredient.of(Tags.Items.GEMS_EMERALD, 1), 1,
+        build(enchantmentRegistry, Enchantments.BLOCK_FORTUNE, SizedIngredient.of(Tags.Items.GEMS_EMERALD, 1), 1,
                 recipeOutput);
-        build(enchantmentRegistry, Enchantments.POWER, SizedIngredient.of(Items.FLINT, 12), 1, recipeOutput);
-        build(enchantmentRegistry, Enchantments.PUNCH, SizedIngredient.of(Tags.Items.STRINGS, 1), 1, recipeOutput);
-        build(enchantmentRegistry, Enchantments.FLAME, SizedIngredient.of(Tags.Items.NETHERRACKS, 1), 1, recipeOutput);
-        build(enchantmentRegistry, Enchantments.INFINITY, SizedIngredient.of(EIOTags.Items.DUSTS_GRAINS_OF_INFINITY, 1),
+        build(enchantmentRegistry, Enchantments.POWER_ARROWS, SizedIngredient.of(Items.FLINT, 12), 1, recipeOutput);
+        build(enchantmentRegistry, Enchantments.PUNCH_ARROWS, SizedIngredient.of(Tags.Items.STRING, 1), 1, recipeOutput);
+        build(enchantmentRegistry, Enchantments.FLAMING_ARROWS, SizedIngredient.of(Tags.Items.NETHERRACK, 1), 1, recipeOutput);
+        build(enchantmentRegistry, Enchantments.INFINITY_ARROWS, SizedIngredient.of(EIOTags.Items.DUSTS_GRAINS_OF_INFINITY, 1),
                 1, recipeOutput);
-        build(enchantmentRegistry, Enchantments.LUCK_OF_THE_SEA, SizedIngredient.of(Tags.Items.GEMS_LAPIS, 1), 1,
+        build(enchantmentRegistry, Enchantments.FISHING_LUCK, SizedIngredient.of(Tags.Items.GEMS_LAPIS, 1), 1,
                 recipeOutput);
-        build(enchantmentRegistry, Enchantments.LURE, SizedIngredient.of(ItemTags.FISHES, 1), 1, recipeOutput);
+        build(enchantmentRegistry, Enchantments.FISHING_SPEED, SizedIngredient.of(ItemTags.FISHES, 1), 1, recipeOutput);
         build(enchantmentRegistry, Enchantments.SWEEPING_EDGE, SizedIngredient.of(Tags.Items.INGOTS_IRON, 8), 1,
                 recipeOutput);
         // new
@@ -85,14 +85,14 @@ public class EnchanterRecipeProvider extends SubRecipeProvider {
         build(enchantmentRegistry, Enchantments.SOUL_SPEED, SizedIngredient.of(Items.SOUL_SOIL, 16), 1, recipeOutput);
     }
 
-    protected void build(HolderGetter<Enchantment> enchantmentRegistry, ResourceKey<Enchantment> enchantment,
+    protected void build(HolderGetter<Enchantment> enchantmentRegistry, Enchantment enchantment,
             SizedIngredient input, int levelModifier, RecipeOutput recipeOutput) {
-        build(enchantmentRegistry.getOrThrow(enchantment), input, levelModifier, recipeOutput);
+        build(enchantmentRegistry.getOrThrow(net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.getResourceKey(enchantment).orElseThrow()), input, levelModifier, recipeOutput);
     }
 
     protected void build(Holder<Enchantment> enchantment, SizedIngredient input, int levelModifier,
             RecipeOutput recipeOutput) {
-        recipeOutput.accept(EnderIO.rl("enchanting/" + enchantment.getKey().location().getPath()),
+        recipeOutput.accept(EnderIO.rl("enchanting/" + enchantment.unwrapKey().orElseThrow().location().getPath()),
                 new EnchanterRecipe(enchantment, levelModifier, input), null);
     }
 

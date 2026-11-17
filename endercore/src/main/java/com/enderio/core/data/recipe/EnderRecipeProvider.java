@@ -34,7 +34,7 @@ public abstract class EnderRecipeProvider extends RecipeProvider {
     @Override
     protected void buildRecipes(Consumer<FinishedRecipe> recipeOutput) {
         for (var provider : subRecipeProviders) {
-            provider.buildRecipes(recipeOutput, lookup);
+            provider.buildRecipes(new RecipeOutput(recipeOutput, lookup), lookup);
         }
     }
 

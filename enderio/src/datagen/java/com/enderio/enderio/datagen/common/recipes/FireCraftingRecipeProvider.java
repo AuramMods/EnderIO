@@ -5,7 +5,7 @@ import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.fire_crafting.FireCraftingRecipe;
 import com.enderio.enderio.init.EIOItems;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 

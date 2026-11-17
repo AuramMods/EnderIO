@@ -15,13 +15,13 @@ import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.common.Tags;
 import com.enderio.core.common.registries.BlockDeferredHolder;
 
 import java.util.ArrayList;
@@ -95,7 +95,7 @@ public class MachineRecipeProvider extends SubRecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, EIOBlocks.FLUID_TANK.get())
                 .define('I', Tags.Items.INGOTS_IRON)
                 .define('B', Blocks.IRON_BARS)
-                .define('G', Tags.Items.GLASS_BLOCKS)
+                .define('G', Tags.Items.GLASS)
                 .pattern("IBI")
                 .pattern("BGB")
                 .pattern("IBI")
@@ -132,7 +132,7 @@ public class MachineRecipeProvider extends SubRecipeProvider {
                 .define('I', Tags.Items.INGOTS_IRON)
                 .define('G', EIOTags.Items.GEARS_IRON)
                 .define('V', EIOBlocks.VOID_CHASSIS.get())
-                .define('O', Tags.Items.OBSIDIANS)
+                .define('O', Tags.Items.OBSIDIAN)
                 .pattern("GFG")
                 .pattern("FVF")
                 .pattern("IOI")
@@ -145,7 +145,7 @@ public class MachineRecipeProvider extends SubRecipeProvider {
                 .define('I', Tags.Items.INGOTS_IRON)
                 .define('G', EIOTags.Items.GEARS_IRON)
                 .define('V', EIOBlocks.VOID_CHASSIS.get())
-                .define('O', Tags.Items.OBSIDIANS)
+                .define('O', Tags.Items.OBSIDIAN)
                 .define('D', Items.DEEPSLATE)
                 .pattern("GFG")
                 .pattern("IVI")
@@ -159,7 +159,7 @@ public class MachineRecipeProvider extends SubRecipeProvider {
                 .define('I', Tags.Items.INGOTS_IRON)
                 .define('G', EIOTags.Items.GEARS_IRON)
                 .define('V', EIOBlocks.VOID_CHASSIS.get())
-                .define('O', Tags.Items.OBSIDIANS)
+                .define('O', Tags.Items.OBSIDIAN)
                 .define('P', Items.PISTON)
                 .pattern("GFG")
                 .pattern("IVI")
@@ -173,7 +173,7 @@ public class MachineRecipeProvider extends SubRecipeProvider {
                 .define('G', EIOTags.Items.GEARS_ENERGIZED)
                 .define('C', EIOBlocks.ENSOULED_CHASSIS.get())
                 .define('B', Items.IRON_BARS)
-                .define('H', ItemTags.SKULLS)
+                .define('H', EIOTags.Items.SKULLS)
                 .pattern("IHI")
                 .pattern("ICI")
                 .pattern("GBG")
@@ -310,7 +310,7 @@ public class MachineRecipeProvider extends SubRecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, EIOBlocks.SOLAR_PANELS.get(SolarPanelTier.ENERGETIC))
                 .define('E', Tags.Items.INGOTS_GOLD)
-                .define('F', Tags.Items.GLASS_BLOCKS)
+                .define('F', Tags.Items.GLASS)
                 .define('P', EIOItems.PHOTOVOLTAIC_PLATE)
                 .define('C', EIOItems.BASIC_CAPACITOR)
                 .define('D', Items.REDSTONE)

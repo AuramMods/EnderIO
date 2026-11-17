@@ -15,12 +15,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.client.model.generators.ItemModelBuilder;
-import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
-import net.neoforged.neoforge.client.model.generators.ModelFile;
-import net.neoforged.neoforge.client.model.generators.loaders.DynamicFluidContainerModelBuilder;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import net.neoforged.neoforge.internal.versions.neoforge.NeoForgeVersion;
+import net.minecraftforge.client.model.generators.ItemModelBuilder;
+import net.minecraftforge.client.model.generators.ItemModelProvider;
+import net.minecraftforge.client.model.generators.ModelFile;
+import net.minecraftforge.client.model.generators.loaders.DynamicFluidContainerModelBuilder;
+import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.versions.forge.ForgeVersion;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -369,6 +369,16 @@ public class EIOItemModelProvider extends ItemModelProvider {
         simpleBlockItem(EIOBlocks.WEATHER_OBELISK.get());
     }
 
+    private ItemModelBuilder simpleBlockItem(Block block) {
+        var id = BuiltInRegistries.BLOCK.getKey(block);
+        return withExistingParent(id.toString(), id.withPrefix("block/"));
+    }
+
+    private ItemModelBuilder handheldItem(net.minecraft.world.item.Item item) {
+        var id = BuiltInRegistries.ITEM.getKey(item);
+        return withExistingParent(id.toString(), mcLoc("item/handheld")).texture("layer0", id.withPrefix("item/"));
+    }
+
     private ItemModelBuilder fakeBlock(ItemLike item) {
         return fakeBlock(BuiltInRegistries.ITEM.getKey(item.asItem()));
     }
@@ -388,9 +398,9 @@ public class EIOItemModelProvider extends ItemModelProvider {
     }
 
     public ItemModelBuilder bucketItem(BucketItem item) {
-        return withExistingParent(BuiltInRegistries.ITEM.getKey(item).toString(), ResourceLocation.fromNamespaceAndPath(NeoForgeVersion.MOD_ID, "item/bucket"))
+        return withExistingParent(BuiltInRegistries.ITEM.getKey(item).toString(), ResourceLocation.fromNamespaceAndPath(ForgeVersion.MOD_ID, "item/bucket"))
             .customLoader(DynamicFluidContainerModelBuilder::begin)
-            .fluid(item.content)
+            .fluid(item.getFluid())
             .end();
     }
 }

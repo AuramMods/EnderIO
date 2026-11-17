@@ -7,8 +7,6 @@ import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.data.recipes.FinishedRecipe;
-import java.util.function.Consumer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
@@ -17,7 +15,7 @@ import net.minecraft.world.level.block.Block;
 import java.util.Arrays;
 
 public abstract class SubRecipeProvider {
-    public abstract void buildRecipes(Consumer<FinishedRecipe> recipeOutput, HolderLookup.Provider registries);
+    public abstract void buildRecipes(RecipeOutput recipeOutput, HolderLookup.Provider registries);
 
     // Helpers copied from RecipeProvider.
     protected static EnterBlockTrigger.TriggerInstance insideOf(Block block) {

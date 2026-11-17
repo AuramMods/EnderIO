@@ -10,7 +10,7 @@ import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.tags.ItemTags;
@@ -20,7 +20,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
@@ -120,7 +120,7 @@ public class MiscBlockRecipeProvider extends SubRecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, EIOBlocks.REINFORCED_OBSIDIAN.get())
                 .define('B', EIOBlocks.DARK_STEEL_BARS)
                 .define('G', EIOTags.Items.DUSTS_GRAINS_OF_INFINITY)
-                .define('O', Tags.Items.OBSIDIANS)
+                .define('O', Tags.Items.OBSIDIAN)
                 .pattern("GBG")
                 .pattern("BOB")
                 .pattern("GBG")
@@ -268,7 +268,7 @@ public class MiscBlockRecipeProvider extends SubRecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, EIOBlocks.BLOCK_DETECTOR.get())
             .define('G', EIOTags.Items.DUSTS_GRAINS_OF_INFINITY)
-            .define('S', Tags.Items.STONES)
+            .define('S', Tags.Items.STONE)
             .define('R', Tags.Items.DUSTS_REDSTONE)
             .pattern("SSS")
             .pattern("RGR")

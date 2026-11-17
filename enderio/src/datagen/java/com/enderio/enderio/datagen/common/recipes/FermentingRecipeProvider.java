@@ -7,12 +7,12 @@ import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.init.EIOFluids;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.RecipeOutput;
+import com.enderio.core.data.recipe.RecipeOutput;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
-import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.common.Tags;
+import net.minecraftforge.fluids.FluidStack;
 import com.enderio.core.common.recipes.SizedFluidIngredient;
 
 public class FermentingRecipeProvider extends SubRecipeProvider {

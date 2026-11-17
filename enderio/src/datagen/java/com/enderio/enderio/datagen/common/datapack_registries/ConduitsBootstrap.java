@@ -10,7 +10,7 @@ import com.enderio.enderio.content.conduits.type.item.ItemConduit;
 import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduit;
 import com.enderio.enderio.init.EIOConduits;
 import net.minecraft.Util;
-import net.minecraft.data.worldgen.BootstrapContext;
+import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 
@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public class ConduitsBootstrap {
-    public static void bootstrap(BootstrapContext<Conduit<?, ?>> context) {
+    public static void bootstrap(BootstapContext<Conduit<?, ?>> context) {
         // TODO: These rates are still up for change, but will refine through testing.
 
         // TODO(1.21.1+): change resource keys to match the names
@@ -39,7 +39,7 @@ public class ConduitsBootstrap {
         register(context, EIOConduits.VIBRANT_ITEM, (desc) -> new ItemConduit(EnderIO.rl("block/conduit/item"), desc, 64, 10));
     }
 
-    private static void register(BootstrapContext<Conduit<?, ?>> context, ResourceKey<Conduit<?, ?>> key, Function<Component, Conduit<?, ?>> factory) {
+    private static void register(BootstapContext<Conduit<?, ?>> context, ResourceKey<Conduit<?, ?>> key, Function<Component, Conduit<?, ?>> factory) {
         context.register(key,
             factory.apply(Component.translatable(ConduitApi.INSTANCE.makeDescriptionId(key))));
     }

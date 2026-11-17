@@ -5,10 +5,8 @@ import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlock;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorTier;
 import com.enderio.enderio.init.EIOBlocks;
 import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.advancements.AdvancementType;
+import net.minecraft.advancements.FrameType;
 import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.ContextAwarePredicate;
 import net.minecraft.advancements.critereon.ItemUsedOnLocationTrigger;
 import net.minecraft.core.HolderLookup;
@@ -17,35 +15,31 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
-import net.neoforged.neoforge.common.data.AdvancementProvider;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraftforge.common.data.ForgeAdvancementProvider;
+import net.minecraftforge.common.data.ExistingFileHelper;
 
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.function.Consumer;
 
-public class MachinesAdvancementGenerator implements AdvancementProvider.AdvancementGenerator {
+public class MachinesAdvancementGenerator implements ForgeAdvancementProvider.AdvancementGenerator {
     @Override
-    public void generate(HolderLookup.Provider registries, Consumer<AdvancementHolder> saver, ExistingFileHelper existingFileHelper) {
+    public void generate(HolderLookup.Provider registries, Consumer<Advancement> saver, ExistingFileHelper existingFileHelper) {
 
         Advancement.Builder builder = Advancement.Builder
             .advancement()
             .parent(ResourceLocation.withDefaultNamespace("adventure/root"))
-            .display(EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC), AdvancementsLang.PLACE_CAPACITOR_BANK_ADVANCEMENT_TITLE, AdvancementsLang.PLACE_CAPACITOR_BANK_ADVANCEMENT_DESCRIPTION, null, AdvancementType.TASK, true,
+            .display(EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC), AdvancementsLang.PLACE_CAPACITOR_BANK_ADVANCEMENT_TITLE, AdvancementsLang.PLACE_CAPACITOR_BANK_ADVANCEMENT_DESCRIPTION, null, FrameType.TASK, true,
                 true, false)
-            .addCriterion("place_capacitor_bank", placedBlock(EIOBlocks.CAPACITOR_BANKS.values().stream().map(DeferredHolder::get)
+            .addCriterion("place_capacitor_bank", placedBlock(EIOBlocks.CAPACITOR_BANKS.values().stream().map(holder -> holder.get())
                 .sorted(Comparator.comparing(BuiltInRegistries.BLOCK::getKey)).toArray(CapacitorBankBlock[]::new)));
 
-        builder.save(saver, CapacitorBankBlock.PLACE_ADVANCEMENT_ID.toString());
+        builder.save(saver, CapacitorBankBlock.PLACE_ADVANCEMENT_ID, existingFileHelper);
     }
 
-    public static Criterion<ItemUsedOnLocationTrigger.TriggerInstance> placedBlock(Block... block) {
+    public static ItemUsedOnLocationTrigger.TriggerInstance placedBlock(Block... block) {
         var contextawarepredicate = ContextAwarePredicate.create(placedBlockCondition(block));
-        return new Criterion<>(
-            CriteriaTriggers.PLACED_BLOCK,
-            new ItemUsedOnLocationTrigger.TriggerInstance(
-                Optional.empty(),
-                Optional.of(contextawarepredicate)));
+        return new ItemUsedOnLocationTrigger.TriggerInstance(
+            CriteriaTriggers.PLACED_BLOCK.getId(), ContextAwarePredicate.ANY, contextawarepredicate);
     }
 
     public static LootItemCondition placedBlockCondition(Block... blocks) {

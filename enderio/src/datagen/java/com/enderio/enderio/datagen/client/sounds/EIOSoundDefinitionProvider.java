@@ -3,8 +3,8 @@ package com.enderio.enderio.datagen.client.sounds;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.init.EIOSounds;
 import net.minecraft.data.PackOutput;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import net.neoforged.neoforge.common.data.SoundDefinitionsProvider;
+import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.common.data.SoundDefinitionsProvider;
 
 public class EIOSoundDefinitionProvider extends SoundDefinitionsProvider {
 

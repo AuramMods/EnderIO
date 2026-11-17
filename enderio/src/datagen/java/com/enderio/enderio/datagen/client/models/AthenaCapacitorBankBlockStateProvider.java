@@ -4,12 +4,17 @@ import com.enderio.core.data.athena.AthenaBlockStateProvider;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.init.EIOBlocks;
 import net.minecraft.data.PackOutput;
-import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraftforge.client.model.generators.ConfiguredModel;
+import net.minecraftforge.common.data.ExistingFileHelper;
 
 public class AthenaCapacitorBankBlockStateProvider extends AthenaBlockStateProvider {
     public AthenaCapacitorBankBlockStateProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
         super(output, EnderIO.MOD_ID, existingFileHelper);
+    }
+
+    @Override
+    public String getName() {
+        return "Athena " + super.getName();
     }
 
     @Override

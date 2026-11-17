@@ -8,9 +8,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.common.data.BlockTagsProvider;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraftforge.common.Tags;
+import net.minecraftforge.common.data.BlockTagsProvider;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -31,8 +31,12 @@ public class EIOBlockTagsProvider extends BlockTagsProvider {
         tag(BlockTags.DOORS).add(EIOBlocks.DARK_STEEL_DOOR.get());
         tag(BlockTags.TRAPDOORS).add(EIOBlocks.DARK_STEEL_TRAPDOOR.get());
         tag(BlockTags.WITHER_IMMUNE).add(EIOBlocks.REINFORCED_OBSIDIAN.get());
-        tag(Tags.Blocks.CHAINS).add(EIOBlocks.SOUL_CHAIN.get());
-        tag(Tags.Blocks.SKULLS)
+        tag(EIOTags.Blocks.CHAINS).add(Blocks.CHAIN, EIOBlocks.SOUL_CHAIN.get());
+        tag(EIOTags.Blocks.SKULLS)
+            .add(Blocks.PLAYER_HEAD, Blocks.PLAYER_WALL_HEAD, Blocks.CREEPER_HEAD, Blocks.CREEPER_WALL_HEAD,
+                Blocks.ZOMBIE_HEAD, Blocks.ZOMBIE_WALL_HEAD, Blocks.SKELETON_SKULL, Blocks.SKELETON_WALL_SKULL,
+                Blocks.WITHER_SKELETON_SKULL, Blocks.WITHER_SKELETON_WALL_SKULL, Blocks.DRAGON_HEAD,
+                Blocks.DRAGON_WALL_HEAD, Blocks.PIGLIN_HEAD, Blocks.PIGLIN_WALL_HEAD)
             .add(EIOBlocks.ENDERMAN_HEAD.get())
             .add(EIOBlocks.WALL_ENDERMAN_HEAD.get());
 
@@ -93,7 +97,7 @@ public class EIOBlockTagsProvider extends BlockTagsProvider {
         // Solar Panels and Capacitor Banks
         var solarPanels = EIOBlocks.SOLAR_PANELS.values()
             .stream()
-            .sorted(Comparator.comparing(DeferredHolder::getKey))
+            .sorted(Comparator.comparing(holder -> holder.getId()))
             .toList();
 
         for (var solarPanel : solarPanels) {
@@ -103,7 +107,7 @@ public class EIOBlockTagsProvider extends BlockTagsProvider {
 
         var capacitorBanks = EIOBlocks.CAPACITOR_BANKS.values()
             .stream()
-            .sorted(Comparator.comparing(DeferredHolder::getKey))
+            .sorted(Comparator.comparing(holder -> holder.getId()))
             .toList();
 
         for (var capacitorBank : capacitorBanks) {
@@ -185,13 +189,20 @@ public class EIOBlockTagsProvider extends BlockTagsProvider {
 
         tag(EIOTags.Blocks.REDSTONE_CONNECTABLE)
             .add(Blocks.PISTON, Blocks.STICKY_PISTON, Blocks.REDSTONE_LAMP, Blocks.NOTE_BLOCK, Blocks.DISPENSER,
-                Blocks.DROPPER, Blocks.POWERED_RAIL, Blocks.ACTIVATOR_RAIL, Blocks.MOVING_PISTON,
-                Blocks.COPPER_BULB, Blocks.EXPOSED_COPPER_BULB, Blocks.WEATHERED_COPPER_BULB,
-                Blocks.OXIDIZED_COPPER_BULB, Blocks.WAXED_COPPER_BULB, Blocks.WAXED_EXPOSED_COPPER_BULB,
-                Blocks.WAXED_WEATHERED_COPPER_BULB, Blocks.WAXED_OXIDIZED_COPPER_BULB, Blocks.CRAFTER)
+                Blocks.DROPPER, Blocks.POWERED_RAIL, Blocks.ACTIVATOR_RAIL, Blocks.MOVING_PISTON)
+            // These vanilla blocks were introduced after 1.20.1; retain optional IDs.
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "copper_bulb"))
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "exposed_copper_bulb"))
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "weathered_copper_bulb"))
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "oxidized_copper_bulb"))
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "waxed_copper_bulb"))
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "waxed_exposed_copper_bulb"))
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "waxed_weathered_copper_bulb"))
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "waxed_oxidized_copper_bulb"))
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "crafter"))
             .addTags(BlockTags.DOORS, BlockTags.TRAPDOORS, BlockTags.REDSTONE_ORES);
 
-        tag(Tags.Blocks.RELOCATION_NOT_SUPPORTED).add(EIOBlocks.CONDUIT_BUNDLE.get());
+        tag(EIOTags.Blocks.RELOCATION_NOT_SUPPORTED).add(EIOBlocks.CONDUIT_BUNDLE.get());
 
         // Alloys
         tag(EIOTags.Blocks.BLOCKS_ENERGETIC_ALLOY).add(EIOBlocks.ENERGETIC_ALLOY_BLOCK.get());
@@ -311,8 +322,8 @@ public class EIOBlockTagsProvider extends BlockTagsProvider {
 
         for (var glassBlocks : glassBlockCollections) {
             var glassItems = new ArrayList<>(glassBlocks.getAllBlocks()
-                .sorted(Comparator.comparing(DeferredHolder::getKey))
-                .map(DeferredHolder::get)
+                .sorted(Comparator.comparing(holder -> holder.getId()))
+                .map(holder -> holder.get())
                 .toList());
 
             for (var block : glassItems) {
