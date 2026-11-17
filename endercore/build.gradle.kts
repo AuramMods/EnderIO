@@ -88,6 +88,11 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
         "content/paint/CopyPaintFunction.java",
         "content/paint/PaintingTrigger.java",
         "content/advancements/AdvancementsLang.java",
+        "content/tools/vials/SoulVialItem.java",
+        "content/tools/ToolsLang.java",
+        "foundation/util/EntityCaptureUtils.java",
+        "api/soul/SoulBoundUtils.java",
+        "foundation/soul/SoulCapabilityProviders.java",
         "content/paint/block/entity/PaintedBlockEntity.java",
         "content/tools/hang_glider/UseGliderTrigger.java",
         "init/EIOLootModifiers.java",
@@ -124,6 +129,7 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
     ).map { mainSource.resolve(it) })
     source(rootProject.file("enderio/src/datagen/java/com/enderio/enderio/datagen/common/loot/EIOLootModifiersProvider.java"))
     source(rootProject.file("enderio/src/datagen/java/com/enderio/enderio/datagen/common/advancement/EIOAdvancementGenerator.java"))
+    source(rootProject.file("enderio/src/datagen/java/com/enderio/enderio/datagen/common/tags/EIOEntityTagsProvider.java"))
 }
 
 
@@ -258,5 +264,8 @@ tasks.named<ProcessResources>(gameTestSourceSet.processResourcesTaskName) {
         include("data/enderio/loot_modifiers/*.json")
         include("data/enderio/advancements/adventure/rich.json")
         include("data/enderio/advancements/adventure/richer.json")
+        include("data/enderio/tags/entity_types/*.json")
+        include("data/c/tags/entity_types/bosses.json")
+        include("data/c/tags/entity_types/capturing_not_supported.json")
     }
 }

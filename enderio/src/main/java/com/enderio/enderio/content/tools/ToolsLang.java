@@ -1,6 +1,6 @@
 package com.enderio.enderio.content.tools;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -46,6 +46,6 @@ public class ToolsLang {
     }
 
     private static MutableComponent create(String type, String path) {
-        return Component.translatable(Util.makeDescriptionId(type, EnderIO.rl("tool/" + path)));
+        return Component.translatable(Util.makeDescriptionId(type, EnderIOAPI.rl("tool/" + path)));
     }
 }

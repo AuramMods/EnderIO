@@ -1,7 +1,9 @@
 package com.enderio.enderio.foundation.util;
 
 import com.enderio.enderio.content.tools.ToolsLang;
-import com.enderio.enderio.foundation.tag.EIOTags;
+import com.enderio.enderio.api.EnderIOAPI;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import com.google.common.collect.ImmutableList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -10,18 +12,26 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import org.jetbrains.annotations.Nullable;
+import net.minecraftforge.event.TagsUpdatedEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class EntityCaptureUtils {
+    public static final TagKey<EntityType<?>> SOUL_VIAL_WHITELIST = TagKey.create(Registries.ENTITY_TYPE, EnderIOAPI.rl("soul_vial_whitelist"));
+    public static final TagKey<EntityType<?>> SOUL_VIAL_BLACKLIST = TagKey.create(Registries.ENTITY_TYPE, EnderIOAPI.rl("soul_vial_blacklist"));
+    public static final TagKey<EntityType<?>> BOSSES = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("c", "bosses"));
+    public static final TagKey<EntityType<?>> CAPTURING_NOT_SUPPORTED = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("c", "capturing_not_supported"));
     // The id of the ender dragon for manual filtering.
     private static final ResourceLocation DRAGON = ResourceLocation.withDefaultNamespace("ender_dragon");
 
     @Nullable
     private static List<EntityType<?>> capturableEntityTypes = null;
 
-    public static List<EntityType<?>> getCapturableEntityTypes() {
+    public static synchronized List<EntityType<?>> getCapturableEntityTypes() {
         if (capturableEntityTypes == null) {
             //noinspection unchecked
             capturableEntityTypes = ImmutableList.copyOf(
@@ -34,6 +44,11 @@ public class EntityCaptureUtils {
         }
 
         return capturableEntityTypes;
+    }
+
+    @SubscribeEvent
+    public static synchronized void onTagsUpdated(TagsUpdatedEvent event) {
+        capturableEntityTypes = null;
     }
 
     public enum CapturableStatus {
@@ -68,11 +83,11 @@ public class EntityCaptureUtils {
 
         // Whitelist takes precedence over all
         // This allows easier allowing of restricted mobs than removing from tags.
-        if (type.is(EIOTags.EntityTypes.SOUL_VIAL_WHITELIST)) {
+        if (type.is(SOUL_VIAL_WHITELIST)) {
             return CapturableStatus.CAPTURABLE;
         }
 
-        if (type.is(EIOTags.EntityTypes.SOUL_VIAL_BLACKLIST)) {
+        if (type.is(SOUL_VIAL_BLACKLIST)) {
             return CapturableStatus.BLACKLISTED;
         }
 

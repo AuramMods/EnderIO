@@ -2,17 +2,20 @@ package com.enderio.enderio.content.tools.vials;
 
 import com.enderio.core.client.item.AdvancedTooltipProvider;
 import com.enderio.core.common.util.TooltipUtil;
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
+import com.enderio.core.common.item.ItemDataKey;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.registries.BuiltInRegistries;
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.api.soul.SoulBoundUtils;
 import com.enderio.enderio.config.base.BaseConfig;
 import com.enderio.enderio.content.tools.ToolsLang;
 import com.enderio.enderio.foundation.util.EntityCaptureUtils;
-import com.enderio.enderio.init.EIODataComponents;
-import com.enderio.enderio.init.EIOItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.BlockSource;
+import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
+import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.core.dispenser.OptionalDispenseItemBehavior;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -34,7 +37,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.Spawner;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -54,20 +57,26 @@ import java.util.function.Consumer;
 @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class SoulVialItem extends Item implements AdvancedTooltipProvider {
 
-    public static final ResourceLocation FILLED_MODEL_PROPERTY = EnderIO.rl("soul_vial_filled");
+    public static final ResourceLocation FILLED_MODEL_PROPERTY = EnderIOAPI.rl("soul_vial_filled");
 
     /**
      * Should match key from {@link LivingEntity#addAdditionalSaveData(CompoundTag)}
      */
     public static final String KEY_HEALTH = "Health";
+    public static final ItemDataKey<Float> ENTITY_MAX_HEALTH = new ItemDataKey<>(EnderIOAPI.rl("entity_max_health"), Codec.FLOAT);
+
+    private static Item soulVialItem() {
+        return BuiltInRegistries.ITEM.getOptional(EnderIOAPI.rl("soul_vial"))
+            .orElseThrow(() -> new IllegalStateException("Soul vial item is not registered"));
+    }
 
     public SoulVialItem(Properties properties) {
         super(properties);
     }
 
     public static ItemStack forSoul(Soul soul) {
-        ItemStack soulVial = new ItemStack(EIOItems.SOUL_VIAL.get());
-        EIODataComponents.SOUL.set(soulVial, soul);
+        ItemStack soulVial = new ItemStack(soulVialItem());
+        Soul.ITEM_DATA.set(soulVial, soul);
         return soulVial;
     }
 
@@ -75,13 +84,13 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
 
     @Override
     public boolean isFoil(ItemStack stack) {
-        return EIODataComponents.SOUL.getOrDefault(stack, Soul.EMPTY).hasEntity();
+        return Soul.ITEM_DATA.getOrDefault(stack, Soul.EMPTY).hasEntity();
     }
 
     @Override
     public void addCommonTooltips(ItemStack itemStack, @Nullable Player player, List<Component> tooltips) {
         // Add entity name
-        var soul = EIODataComponents.SOUL.getOrDefault(itemStack, Soul.EMPTY);
+        var soul = Soul.ITEM_DATA.getOrDefault(itemStack, Soul.EMPTY);
         if (!soul.isEmpty()) {
             tooltips.add(TooltipUtil.style(Component.translatable(soul.entityType().getDescriptionId())));
         }
@@ -89,13 +98,13 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
 
     @Override
     public void addDetailedTooltips(ItemStack itemStack, @Nullable Player player, List<Component> tooltips) {
-        var soul = EIODataComponents.SOUL.getOrDefault(itemStack, Soul.EMPTY);
+        var soul = Soul.ITEM_DATA.getOrDefault(itemStack, Soul.EMPTY);
         if (soul.isEmpty()) {
             return;
         }
 
         // Try add entity health
-        float maxHealth = EIODataComponents.ENTITY_MAX_HEALTH.getOrDefault(itemStack, 0f);
+        float maxHealth = ENTITY_MAX_HEALTH.getOrDefault(itemStack, 0f);
         if (maxHealth <= 0) {
             return;
         }
@@ -152,15 +161,15 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
 
         Runnable consumeVial = () -> {
             context.getItemInHand().shrink(1);
-            var emptyVial = EIOItems.SOUL_VIAL.get().getDefaultInstance();
+            var emptyVial = soulVialItem().getDefaultInstance();
             if (!player.addItem(emptyVial)) {
                 player.drop(emptyVial, false);
             }
         };
 
         if (BaseConfig.COMMON.ITEMS.ALLOW_SOUL_VIALS_TO_CHANGE_SPAWNERS.get()) {
-            if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof Spawner spawnerHolder) {
-                var storedSoul = EIODataComponents.SOUL.get(context.getItemInHand());
+            if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof SpawnerBlockEntity spawnerHolder) {
+                var storedSoul = Soul.ITEM_DATA.get(context.getItemInHand());
                 if (storedSoul == null || storedSoul.isEmpty()) {
                     return InteractionResult.FAIL;
                 }
@@ -169,6 +178,7 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
                 BlockState blockState = serverLevel.getBlockState(pos);
 
                 spawnerHolder.setEntityId(storedSoul.entityType(), serverLevel.getRandom());
+                spawnerHolder.setChanged();
                 serverLevel.sendBlockUpdated(pos, blockState, blockState, 3);
                 serverLevel.gameEvent(context.getPlayer(), GameEvent.BLOCK_CHANGE, pos);
                 consumeVial.run();
@@ -186,7 +196,7 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
             Consumer<Component> displayCallback) {
 
         // Soul Vial is filled, so it can't capture
-        Soul soul = EIODataComponents.SOUL.getOrDefault(soulVial, Soul.EMPTY);
+        Soul soul = Soul.ITEM_DATA.getOrDefault(soulVial, Soul.EMPTY);
         if (soul.hasEntity()) {
             return Optional.empty();
         }
@@ -216,8 +226,8 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
 
         // Create the filled vial
         ItemStack filledVial = soulVial.copyWithCount(1);
-        EIODataComponents.SOUL.set(filledVial, Soul.of(entity));
-        EIODataComponents.ENTITY_MAX_HEALTH.set(filledVial, entity.getMaxHealth());
+        Soul.ITEM_DATA.set(filledVial, Soul.of(entity));
+        ENTITY_MAX_HEALTH.set(filledVial, entity.getMaxHealth());
 
         // Consume the stack
         soulVial.shrink(1);
@@ -229,30 +239,22 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
 
     private static InteractionResult releaseEntity(Level level, ItemStack filledVial, Direction face, BlockPos pos,
             Runnable vialConsumed) {
-        var storedSoul = EIODataComponents.SOUL.get(filledVial);
+        if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.FAIL;
+        var storedSoul = Soul.ITEM_DATA.get(filledVial);
+        if (storedSoul == null || storedSoul.isEmpty()) return InteractionResult.FAIL;
 
-        if (storedSoul != null && storedSoul.hasEntity()) {
-            // Get the spawn location for the mob.
-            double spawnX = pos.getX() + face.getStepX() + 0.5;
-            double spawnY = pos.getY() + face.getStepY();
-            double spawnZ = pos.getZ() + face.getStepZ() + 0.5;
+        double spawnX = pos.getX() + face.getStepX() + 0.5;
+        double spawnY = pos.getY() + face.getStepY();
+        double spawnZ = pos.getZ() + face.getStepZ() + 0.5;
+        float rotation = Mth.wrapDegrees(level.getRandom().nextFloat() * 360.0f);
+        Optional<Entity> entity = EntityType.create(storedSoul.getEntityTagWithId(), serverLevel);
+        if (entity.isEmpty()) return InteractionResult.FAIL;
 
-            // Get a random rotation for the entity.
-            float rotation = Mth.wrapDegrees(level.getRandom().nextFloat() * 360.0f);
-
-            // Try to get the entity NBT from the item.
-            Optional<Entity> entity = EntityType.create(storedSoul.getEntityTagWithId(), level);
-
-            // Position the entity and add it.
-            entity.ifPresent(ent -> {
-                ent.setPos(spawnX, spawnY, spawnZ);
-                ent.setYRot(rotation);
-                level.addFreshEntity(ent);
-            });
-
-            vialConsumed.run();
-        }
-
+        Entity released = entity.get();
+        released.setPos(spawnX, spawnY, spawnZ);
+        released.setYRot(rotation);
+        if (!serverLevel.addFreshEntity(released)) return InteractionResult.FAIL;
+        vialConsumed.run();
         return InteractionResult.SUCCESS;
     }
 
@@ -291,10 +293,14 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
             stack = stack.copy();
         }
 
-        if (stack.is(EIOItems.SOUL_VIAL)) {
+        if (stack.is(soulVialItem())) {
             if (event.getTarget() instanceof AbstractHorse || event.getTarget() instanceof Villager
                     || event.getTarget() instanceof WanderingTrader || event.getTarget() instanceof Wolf) {
-                stack.interactLivingEntity(event.getEntity(), (LivingEntity) event.getTarget(), event.getHand());
+                InteractionResult result = stack.interactLivingEntity(event.getEntity(), (LivingEntity) event.getTarget(), event.getHand());
+                if (result.consumesAction()) {
+                    event.setCancellationResult(result);
+                    event.setCanceled(true);
+                }
             }
         }
     }
@@ -304,7 +310,7 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
         @SubscribeEvent
         public static void onCommonSetup(FMLCommonSetupEvent event) {
             event.enqueueWork(() -> {
-                DispenserBlock.registerBehavior(EIOItems.SOUL_VIAL.get(), new SoulVialDispenseBehavior());
+                DispenserBlock.registerBehavior(soulVialItem(), new SoulVialDispenseBehavior());
             });
         }
     }
@@ -314,8 +320,19 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
     // region Dispenser
 
     private static class SoulVialDispenseBehavior extends OptionalDispenseItemBehavior {
+        private final DefaultDispenseItemBehavior dropRemainder = new DefaultDispenseItemBehavior();
+
+        private ItemStack consumeWithRemainder(BlockSource source, ItemStack stack, ItemStack remainder) {
+            stack.shrink(1);
+            if (stack.isEmpty()) return remainder;
+            DispenserBlockEntity dispenser = source.getEntity();
+            if (dispenser.addItem(remainder) < 0) dropRemainder.dispense(source, remainder);
+            return stack;
+        }
+
         @Override
         protected ItemStack execute(BlockSource source, ItemStack stack) {
+            setSuccess(true);
             if (SoulBoundUtils.isBound(stack)) {
                 return release(source, stack);
             } else {
@@ -324,10 +341,10 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
         }
 
         private ItemStack release(BlockSource source, ItemStack stack) {
-            Direction dispenserDirection = source.state().getValue(DispenserBlock.FACING);
+            Direction dispenserDirection = source.getBlockState().getValue(DispenserBlock.FACING);
             AtomicReference<ItemStack> resultStack = new AtomicReference<>();
-            releaseEntity(source.level(), stack, dispenserDirection, source.pos(),
-                () -> resultStack.set(this.consumeWithRemainder(source, stack, EIOItems.SOUL_VIAL.get().getDefaultInstance())));
+            releaseEntity(source.getLevel(), stack, dispenserDirection, source.getPos(),
+                () -> resultStack.set(this.consumeWithRemainder(source, stack, soulVialItem().getDefaultInstance())));
 
             if (resultStack.get() != null) {
                 return resultStack.get();
@@ -338,8 +355,8 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
         }
 
         private ItemStack capture(BlockSource source, ItemStack stack) {
-            BlockPos blockpos = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
-            for (LivingEntity livingentity : source.level()
+            BlockPos blockpos = source.getPos().relative(source.getBlockState().getValue(DispenserBlock.FACING));
+            for (LivingEntity livingentity : source.getLevel()
                 .getEntitiesOfClass(LivingEntity.class, new AABB(blockpos),
                     living -> !(living instanceof Player))) {
 

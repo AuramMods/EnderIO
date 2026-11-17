@@ -219,8 +219,8 @@ public class EIOTags {
         // TODO: 1.22: Rename allow/deny list.
         public static final TagKey<EntityType<?>> SPAWNER_BLACKLIST = tag("spawner_blacklist");
         public static final TagKey<EntityType<?>> SPAWNER_WHITELIST = tag("spawner_whitelist");
-        public static final TagKey<EntityType<?>> SOUL_VIAL_WHITELIST = tag("soul_vial_whitelist");
-        public static final TagKey<EntityType<?>> SOUL_VIAL_BLACKLIST = tag("soul_vial_blacklist");
+        public static final TagKey<EntityType<?>> SOUL_VIAL_WHITELIST = com.enderio.enderio.foundation.util.EntityCaptureUtils.SOUL_VIAL_WHITELIST;
+        public static final TagKey<EntityType<?>> SOUL_VIAL_BLACKLIST = com.enderio.enderio.foundation.util.EntityCaptureUtils.SOUL_VIAL_BLACKLIST;
 
         private static TagKey<EntityType<?>> tag(String name) {
             return TagKey.create(Registries.ENTITY_TYPE, EnderIO.rl(name));

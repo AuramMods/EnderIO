@@ -119,7 +119,7 @@ public class EIODataComponents {
 
     // region Vials
 
-    public static final ItemDataKey<Float> ENTITY_MAX_HEALTH = new ItemDataKey<>(EnderIO.rl("entity_max_health"), Codec.FLOAT);
+    public static final ItemDataKey<Float> ENTITY_MAX_HEALTH = com.enderio.enderio.content.tools.vials.SoulVialItem.ENTITY_MAX_HEALTH;
 
     // endregion
 
