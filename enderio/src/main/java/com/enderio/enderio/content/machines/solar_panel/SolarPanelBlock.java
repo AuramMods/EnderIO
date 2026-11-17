@@ -5,7 +5,6 @@ import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.content.machines.MachinesLang;
 import com.enderio.enderio.foundation.block.EIOEntityBlock;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -58,10 +57,6 @@ public class SolarPanelBlock extends EIOEntityBlock<SolarPanelBlockEntity> imple
         this.tier = tier;
     }
 
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        throw new NotImplementedException("Block codecs are a later problem...");
-    }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {

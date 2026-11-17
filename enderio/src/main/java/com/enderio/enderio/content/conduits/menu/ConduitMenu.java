@@ -42,6 +42,7 @@ public class ConduitMenu extends BaseEnderMenu {
 
     public static void openConduitMenu(ServerPlayer serverPlayer, ConduitBundleBlockEntity conduitBundle,
             Direction side, Holder<Conduit<?, ?>> conduit) {
+        // Forge closes the old server menu without sending a close-screen packet.
         net.minecraftforge.network.NetworkHooks.openScreen(serverPlayer, new MenuProvider(conduitBundle, side, conduit), raw -> {
             var buf = new RegistryPacketBuffer(raw, serverPlayer.level().registryAccess());
             buf.writeBlockPos(conduitBundle.getBlockPos());
@@ -368,10 +369,5 @@ public class ConduitMenu extends BaseEnderMenu {
             return new ConduitMenu(containerId, inventory, conduitBundle, conduit, side);
         }
 
-        @Override
-        public boolean shouldTriggerClientSideContainerClosingOnOpen() {
-            // Prevents the mouse from jumping when changing between conduits.
-            return false;
-        }
     }
 }

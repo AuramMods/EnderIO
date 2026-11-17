@@ -20,7 +20,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
+import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -39,8 +39,8 @@ public record EnergyConduit(ResourceLocation texture, Component description, int
         implements Conduit<EnergyConduit, EnergyConduitConnectionConfig> {
 
     public static final MapCodec<EnergyConduit> CODEC = RecordCodecBuilder.mapCodec(builder -> builder
-            .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(Conduit::texture),
-                    ComponentSerialization.CODEC.fieldOf("description").forGetter(Conduit::description),
+            .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(EnergyConduit::texture),
+                    ComponentCodecs.COMPONENT.fieldOf("description").forGetter(EnergyConduit::description),
                     Codec.INT.fieldOf("transfer_rate").forGetter(EnergyConduit::transferRatePerTick))
             .apply(builder, EnergyConduit::new));
 

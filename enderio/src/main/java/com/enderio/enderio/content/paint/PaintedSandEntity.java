@@ -6,21 +6,19 @@ import com.enderio.enderio.init.EIOEntities;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
+import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class PaintedSandEntity extends FallingBlockEntity implements IEntityWithComplexSpawn {
+public class PaintedSandEntity extends FallingBlockEntity implements IEntityAdditionalSpawnData {
 
     public PaintedSandEntity(EntityType<? extends FallingBlockEntity> type, Level level) {
         super(type, level);
@@ -28,6 +26,11 @@ public class PaintedSandEntity extends FallingBlockEntity implements IEntityWith
 
     public PaintedSandEntity(Level level, double x, double y, double z, BlockState state) {
         super(level, x, y, z, state);
+    }
+
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getAddEntityPacket() {
+        return net.minecraftforge.network.NetworkHooks.getEntitySpawningPacket(this);
     }
 
     @Override
@@ -53,25 +56,29 @@ public class PaintedSandEntity extends FallingBlockEntity implements IEntityWith
 
     @Override
     public void writeSpawnData(FriendlyByteBuf buffer) {
-        Block block = getPaint();
-        // TODO: 1.21: Check this RL creation
-        buffer.writeResourceLocation(block != null ? Objects.requireNonNull(BuiltInRegistries.BLOCK.getKey(block)) : ResourceLocation.fromNamespaceAndPath("", ""));
+        // Forge's custom spawn packet has no vanilla falling-block state ID.
+        // Carry the native falling-block fields, including paint in TileEntityData.
+        CompoundTag data = new CompoundTag();
+        super.addAdditionalSaveData(data);
+        buffer.writeNbt(data);
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf additionalData) {
-        ResourceLocation rl = additionalData.readResourceLocation();
-        Block block = BuiltInRegistries.BLOCK.get(rl);
-        if (block != Blocks.AIR) {
-            setPaint(block);
+    public void readSpawnData(FriendlyByteBuf buffer) {
+        CompoundTag data = buffer.readNbt();
+        if (data != null) {
+            super.readAdditionalSaveData(data);
         }
+        blocksBuilding = true;
+        setStartPos(blockPosition());
     }
 
     @Nullable
     @Override
     public ItemEntity spawnAtLocation(ItemStack stack, float offsetY) {
-        if (!stack.isEmpty() && blockData != null) {
-            EIODataComponents.BLOCK_PAINT.set(stack, BlockPaintData.of(getPaint()));
+        Block paint = getPaint();
+        if (!stack.isEmpty() && paint != null) {
+            EIODataComponents.BLOCK_PAINT.set(stack, BlockPaintData.of(paint));
         }
 
         return super.spawnAtLocation(stack, offsetY);

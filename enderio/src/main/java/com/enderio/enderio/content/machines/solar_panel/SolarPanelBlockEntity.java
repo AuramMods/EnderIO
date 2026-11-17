@@ -291,7 +291,7 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
         } else if (level.isRaining()) {
             outputScale -= 0.3f;
         }
-        outputScale = Math.clamp(outputScale, 0, 1);
+        outputScale = net.minecraft.util.Mth.clamp(outputScale, 0, 1);
         return outputScale;
     }
 

@@ -60,6 +60,8 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
         "foundation/block/entity/MachineInventoryHolder.java",
         "foundation/attachment/FluidTankUser.java",
         "foundation/io/fluid/MachineFluidHandler.java",
+        "foundation/fluid/FluidStorageInfo.java",
+        "foundation/fluid/FluidStorageSyncSlot.java",
         "foundation/io/fluid/MachineFluidTank.java",
         "foundation/io/fluid/MachineTankLayout.java",
         "foundation/io/fluid/TankAccess.java",

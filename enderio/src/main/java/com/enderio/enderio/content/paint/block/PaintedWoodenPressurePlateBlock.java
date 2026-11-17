@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 public class PaintedWoodenPressurePlateBlock extends PressurePlateBlock implements EntityBlock, PaintedBlock {
 
     public PaintedWoodenPressurePlateBlock(Properties properties) {
-        super(BlockSetType.OAK, properties);
+        super(Sensitivity.EVERYTHING, properties, BlockSetType.OAK);
     }
 
     @Nullable
@@ -26,7 +26,7 @@ public class PaintedWoodenPressurePlateBlock extends PressurePlateBlock implemen
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, net.minecraft.world.level.BlockGetter level, BlockPos pos, Player player) {
         return getPaintedStack(level, pos, this);
     }
 }

@@ -28,6 +28,18 @@ public record RangeParticleData(int range, String color) implements ParticleOpti
     );
 
     @Override
+    public void writeToNetwork(net.minecraft.network.FriendlyByteBuf buffer) {
+        STREAM_CODEC.encode(buffer, this);
+    }
+
+    @Override
+    public String writeToString() {
+        return String.format(java.util.Locale.ROOT, "%s %d %s",
+            net.minecraft.core.registries.BuiltInRegistries.PARTICLE_TYPE.getKey(getType()), range,
+            com.mojang.brigadier.arguments.StringArgumentType.escapeIfRequired(color));
+    }
+
+    @Override
     public ParticleType<?> getType() {
         return EIOParticles.RANGE_PARTICLE.get();
     }

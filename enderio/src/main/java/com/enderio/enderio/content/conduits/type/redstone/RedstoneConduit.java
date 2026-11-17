@@ -17,7 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
+import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
@@ -37,7 +37,7 @@ public record RedstoneConduit(ResourceLocation texture, ResourceLocation activeT
     public static final MapCodec<RedstoneConduit> CODEC = RecordCodecBuilder.mapCodec(builder -> builder
         .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(RedstoneConduit::texture),
             ResourceLocation.CODEC.fieldOf("active_texture").forGetter(RedstoneConduit::activeTexture),
-            ComponentSerialization.CODEC.fieldOf("description").forGetter(RedstoneConduit::description))
+            ComponentCodecs.COMPONENT.fieldOf("description").forGetter(RedstoneConduit::description))
         .apply(builder, RedstoneConduit::new));
 
     @Override

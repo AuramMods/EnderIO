@@ -1,19 +1,18 @@
 package com.enderio.enderio.foundation.soul;
 
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.AdvancementHolder;
+import com.enderio.enderio.init.EIORecipes;
+import com.google.gson.JsonObject;
+import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
-import net.neoforged.neoforge.common.conditions.ICondition;
 import org.jetbrains.annotations.Nullable;
 
-public class ShapedEntityStorageRecipeBuilder extends ShapedRecipeBuilder {
+import java.util.function.Consumer;
 
+public class ShapedEntityStorageRecipeBuilder extends ShapedRecipeBuilder {
     public ShapedEntityStorageRecipeBuilder(RecipeCategory category, ItemLike result, int count) {
         super(category, result, count);
     }
@@ -27,20 +26,13 @@ public class ShapedEntityStorageRecipeBuilder extends ShapedRecipeBuilder {
     }
 
     @Override
-    public void save(RecipeOutput recipeOutput, ResourceLocation recipeId) {
-
-        super.save(new RecipeOutput() {
-            @Override
-            public void accept(ResourceLocation id, Recipe<?> recipe, @Nullable AdvancementHolder advancement, ICondition... conditions) {
-                if (recipe instanceof ShapedRecipe shapedRecipe) {
-                    recipeOutput.accept(id, new ShapedEntityStorageRecipe(shapedRecipe), advancement, conditions);
-                }
-            }
-
-            @Override
-            public Advancement.Builder advancement() {
-                return recipeOutput.advancement();
-            }
-        }, recipeId);
+    public void save(Consumer<FinishedRecipe> output, ResourceLocation recipeId) {
+        super.save(recipe -> output.accept(new FinishedRecipe() {
+            @Override public void serializeRecipeData(JsonObject json) { recipe.serializeRecipeData(json); }
+            @Override public ResourceLocation getId() { return recipe.getId(); }
+            @Override public RecipeSerializer<?> getType() { return EIORecipes.SHAPED_ENTITY_STORAGE.get(); }
+            @Nullable @Override public JsonObject serializeAdvancement() { return recipe.serializeAdvancement(); }
+            @Nullable @Override public ResourceLocation getAdvancementId() { return recipe.getAdvancementId(); }
+        }), recipeId);
     }
 }

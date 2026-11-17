@@ -19,7 +19,7 @@ public class EnderSkullBlock extends SkullBlock {
         super(EIOSkulls.ENDERMAN, properties);
     }
 
-    public enum EIOSkulls implements Type {
+    public enum EIOSkulls implements Type, net.minecraft.util.StringRepresentable {
         ENDERMAN;
 
         @Override

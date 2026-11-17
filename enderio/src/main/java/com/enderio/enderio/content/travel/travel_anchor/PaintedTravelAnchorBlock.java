@@ -31,7 +31,7 @@ public class PaintedTravelAnchorBlock extends TravelAnchorBlock<PaintedTravelAnc
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos,
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, net.minecraft.world.level.BlockGetter level, BlockPos pos,
             Player player) {
         return getPaintedStack(level, pos, this);
     }

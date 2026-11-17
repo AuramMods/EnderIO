@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.conduits.type.fluid;
 
+import com.enderio.core.common.capability.EnderFluidUtil;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.connection.ConduitBlockConnection;
@@ -67,7 +68,7 @@ public class FluidConduitTicker extends ConduitTickerBase<FluidConduit> {
             .requireNonNull(extractConnection.getSidedCapability(ForgeCapabilities.FLUID_HANDLER));
 
         // Attempt to drain fluid from the target.
-        FluidStack extractedFluid = extractHandler.drain(fluid.copyWithAmount(maxTransfer),
+        FluidStack extractedFluid = extractHandler.drain(EnderFluidUtil.copyWithAmount(fluid, maxTransfer),
             IFluidHandler.FluidAction.SIMULATE);
         if (extractedFluid.isEmpty()) {
             return maxTransfer;

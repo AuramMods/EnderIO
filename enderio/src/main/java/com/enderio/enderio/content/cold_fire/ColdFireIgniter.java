@@ -93,7 +93,7 @@ public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext tooltipContext, List<Component> components, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level tooltipContext, List<Component> components, TooltipFlag flag) {
         super.appendHoverText(stack, tooltipContext, components, flag);
 
         var tankCap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
@@ -104,7 +104,7 @@ public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
             }
             for (int i = 0; i < tankCap.getTanks(); i++) {
                 String prefix = isOneTank ? "" : i + ": ";
-                Component postFix = tankCap.getFluidInTank(i).isEmpty() ? Component.literal("") : tankCap.getFluidInTank(i).getHoverName();
+                Component postFix = tankCap.getFluidInTank(i).isEmpty() ? Component.literal("") : tankCap.getFluidInTank(i).getDisplayName();
                 components.add(Component.literal(prefix + tankCap.getFluidInTank(i).getAmount() + " / " + tankCap.getTankCapacity(i) + " ").append(postFix));
             }
         }
@@ -117,7 +117,7 @@ public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
         var fluidHandler = is.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandler != null) {
             if (fluidHandler instanceof StrictFluidHandlerItemStack strictFluidHandlerItemStack) {
-                strictFluidHandlerItemStack.setFluid(new FluidStack(EIOFluids.VAPOR_OF_LEVITY.source(), fluidHandler.getTankCapacity(0)));
+                strictFluidHandlerItemStack.setFluid(new FluidStack(EIOFluids.VAPOR_OF_LEVITY.source().get(), fluidHandler.getTankCapacity(0)));
                 output.accept(is);
             }
         }

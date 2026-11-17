@@ -60,11 +60,11 @@ public class SinglePaintedBlockEntity extends BlockEntity implements PaintedBloc
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
         Block oldPaint = paint;
         CompoundTag tag = pkt.getTag();
 
-        handleUpdateTag(tag, lookupProvider);
+        if (tag != null) handleUpdateTag(tag);
         if (oldPaint != paint) {
             requestModelDataUpdate();
             if (level != null) {

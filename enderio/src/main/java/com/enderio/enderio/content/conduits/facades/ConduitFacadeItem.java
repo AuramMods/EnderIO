@@ -66,7 +66,7 @@ public class ConduitFacadeItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents,
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level context, List<Component> tooltipComponents,
             TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 
@@ -75,7 +75,7 @@ public class ConduitFacadeItem extends BlockItem {
                 && (facade.type().isBlastResistant() || facade.type().doesHideConduits());
 
         if (hasFacadeTooltip) {
-            if (tooltipFlag.hasShiftDown()) {
+            if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
                 if (facade.type().doesHideConduits()) {
                     tooltipComponents.add(ConduitLang.TRANSPARENT_FACADE_TOOLTIP);
                 }

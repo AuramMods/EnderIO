@@ -43,9 +43,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.client.event.RecipesUpdatedEvent;
-import net.neoforged.neoforge.common.SpecialPlantable;
-import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.common.util.FakePlayer;
+import net.minecraftforge.common.IPlantable;
+import net.minecraftforge.common.util.FakePlayer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -117,7 +116,7 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
                 .slotAccess(TOOLS)
                 .inputSlot(4)
                 .slotAccess(AREAS)
-                .inputSlot(2, (integer, stack) -> stack.is(Tags.Items.FERTILIZERS))
+                .inputSlot(2, (integer, stack) -> stack.is(com.enderio.enderio.foundation.tag.EIOTags.Items.FERTILIZERS))
                 .slotAccess(BONEMEAL)
                 .outputSlot(6)
                 .slotAccess(OUTPUT)
@@ -183,7 +182,7 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
         return switch(index) { // Order - Axes, Hoes, Shears - Check TOOLS slot access
             case 1 -> stack.is(ItemTags.AXES);
             case 2 -> stack.is(ItemTags.HOES);
-            case 3 -> stack.is(Tags.Items.TOOLS_SHEAR);
+            case 3 -> stack.is(net.minecraftforge.common.Tags.Items.SHEARS);
             default -> false;
         };
     }
@@ -230,8 +229,7 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
             ItemStack stack) {
         ItemStack dummy = stack.copy();
         if (soulData != null) {
-            var enchantmentsRecipe = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-            var fortuneEnchantment = enchantmentsRecipe.getOrThrow(Enchantments.FORTUNE);
+            var fortuneEnchantment = Enchantments.BLOCK_FORTUNE;
             dummy.enchant(fortuneEnchantment, dummy.getEnchantmentLevel(fortuneEnchantment) + soulData.seeds());
         }
         List<ItemStack> drops = Block.getDrops(plant, (ServerLevel) this.level, pos, blockEntity, getPlayer(), dummy);
@@ -245,7 +243,7 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
             if (soil != null) {
                 ItemStack seeds = getSeedForPos(soil).getItemStack(this);
                 if (seeds.isEmpty()) {
-                    if (drop.getItem() instanceof BlockItem || drop.getItem() instanceof SpecialPlantable) {
+                    if (drop.getItem() instanceof BlockItem || drop.getItem() instanceof IPlantable) {
                         // Collect potential seeds
                         getSeedForPos(soil).setStackInSlot(this, drop);
                         continue;

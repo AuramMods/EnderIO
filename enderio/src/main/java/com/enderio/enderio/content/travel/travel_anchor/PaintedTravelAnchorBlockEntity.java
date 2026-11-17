@@ -52,13 +52,11 @@ public class PaintedTravelAnchorBlockEntity extends TravelAnchorBlockEntity impl
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt,
-            HolderLookup.Provider lookupProvider) {
-        super.onDataPacket(net, pkt, lookupProvider);
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
         Block oldPaint = paint;
         CompoundTag tag = pkt.getTag();
 
-        handleUpdateTag(tag, lookupProvider);
+        if (tag != null) handleUpdateTag(tag);
         if (oldPaint != paint) {
             requestModelDataUpdate();
             if (level != null) {
@@ -74,8 +72,8 @@ public class PaintedTravelAnchorBlockEntity extends TravelAnchorBlockEntity impl
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag syncData, HolderLookup.Provider lookupProvider) {
-        super.handleUpdateTag(syncData, lookupProvider);
+    public void handleUpdateTag(CompoundTag syncData) {
+        super.handleUpdateTag(syncData);
         readPaint(syncData);
     }
 

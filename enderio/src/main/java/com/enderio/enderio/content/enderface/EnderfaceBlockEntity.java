@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.chunk.ChunkStatus;
 
 import java.util.Optional;
 
@@ -90,7 +90,7 @@ public class EnderfaceBlockEntity extends EIOBlockEntity {
         }
 
         // Iterate over all nearby chunks and look for a close enough enderface
-        int range = MachinesConfig.COMMON.ENDERFACE_RANGE.getAsInt();
+        int range = MachinesConfig.COMMON.ENDERFACE_RANGE.get();
         int rangeSqr = range * range;
         int x1 = SectionPos.blockToSectionCoord(pos.getX() - range),
                 x2 = SectionPos.blockToSectionCoord(pos.getX() + range),

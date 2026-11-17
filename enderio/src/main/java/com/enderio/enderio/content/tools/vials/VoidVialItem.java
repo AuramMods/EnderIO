@@ -27,7 +27,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import java.util.function.BiFunction;
-import net.neoforged.neoforge.common.Tags;
 import net.minecraftforge.event.entity.player.PlayerXpEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -41,7 +40,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
     public static final ResourceLocation FILLED_MODEL_PROPERTY = EnderIO.rl("void_vial_filled");
 
     public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack, v) -> new StrictFluidHandlerItemStack(
-        EIODataComponents.ITEM_FLUID_CONTENT, stack, Ints.saturatedCast(ExperienceUtil.getFluidFromLevel(10)), Tags.Fluids.EXPERIENCE);
+        EIODataComponents.ITEM_FLUID_CONTENT, stack, Ints.saturatedCast(ExperienceUtil.getFluidFromLevel(10)), com.enderio.enderio.foundation.tag.EIOTags.Fluids.EXPERIENCE);
 
     public VoidVialItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -51,7 +50,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
     public void addAdditionalCreativeTabEntries(CreativeModeTab.ItemDisplayParameters parameters, CreativeModeTab.Output output) {
         var filledStack = new ItemStack(this);
         var fluidHandler = filledStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
-        fluidHandler.fill(new FluidStack(EIOFluids.XP_JUICE.source(), Integer.MAX_VALUE), IFluidHandler.FluidAction.EXECUTE);
+        fluidHandler.fill(new FluidStack(EIOFluids.XP_JUICE.source().get(), Integer.MAX_VALUE), IFluidHandler.FluidAction.EXECUTE);
         output.accept(filledStack);
     }
 
@@ -121,7 +120,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 
         tooltipComponents.add(ToolsLang.VOID_VIAL_HINT);
@@ -133,7 +132,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
             int capacity = tankCap.getTankCapacity(0);
 
             if (amount > 0) {
-                tooltipComponents.add(TooltipUtil.styledWithArgs(EIOCommonLang.FLUID_TANK_TOOLTIP, amount, capacity, storedFluid.getHoverName()));
+                tooltipComponents.add(TooltipUtil.styledWithArgs(EIOCommonLang.FLUID_TANK_TOOLTIP, amount, capacity, storedFluid.getDisplayName()));
 
                 var xp = ExperienceUtil.getLevelFromFluidWithLeftover(amount);
                 tooltipComponents.add(TooltipUtil.styledWithArgs(ToolsLang.VOID_VIAL_STORED_EXPERIENCE, xp.level(), xp.experience()));
@@ -142,7 +141,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
     }
 
     @Override
-    public int getUseDuration(ItemStack stack, LivingEntity entity) {
+    public int getUseDuration(ItemStack stack) {
         return (int) (1.6F * 20.0F); // default food time
     }
 
@@ -160,7 +159,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
             if (cap != null && event.getOrb().getValue() > 0 && cap.getFluidInTank(0).getAmount() < cap.getTankCapacity(0)) {
                 int orbFluidVolume = event.getOrb().getValue() * ExperienceUtil.EXP_TO_FLUID;
 
-                int simulatedFilled = cap.fill(new FluidStack(EIOFluids.XP_JUICE.source(), orbFluidVolume), IFluidHandler.FluidAction.SIMULATE);
+                int simulatedFilled = cap.fill(new FluidStack(EIOFluids.XP_JUICE.source().get(), orbFluidVolume), IFluidHandler.FluidAction.SIMULATE);
 
                 // Ensure we're aligning to the EXP_TO_FLUID boundary
                 int amountToFill = simulatedFilled - (simulatedFilled % ExperienceUtil.EXP_TO_FLUID);
@@ -168,7 +167,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
                     return;
                 }
 
-                cap.fill(new FluidStack(EIOFluids.XP_JUICE.source(), amountToFill), IFluidHandler.FluidAction.EXECUTE);
+                cap.fill(new FluidStack(EIOFluids.XP_JUICE.source().get(), amountToFill), IFluidHandler.FluidAction.EXECUTE);
 
                 int newOrbVolume = (orbFluidVolume - amountToFill);
                 event.getOrb().value = newOrbVolume / ExperienceUtil.EXP_TO_FLUID;

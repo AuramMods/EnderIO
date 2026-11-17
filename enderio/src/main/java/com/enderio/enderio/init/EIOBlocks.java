@@ -192,7 +192,7 @@ public class EIOBlocks {
     public static final BlockDeferredHolder<PaintedWallBlock> PAINTED_WALL = registerPainted("painted_wall", PaintedWallBlock::new, Blocks.COBBLESTONE_WALL);
 
     private static <B extends Block> BlockDeferredHolder<B> registerPainted(String name, Function<BlockBehaviour.Properties, B> factory, Block reference) {
-        var blockHolder = registerWithItem(name, factory, BlockBehaviour.Properties.ofFullCopy(reference).noOcclusion(), b -> new PaintedBlockItem(b.get(), new Item.Properties()));
+        var blockHolder = registerWithItem(name, factory, BlockBehaviour.Properties.copy(reference).noOcclusion(), b -> new PaintedBlockItem(b.get(), new Item.Properties()));
         PAINTED_BLOCKS.add(Pair.of(blockHolder, reference));
         return blockHolder;
     }
@@ -308,16 +308,16 @@ public class EIOBlocks {
             .mapColor(MapColor.NONE));
 
     public static final BlockDeferredHolder<ColdFireBlock> COLD_FIRE = BLOCKS
-        .registerBlock("cold_fire", ColdFireBlock::new, BlockBehaviour.Properties.ofFullCopy(Blocks.FIRE).noLootTable());
+        .registerBlock("cold_fire", ColdFireBlock::new, BlockBehaviour.Properties.copy(Blocks.FIRE).noLootTable());
 
     public static final BlockDeferredHolder<EnderSkullBlock> ENDERMAN_HEAD = registerWithItem("enderman_head", EnderSkullBlock::new,
-            BlockBehaviour.Properties.ofFullCopy(Blocks.SKELETON_SKULL).instrument(NoteBlockInstrument.SKELETON).strength(1.0F).pushReaction(PushReaction.DESTROY));
+            BlockBehaviour.Properties.copy(Blocks.SKELETON_SKULL).instrument(NoteBlockInstrument.SKELETON).strength(1.0F).pushReaction(PushReaction.DESTROY));
 
     public static final BlockDeferredHolder<WallEnderSkullBlock> WALL_ENDERMAN_HEAD = BLOCKS.registerBlock("wall_enderman_head", WallEnderSkullBlock::new,
-        BlockBehaviour.Properties.ofFullCopy(Blocks.SKELETON_SKULL).strength(1.0F).lootFrom(ENDERMAN_HEAD).pushReaction(PushReaction.DESTROY));
+        BlockBehaviour.Properties.copy(Blocks.SKELETON_SKULL).strength(1.0F).lootFrom(ENDERMAN_HEAD).pushReaction(PushReaction.DESTROY));
 
     public static final BlockDeferredHolder<IndustrialInsulationBlock> INDUSTRIAL_INSULATION = registerWithItem("industrial_insulation",
-        IndustrialInsulationBlock::new, BlockBehaviour.Properties.ofFullCopy(Blocks.SPONGE));
+        IndustrialInsulationBlock::new, BlockBehaviour.Properties.copy(Blocks.SPONGE));
 
     // endregion
 
@@ -480,7 +480,7 @@ public class EIOBlocks {
     // Block Detector
     public static final BlockDeferredHolder<BlockDetectorBlock> BLOCK_DETECTOR = registerWithItem("block_detector",
         BlockDetectorBlock::new,
-        BlockBehaviour.Properties.ofFullCopy(Blocks.OBSERVER));
+        BlockBehaviour.Properties.copy(Blocks.OBSERVER));
 
     // Farming Station
     public static final BlockDeferredHolder<FarmingStationBlock> FARMING_STATION = registerWithItem("farming_station",

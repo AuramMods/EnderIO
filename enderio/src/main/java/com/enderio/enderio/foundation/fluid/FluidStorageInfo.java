@@ -24,11 +24,11 @@ public record FluidStorageInfo(FluidStack contents, int capacity) {
             return false;
         }
 
-        return capacity == that.capacity && FluidStack.matches(contents, that.contents);
+        return capacity == that.capacity && contents.isFluidStackIdentical(that.contents);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(FluidStack.hashFluidAndComponents(contents), capacity);
+        return Objects.hash(contents.getFluid(), contents.getAmount(), contents.getTag(), capacity);
     }
 }

@@ -32,8 +32,7 @@ import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.common.util.FakePlayer;
+import net.minecraftforge.common.util.FakePlayer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -126,7 +125,7 @@ public class AttractorObeliskBlockEntity extends ObeliskBlockEntity<AttractorObe
         List<Mob> filteredEntities = level.getEntities(EntityTypeTest.forClass(Mob.class), aabb,
                 mob -> filter.test(mob));
         for (Mob mob : filteredEntities) {
-            if (!MachinesConfig.COMMON.ATTRACTOR_PULL_BOSSES.get() && mob.getType().is(Tags.EntityTypes.BOSSES)) {
+            if (!MachinesConfig.COMMON.ATTRACTOR_PULL_BOSSES.get() && mob.getType().is(com.enderio.enderio.foundation.util.EntityCaptureUtils.BOSSES)) {
                 // ignore
             } else if (mob instanceof WitherBoss) {
                 mob.goalSelector.disableControlFlag(Goal.Flag.TARGET);

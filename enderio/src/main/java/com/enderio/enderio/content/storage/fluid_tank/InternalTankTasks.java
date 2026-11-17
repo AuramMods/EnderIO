@@ -12,7 +12,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.neoforged.neoforge.common.Tags;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.FluidUtil;
@@ -55,12 +54,12 @@ public class InternalTankTasks {
         // If this is the only input, and it's not fully empty we will retain it in the input slot, so long as the
         //  destination tank is not full
         if (inputItem.getCount() == 1 && !EnderFluidUtil.isEmpty(fluidHandlerItem) && !tank.isFull(blockEntity)) {
-            tank.fill(blockEntity, availableFluid.copyWithAmount(filled), IFluidHandler.FluidAction.EXECUTE);
+            tank.fill(blockEntity, EnderFluidUtil.copyWithAmount(availableFluid, filled), IFluidHandler.FluidAction.EXECUTE);
             fluidFillInput.setStackInSlot(blockEntity, resultStack);
         } else if (!fluidFillInput.extractItem(blockEntity, 1, true).isEmpty() &&
             fluidFillOutput.insertItem(blockEntity, resultStack, true).isEmpty()) {
 
-            tank.fill(blockEntity, availableFluid.copyWithAmount(filled), IFluidHandler.FluidAction.EXECUTE);
+            tank.fill(blockEntity, EnderFluidUtil.copyWithAmount(availableFluid, filled), IFluidHandler.FluidAction.EXECUTE);
             fluidFillInput.extractItem(blockEntity, 1, false);
             fluidFillOutput.insertItem(blockEntity, resultStack, false);
         }
@@ -99,12 +98,12 @@ public class InternalTankTasks {
 
         // If this is the only input, and it isn't completely full, and the destination still has fluid, we will retain it
         if (inputItem.getCount() == 1 && !EnderFluidUtil.isFull(fluidHandlerItem) && !tank.isEmpty(blockEntity)) {
-            tank.drain(blockEntity, availableFluid.copyWithAmount(filled), IFluidHandler.FluidAction.EXECUTE);
+            tank.drain(blockEntity, EnderFluidUtil.copyWithAmount(availableFluid, filled), IFluidHandler.FluidAction.EXECUTE);
             fluidDrainInput.setStackInSlot(blockEntity, resultStack);
         } else if (!fluidDrainInput.extractItem(blockEntity, 1, true).isEmpty() &&
             fluidDrainOutput.insertItem(blockEntity, resultStack, true).isEmpty()) {
 
-            tank.drain(blockEntity, availableFluid.copyWithAmount(filled), IFluidHandler.FluidAction.EXECUTE);
+            tank.drain(blockEntity, EnderFluidUtil.copyWithAmount(availableFluid, filled), IFluidHandler.FluidAction.EXECUTE);
             fluidDrainInput.extractItem(blockEntity, 1, false);
             fluidDrainOutput.insertItem(blockEntity, resultStack, false);
         }
@@ -118,13 +117,12 @@ public class InternalTankTasks {
     ) {
         FluidStack fluid = tank.getFluid(blockEntity);
 
-        if (!fluid.isEmpty() && fluid.is(Tags.Fluids.EXPERIENCE)
+        if (!fluid.isEmpty() && fluid.getFluid().is(com.enderio.enderio.foundation.tag.EIOTags.Fluids.EXPERIENCE)
             && fluidDrainOutput.getItemStack(blockEntity).isEmpty()) {
 
             ItemStack tool = fluidDrainInput.getItemStack(blockEntity);
 
-            var enchantmentsRecipe = blockEntity.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-            var mendingEnchantment = enchantmentsRecipe.getOrThrow(Enchantments.MENDING);
+            var mendingEnchantment = Enchantments.MENDING;
 
             if (tool.isDamageableItem() && tool.getEnchantmentLevel(mendingEnchantment) > 0) {
 

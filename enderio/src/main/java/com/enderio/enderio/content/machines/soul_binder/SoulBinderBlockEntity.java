@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.soul_binder;
 
+import com.enderio.core.common.capability.EnderFluidUtil;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.capacitor.CapacitorModifier;
 import com.enderio.enderio.api.capacitor.QuadraticScalable;
@@ -43,7 +44,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.common.Tags;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
@@ -169,7 +169,7 @@ public class SoulBinderBlockEntity extends PoweredMachineBlockEntity implements 
     private SoulBindingRecipe.Input createFakeRecipeInput() {
         return new SoulBindingRecipe.Input(INPUT_SOUL.getItemStack(getInventory()),
                 INPUT_OTHER.getItemStack(getInventory()),
-                new FluidStack(EIOFluids.XP_JUICE.source(), Integer.MAX_VALUE));
+                new FluidStack(EIOFluids.XP_JUICE.source().get(), Integer.MAX_VALUE));
     }
 
     // endregion
@@ -197,7 +197,7 @@ public class SoulBinderBlockEntity extends PoweredMachineBlockEntity implements 
     // region Fluid Storage
     @Override
     public @Nullable MachineTankLayout getTankLayout() {
-        return MachineTankLayout.builder().tank(TANK, 10000, true, false, f -> f.is(Tags.Fluids.EXPERIENCE)).build();
+        return MachineTankLayout.builder().tank(TANK, 10000, true, false, f -> f.getFluid().is(com.enderio.enderio.foundation.tag.EIOTags.Fluids.EXPERIENCE)).build();
     }
 
     @Override
@@ -215,10 +215,10 @@ public class SoulBinderBlockEntity extends PoweredMachineBlockEntity implements 
                 // Convert into XP Juice
                 if (TANK.isFluidValid(this, resource)) {
                     FluidStack currentFluid = TANK.getFluid(this);
-                    if (currentFluid.isEmpty() || FluidStack.isSameFluidSameComponents(resource, currentFluid)) {
+                    if (currentFluid.isEmpty() || resource.isFluidEqual(currentFluid)) {
                         return super.fill(resource, action);
                     } else {
-                        return super.fill(currentFluid.copyWithAmount(resource.getAmount()), action);
+                        return super.fill(EnderFluidUtil.copyWithAmount(currentFluid, resource.getAmount()), action);
                     }
                 }
 

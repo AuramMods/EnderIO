@@ -23,6 +23,7 @@ public class EIOTags {
     public static final String COMMON = "c";
 
     public static class Items {
+        public static final TagKey<Item> FERTILIZERS = commonTag("fertilizers");
         public static final TagKey<Item> HIDE_FACADES = tag("enderio/hide_facades");
 
         public static final TagKey<Item> WRENCH = com.enderio.enderio.foundation.block.entity.Wrenchable.WRENCH_TAG;
@@ -201,6 +202,7 @@ public class EIOTags {
     }
 
     public static class Fluids {
+        public static final TagKey<Fluid> EXPERIENCE = commonTag("experience");
         public static final TagKey<Fluid> COLD_FIRE_IGNITER_FUEL = tag("fluid_fuel/cold_fire_igniter");
         public static final TagKey<Fluid> STAFF_OF_LEVITY_FUEL = tag("fluid_fuel/staff_of_levity");
         public static final TagKey<Fluid> SOLAR_PANEL_LIGHT = tag("solar_panel_light");

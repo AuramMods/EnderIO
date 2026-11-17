@@ -218,7 +218,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
 
         @Override
         protected boolean placeOutputs(List<OutputStack> outputs, boolean simulate) {
-            FluidStack output = outputs.getFirst().getFluid();
+            FluidStack output = outputs.get(0).getFluid();
 
             // Always simulate first to check if we can place the full amount
             int simulatedFill = OUTPUT_TANK.getTank(fluidHandler).fill(output, IFluidHandler.FluidAction.SIMULATE);

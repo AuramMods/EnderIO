@@ -13,7 +13,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
+import com.enderio.core.common.serialization.ComponentCodecs;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
@@ -61,9 +61,9 @@ public record ConduitType<T extends Conduit<T, U>, U extends ConnectionConfig>(
     public static <T extends Conduit<T, U>, U extends ConnectionConfig> Builder<T, U> builder(
         BiFunction<ResourceLocation, Component, T> factory,
         ConnectionConfigType<U> connectionConfigType) {
-        return new Builder<T, U>(RecordCodecBuilder.mapCodec(builder -> builder
+        return new Builder<T, U>(RecordCodecBuilder.<T>mapCodec(builder -> builder
             .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(Conduit::texture),
-                ComponentSerialization.CODEC.fieldOf("description").forGetter(Conduit::description))
+                ComponentCodecs.COMPONENT.fieldOf("description").forGetter(Conduit::description))
             .apply(builder, factory)), connectionConfigType);
     }
 

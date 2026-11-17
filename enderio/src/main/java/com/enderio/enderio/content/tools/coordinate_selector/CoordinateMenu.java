@@ -4,7 +4,6 @@ import com.enderio.enderio.api.attachment.CoordinateSelection;
 import com.enderio.enderio.init.EIOItems;
 import com.enderio.enderio.init.EIOMenus;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -81,7 +80,7 @@ public class CoordinateMenu extends AbstractContainerMenu {
             ItemStack itemstack = EIOItems.LOCATION_PRINTOUT.get().getDefaultInstance();
             LocationPrintoutItem.setSelection(itemstack, selection);
             if (!StringUtils.isBlank(name)) {
-                itemstack.set(DataComponents.CUSTOM_NAME, Component.literal(name).withStyle(ChatFormatting.AQUA));
+                itemstack.setHoverName(Component.literal(name).withStyle(ChatFormatting.AQUA));
             }
 
             if (severPlayer.isAlive() && !severPlayer.hasDisconnected()) {
@@ -124,9 +123,9 @@ public class CoordinateMenu extends AbstractContainerMenu {
                 ItemStack stack = player.getItemInHand(hand);
                 if (stack.getItem() == EIOItems.LOCATION_PRINTOUT.get()) {
                     if (StringUtils.isBlank(name)) {
-                        stack.remove(DataComponents.CUSTOM_NAME);
+                        stack.resetHoverName();
                     } else {
-                        stack.set(DataComponents.CUSTOM_NAME, Component.literal(name).withStyle(ChatFormatting.AQUA));
+                        stack.setHoverName(Component.literal(name).withStyle(ChatFormatting.AQUA));
                     }
                 }
             }

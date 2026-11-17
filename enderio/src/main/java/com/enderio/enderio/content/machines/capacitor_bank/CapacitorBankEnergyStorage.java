@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.capacitor_bank;
 
+import com.enderio.core.common.util.LongMathUtil;
 import net.minecraft.core.Direction;
 import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
@@ -26,12 +27,12 @@ public record CapacitorBankEnergyStorage(CapacitorBankBlockEntity capacitorBank,
 
     @Override
     public int getEnergyStored() {
-        return Math.clamp(capacitorBank.getNetwork().getTotalEnergyStored(), 0, Integer.MAX_VALUE);
+        return LongMathUtil.nonNegativeInt(capacitorBank.getNetwork().getTotalEnergyStored());
     }
 
     @Override
     public int getMaxEnergyStored() {
-        return Math.clamp(capacitorBank.getNetwork().getTotalMaxEnergyStored(), 0, Integer.MAX_VALUE);
+        return LongMathUtil.nonNegativeInt(capacitorBank.getNetwork().getTotalMaxEnergyStored());
     }
 
     @Override

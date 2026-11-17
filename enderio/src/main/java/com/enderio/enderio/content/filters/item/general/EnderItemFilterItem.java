@@ -9,7 +9,6 @@ import com.enderio.enderio.content.filters.FiltersLang;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOMenus;
 import com.enderio.core.common.item.ItemDataKey;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,7 +19,6 @@ import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraft.world.item.component.BundleContents;
 import java.util.function.BiFunction;
 import oshi.util.tuples.Pair;
 
@@ -55,7 +53,7 @@ public class EnderItemFilterItem extends AbstractFilterItem<EnderItemFilter> {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents,
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level context, List<Component> tooltipComponents,
             TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         // Display warning on basic item filters which have been set to match on

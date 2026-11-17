@@ -40,7 +40,7 @@ public class LaserFluidFilter implements FluidFilter {
                         FluidStack fluidStack = fluidHandler.getFluidInTank(tank);
                         if (!fluidStack.isEmpty()) {
                             if (shouldCompareComponents ? FluidStack.isSameFluid(fluidStack, stack)
-                                    : FluidStack.isSameFluidSameComponents(fluidStack, stack)) {
+                                    : fluidStack.isFluidEqual(stack)) {
                                 return isAllowList ? fluidStack : FluidStack.EMPTY;
                             }
                         }

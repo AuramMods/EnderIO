@@ -31,7 +31,7 @@ public class PaintedRedstoneBlock extends PoweredBlock implements EntityBlock, P
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, net.minecraft.world.level.BlockGetter level, BlockPos pos, Player player) {
         return getPaintedStack(level, pos, this);
     }
 

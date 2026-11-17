@@ -28,6 +28,8 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
+        tag(EIOTags.Items.FERTILIZERS).add(net.minecraft.world.item.Items.BONE_MEAL)
+            .addOptionalTag(new net.minecraft.resources.ResourceLocation("forge", "fertilizers"));
         copy(EIOTags.Blocks.CLEAR_GLASS, EIOTags.Items.CLEAR_GLASS);
         copy(EIOTags.Blocks.FUSED_QUARTZ, EIOTags.Items.FUSED_QUARTZ);
 

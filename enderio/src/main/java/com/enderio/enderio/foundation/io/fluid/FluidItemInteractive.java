@@ -1,5 +1,6 @@
 package com.enderio.enderio.foundation.io.fluid;
 
+import com.enderio.core.common.capability.EnderFluidUtil;
 import com.enderio.enderio.foundation.attachment.FluidTankUser;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
@@ -20,7 +21,7 @@ public interface FluidItemInteractive {
     // Requires direct tank access which is undesirable. MachineFluidHandler would be better to for multi-tank block.
     default boolean handleFluidItemInteraction(Player player, InteractionHand hand, ItemStack itemStack, FluidTankUser machine, TankAccess tankAccess) {
         ItemStack copyStack = itemStack.copyWithCount(1);
-        Optional<IFluidHandlerItem> fluidHandlerItem = FluidUtil.getFluidHandler(copyStack);
+        Optional<IFluidHandlerItem> fluidHandlerItem = FluidUtil.getFluidHandler(copyStack).resolve();
         if (fluidHandlerItem.isPresent()) {
             IFluidHandlerItem handler = fluidHandlerItem.get();
             FluidStack fluidInItem;
@@ -31,7 +32,7 @@ public interface FluidItemInteractive {
                 //Otherwise, try draining the same type of fluid we have stored
                 // We do this to better support multiple tanks in case the fluid we have stored we could pull out of a block's
                 // second tank but just asking to drain a specific amount
-                fluidInItem = handler.drain(tankAccess.getFluid(machine).copyWithAmount(Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE);
+                fluidInItem = handler.drain(EnderFluidUtil.copyWithAmount(tankAccess.getFluid(machine), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE);
             }
             if (fluidInItem.isEmpty()) {
                 if (!tankAccess.isEmpty(machine) && tankAccess.canExtract(machine)) {
@@ -49,7 +50,7 @@ public interface FluidItemInteractive {
                         }
                         if (player.isCreative()) {
                             ItemStack copy = itemStack.copyWithCount(1);
-                            Optional<IFluidHandlerItem> newHandler = FluidUtil.getFluidHandler(copy);
+                            Optional<IFluidHandlerItem> newHandler = FluidUtil.getFluidHandler(copy).resolve();
                             newHandler.get().fill(tankAccess.getFluid(machine), IFluidHandler.FluidAction.EXECUTE);
                             container = newHandler.get().getContainer();
                             if (!player.getInventory().add(container)) {
@@ -64,7 +65,7 @@ public interface FluidItemInteractive {
                 int filledAmount = tankAccess.fill(machine, fluidInItem, IFluidHandler.FluidAction.SIMULATE);
                 if (filledAmount > 0) {
                     boolean filled = false;
-                    FluidStack fluidToFill = handler.drain(fluidInItem.copyWithAmount(filledAmount),
+                    FluidStack fluidToFill = handler.drain(EnderFluidUtil.copyWithAmount(fluidInItem, filledAmount),
                         player.isCreative() ? IFluidHandler.FluidAction.SIMULATE : IFluidHandler.FluidAction.EXECUTE);
                     if (!fluidToFill.isEmpty()) {
                         ItemStack container = handler.getContainer();

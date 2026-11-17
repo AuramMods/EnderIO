@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.soul_engine;
 
+import com.enderio.core.common.capability.EnderFluidUtil;
 import net.minecraft.world.item.ItemStack;
 import com.enderio.enderio.api.capacitor.CapacitorModifier;
 import com.enderio.enderio.api.capacitor.FixedScalable;
@@ -198,10 +199,10 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
                 // Convert into tagged fluid
                 if (TANK.isFluidValid(this, resource)) {
                     FluidStack currentFluid = TANK.getFluid(this);
-                    if (currentFluid.isEmpty() || FluidStack.isSameFluidSameComponents(resource, currentFluid)) {
+                    if (currentFluid.isEmpty() || resource.isFluidEqual(currentFluid)) {
                         return super.fill(resource, action);
                     } else {
-                        return super.fill(currentFluid.copyWithAmount(resource.getAmount()), action);
+                        return super.fill(EnderFluidUtil.copyWithAmount(currentFluid, resource.getAmount()), action);
                     }
                 }
 
@@ -228,7 +229,7 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
             String fluid = soulData.fluid();
             if (fluid.startsWith("#")) { // We have a fluid tag instead
                 TagKey<Fluid> tag = TagKey.create(Registries.FLUID, ResourceLocation.parse(fluid.substring(1)));
-                return fluidStack.is(tag);
+                return fluidStack.getFluid().is(tag);
             } else {
                 Optional<Holder.Reference<Fluid>> delegate = BuiltInRegistries.FLUID
                         .getHolder(ResourceKey.create(Registries.FLUID, ResourceLocation.parse(fluid)));

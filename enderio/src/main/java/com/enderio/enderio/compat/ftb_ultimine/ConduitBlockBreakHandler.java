@@ -33,7 +33,7 @@ public enum ConduitBlockBreakHandler implements BlockBreakHandler {
         //       Returning PASS means it's not our block.
         var level = player.level();
         var blockEntity = level.getBlockEntity(pos);
-        if (!state.is(EIOBlocks.CONDUIT_BUNDLE) ||
+        if (!state.is(EIOBlocks.CONDUIT_BUNDLE.get()) ||
             !(blockEntity instanceof ConduitBundleBlockEntity conduitBundle)) {
             return Result.PASS;
         }

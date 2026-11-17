@@ -182,15 +182,17 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
                         Codec.BOOL.optionalFieldOf("copyInputComponents", false)
                                 .forGetter(SoulBindingRecipe::copyInputComponents))
                 .apply(instance, SoulBindingRecipe::new))
-                .validate(recipe -> {
-                    int entityType = recipe.entityType().isPresent() ? 1 : 0;
-                    int mobCategory = recipe.mobCategory().isPresent() ? 1 : 0;
-                    int soulData = recipe.soulData().isPresent() ? 1 : 0;
-                    if (entityType + mobCategory + soulData > 1) {
-                        return DataResult.error(() -> "Soul Binding recipe properties entity_type, mob_category and soul_data are mutually exclusive.");
-                    }
-                    return DataResult.success(recipe);
-                });
+                .flatXmap(Serializer::validate, Serializer::validate);
+
+        private static DataResult<SoulBindingRecipe> validate(SoulBindingRecipe recipe) {
+            int entityType = recipe.entityType().isPresent() ? 1 : 0;
+            int mobCategory = recipe.mobCategory().isPresent() ? 1 : 0;
+            int soulData = recipe.soulData().isPresent() ? 1 : 0;
+            if (entityType + mobCategory + soulData > 1) {
+                return DataResult.error(() -> "Soul Binding recipe properties entity_type, mob_category and soul_data are mutually exclusive.");
+            }
+            return DataResult.success(recipe);
+        }
 
         public static final PacketCodec<SoulBindingRecipe> STREAM_CODEC = MassiveStreamCodec
                 .composite(PacketCodecs.REQUIRED_ITEM_STACK_DATA, SoulBindingRecipe::output, PacketCodecs.INGREDIENT,

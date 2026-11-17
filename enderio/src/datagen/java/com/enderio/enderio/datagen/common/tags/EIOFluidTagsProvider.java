@@ -6,8 +6,7 @@ import com.enderio.enderio.init.EIOFluids;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.FluidTagsProvider;
-import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
@@ -21,7 +20,8 @@ public class EIOFluidTagsProvider extends FluidTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        tag(Tags.Fluids.EXPERIENCE).add(EIOFluids.XP_JUICE.source().get());
+        tag(EIOTags.Fluids.EXPERIENCE).add(EIOFluids.XP_JUICE.source().get())
+            .addOptionalTag(new net.minecraft.resources.ResourceLocation("forge", "experience"));
         tag(EIOTags.Fluids.SOLAR_PANEL_LIGHT).add(EIOFluids.LIQUID_SUNSHINE.source().get());
         tag(EIOTags.Fluids.SOLAR_PANEL_DARK).add(EIOFluids.LIQUID_DARKNESS.source().get());
         tag(EIOTags.Fluids.COLD_FIRE_IGNITER_FUEL).add(EIOFluids.VAPOR_OF_LEVITY.source().get());

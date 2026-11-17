@@ -30,7 +30,7 @@ public class CapacitorBankMenu extends BaseBlockEntityMenu<CapacitorBankBlockEnt
 
     public CapacitorBankMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         super(EIOMenus.CAPACITOR_BANK.get(), containerId, playerInventory, buf,
-            EIOBlockEntities.CAPACITOR_BANKS.values().stream().map(DeferredHolder::get).toArray(BlockEntityType[]::new));
+            EIOBlockEntities.CAPACITOR_BANKS.values().stream().map(net.minecraftforge.registries.RegistryObject::get).toArray(BlockEntityType[]::new));
 
         redstoneControlSlot = addUpdatableSyncSlot(EnumSyncSlot.standalone(RedstoneControl.class));
 
@@ -81,12 +81,12 @@ public class CapacitorBankMenu extends BaseBlockEntityMenu<CapacitorBankBlockEnt
 
         @Override
         public int getEnergyStored() {
-            return Math.clamp(energyStored, 0, Integer.MAX_VALUE);
+            return com.enderio.core.common.util.LongMathUtil.nonNegativeInt(energyStored);
         }
 
         @Override
         public int getMaxEnergyStored() {
-            return Math.clamp(maxEnergyStored, 0, Integer.MAX_VALUE);
+            return com.enderio.core.common.util.LongMathUtil.nonNegativeInt(maxEnergyStored);
         }
 
         @Override

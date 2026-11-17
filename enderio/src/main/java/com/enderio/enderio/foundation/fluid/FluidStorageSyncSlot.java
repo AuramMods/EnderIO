@@ -1,5 +1,6 @@
 package com.enderio.enderio.foundation.fluid;
 
+import com.enderio.core.common.capability.EnderFluidUtil;
 import com.enderio.core.common.network.menu.SyncSlot;
 import com.enderio.core.common.network.menu.payload.FluidStackSlotPayload;
 import com.enderio.core.common.network.menu.payload.IntSlotPayload;
@@ -76,11 +77,11 @@ public abstract class FluidStorageSyncSlot implements SyncSlot {
 
         boolean isSameCapacity = lastValue != null && currentValue.capacity() == lastValue.capacity();
         boolean isSameFluid = lastValue != null
-                && FluidStack.isSameFluid(currentValue.contents(), lastValue.contents());
+                && currentValue.contents().isFluidEqual(lastValue.contents());
 
         var changeType = isSameFluid && isSameCapacity ? ChangeType.PARTIAL : ChangeType.FULL;
 
-        lastValue = currentValue;
+        lastValue = new FluidStorageInfo(currentValue.contents().copy(), currentValue.capacity());
         return changeType;
     }
 
@@ -97,7 +98,7 @@ public abstract class FluidStorageSyncSlot implements SyncSlot {
     @Override
     public void unpackPayload(Level level, SlotPayload payload) {
         if (payload instanceof IntSlotPayload intSlotPayload) {
-            set(get().withContents(get().contents().copyWithAmount(intSlotPayload.value())));
+            set(get().withContents(EnderFluidUtil.copyWithAmount(get().contents(), intSlotPayload.value())));
         } else if (payload instanceof PairSlotPayload pair) {
             if (pair.left().type() != SlotPayloadType.FLUID_STACK || pair.right().type() != SlotPayloadType.INT) {
                 return;

@@ -1,0 +1,9 @@
+{
+  "values": [
+    "enderio:fluid_xp_juice_still",
+    {
+      "id": "#forge:experience",
+      "required": false
+    }
+  ]
+}

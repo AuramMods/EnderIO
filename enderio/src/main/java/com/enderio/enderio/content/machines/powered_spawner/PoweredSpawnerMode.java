@@ -41,11 +41,11 @@ public enum PoweredSpawnerMode implements StringRepresentable {
     }
 
     public Tag save(HolderLookup.Provider lookupProvider) {
-        return CODEC.encodeStart(lookupProvider.createSerializationContext(NbtOps.INSTANCE), this).getOrThrow();
+        return CODEC.encodeStart(net.minecraft.resources.RegistryOps.create(NbtOps.INSTANCE, lookupProvider), this).getOrThrow(false, message -> { throw new IllegalArgumentException(message); });
     }
 
     public static PoweredSpawnerMode parse(HolderLookup.Provider lookupProvider, Tag tag) {
-        return CODEC.parse(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag).getOrThrow();
+        return CODEC.parse(net.minecraft.resources.RegistryOps.create(NbtOps.INSTANCE, lookupProvider), tag).getOrThrow(false, message -> { throw new IllegalArgumentException(message); });
     }
 
     public MutableComponent getComponent() {

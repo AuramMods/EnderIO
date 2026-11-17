@@ -27,7 +27,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.neoforged.neoforge.common.Tags;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -134,15 +133,14 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
 
         // Receive items that can accept our current fluid as input -or- if our current contents are empty.
         IFluidHandlerItem fluidHandlerCap = item.copyWithCount(1).getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
-        if (fluidHandlerCap != null && (fluid.isEmpty() || fluidHandlerCap.fill(fluid.copyWithAmount(Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0)) {
+        if (fluidHandlerCap != null && (fluid.isEmpty() || fluidHandlerCap.fill(EnderFluidUtil.copyWithAmount(fluid, Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0)) {
             return true;
         }
 
         // Mending
 
-        if (item.isDamageableItem() && !fluid.isEmpty() && fluid.is(Tags.Fluids.EXPERIENCE)) {
-            var enchantmentsRecipe = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-            var mendingEnchantment = enchantmentsRecipe.getOrThrow(Enchantments.MENDING);
+        if (item.isDamageableItem() && !fluid.isEmpty() && fluid.getFluid().is(com.enderio.enderio.foundation.tag.EIOTags.Fluids.EXPERIENCE)) {
+            var mendingEnchantment = Enchantments.MENDING;
 
             if (item.getEnchantmentLevel(mendingEnchantment) > 0) {
                 return true;

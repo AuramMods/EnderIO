@@ -4,7 +4,6 @@ import com.enderio.enderio.content.paint.PaintUtils;
 import com.enderio.enderio.foundation.EIONBTKeys;
 import com.enderio.enderio.init.EIOBlockEntities;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -54,9 +53,9 @@ public class DoublePaintedBlockEntity extends SinglePaintedBlockEntity {
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
         Block oldPaint = getSecondaryPaint().orElse(null);
-        super.onDataPacket(net, pkt, lookupProvider);
+        super.onDataPacket(net, pkt);
 
         if (oldPaint != paint2) {
             requestModelDataUpdate();

@@ -18,7 +18,7 @@ public class ConduitSpectatorOpenScreenEvent {
     // attention to detail is nice.
     @SubscribeEvent
     public static void onRightClick(PlayerInteractEvent.RightClickBlock event) {
-        if (event.getUseItem().isFalse() || !event.getEntity().isSpectator()) {
+        if (event.getUseItem() == net.minecraftforge.eventbus.api.Event.Result.DENY || !event.getEntity().isSpectator()) {
             return;
         }
 
@@ -28,7 +28,7 @@ public class ConduitSpectatorOpenScreenEvent {
 
         BlockState state = level.getBlockState(hit.getBlockPos());
 
-        if (state.is(EIOBlocks.CONDUIT_BUNDLE)) {
+        if (state.is(EIOBlocks.CONDUIT_BUNDLE.get())) {
             if (level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity conduitBundle) {
                 // TODO: The connection shouldn't include the plate.. if we hit the plate open
                 // the first conduit?

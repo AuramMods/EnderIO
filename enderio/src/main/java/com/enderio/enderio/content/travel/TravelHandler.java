@@ -209,7 +209,7 @@ public class TravelHandler {
         Vec3 toPos = playerPos.add(lookVec.scale(range));
 
         ClipContext clipCtx = new ClipContext(playerPos, toPos, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE,
-                CollisionContext.empty());
+                (net.minecraft.world.entity.Entity) null);
         BlockHitResult bhr = level.clip(clipCtx);
 
         // process the result
@@ -374,7 +374,7 @@ public class TravelHandler {
 
     private static Optional<Vec3> teleportEvent(Player player, Vec3 target) {
         EntityTeleportEvent event = new EntityTeleportEvent(player, target.x(), target.y(), target.z());
-        if (MinecraftForge.EVENT_BUS.post(event).isCanceled()) {
+        if (MinecraftForge.EVENT_BUS.post(event)) {
             return Optional.empty();
         }
 

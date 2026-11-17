@@ -105,10 +105,10 @@ public class PlayerMovementHandler {
             Optional<Component> disabledReason = Optional.empty();
             Optional<GliderMovementInfo> gliderMovementInfo = Optional.empty();
             if (!infos.isEmpty()) {
-                disabledReason = infos.getFirst().cause().hangGliderDisabledReason(player);
+                disabledReason = infos.get(0).cause().hangGliderDisabledReason(player);
                 // Don't enable flight if a disabled reason is present
                 if (disabledReason.isEmpty()) {
-                    gliderMovementInfo = Optional.of(infos.getFirst());
+                    gliderMovementInfo = Optional.of(infos.get(0));
                 }
             }
             if (displayDisabledMessage && disabledReason.isPresent()) {

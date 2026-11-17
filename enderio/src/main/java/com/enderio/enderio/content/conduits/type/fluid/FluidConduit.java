@@ -24,7 +24,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
+import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -50,8 +50,8 @@ public record FluidConduit(ResourceLocation texture, Component description, int 
     public static final int INSERT_FILTER_SLOT = 1;
 
     public static final MapCodec<FluidConduit> CODEC = RecordCodecBuilder.mapCodec(builder -> builder
-        .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(Conduit::texture),
-            ComponentSerialization.CODEC.fieldOf("description").forGetter(Conduit::description),
+        .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(FluidConduit::texture),
+            ComponentCodecs.COMPONENT.fieldOf("description").forGetter(FluidConduit::description),
             Codec.INT.fieldOf("transfer_rate").forGetter(FluidConduit::transferRatePerTick))
         .apply(builder, FluidConduit::new));
 

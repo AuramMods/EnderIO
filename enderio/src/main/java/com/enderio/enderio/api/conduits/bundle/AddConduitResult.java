@@ -10,7 +10,7 @@ public sealed interface AddConduitResult
     record Upgrade(Holder<Conduit<?, ?>> replacedConduit) implements AddConduitResult {
         @Override
         public String toString() {
-            return "Upgrade[" + replacedConduit.getRegisteredName() + "]";
+            return "Upgrade[" + replacedConduit.unwrapKey().map(key -> key.location().toString()).orElse("[unregistered]") + "]";
         }
     }
 

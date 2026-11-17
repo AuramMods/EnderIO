@@ -15,12 +15,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
-import net.neoforged.neoforge.common.extensions.IBlockExtension;
+import net.minecraftforge.common.extensions.IForgeBlock;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public interface PaintedBlock extends IBlockExtension {
+public interface PaintedBlock extends IForgeBlock {
 
     //sane default (definitely not air)
     Block DEFAULT_PAINT = Blocks.OAK_PLANKS;

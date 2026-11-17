@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.obelisks.xp;
 
+import com.enderio.core.common.capability.EnderFluidUtil;
 import net.minecraft.world.item.ItemStack;
 import com.enderio.enderio.foundation.attachment.FluidTankUser;
 import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
@@ -21,7 +22,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.common.Tags;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
@@ -53,7 +53,7 @@ public class XPObeliskBlockEntity extends MachineBlockEntity implements FluidTan
     @Override
     public MachineTankLayout getTankLayout() {
         return new MachineTankLayout.Builder()
-                .tank(TANK, Integer.MAX_VALUE, fluidStack -> fluidStack.is(Tags.Fluids.EXPERIENCE))
+                .tank(TANK, Integer.MAX_VALUE, fluidStack -> fluidStack.getFluid().is(com.enderio.enderio.foundation.tag.EIOTags.Fluids.EXPERIENCE))
                 .build();
     }
 
@@ -74,10 +74,10 @@ public class XPObeliskBlockEntity extends MachineBlockEntity implements FluidTan
                 // Convert into XP Juice
                 if (TANK.isFluidValid(this, resource)) {
                     FluidStack currentFluid = TANK.getFluid(this);
-                    if (currentFluid.isEmpty() || FluidStack.isSameFluidSameComponents(resource, currentFluid)) {
+                    if (currentFluid.isEmpty() || resource.isFluidEqual(currentFluid)) {
                         return super.fill(resource, action);
                     } else {
-                        return super.fill(currentFluid.copyWithAmount(resource.getAmount()), action);
+                        return super.fill(EnderFluidUtil.copyWithAmount(currentFluid, resource.getAmount()), action);
                     }
                 }
 

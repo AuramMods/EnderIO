@@ -3,7 +3,6 @@ package com.enderio.enderio.content.fun;
 import com.enderio.core.common.util.TeleportUtils;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.config.base.BaseConfig;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,13 +15,12 @@ import net.minecraft.world.level.Level;
 
 import java.util.Calendar;
 
-public class EnderiosItem extends Item {
+public class EnderiosItem extends net.minecraft.world.item.BowlFoodItem {
     public static final ResourceLocation INVERTED_PROPERTY = EnderIO.rl("enderios_inverted");
 
     private static final FoodProperties PROPERTIES = new FoodProperties.Builder()
         .nutrition(10)
-        .saturationModifier(0.8f)
-        .usingConvertsTo(Items.BOWL)
+        .saturationMod(0.8f)
         .build();
 
     public EnderiosItem(Properties properties) {
@@ -42,7 +40,7 @@ public class EnderiosItem extends Item {
     public void onCraftedBy(ItemStack stack, Level level, Player player) {
         super.onCraftedBy(stack, level, player);
         if (player.getUUID().hashCode() == -1435081874 || isSpecialDay()) {
-            stack.set(DataComponents.CUSTOM_NAME, Component.literal("SOIREDNE"));
+            stack.setHoverName(Component.literal("SOIREDNE"));
         }
     }
     private static boolean isSpecialDay() {

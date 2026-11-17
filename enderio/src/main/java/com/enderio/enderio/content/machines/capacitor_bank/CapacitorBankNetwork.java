@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.capacitor_bank;
 
+import com.enderio.core.common.util.LongMathUtil;
 import com.enderio.core.common.graph.Network;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.foundation.network.packets.ClientBoundRemoveCapacitorBankPacket;
@@ -155,7 +156,7 @@ public class CapacitorBankNetwork extends Network<CapacitorBankNetwork, Capacito
     public int receiveEnergy(BlockPos pos, @Nullable Direction side, int amount, boolean simulate) {
         long energyBefore = getTotalEnergyStored();
         long energyAfter = Math.min(energyBefore + amount, getTotalMaxEnergyStored());
-        int result = Math.toIntExact(Mth.clamp(energyAfter - energyBefore, 0, Integer.MAX_VALUE));
+        int result = Math.toIntExact(LongMathUtil.clamp(energyAfter - energyBefore, 0, Integer.MAX_VALUE));
 
         if (!simulate) {
             this.totalEnergyStored = energyAfter;
@@ -227,7 +228,7 @@ public class CapacitorBankNetwork extends Network<CapacitorBankNetwork, Capacito
                 shareAmount = energyRemaining / toShareWith;
             }
 
-            int inserted = receiver.receiveEnergy(Math.clamp(shareAmount, 0, Integer.MAX_VALUE), false);
+            int inserted = receiver.receiveEnergy(LongMathUtil.nonNegativeInt(shareAmount), false);
             long io = this.energyIO.getOrDefault(sided.sidedPos(), 0L);
             this.energyIO.put(sided.sidedPos(), io - inserted);
             energyRemaining -= inserted;
@@ -273,8 +274,8 @@ public class CapacitorBankNetwork extends Network<CapacitorBankNetwork, Capacito
 
     @Override
     protected void onNodeRemoved(CapacitorBankNode node) {
-        totalMaxEnergyStored = Mth.clamp(totalMaxEnergyStored - node.getMaxEnergyStored(), 0, Long.MAX_VALUE);
-        totalEnergyStored = Mth.clamp(totalEnergyStored,0, getTotalMaxEnergyStored());
+        totalMaxEnergyStored = LongMathUtil.clamp(totalMaxEnergyStored - node.getMaxEnergyStored(), 0, Long.MAX_VALUE);
+        totalEnergyStored = LongMathUtil.clamp(totalEnergyStored,0, getTotalMaxEnergyStored());
         positions.remove(node.getPos());
     }
 
@@ -284,7 +285,7 @@ public class CapacitorBankNetwork extends Network<CapacitorBankNetwork, Capacito
             return;
         }
 
-        totalMaxEnergyStored = Mth.clamp(totalMaxEnergyStored + node.getMaxEnergyStored(),0, Long.MAX_VALUE);
+        totalMaxEnergyStored = LongMathUtil.clamp(totalMaxEnergyStored + node.getMaxEnergyStored(),0, Long.MAX_VALUE);
         if (positions == null) { //This is called in init when it's not ready yet, so just wait
             return;
         }
@@ -295,7 +296,7 @@ public class CapacitorBankNetwork extends Network<CapacitorBankNetwork, Capacito
     //Node has a BE now, update the network
     public void init(CapacitorBankNode node) {
         //Change the total capacity to the difference of the stored and the current one.
-        totalMaxEnergyStored = Mth.clamp(totalMaxEnergyStored - node.getCapacity() + node.getMaxEnergyStored(),0, Long.MAX_VALUE);
+        totalMaxEnergyStored = LongMathUtil.clamp(totalMaxEnergyStored - node.getCapacity() + node.getMaxEnergyStored(),0, Long.MAX_VALUE);
         positions.add(node.getPos());
     }
 
@@ -317,7 +318,7 @@ public class CapacitorBankNetwork extends Network<CapacitorBankNetwork, Capacito
         this.totalMaxEnergyStored += other.getTotalMaxEnergyStored();
         this.totalEnergyStored += other.totalEnergyStored;
         other.totalEnergyStored = 0;
-        this.totalEnergyStored = Mth.clamp(totalEnergyStored,0, getTotalMaxEnergyStored());
+        this.totalEnergyStored = LongMathUtil.clamp(totalEnergyStored,0, getTotalMaxEnergyStored());
         this.positions.clear();
         this.positions.addAll(nodes().stream().map(CapacitorBankNode::getPos).toList());
         other.setRedstoneControl(this.redstoneControl);

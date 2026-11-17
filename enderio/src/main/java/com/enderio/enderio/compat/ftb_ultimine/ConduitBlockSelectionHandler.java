@@ -19,13 +19,13 @@ public enum ConduitBlockSelectionHandler implements BlockSelectionHandler {
         var level = player.level();
 
         var origBlockEntity = level.getBlockEntity(origPos);
-        if (!state.is(EIOBlocks.CONDUIT_BUNDLE) ||
+        if (!state.is(EIOBlocks.CONDUIT_BUNDLE.get()) ||
             !(origBlockEntity instanceof ConduitBundleBlockEntity origConduitBundle)) {
             return Result.PASS;
         }
 
         var blockEntity = level.getBlockEntity(pos);
-        if (!state.is(EIOBlocks.CONDUIT_BUNDLE) ||
+        if (!state.is(EIOBlocks.CONDUIT_BUNDLE.get()) ||
             !(blockEntity instanceof ConduitBundleBlockEntity conduitBundle)) {
             return Result.PASS;
         }

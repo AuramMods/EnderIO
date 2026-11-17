@@ -24,7 +24,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
+import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -47,8 +47,8 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
     public static final int INSERT_FILTER_SLOT = 1;
 
     public static final MapCodec<ItemConduit> CODEC = RecordCodecBuilder.mapCodec(builder -> builder
-        .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(Conduit::texture),
-            ComponentSerialization.CODEC.fieldOf("description").forGetter(Conduit::description),
+        .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(ItemConduit::texture),
+            ComponentCodecs.COMPONENT.fieldOf("description").forGetter(ItemConduit::description),
             // Using optionals in order to support the old conduit format.
             Codec.INT.optionalFieldOf("transfer_rate", 4).forGetter(ItemConduit::transferRatePerCycle),
             Codec.intRange(1, 20).optionalFieldOf("ticks_per_cycle", 20).forGetter(ItemConduit::networkTickRate))

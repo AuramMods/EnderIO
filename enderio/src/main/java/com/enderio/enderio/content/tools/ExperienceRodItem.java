@@ -20,7 +20,6 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.neoforged.neoforge.common.Tags;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import com.enderio.core.common.network.CoreNetwork;
@@ -72,7 +71,7 @@ public class ExperienceRodItem extends Item {
             var fluidHandler = CapabilityUtil.get(level, pos, ForgeCapabilities.FLUID_HANDLER, side);
             if (fluidHandler != null) {
                 FluidStack availableFluid = fluidHandler.getFluidInTank(0);
-                if (availableFluid.is(Tags.Fluids.EXPERIENCE) && availableFluid.getAmount() > 0) {
+                if (availableFluid.getFluid().is(com.enderio.enderio.foundation.tag.EIOTags.Fluids.EXPERIENCE) && availableFluid.getAmount() > 0) {
                     int requiredXp = player.getXpNeededForNextLevel();
                     int fluidVolume = requiredXp * ExperienceUtil.EXP_TO_FLUID;
 
@@ -106,7 +105,7 @@ public class ExperienceRodItem extends Item {
             if (fluidHandler != null) {
                 long fluidVolume = ExperienceUtil.getPlayerTotalXp(player) * ExperienceUtil.EXP_TO_FLUID;
                 int cappedVolume = (int) Math.min(Integer.MAX_VALUE, fluidVolume);
-                FluidStack fs = new FluidStack(EIOFluids.XP_JUICE.source(), cappedVolume);
+                FluidStack fs = new FluidStack(EIOFluids.XP_JUICE.source().get(), cappedVolume);
                 int takenVolume = fluidHandler.fill(fs, IFluidHandler.FluidAction.EXECUTE);
                 if (takenVolume > 0) {
                     player.giveExperiencePoints(-takenVolume / ExperienceUtil.EXP_TO_FLUID);

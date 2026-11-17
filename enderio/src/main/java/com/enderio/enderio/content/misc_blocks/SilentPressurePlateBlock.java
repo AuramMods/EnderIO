@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.PressurePlateBlock;
 public class SilentPressurePlateBlock extends PressurePlateBlock {
 
     public SilentPressurePlateBlock(PressurePlateBlock wrapped) {
-        super(EIOBlockSetType.SILENT, Properties.ofFullCopy(wrapped));
+        super(Sensitivity.EVERYTHING, Properties.copy(wrapped), EIOBlockSetType.SILENT);
     }
 
 }

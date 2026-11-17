@@ -1,6 +1,5 @@
 package com.enderio.enderio.content.machines.block_detector;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -20,7 +19,6 @@ import net.minecraft.world.level.Level;
 
 public class BlockDetectorBlock extends DirectionalBlock {
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
-    public static final MapCodec<BlockDetectorBlock> CODEC = simpleCodec(BlockDetectorBlock::new);
 
     public BlockDetectorBlock(Properties p_55926_) {
         super(p_55926_);
@@ -28,10 +26,6 @@ public class BlockDetectorBlock extends DirectionalBlock {
                 this.stateDefinition.any().setValue(FACING, Direction.SOUTH).setValue(POWERED, Boolean.valueOf(false)));
     }
 
-    @Override
-    protected MapCodec<? extends DirectionalBlock> codec() {
-        return CODEC;
-    }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 public class PaintedFenceGateBlock extends FenceGateBlock implements EntityBlock, PaintedBlock {
 
     public PaintedFenceGateBlock(Properties properties) {
-        super(WoodType.OAK, properties);
+        super(properties, WoodType.OAK);
     }
 
     @Nullable
@@ -26,7 +26,7 @@ public class PaintedFenceGateBlock extends FenceGateBlock implements EntityBlock
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, net.minecraft.world.level.BlockGetter level, BlockPos pos, Player player) {
         return getPaintedStack(level, pos, this);
     }
 

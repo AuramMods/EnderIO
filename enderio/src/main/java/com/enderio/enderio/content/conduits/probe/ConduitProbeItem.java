@@ -88,7 +88,7 @@ public class ConduitProbeItem extends Item {
         conduits.forEach(conduit -> {
             ConnectionConfig connectionConfig = conduitBlock.getConnectionConfig(conduit, face);
             if (connectionConfig != null) {
-                ResourceLocation conduitKey = ResourceLocation.parse(conduit.getRegisteredName());
+                ResourceLocation conduitKey = conduit.unwrapKey().orElseThrow().location();
                 RegistryOps<Tag> ops = net.minecraft.resources.RegistryOps.create(
                     net.minecraft.nbt.NbtOps.INSTANCE,
                     conduitBlock.getLevel().registryAccess()
@@ -129,7 +129,7 @@ public class ConduitProbeItem extends Item {
         List<String> pastedConduits = new ArrayList<String>();
         var conduits = conduitBlock.getConduits();
         conduits.forEach(conduit -> {
-            ResourceLocation conduitKey = ResourceLocation.parse(conduit.getRegisteredName());
+            ResourceLocation conduitKey = conduit.unwrapKey().orElseThrow().location();
             ConnectionConfig storedConfig = configData.conduitData().get(conduitKey);
             if (storedConfig != null) {
                 conduitBlock.setConnectionConfig(conduit, face, storedConfig);
@@ -146,7 +146,7 @@ public class ConduitProbeItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 
         tooltipComponents.add(TooltipUtil.styledWithArgs(ConduitLang.CONDUIT_PROBE_MODE_TOOLTIP, getState(stack).getStateText()));
@@ -165,7 +165,7 @@ public class ConduitProbeItem extends Item {
     }
     
     public static void setState(Player player, ItemStack stack, State state) {
-        if (!stack.is(EIOItems.CONDUIT_PROBE)) {
+        if (!stack.is(EIOItems.CONDUIT_PROBE.get())) {
             throw new IllegalArgumentException("Invalid item passed to setState.");
         }
 
@@ -177,7 +177,7 @@ public class ConduitProbeItem extends Item {
     }
 
     public static void switchState(Player player, ItemStack stack) {
-        if (!stack.is(EIOItems.CONDUIT_PROBE)) {
+        if (!stack.is(EIOItems.CONDUIT_PROBE.get())) {
             throw new IllegalArgumentException("Invalid item passed to switchState.");
         }
 

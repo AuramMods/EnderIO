@@ -38,7 +38,7 @@ public class ConduitSorter {
         @SubscribeEvent
         public static void clientSortTypes(ClientPlayerNetworkEvent.LoggingIn event) {
             var conduitRegistry = event.getPlayer()
-                    .registryAccess()
+                    .level().registryAccess()
                     .registryOrThrow(EnderIORegistries.Keys.CONDUIT);
             sortTypes(conduitRegistry);
         }
@@ -70,7 +70,7 @@ public class ConduitSorter {
                     public int compare(Holder<Conduit<?, ?>> o1, Holder<Conduit<?, ?>> o2) {
                         return ((T) o1.value()).compareTo((T) o2.value());
                     }
-                }.thenComparing(Holder::getRegisteredName))
+                }.thenComparing(holder -> holder.unwrapKey().orElseThrow().location().toString()))
                 .map(i -> (Holder<Conduit<?, ?>>) i)
                 .toList();
     }

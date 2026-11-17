@@ -127,7 +127,7 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
 
         // Ensure output is free in capture mode
         if (mode == PoweredSpawnerMode.CAPTURE) {
-            if (!INPUT.getItemStack(this).is(EIOItems.SOUL_VIAL)) {
+            if (!INPUT.getItemStack(this).is(EIOItems.SOUL_VIAL.get())) {
                 setReason(SpawnerBlockedReason.INPUT_EMPTY);
                 return null;
             }

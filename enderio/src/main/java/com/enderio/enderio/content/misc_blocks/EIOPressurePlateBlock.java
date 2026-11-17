@@ -47,7 +47,7 @@ public class EIOPressurePlateBlock extends PressurePlateBlock {
     private final Detector detector;
 
     public EIOPressurePlateBlock(Properties props, Detector detector, boolean silent) {
-        super(silent ? EIOBlockSetType.SILENT : BlockSetType.IRON, props);
+        super(Sensitivity.EVERYTHING, props, silent ? EIOBlockSetType.SILENT : BlockSetType.IRON);
         this.detector = detector;
         this.silent = silent;
         this.registerDefaultState(this.stateDefinition.any().setValue(POWERED, false));

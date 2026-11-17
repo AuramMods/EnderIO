@@ -53,7 +53,7 @@ public class EIOCreativeTabs {
         if (event.getTabKey() == CreativeModeTabs.COLORED_BLOCKS) {
             for (var glassSet : EIOBlocks.GLASS_BLOCKS.values()) {
                 for (var glassBlock : glassSet.getAllBlocks().toList()) {
-                    event.accept(glassBlock, CreativeModeTab.TabVisibility.PARENT_TAB_ONLY);
+                    event.accept(glassBlock.get(), CreativeModeTab.TabVisibility.PARENT_TAB_ONLY);
                 }
             }
         } else if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {

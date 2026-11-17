@@ -63,7 +63,7 @@ public class LocationPrintoutItem extends Item {
 
     private static void openMenu(ServerPlayer player, CoordinateSelection selection, String name) {
 
-        player.openMenu(new MenuProvider() {
+        net.minecraftforge.network.NetworkHooks.openScreen(player, new MenuProvider() {
             @Override
             public Component getDisplayName() {
                 return Component.empty();
@@ -86,7 +86,7 @@ public class LocationPrintoutItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext tooltipContext, List<Component> toolTip, TooltipFlag isAdvanced) {
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level tooltipContext, List<Component> toolTip, TooltipFlag isAdvanced) {
         super.appendHoverText(stack, tooltipContext, toolTip, isAdvanced);
         getSelection(stack).ifPresent(selection -> {
                 toolTip.add(writeCoordinate('x', selection.pos().getX())

@@ -48,7 +48,7 @@ public class PaintedSlabBlock extends SlabBlock implements EntityBlock, PaintedB
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, net.minecraft.world.level.BlockGetter level, BlockPos pos, Player player) {
         ItemStack stack = new ItemStack(this);
         if (level.getBlockEntity(pos) instanceof DoublePaintedBlockEntity paintedBlockEntity) {
             Optional<Block> paint;

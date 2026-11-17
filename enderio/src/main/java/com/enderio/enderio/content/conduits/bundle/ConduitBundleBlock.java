@@ -146,7 +146,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     // endregion
 
     @Override
-    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, net.minecraft.world.level.BlockGetter level, BlockPos pos, Player player) {
         if (!(level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity blockEntity)) {
             return super.getCloneItemStack(state, target, level, pos, player);
         }
@@ -173,7 +173,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
 
         Holder<Conduit<?, ?>> conduit = blockEntity.getShape().getConduit(pos, target);
         if (conduit == null) {
-            conduit = blockEntity.getConduits().getFirst();
+            conduit = blockEntity.getConduits().get(0);
         }
 
         return ConduitBlockItem.getStackFor(conduit, 1);
@@ -271,7 +271,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void handleCancelledBlockBreak(BlockEvent.BreakEvent event) {
         // If a conduit bundle block break was cancelled, we'll need to send the block entity data back to the clients to correct the visuals.
-        if (event.getState().is(EIOBlocks.CONDUIT_BUNDLE) && event.isCanceled()) {
+        if (event.getState().is(EIOBlocks.CONDUIT_BUNDLE.get()) && event.isCanceled()) {
             event.getPlayer().level().sendBlockUpdated(event.getPos(), event.getState(), event.getState(), Block.UPDATE_CLIENTS);
         }
     }
@@ -293,7 +293,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
 
             if (level.isClientSide()) {
                 if (!conduitBundle.getConduits().isEmpty()) {
-                    var conduit = conduitBundle.getConduits().getFirst();
+                    var conduit = conduitBundle.getConduits().get(0);
                     ConduitBreakParticle.addDestroyEffects(pos, state, conduit.value());
                 } else {
                     // TODO: Facade particles?
@@ -303,7 +303,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
                     if (conduitBundle.hasFacade()) {
                         popResource(level, pos, conduitBundle.getFacadeProvider());
                     } else {
-                        var lastConduit = conduitBundle.getConduits().getFirst();
+                        var lastConduit = conduitBundle.getConduits().get(0);
                         conduitBundle.dropConnectionInventories(lastConduit, stack -> popResource(level, pos, stack));
                         popResource(level, pos, ConduitBlockItem.getStackFor(lastConduit, 1));
                     }
