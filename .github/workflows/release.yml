@@ -23,7 +23,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v6
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'temurin'
 
       - uses: gradle/actions/setup-gradle@v6
@@ -85,10 +85,10 @@ jobs:
             build/libs/!(*-@(api|sources)).jar
             build/libs/*-@(api|sources).jar
           changelog: ${{ github.event.release.body }}
-          loaders: neoforge
+          loaders: forge
           environment: client | server
-          game-versions: 1.21.1
-          java: 21
+          game-versions: 1.20.1
+          java: 17
           dependencies: |
             jei(optional){curseforge:238222}
             athena(optional){curseforge:841890}
@@ -120,10 +120,10 @@ jobs:
             build/libs/!(*-@(api|sources)).jar
             build/libs/*-@(api|sources).jar
           changelog: ${{ github.event.release.body }}
-          loaders: neoforge
+          loaders: forge
           environment: client | server
-          game-versions: 1.21.1
-          java: 21
+          game-versions: 1.20.1
+          java: 17
           dependencies: |
             jei(optional){modrinth:u6dRKJwZ}
             athena(optional){modrinth:b1ZV3DIJ}

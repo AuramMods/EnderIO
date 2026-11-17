@@ -14,12 +14,12 @@ logoFile="logo.png"
 
 [[dependencies.endercore]]
 modId="minecraft"
-type="required"
+mandatory=true
 versionRange="${minecraft_version_range}"
 side="BOTH"
 
 [[dependencies.endercore]]
-modId="neoforge"
-type="required"
-versionRange="${neoforge_version}"
+modId="forge"
+mandatory=true
+versionRange="${forge_version_range}"
 side="BOTH"

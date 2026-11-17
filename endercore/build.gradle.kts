@@ -1,8 +1,3 @@
-val minecraftVersion: String by project
-val minecraftVersionRange: String by project
-val neoForgeVersionRange: String by project
-val loaderVersionRange: String by project
-
 plugins {
     id("mod-common-conventions")
 }
@@ -10,16 +5,15 @@ plugins {
 dependencies {
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
-    testImplementation(libs.neoforgeTestFramework)
 }
 
 tasks.test {
     useJUnitPlatform()
 }
 
-neoForge {
+legacyForge {
     enable {
-        version = libs.versions.neoforge.get()
+        forgeVersion = "1.20.1-${libs.versions.forge.get()}"
         isDisableRecompilation = System.getenv("CI") == "true"
     }
 
@@ -29,10 +23,7 @@ neoForge {
         }
     }
 
-    unitTest {
-        enable()
-        testedMod = mods["endercore"]
-    }
+    addModdingDependenciesTo(sourceSets.test.get())
 }
 
 // Expand variables in mods.toml
@@ -40,8 +31,8 @@ var generateModMetadata = tasks.register<ProcessResources>("generateModMetadata"
     val replaceProperties = mapOf(
             "mod_version" to project.version,
             "minecraft_version_range" to libs.versions.minecraft.get(),
-            "neoforge_version" to libs.versions.neoforge.get(),
-            "loader_version_range" to "[4,)", // TODO
+            "forge_version_range" to "[${libs.versions.forge.get()},48)",
+            "loader_version_range" to "[47,)",
     )
 
     inputs.properties(replaceProperties)
@@ -52,7 +43,7 @@ var generateModMetadata = tasks.register<ProcessResources>("generateModMetadata"
 
 // Add results to source set and to IDE sync
 sourceSets.main.get().resources.srcDir(generateModMetadata)
-neoForge.ideSyncTask(generateModMetadata)
+legacyForge.ideSyncTask(generateModMetadata)
 
 publishing {
     publications {

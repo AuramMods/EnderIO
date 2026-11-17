@@ -1,7 +1,8 @@
 modLoader="javafml"
-loaderVersion="[1,)"
+loaderVersion="[47,)"
 license="MIT"
 
 [[mods]]
 modId="enderio_tests"
+version="1.0"
 displayName="EnderIO: Tests"

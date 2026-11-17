@@ -84,42 +84,35 @@ dependencies {
     accessTransformers(project(":enderio"))
 
     // AE2
-    compileOnly(variantOf(libs.ae2) {
-        classifier("api")
-    })
+    modCompileOnly(libs.ae2)
 
-    runtimeOnly(libs.ae2)
+    modRuntimeOnly(libs.ae2)
 
     // Mekanism
-    compileOnly(variantOf(libs.mekanism) {
-        classifier("api")
-    })
+    modCompileOnly(libs.mekanism)
 
-    runtimeOnly(libs.mekanism)
+    modRuntimeOnly(libs.mekanism)
 
     // Refined Storage
-    compileOnly(libs.refinedStorage)
-    runtimeOnly(libs.refinedStorage)
+    modCompileOnly(libs.refinedStorage)
+    modRuntimeOnly(libs.refinedStorage)
 
     //Laserio
-    compileOnly(libs.laserio)
-    runtimeOnly(libs.laserio)
+    modCompileOnly(libs.laserio)
+    modRuntimeOnly(libs.laserio)
+
+    modRuntimeOnly(libs.guideMe)
 
     // Unit tests
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
-    testImplementation(libs.neoforgeTestFramework)
 
-    // Setup gametests
-    val gametestImplementation by configurations.getting
-    gametestImplementation(libs.neoforgeTestFramework) {
-        isTransitive = false
-    }
+    // GameTest sources remain available for Forge-native tests.
 }
 
-neoForge {
+legacyForge {
     enable {
-        version = libs.versions.neoforge.get()
+        forgeVersion = "1.20.1-${libs.versions.forge.get()}"
         isDisableRecompilation = System.getenv("CI") == "true"
     }
 
@@ -166,10 +159,7 @@ neoForge {
 //        }
     }
 
-    unitTest {
-        enable()
-        testedMod = mods["enderio_modded_conduits"]
-    }
+    addModdingDependenciesTo(sourceSets.test.get())
 }
 
 // Expand variables in mods.toml
@@ -177,8 +167,8 @@ var generateModMetadata = tasks.register<ProcessResources>("generateModMetadata"
     val replaceProperties = mapOf(
             "mod_version" to project.version,
             "minecraft_version_range" to libs.versions.minecraft.get(),
-            "neoforge_version" to libs.versions.neoforge.get(),
-            "loader_version_range" to "[4,)", // TODO
+            "forge_version_range" to "[${libs.versions.forge.get()},48)",
+            "loader_version_range" to "[47,)",
             "mekanism_version_range" to libs.versions.mekanismMod.get(),
             "ae2_version_range" to libs.versions.ae2.get(),
             "refinedstorage_version_range" to libs.versions.refinedStorage.get(),
@@ -188,7 +178,7 @@ var generateModMetadata = tasks.register<ProcessResources>("generateModMetadata"
     into("build/generated/sources/modMetadata")
 
     from("src/main/templates") {
-        filesMatching("META-INF/neoforge.mods.toml") {
+        filesMatching("META-INF/mods.toml") {
             expand(replaceProperties)
         }
     }
@@ -200,7 +190,7 @@ var generateModMetadata = tasks.register<ProcessResources>("generateModMetadata"
 
 // Add results to source set and to IDE sync
 sourceSets.main.get().resources.srcDir(generateModMetadata)
-neoForge.ideSyncTask(generateModMetadata)
+legacyForge.ideSyncTask(generateModMetadata)
 
 tasks.withType<Jar> {
     manifest {

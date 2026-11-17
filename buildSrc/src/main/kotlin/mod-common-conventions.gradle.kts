@@ -10,7 +10,7 @@ plugins {
     id("com.palantir.git-version")
 }
 
-apply(plugin = "net.neoforged.moddev")
+apply(plugin = "net.neoforged.moddev.legacyforge")
 
 group = "com.enderio"
 
@@ -31,7 +31,7 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 

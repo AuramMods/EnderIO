@@ -76,10 +76,15 @@ configurations {
     }
 }
 
+obfuscation {
+    createRemappingConfiguration(configurations["localRuntime"])
+}
+
 // https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
 val mockitoAgent = configurations.create("mockitoAgent")
 
 dependencies {
+    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
     val localRuntime by configurations.getting
 
     // EnderIO bundles EnderCore.
@@ -91,91 +96,80 @@ dependencies {
     localRuntime(project(":enderio-modded-conduits"))
 
     // Almost Unified
-    compileOnly(variantOf(libs.almostUnified) {
-        classifier("api")
-    })
+    modCompileOnly(libs.almostUnified)
 
     // JEI
-    compileOnly(libs.bundles.jeiApi)
-    localRuntime(libs.bundles.jei)
+    modCompileOnly(libs.jei)
+    "modLocalRuntime"(libs.jei)
 
     // CC: Tweaked
-    compileOnly(libs.bundles.ccTweakedApi)
-    localRuntime(libs.ccTweakedForge)
+    modCompileOnly(libs.ccTweaked)
+    "modLocalRuntime"(libs.ccTweaked)
 
     // Jade for conduit addon
-    compileOnly(libs.jade)
-    localRuntime(libs.jade)
+    modCompileOnly(libs.jade)
+    "modLocalRuntime"(libs.jade)
 
     //Athena ctm
-    localRuntime(libs.athena)
+    "modLocalRuntime"(libs.athena)
 
     // AE2
-    compileOnly(variantOf(libs.ae2) {
-        classifier("api")
-    })
+    modCompileOnly(libs.ae2)
 
-    localRuntime(libs.ae2)
+    "modLocalRuntime"(libs.ae2)
 
     // TODO: Re-add Enchantment descriptions if we add enchantments again
 
     // Mekanism
-    compileOnly(variantOf(libs.mekanism) {
-        classifier("api")
-    })
+    modCompileOnly(libs.mekanism)
 
-    localRuntime(libs.mekanism)
+    "modLocalRuntime"(libs.mekanism)
 
     // Refined Storage
-    compileOnly(libs.refinedStorage)
-    localRuntime(libs.refinedStorage)
+    modCompileOnly(libs.refinedStorage)
+    "modLocalRuntime"(libs.refinedStorage)
 
     //Laserio
-    compileOnly(libs.laserio)
-    localRuntime(libs.laserio)
+    modCompileOnly(libs.laserio)
+    "modLocalRuntime"(libs.laserio)
+
+    // Dependencies of optional mods (legacy remapping configurations are non-transitive).
+    "modLocalRuntime"(libs.guideMe)
+    "modLocalRuntime"(libs.ftbLibrary)
+    "modLocalRuntime"(libs.architectury)
 
     // Graphlib
     api(libs.graphlib)
     jarJar(libs.graphlib)
 
     // FTB Ultimine Addon
-    compileOnly(libs.ftbUltimine)
-    localRuntime(libs.ftbUltimine)
+    modCompileOnly(libs.ftbUltimine)
+    "modLocalRuntime"(libs.ftbUltimine)
 
 	// Curio compat
-    compileOnly(libs.curios)
-    localRuntime(libs.curios)
+    modCompileOnly(libs.curios)
+    "modLocalRuntime"(libs.curios)
 
-    // Sodium + Iris to test shader compatibility
-    compileOnly(libs.iris)
-    localRuntime(libs.sodium)
-    localRuntime(libs.iris)
+    // Forge 1.20.1 renderer/shader implementations for compatibility testing
+    modCompileOnly(libs.oculus)
+    "modLocalRuntime"(libs.embeddium)
+    "modLocalRuntime"(libs.oculus)
 
     // Unit tests
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
-    testImplementation(libs.neoforgeTestFramework)
 
     // Mocks
     testImplementation(libs.mockito)
     testImplementation(libs.mockitoJunit)
     mockitoAgent(libs.mockito) { isTransitive = false }
 
-    // Setup gametests
-    val gametestImplementation by configurations.getting
-    gametestImplementation(libs.neoforgeTestFramework) {
-        isTransitive = false
-    }
-
-    // Also allow running gametests in client+server but don't declare as a dependency
-    localRuntime(libs.neoforgeTestFramework) {
-        isTransitive = false
-    }
+    // GameTest sources will be migrated from NeoForge to the Forge GameTest API.
 }
 
-neoForge {
+legacyForge {
     enable {
-        version = libs.versions.neoforge.get()
+        forgeVersion = "1.20.1-${libs.versions.forge.get()}"
         isDisableRecompilation = System.getenv("CI") == "true"
     }
 
@@ -204,11 +198,13 @@ neoForge {
         // Data + Game Test focus purely on the core mod.
         val client by creating {
             client()
+            gameDirectory = project.file("run/client")
             loadedMods = listOf(modEnderio)
         }
 
         val server by creating {
             server()
+            programArguments.add("nogui")
             loadedMods = listOf(modEnderio)
 
             gameDirectory = project.file("run/server")
@@ -230,6 +226,7 @@ neoForge {
 
         val gameTestServer by creating {
             type = "gameTestServer"
+            gameDirectory = project.file("run/gametest-server")
             loadedMods = listOf(modEnderio, modEnderioGametests)
             sourceSet = sourceSets["gametest"]
 
@@ -240,14 +237,12 @@ neoForge {
         // Useful for debugging tests, but will include the gametest datapack so I separated the run config.
         val gameTestClient by creating {
             client()
+            gameDirectory = project.file("run/gametest-client")
             loadedMods = listOf(modEnderio, modEnderioGametests)
         }
     }
 
-    unitTest {
-        enable()
-        testedMod = modEnderio
-    }
+    addModdingDependenciesTo(sourceSets.test.get())
 }
 
 // Expand variables in mods.toml
@@ -255,8 +250,8 @@ var generateModMetadata = tasks.register<ProcessResources>("generateModMetadata"
     val replaceProperties = mapOf(
             "mod_version" to project.version,
             "minecraft_version_range" to libs.versions.minecraft.get(),
-            "neoforge_version" to libs.versions.neoforge.get(),
-            "loader_version_range" to "[4,)", // TODO
+            "forge_version_range" to "[${libs.versions.forge.get()},48)",
+            "loader_version_range" to "[47,)",
             "mekanism_version_range" to libs.versions.mekanismMod.get(),
             "ae2_version_range" to libs.versions.ae2.get(),
             "refinedstorage_version_range" to libs.versions.refinedStorage.get(),
@@ -268,7 +263,7 @@ var generateModMetadata = tasks.register<ProcessResources>("generateModMetadata"
     into("build/generated/sources/modMetadata")
 
     from("src/main/templates") {
-        filesMatching("META-INF/neoforge.mods.toml") {
+        filesMatching("META-INF/mods.toml") {
             expand(replaceProperties)
         }
     }
@@ -280,7 +275,7 @@ var generateModMetadata = tasks.register<ProcessResources>("generateModMetadata"
 
 // Add results to source set and to IDE sync
 sourceSets.main.get().resources.srcDir(generateModMetadata)
-neoForge.ideSyncTask(generateModMetadata)
+legacyForge.ideSyncTask(generateModMetadata)
 
 tasks {
     test {
@@ -296,6 +291,7 @@ tasks.named<Jar>("jar") {
 tasks.withType<Jar> {
     manifest {
         attributes(mapOf(
+                "MixinConfigs" to "enderio.mixins.json",
                 "Specification-Title" to "Ender IO",
                 "Specification-Vendor" to "Team Ender IO",
                 "Specification-Version" to "1",
@@ -354,4 +350,28 @@ publishing {
             }
         }
     }
+}
+
+mixin {
+    add(sourceSets.main.get(), "enderio.refmap.json")
+    config("enderio.mixins.json")
+}
+
+// These settings provide silence. Non-activating window instrumentation is a
+// separate runtime-port task and must be implemented before launching clients.
+for ((runName, directory) in mapOf(
+    "Client" to "client", "Server" to "server",
+    "GameTestClient" to "gametest-client", "GameTestServer" to "gametest-server"
+)) {
+    val prepareProfile = tasks.register<PrepareTestProfile>("prepare${runName}Profile") {
+        gameDirectory.set(layout.projectDirectory.dir("run/$directory"))
+        client.set(runName.endsWith("Client"))
+    }
+    tasks.matching { it.name == "run$runName" }.configureEach {
+        dependsOn(prepareProfile)
+    }
+}
+
+obfuscation {
+    reobfuscate(tasks.named<Jar>("apiJar"), sourceSets.main.get())
 }

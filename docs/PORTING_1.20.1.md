@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: investigation and planning complete; implementation has not started. No build, game, or server has been launched during preparation.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 002 establishes the Forge build/compiler loop; gameplay code and tests are not yet ported. No game or server has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -17,7 +17,7 @@ Port the complete implemented feature set of this checkout to Minecraft 1.20.1 o
 | Baseline platform | Minecraft 1.21.1, NeoForge 21.1.216, Java 21 |
 | Historical Forge reference | `origin/1.20.1` at `18ee1b17bf6879298e911fff751204b07f2e4228` |
 | Historical platform | Minecraft 1.20.1, Forge 47.1.1, Java 17, release series 6.2 |
-| Target platform | Minecraft 1.20.1, a pinned and tested Forge 47.x version, Java 17 |
+| Target platform | Minecraft 1.20.1, Forge 47.4.28 (pinned; runtime verification pending), Java 17 |
 
 The two upstream branch tips were checked with `git ls-remote` against `https://github.com/Team-EnderIO/EnderIO.git` and match the fork's fetched remote references. The historical Forge branch already implements an older version of this mod; merely checking it out would not preserve the current feature set. The branches have diverged: at preparation, 154 commits are unique to the historical branch and 951 to the current source baseline.
 
@@ -64,14 +64,14 @@ Counts above are lexical file matches across module Java sources, including test
 
 Retain the current multi-module feature baseline. Reuse proven 1.20.1 Forge implementations from the recorded historical commit where they fit, then adapt them to current semantics. Do not replace newer conduit, soul, machine or filter behavior with historical behavior just to reduce compile errors.
 
-First expand the inventory below into concrete registrations/features and map each to its source, port status and verification evidence. Inventory the existing opt-in features separately: the source declares feature flags for farming station, Enderface and Niard; inspect their actual consumers before deciding enablement. Preserve existing defaults and implemented opt-in behavior. Unimplemented historical wishlist items and unrelated newer branches are outside this baseline.
+First expand the inventory below into concrete registrations/features and map each to its source, port status and verification evidence. Inventory the existing opt-in features separately: the source declares flags for farming station, Enderface and Niard, but only Enderface/Niard registrations require them; farming station is currently enabled by default. Preserve existing defaults and implemented opt-in behavior. Unimplemented historical wishlist items and unrelated newer branches are outside this baseline.
 
 Prefer Forge-native adapters and shared utilities in this project's namespaces. Do not supply fake Minecraft/NeoForge classes or empty implementations that merely satisfy compilation. Preserve public APIs where practical; document unavoidable source/API changes for addon authors.
 
 | Cycle area | Work | Status |
 | --- | --- | --- |
 | Preparation | Record source references, create local branch, write tracker and goal | Complete |
-| Inventory and build | Expand parity/dependency matrix; establish Forge 1.20.1 toolchain, metadata, artifacts and silent test profiles | Pending |
+| Inventory and build | Expand parity/dependency matrix; establish Forge 1.20.1 toolchain, metadata, artifacts and silent test profiles | In progress: platform artifacts/compiler and metadata work; final packaging and non-activating client launch pending |
 | Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | Pending |
 | Core content | Port every implemented block/item/entity, machine, conduit, filter, tool, soul and travel feature | Pending |
 | Assets and client | Data generation, recipes/tags, models, textures, rendering, screens, particles, input, mixins | Pending |
@@ -83,7 +83,7 @@ These are work areas, not a requirement to put a huge phase into one commit. Eac
 
 ## Feature and integration evidence matrix
 
-Split these umbrella rows into concrete feature rows during the first implementation cycle. Every row starts **unverified**. Each completed row must name the tested build/commit, profile, commands or procedure, expected and observed results, and evidence location.
+The [concrete feature matrix](porting/1.20.1/features.md) contains 257 declaration rows and explicit factory expansions. The [fixed baseline inventory](porting/1.20.1/baseline.json) records 487 registration declarations, 469 content/integration source files, 180 captured test methods and 4,173 data/blockstate IDs. These are source discoveries, not runtime/test results. Every row starts **unverified**. Each completed row must name the tested build/commit, profile, commands or procedure, expected and observed results, and evidence location.
 
 | Feature group | Required verification | Status |
 | --- | --- | --- |
@@ -100,7 +100,7 @@ Split these umbrella rows into concrete feature rows during the first implementa
 | Persistence and lifecycle | Save/reopen, dedicated-server restart, unload/reload, dimensions, player reconnect, block removal/replacement, no duplication/loss | Unverified |
 | Distribution | Final remapped/reobfuscated jars load in clean Forge installations without a development classpath | Unverified |
 
-Compatibility inventory: JEI, Jade, CC:Tweaked, Almost Unified, Curios, FTB Ultimine, LaserIO, Inventory Sorter hooks, Athena/connected textures, AE2, Mekanism and Refined Storage. Also inspect the existing Sodium/Iris-specific compatibility code and determine appropriate Forge 1.20.1 equivalents. Each entry needs an exact dependency version, artifact coordinate/source, supported behavior, presence/absence result and any required adaptation. Availability of older releases has not been validated during preparation. An unavailable dependency is a tracked unresolved problem, not permission to delete an integration or claim completion.
+Compatibility inventory: JEI, Jade, CC:Tweaked, Almost Unified, Curios, FTB Ultimine, LaserIO, Inventory Sorter hooks, Athena/connected textures, AE2, Mekanism and Refined Storage. Also inspect the existing Sodium/Iris-specific compatibility code and determine appropriate Forge 1.20.1 equivalents. Each entry needs an exact dependency version, artifact coordinate/source, supported behavior, presence/absence result and any required adaptation. Cycle 002 selected pinned target artifacts from author Maven metadata and project release APIs; see the [dependency record](porting/1.20.1/dependencies.md). Actual integration behavior remains unverified. An unavailable dependency is a tracked unresolved problem, not permission to delete an integration or claim completion.
 
 New-world operation and save/reload within this port are required. Audit historical Ender IO 6.x identifiers and NBT formats, test upgrades using disposable fixtures/copies, and implement necessary migration or document any genuinely unsupported upgrade explicitly. Never test on the user's real worlds. Minecraft 1.21.1 world downgrades are not promised by this port.
 
@@ -133,7 +133,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | Cycle | Result | Verification | Commit |
 | --- | --- | --- | --- |
-| 001: preparation | Created local `1.20.1` from the fixed 1.21.1 baseline; recorded architecture, historical Forge reference, work areas and goal | Read-only source/build/test inspection, fetched fork refs and compared upstream tips; documentation diff review; no build/runtime tests | Commit containing this initial tracker and goal prompt; discover with `git log -- docs/PORTING_1.20.1.md` |
+| 001: preparation | Created local `1.20.1` from the fixed 1.21.1 baseline; recorded architecture, historical Forge reference, work areas and goal | Read-only source/build/test inspection, fetched fork refs and compared upstream tips; documentation diff review; no build/runtime tests | `82e957e17` |
+
+| 002: Forge build foundation | Legacy Forge build plugin, Forge 47.4.28/Java 17, metadata/refmap/reobfuscation configuration, dependency pins, CI platform settings, isolated muted profiles, source inventory and feature matrix | Minecraft artifacts generated; EnderCore compilation reached source errors (400-report cap); metadata/profile tasks passed; no gameplay tests or client/server launch. [Evidence](porting/1.20.1/cycle-002.md) | Commit containing cycle 002 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
