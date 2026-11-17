@@ -20,6 +20,7 @@ public class EnderCoreTestMod {
         ItemDataTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         MachineInteractionTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         PoweredMachineTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
+        RegistryBlockEntityTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         NetworkTestContent.register();
         File report = new File(System.getProperty("endercore.gametest.report", "gametest-results.xml"));
         report.getAbsoluteFile().getParentFile().mkdirs();

@@ -34,9 +34,9 @@ public record DynamicConnectionState(boolean isInsert, DyeColor insertChannel, b
                     DyeColor.CODEC.fieldOf("extract_channel").forGetter(DynamicConnectionState::extractChannel),
                     RedstoneControl.CODEC.fieldOf("redstone_control").forGetter(DynamicConnectionState::control),
                     DyeColor.CODEC.fieldOf("redstone_channel").forGetter(DynamicConnectionState::redstoneChannel),
-                    StackDataCodecs.OPTIONAL_ITEM.lenientOptionalFieldOf("filter_insert", ItemStack.EMPTY).forGetter(DynamicConnectionState::filterInsert),
-                    StackDataCodecs.OPTIONAL_ITEM.lenientOptionalFieldOf("filter_extract", ItemStack.EMPTY).forGetter(DynamicConnectionState::filterExtract),
-                    StackDataCodecs.OPTIONAL_ITEM.lenientOptionalFieldOf("upgrade_extract", ItemStack.EMPTY)
+                    StackDataCodecs.OPTIONAL_ITEM.optionalFieldOf("filter_insert", ItemStack.EMPTY).forGetter(DynamicConnectionState::filterInsert),
+                    StackDataCodecs.OPTIONAL_ITEM.optionalFieldOf("filter_extract", ItemStack.EMPTY).forGetter(DynamicConnectionState::filterExtract),
+                    StackDataCodecs.OPTIONAL_ITEM.optionalFieldOf("upgrade_extract", ItemStack.EMPTY)
                             .forGetter(DynamicConnectionState::upgradeExtract))
             .apply(instance, DynamicConnectionState::new));
 

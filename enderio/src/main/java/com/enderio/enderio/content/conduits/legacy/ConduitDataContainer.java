@@ -7,7 +7,10 @@ import com.mojang.serialization.Codec;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.util.ExtraCodecs;
+import net.minecraft.resources.RegistryOps;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.datafixers.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -19,8 +22,20 @@ import java.util.Optional;
 @Deprecated(since = "8.0.0")
 public class ConduitDataContainer implements ConduitDataAccessor {
 
-    public static final Codec<ConduitDataContainer> CODEC = ExtraCodecs.optionalEmptyMap(ConduitData.CODEC)
-            .xmap(ConduitDataContainer::new, i -> Optional.ofNullable(i.data));
+    public static final Codec<ConduitDataContainer> CODEC = new Codec<>() {
+        @Override
+        public <T> DataResult<Pair<ConduitDataContainer, T>> decode(DynamicOps<T> ops, T input) {
+            boolean empty = ops.getMap(input).result().map(map -> map.entries().findAny().isEmpty()).orElse(false);
+            return empty ? DataResult.success(Pair.of(new ConduitDataContainer(), ops.empty()))
+                : ConduitData.CODEC.decode(ops, input).map(pair -> pair.mapFirst(ConduitDataContainer::new));
+        }
+
+        @Override
+        public <T> DataResult<T> encode(ConduitDataContainer container, DynamicOps<T> ops, T prefix) {
+            return container.data == null ? ops.mergeToMap(prefix, java.util.Map.of())
+                : ConduitData.CODEC.encode(container.data, ops, prefix);
+        }
+    };
 
     @Nullable
     private ConduitData<?> data;
@@ -71,11 +86,11 @@ public class ConduitDataContainer implements ConduitDataAccessor {
     }
 
     public Tag save(HolderLookup.Provider lookupProvider) {
-        return CODEC.encodeStart(lookupProvider.createSerializationContext(NbtOps.INSTANCE), this).getPartialOrThrow();
+        return CODEC.encodeStart(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), this).getOrThrow(true, message -> {});
     }
 
     public static ConduitDataContainer parse(HolderLookup.Provider lookupProvider, Tag tag) {
-        return CODEC.parse(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag).getPartialOrThrow();
+        return CODEC.parse(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), tag).getOrThrow(true, message -> {});
     }
 
     public ConduitDataContainer deepCopy() {

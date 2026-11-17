@@ -10,6 +10,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.level.LevelEvent;
 
 // TODO: In future, support hiding specific conduit types too.
 @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
@@ -38,6 +39,15 @@ public class ClientFacadeVisibility {
         }
 
         setFacadesVisible(FacadeUtil.areFacadesVisible(event.player));
+    }
+
+    @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide()) {
+            ConduitBundleBlockEntity.FACADES.clear();
+            ConduitBundleBlockEntity.CHUNK_FACADES.clear();
+            FACADES_VISIBLE = true;
+        }
     }
 
     private static void setFacadesVisible(boolean visible) {

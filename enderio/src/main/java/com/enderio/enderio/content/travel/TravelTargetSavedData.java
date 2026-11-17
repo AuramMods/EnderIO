@@ -10,7 +10,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -25,33 +25,38 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
+import java.util.WeakHashMap;
+import java.util.Objects;
+import net.minecraftforge.event.level.LevelEvent;
 import java.util.stream.Stream;
 
 @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class TravelTargetSavedData extends SavedData {
 
-    // Even though the client doesn't need to know the data in the old dimensions,
-    // I am more comfortable with each dimension having its own data on the client.
-    private static final Map<ResourceKey<Level>, TravelTargetSavedData> CLIENT_DATA = new ConcurrentHashMap<>();
+    // Client worlds with the same dimension ID on different connections must not share targets.
+    private static final Map<Level, TravelTargetSavedData> CLIENT_DATA = Collections.synchronizedMap(new WeakHashMap<>());
+    private final HolderLookup.Provider registries;
 
     public static final String TARGETS = "targets";
     private final Map<BlockPos, TravelTarget> travelTargets = new HashMap<>();
 
-    public TravelTargetSavedData() {
+    public TravelTargetSavedData(HolderLookup.Provider registries) {
+        this.registries = Objects.requireNonNull(registries);
     }
 
     public TravelTargetSavedData(CompoundTag nbt, HolderLookup.Provider lookupProvider) {
+        this(lookupProvider);
         this.loadNBT(lookupProvider, nbt);
     }
 
     public static TravelTargetSavedData getTravelData(Level level) {
         if (level instanceof ServerLevel serverLevel) {
             return serverLevel.getDataStorage()
-                    .computeIfAbsent(new Factory<>(TravelTargetSavedData::new, TravelTargetSavedData::new),
-                            "enderio_traveldata");
+                    .computeIfAbsent(tag -> new TravelTargetSavedData(tag, level.registryAccess()),
+                        () -> new TravelTargetSavedData(level.registryAccess()), "enderio_traveldata");
         } else {
-            return CLIENT_DATA.computeIfAbsent(level.dimension(), l -> new TravelTargetSavedData());
+            return CLIENT_DATA.computeIfAbsent(level, l -> new TravelTargetSavedData(l.registryAccess()));
         }
     }
 
@@ -67,7 +72,7 @@ public class TravelTargetSavedData extends SavedData {
         return travelTargets.entrySet()
                 .stream()
                 .filter(entry -> entry.getValue().item2BlockRange() == Integer.MAX_VALUE
-                        || center.distSqr(entry.getKey()) < entry.getValue().item2BlockRange()
+                        || center.distSqr(entry.getKey()) < (double) entry.getValue().item2BlockRange()
                                 * entry.getValue().item2BlockRange())
                 .map(Map.Entry::getValue);
     }
@@ -90,30 +95,32 @@ public class TravelTargetSavedData extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag nbt, HolderLookup.Provider lookupProvider) {
+    public CompoundTag save(CompoundTag nbt) {
         ListTag tag = new ListTag();
-        tag.addAll(travelTargets.values().stream().map(target -> saveTarget(lookupProvider, target)).toList());
+        tag.addAll(travelTargets.values().stream().map(target -> saveTarget(registries, target)).toList());
         nbt.put(TARGETS, tag);
         return nbt;
     }
 
     private <T extends TravelTarget> Tag saveTarget(HolderLookup.Provider lookupProvider, T target) {
-        return TravelTarget.CODEC.encodeStart(lookupProvider.createSerializationContext(NbtOps.INSTANCE), target)
-                .getOrThrow();
+        return TravelTarget.CODEC.encodeStart(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), target)
+                .getOrThrow(false, message -> {});
     }
 
     public void loadNBT(HolderLookup.Provider lookupProvider, CompoundTag nbt) {
-        this.travelTargets.clear();
+        Map<BlockPos, TravelTarget> loaded = new HashMap<>();
         ListTag targets = nbt.getList(TARGETS, Tag.TAG_COMPOUND);
         targets.stream()
                 .map(anchorData -> (CompoundTag) anchorData)
                 .map(tag -> loadTarget(lookupProvider, tag))
-                .forEach(target -> travelTargets.put(target.pos(), target));
+                .forEach(target -> loaded.put(target.pos(), target));
+        travelTargets.clear();
+        travelTargets.putAll(loaded);
     }
 
     private TravelTarget loadTarget(HolderLookup.Provider lookupProvider, Tag tag) {
-        return TravelTarget.CODEC.decode(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag)
-                .getOrThrow()
+        return TravelTarget.CODEC.decode(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), tag)
+                .getOrThrow(false, message -> {})
                 .getFirst();
     }
 
@@ -123,11 +130,16 @@ public class TravelTargetSavedData extends SavedData {
     }
 
     @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof Level level && level.isClientSide()) CLIENT_DATA.remove(level);
+    }
+
+    @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         Player player = event.getEntity();
         if (player instanceof ServerPlayer serverPlayer) {
             var savedData = TravelTargetSavedData.getTravelData(serverPlayer.level());
-            var serializedData = savedData.save(new CompoundTag(), serverPlayer.level().registryAccess());
+            var serializedData = savedData.save(new CompoundTag());
             EIONetwork.sendToPlayer(serverPlayer, new ClientboundSyncTravelDataPacket(serializedData));
         }
     }
@@ -137,7 +149,7 @@ public class TravelTargetSavedData extends SavedData {
         Player player = event.getEntity();
         if (player instanceof ServerPlayer serverPlayer) {
             var savedData = TravelTargetSavedData.getTravelData(serverPlayer.level());
-            var serializedData = savedData.save(new CompoundTag(), serverPlayer.level().registryAccess());
+            var serializedData = savedData.save(new CompoundTag());
             EIONetwork.sendToPlayer(serverPlayer, new ClientboundSyncTravelDataPacket(serializedData));
         }
     }

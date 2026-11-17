@@ -11,6 +11,8 @@ import com.enderio.enderio.api.conduits.network.node.NodeDataType;
 import com.enderio.enderio.content.conduits.legacy.ConduitDataContainer;
 import com.google.common.base.Preconditions;
 import com.mojang.serialization.Codec;
+import com.mojang.datafixers.util.Either;
+import com.enderio.core.common.serialization.StrictOptionalFieldCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -34,7 +36,7 @@ public final class ConduitNodeImpl implements INetworkNode<ConduitNetworkImpl, C
     // Just for tests.
     public static final Codec<ConduitNodeImpl> LEGACY_V8_0_CODEC = RecordCodecBuilder
         .create(instance -> instance.group(BlockPos.CODEC.fieldOf("pos").forGetter(ConduitNodeImpl::pos),
-                NodeData.GENERIC_CODEC.optionalFieldOf("data")
+                new StrictOptionalFieldCodec<>(NodeData.GENERIC_CODEC, "data")
                     .forGetter(i -> i.nodeData == null || !i.nodeData.type().isPersistent() ? Optional.empty()
                         : Optional.of(i.nodeData)))
             .apply(instance, ConduitNodeImpl::new));
@@ -43,12 +45,12 @@ public final class ConduitNodeImpl implements INetworkNode<ConduitNetworkImpl, C
             .create(instance -> instance.group(
                 Conduit.CODEC.optionalFieldOf("conduit").forGetter(node -> Optional.ofNullable(node.conduit)),
                 BlockPos.CODEC.fieldOf("pos").forGetter(ConduitNodeImpl::pos),
-                    NodeData.GENERIC_CODEC.optionalFieldOf("data")
+                    new StrictOptionalFieldCodec<>(NodeData.GENERIC_CODEC, "data")
                             .forGetter(i -> i.nodeData == null || !i.nodeData.type().isPersistent() ? Optional.empty()
                                     : Optional.of(i.nodeData)))
                     .apply(instance, ConduitNodeImpl::new));
 
-    public static final Codec<ConduitNodeImpl> CODEC = Codec.withAlternative(NEW_CODEC, LEGACY_V7_CODEC);
+    public static final Codec<ConduitNodeImpl> CODEC = Codec.either(NEW_CODEC, LEGACY_V7_CODEC).xmap(either -> either.map(value -> value, value -> value), Either::left);
 
     // TODO: final in 21.11
     @Nullable
@@ -122,6 +124,10 @@ public final class ConduitNodeImpl implements INetworkNode<ConduitNetworkImpl, C
         if (this.conduit == null) {
             this.conduit = conduit;
         }
+    }
+
+    public boolean isAttachedTo(IConduitNodeAttachment bundle) {
+        return conduitBundle == bundle;
     }
 
     public void attach(IConduitNodeAttachment conduitBundle) {

@@ -5,7 +5,6 @@ import com.google.common.base.Preconditions;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
@@ -37,7 +36,7 @@ public class CapacitorBankSavedData extends SavedData {
     private final Map<BlockPos, CapacitorBankNode> unclaimedNodes = new HashMap<>();
 
     public static CapacitorBankSavedData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(new Factory<>(CapacitorBankSavedData::new, CapacitorBankSavedData::load),
+        return level.getDataStorage().computeIfAbsent(CapacitorBankSavedData::load, CapacitorBankSavedData::new,
             "enderio_capacitor_bank_network");
     }
 
@@ -118,15 +117,15 @@ public class CapacitorBankSavedData extends SavedData {
 
     }
 
-    private static CapacitorBankSavedData load(CompoundTag compoundTag, HolderLookup.Provider provider) {
-        var result = CODEC.parse(provider.createSerializationContext(NbtOps.INSTANCE), compoundTag.get(KEY_DATA));
+    private static CapacitorBankSavedData load(CompoundTag compoundTag) {
+        var result = CODEC.parse(NbtOps.INSTANCE, compoundTag.get(KEY_DATA));
         result.error().ifPresent(e -> LOGGER.error("Errors loading capacitor bank network data, some networks may be missing: {}", e.message()));
-        return result.getPartialOrThrow();
+        return result.getOrThrow(true, LOGGER::error);
     }
 
     @Override
-    public CompoundTag save(CompoundTag compoundTag, HolderLookup.Provider provider) {
-        compoundTag.put(KEY_DATA, CODEC.encodeStart(provider.createSerializationContext(NbtOps.INSTANCE), this).getOrThrow());
+    public CompoundTag save(CompoundTag compoundTag) {
+        compoundTag.put(KEY_DATA, CODEC.encodeStart(NbtOps.INSTANCE, this).getOrThrow(false, LOGGER::error));
         return compoundTag;
     }
 }

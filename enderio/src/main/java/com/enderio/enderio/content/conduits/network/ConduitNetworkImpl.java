@@ -26,6 +26,8 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 import com.mojang.serialization.Codec;
+import com.mojang.datafixers.util.Either;
+import com.enderio.core.common.serialization.StrictOptionalFieldCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.CrashReportCategory;
 import net.minecraft.core.Direction;
@@ -51,7 +53,7 @@ public class ConduitNetworkImpl extends Network<ConduitNetworkImpl, ConduitNodeI
     //Public for testing
     public static final Codec<ConduitNetworkImpl> LEGACY_CODEC = RecordCodecBuilder.create(instance -> instance
             .group(Conduit.CODEC.fieldOf("conduit").forGetter(i -> null),
-                    ConduitNetworkContext.GENERIC_CODEC.optionalFieldOf("context")
+                    new StrictOptionalFieldCodec<>(ConduitNetworkContext.GENERIC_CODEC, "context")
                             .forGetter(i -> i.context == null || !i.context.type().isPersistent() ? Optional.empty()
                                     : Optional.of(i.context)))
             .and(graphCodec(instance, ConduitNodeImpl.CODEC))
@@ -60,13 +62,13 @@ public class ConduitNetworkImpl extends Network<ConduitNetworkImpl, ConduitNodeI
     //Public for testing
     public static final Codec<ConduitNetworkImpl> NEW_CODEC = RecordCodecBuilder.create(instance -> instance
             .group(ConduitType.CODEC.fieldOf("conduit_type").forGetter(i -> i.conduitType),
-                    ConduitNetworkContext.GENERIC_CODEC.optionalFieldOf("context")
+                    new StrictOptionalFieldCodec<>(ConduitNetworkContext.GENERIC_CODEC, "context")
                             .forGetter(i -> i.context == null || !i.context.type().isPersistent() ? Optional.empty()
                                     : Optional.of(i.context)))
             .and(graphCodec(instance, ConduitNodeImpl.CODEC))
             .apply(instance, ConduitNetworkImpl::new));
 
-    public static final Codec<ConduitNetworkImpl> CODEC = Codec.withAlternative(NEW_CODEC, LEGACY_CODEC);
+    public static final Codec<ConduitNetworkImpl> CODEC = Codec.either(NEW_CODEC, LEGACY_CODEC).xmap(either -> either.map(value -> value, value -> value), Either::left);
 
     private final ConduitType<?, ?> conduitType;
     

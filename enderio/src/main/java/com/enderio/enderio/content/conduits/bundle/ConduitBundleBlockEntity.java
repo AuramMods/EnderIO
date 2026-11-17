@@ -1,7 +1,9 @@
 package com.enderio.enderio.content.conduits.bundle;
 
 import com.enderio.core.common.serialization.StackDataCodecs;
-import com.enderio.core.common.blockentity.EnderBlockEntity;
+import com.enderio.core.common.blockentity.RegistryBlockEntity;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.resources.RegistryOps;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.conduits.Conduit;
@@ -92,7 +94,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public final class ConduitBundleBlockEntity extends EnderBlockEntity
+public final class ConduitBundleBlockEntity extends RegistryBlockEntity
         implements ConduitBundle, Wrenchable, ConduitMenu.ConnectionAccessor, IConduitNodeAttachment, Clearable {
 
     public static final int MAX_CONDUITS = 9;
@@ -234,7 +236,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
      * Fire all relevant updates when the conduits or connections change.
      */
     private void bundleChanged() {
-        if (isLoading) {
+        if (isLoading || level == null) {
             return;
         }
 
@@ -261,10 +263,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
     @UseOnly(LogicalSide.CLIENT)
     public void updateModel() {
+        if (level == null || !level.isClientSide()) return;
         requestModelDataUpdate();
-        if (level != null) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
-        }
+        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
 
         if (hasFacade()) {
             ResourceKey<Level> dimension = level.dimension();
@@ -277,6 +278,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
             LongSet chunkList = getChunkFacadesForDimension(dimension).getOrDefault(SectionPos.asLong(worldPosition), null);
             if (chunkList != null) {
                 chunkList.remove(worldPosition.asLong());
+                if (chunkList.isEmpty()) getChunkFacadesForDimension(dimension).remove(SectionPos.asLong(worldPosition));
             }
         }
     }
@@ -619,12 +621,8 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
                 // Add the node
                 setNode(conduit, node);
 
-                // NeoForge contains a patch that calls onLoad after the conduit has been placed
-                // if it's the first one, so onCreated would be called twice. it's easier to
-                // detect here
-                if (conduits.size() != 1) {
-                    conduit.value().onCreated(node, level, getBlockPos(), player);
-                }
+                // Forge calls onLoad synchronously when registering the initially empty bundle.
+                conduit.value().onCreated(node, level, getBlockPos(), player);
             }
 
             result = new AddConduitResult.Insert();
@@ -664,8 +662,8 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
         if (!hasConduitStrict(conduit)) {
             if (!FMLLoader.isProduction()) {
                 throw new IllegalArgumentException(
-                        "Conduit: " + conduit.getRegisteredName() + " is not present in conduit bundle "
-                                + Arrays.toString(conduits.stream().map(Holder::getRegisteredName).toArray()));
+                        "Conduit: " + conduit.unwrapKey().map(key -> key.location().toString()).orElse("<direct>") + " is not present in conduit bundle "
+                                + Arrays.toString(conduits.stream().map(holder -> holder.unwrapKey().map(key -> key.location().toString()).orElse("<direct>")).toArray()));
             }
 
             return;
@@ -1164,8 +1162,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
     @Override
     public CompoundTag getUpdateTag() {
-        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         CompoundTag updateTag = super.getUpdateTag();
+        if (level == null) return updateTag;
+        var registries = level.registryAccess();
 
         // TODO: Do not use saveAdditional, sync less data than it does...
 
@@ -1178,8 +1177,8 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
             if (clientDataTag != null && !clientDataTag.isEmpty()) {
                 CompoundTag tag = new CompoundTag();
                 tag.put("Conduit",
-                        Conduit.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), conduit)
-                                .getOrThrow());
+                        Conduit.CODEC.encodeStart(RegistryOps.create(NbtOps.INSTANCE, registries), conduit)
+                                .getOrThrow(false, message -> {}));
                 tag.put("Data", clientDataTag);
                 nodeDataList.add(tag);
             }
@@ -1190,33 +1189,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag syncData, HolderLookup.Provider lookupProvider) {
-        super.handleUpdateTag(syncData, lookupProvider);
-
-        // Load synced node data
-        if (syncData.contains(CONDUIT_CLIENT_WORLD_DATA_KEY)) {
-            clientConduitExtraWorldData.clear();
-
-            ListTag nodeDataList = syncData.getList(CONDUIT_CLIENT_WORLD_DATA_KEY, Tag.TAG_COMPOUND);
-            var serializationContext = lookupProvider.createSerializationContext(NbtOps.INSTANCE);
-            for (int i = 0; i < nodeDataList.size(); i++) {
-                CompoundTag nodeTag = nodeDataList.getCompound(i);
-                var conduit = Conduit.CODEC.parse(serializationContext, nodeTag.get("Conduit")).getOrThrow();
-                clientConduitExtraWorldData.put(conduit, nodeTag.getCompound("Data"));
-            }
-        }
-
-        updateShape();
-        ensureModelsAreCorrect();
-    }
-
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt,
-            HolderLookup.Provider lookupProvider) {
-        CompoundTag compoundtag = pkt.getTag();
-        if (!compoundtag.isEmpty()) {
-            handleUpdateTag(compoundtag, lookupProvider);
-        }
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        CompoundTag tag = pkt.getTag();
+        if (tag != null) handleUpdateTag(tag);
     }
 
     // endregion
@@ -1229,9 +1204,10 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
         // TODO: Do this in clear removed instead?
         if (!level.isClientSide()) {
+            boolean wasLoading = isLoading;
             isLoading = true;
-            loadFromSavedData();
-            isLoading = false;
+            try { loadFromSavedData(); }
+            finally { isLoading = wasLoading; }
         }
     }
 
@@ -1258,6 +1234,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
             return;
         }
 
+        // Native chunk loading can assign the same level twice before onLoad.
+        var attached = conduitNodes.get(conduit);
+        if (attached != null && attached.isAttachedTo(this)) return;
         ConduitNodeImpl node = savedData.claimNode(conduit, this.worldPosition);
         if (node == null && conduitNodes.get(conduit) == null) {
             // Attempt to recover node data
@@ -1311,9 +1290,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
                 savedData.returnNode(conduit, this.worldPosition, node);
             }
         } else {
-            ResourceKey<Level> dimension = level.dimension();
-            getChunkFacadesForDimension(dimension).remove(SectionPos.asLong(worldPosition));
-            getFacadesForDimension(dimension).remove(worldPosition.asLong());
+            removeFacadeIndex();
         }
     }
 
@@ -1321,7 +1298,10 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     public void setRemoved() {
         closeCapabilityCaches();
         super.setRemoved();
+        removeFacadeIndex();
+    }
 
+    private void removeFacadeIndex() {
         if (level != null && level.isClientSide()) {
             ResourceKey<Level> dimension = level.dimension();
 
@@ -1343,11 +1323,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
-        super.saveAdditional(tag);
+    protected void saveWithRegistries(CompoundTag tag, RegistryAccess registries) {
 
-        var serializationContext = registries.createSerializationContext(NbtOps.INSTANCE);
+        var serializationContext = RegistryOps.create(NbtOps.INSTANCE, registries);
 
         // NEW: Save node data in case of need for recovery
         ListTag nodeData = new ListTag();
@@ -1360,8 +1338,8 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
             if (data != null && data.type().isPersistent()) {
                 CompoundTag nodeTag = new CompoundTag();
-                nodeTag.put("Conduit", Conduit.CODEC.encodeStart(serializationContext, conduit).getOrThrow());
-                nodeTag.put("Data", NodeData.GENERIC_CODEC.encodeStart(serializationContext, data).getOrThrow());
+                nodeTag.put("Conduit", Conduit.CODEC.encodeStart(serializationContext, conduit).getOrThrow(false, message -> {}));
+                nodeTag.put("Data", NodeData.GENERIC_CODEC.encodeStart(serializationContext, data).getOrThrow(false, message -> {}));
                 nodeData.add(nodeTag);
             }
         }
@@ -1369,16 +1347,14 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     }
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag) {
-        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
-        super.saveAdditionalSynced(tag);
+    protected void saveSyncedWithRegistries(CompoundTag tag, RegistryAccess registries) {
 
         if (!conduits.isEmpty()) {
             ListTag conduitList = new ListTag();
             for (var conduit : conduits) {
                 conduitList
-                        .add(Conduit.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), conduit)
-                                .getOrThrow());
+                        .add(Conduit.CODEC.encodeStart(RegistryOps.create(NbtOps.INSTANCE, registries), conduit)
+                                .getOrThrow(false, message -> {}));
             }
             tag.put(CONDUITS_KEY, conduitList);
 
@@ -1396,8 +1372,8 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
                     if (config != null && !config.equals(config.type().getDefault())) {
                         connectionTag.put("Config",
                                 ConnectionConfig.GENERIC_CODEC
-                                        .encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), config)
-                                        .getOrThrow());
+                                        .encodeStart(RegistryOps.create(NbtOps.INSTANCE, registries), config)
+                                        .getOrThrow(false, message -> {}));
                     }
 
                     var inventory = conduitConnections.get(conduit).inventories.get(side);
@@ -1408,7 +1384,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
                         for (int i = 0; i < inventory.getSlots(); i++) {
                             ItemStack stack = inventory.getStackInSlot(i);
                             shouldSave |= !stack.isEmpty();
-                            inventoryListTag.add(stack.saveOptional(registries));
+                            inventoryListTag.add(StackDataCodecs.saveItem(stack));
                         }
 
                         if (shouldSave) {
@@ -1426,33 +1402,61 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
         }
 
         if (!facadeProvider.isEmpty()) {
-            tag.put(FACADE_PROVIDER_KEY, facadeProvider.save(registries));
+            tag.put(FACADE_PROVIDER_KEY, StackDataCodecs.saveItem(facadeProvider));
         }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
-        super.load(tag);
+    protected void loadWithRegistries(CompoundTag tag, RegistryAccess registries) {
+        boolean wasLoading = isLoading;
+        isLoading = true;
+        var oldConduits = conduits;
+        var oldConnections = conduitConnections;
+        var oldFacade = facadeProvider;
+        var oldNodeData = lazyNodeData;
+        var oldNodeNbt = lazyNodeNBT;
+        var oldClientData = new HashMap<>(clientConduitExtraWorldData);
+        try {
+            readBundle(tag, registries);
+        } catch (RuntimeException error) {
+            conduits = oldConduits;
+            conduitConnections = oldConnections;
+            facadeProvider = oldFacade;
+            lazyNodeData = oldNodeData;
+            lazyNodeNBT = oldNodeNbt;
+            clientConduitExtraWorldData.clear();
+            clientConduitExtraWorldData.putAll(oldClientData);
+            throw error;
+        } finally {
+            isLoading = wasLoading;
+        }
+        CapabilityUtil.refresh(this);
+        updateShape();
+        ensureModelsAreCorrect();
+    }
+
+    private void readBundle(CompoundTag tag, RegistryAccess registries) {
+        lazyNodeData = null;
+        lazyNodeNBT = null;
 
         if (tag.contains(EIONBTKeys.CONDUIT_BUNDLE)) {
             // Convert the legacy bundle to the new format
             var bundle = LegacyConduitBundle.parse(registries, tag.getCompound(EIONBTKeys.CONDUIT_BUNDLE));
             loadFromLegacyBundle(bundle);
         } else {
-            // New save format
-            conduits.clear();
+            // Decode into replacement collections so a malformed update can restore the old state.
+            conduits = new ArrayList<>();
             if (tag.contains(CONDUITS_KEY, Tag.TAG_LIST)) {
                 // Get untyped list tag.
                 ListTag conduitList = (ListTag) tag.get(CONDUITS_KEY);
                 for (var conduitTag : conduitList) {
-                    conduits.add(Conduit.CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), conduitTag)
-                            .getOrThrow());
+                    conduits.add(Conduit.CODEC.parse(RegistryOps.create(NbtOps.INSTANCE, registries), conduitTag)
+                            .getOrThrow(false, message -> {}));
                 }
             }
 
             // Load connections
-            conduitConnections.clear();
+            conduitConnections = new HashMap<>();
             if (tag.contains(CONNECTIONS_KEY)) {
                 ListTag conduitConnectionsList = tag.getList(CONNECTIONS_KEY, Tag.TAG_LIST);
 
@@ -1475,9 +1479,9 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
                             if (connectionTag.contains("Config")) {
                                 ConnectionConfig config = ConnectionConfig.GENERIC_CODEC
-                                        .parse(registries.createSerializationContext(NbtOps.INSTANCE),
+                                        .parse(RegistryOps.create(NbtOps.INSTANCE, registries),
                                                 connectionTag.get("Config"))
-                                        .getOrThrow();
+                                        .getOrThrow(false, message -> {});
                                 connections.setConnectionConfig(side, config);
                             }
 
@@ -1491,8 +1495,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
                                     }
 
                                     for (int k = 0; k < inventoryListTag.size() && k < inventory.getSlots(); k++) {
-                                        ItemStack stack = ItemStack.parseOptional(registries,
-                                                inventoryListTag.getCompound(k));
+                                        ItemStack stack = StackDataCodecs.loadItem(inventoryListTag.getCompound(k));
                                         inventory.setStackInSlot(k, stack);
                                     }
                                 }
@@ -1505,7 +1508,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
             }
 
             if (tag.contains(FACADE_PROVIDER_KEY)) {
-                facadeProvider = ItemStack.parseOptional(registries, tag.getCompound(FACADE_PROVIDER_KEY));
+                facadeProvider = StackDataCodecs.loadItem(tag.getCompound(FACADE_PROVIDER_KEY));
             } else {
                 facadeProvider = ItemStack.EMPTY;
             }
@@ -1518,25 +1521,34 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
             var list = tag.getList(NODE_DATA_KEY, Tag.TAG_COMPOUND);
             lazyNodeData = new HashMap<>();
 
-            var serializationContext = registries.createSerializationContext(NbtOps.INSTANCE);
+            var serializationContext = RegistryOps.create(NbtOps.INSTANCE, registries);
 
             for (int i = 0; i < list.size(); i++) {
                 var nodeTag = list.getCompound(i);
                 var conduitParseResult = Conduit.CODEC.parse(serializationContext, nodeTag.get("Conduit"));
-                if (conduitParseResult.isError()) {
+                if (conduitParseResult.error().isPresent()) {
                     continue;
                 }
 
                 var dataParseResult = NodeData.GENERIC_CODEC.parse(serializationContext, nodeTag.get("Data"));
-                if (dataParseResult.isError()) {
+                if (dataParseResult.error().isPresent()) {
                     continue;
                 }
 
-                lazyNodeData.put(conduitParseResult.getOrThrow(), dataParseResult.getOrThrow());
+                lazyNodeData.put(conduitParseResult.getOrThrow(false, message -> {}), dataParseResult.getOrThrow(false, message -> {}));
             }
         }
 
-        ensureModelsAreCorrect();
+        if (tag.contains(CONDUIT_CLIENT_WORLD_DATA_KEY)) {
+            clientConduitExtraWorldData.clear();
+            var data = tag.getList(CONDUIT_CLIENT_WORLD_DATA_KEY, Tag.TAG_COMPOUND);
+            var ops = RegistryOps.create(NbtOps.INSTANCE, registries);
+            for (int i = 0; i < data.size(); i++) {
+                var entry = data.getCompound(i);
+                var conduit = Conduit.CODEC.parse(ops, entry.get("Conduit")).getOrThrow(false, message -> {});
+                clientConduitExtraWorldData.put(conduit, entry.getCompound("Data").copy());
+            }
+        }
     }
 
     // This method ensures that any missing client-side connections render properly after
@@ -1572,7 +1584,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
     // Special casing for redstone conduits.
     private void redstoneConduitChanged(Direction side) {
-        if (level != null) {
+        if (level != null && !isLoading) {
             BlockPos neighborPos = getBlockPos().relative(side);
             if (!level.getBlockState(neighborPos).is(getBlockState().getBlock())) {
                 level.updateNeighborsAt(getBlockPos().relative(side), getBlockState().getBlock());
@@ -1778,15 +1790,20 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
                 .apply(instance, LegacyConduitBundle::new));
 
         public static LegacyConduitBundle parse(HolderLookup.Provider lookupProvider, Tag tag) {
-            return CODEC.decode(lookupProvider.createSerializationContext(NbtOps.INSTANCE), tag)
-                    .getOrThrow()
+            return CODEC.decode(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), tag)
+                    .getOrThrow(false, message -> {})
                     .getFirst();
         }
 
         public static final class ConduitConnection {
 
-            public static final Codec<ConduitConnection> CODEC = ConnectionState.CODEC.listOf(0, MAX_CONDUITS)
+            public static final Codec<ConduitConnection> CODEC = ConnectionState.CODEC.listOf().flatXmap(ConduitConnection::validateSize, ConduitConnection::validateSize)
                     .xmap(ConduitConnection::new, i -> Arrays.stream(i.connectionStates).toList());
+
+            private static com.mojang.serialization.DataResult<List<ConnectionState>> validateSize(List<ConnectionState> states) {
+                return states.size() <= MAX_CONDUITS ? com.mojang.serialization.DataResult.success(states)
+                    : com.mojang.serialization.DataResult.error(() -> "Too many legacy conduit connection states: " + states.size());
+            }
 
             private final ConnectionState[] connectionStates = Util.make(() -> {
                 var states = new ConnectionState[MAX_CONDUITS];
