@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.conduits.bundle;
 
+import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.api.conduits.Conduit;
@@ -190,7 +191,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
             conduit.updateConnections(level, pos, neighborPos, true);
 
             // Invalidate caps in case of redstone update or something else.
-            level.invalidateCapabilities(pos);
+            CapabilityUtil.refresh(level, pos);
         }
 
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
@@ -251,7 +252,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
                 conduitBundle.addConduit(conduit, primaryConnectionSide, player);
             } else {
                 // We might be placed using a facade item. If we are, apply the facade to the
-                var facadeProvider = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER);
+                var facadeProvider = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
                 if (facadeProvider != null && facadeProvider.isValid()) {
                     conduitBundle.setFacadeProvider(stack);
                 }
@@ -438,7 +439,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
 
     private ItemInteractionResult addFacade(ItemStack stack, Level level, BlockPos pos, Player player,
             ConduitBundleBlockEntity conduitBundle) {
-        var facadeProvider = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER);
+        var facadeProvider = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
         if (facadeProvider == null || !facadeProvider.isValid()) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
@@ -572,7 +573,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
 
             var redstoneInsertFilter = node.getInventory(direction.getOpposite())
                     .getStackInSlot(RedstoneConduit.INSERT_FILTER_SLOT)
-                    .getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER);
+                    .getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER).orElse(null);
 
             if (redstoneInsertFilter != null) {
                 return redstoneInsertFilter.getOutputSignal(context, config.insertChannel());

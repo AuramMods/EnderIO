@@ -28,12 +28,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import java.util.function.BiFunction;
+import net.minecraftforge.energy.IEnergyStorage;
 
 public abstract class PoweredMachineBlockEntity extends MachineBlockEntity implements MachineInstallable {
 
-    public static final ICapabilityProvider<PoweredMachineBlockEntity, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER = (
+    public static final BiFunction<PoweredMachineBlockEntity, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER = (
             be, side) -> side == null ? be.energyStorage : be.energyStorage.getSided(side);
 
     private final CapacitorSupport capacitorSupport;
@@ -224,7 +224,7 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
 
         if (supportsCapacitor()) {
             var capacitorItem = getCapacitorItem();
-            var capacitorExtension = capacitorItem.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION);
+            var capacitorExtension = capacitorItem.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION).orElse(null);
             if (capacitorExtension != null) {
                 capacitorData = capacitorExtension.getCapacitorData(capacitorItem, level.registryAccess());
             } else {
@@ -247,7 +247,7 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
             }
 
             var capacitorItem = getCapacitorItem();
-            var capacitorExtension = capacitorItem.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION);
+            var capacitorExtension = capacitorItem.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION).orElse(null);
             if (capacitorExtension != null) {
                 capacitorExtension.onMachineUsed(capacitorItem, serverLevel);
             }

@@ -54,7 +54,7 @@ public class TooltipHandler {
 
     private static void addCapacitorTooltips(ItemStack itemStack, List<Component> components, @Nullable HolderLookup.Provider registries) {
         CapacitorData capacitorData;
-        var capacitorExtension = itemStack.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION);
+        var capacitorExtension = itemStack.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION).orElse(null);
         if (capacitorExtension != null) {
             capacitorData = capacitorExtension.getCapacitorData(itemStack, registries);
         } else {
@@ -88,7 +88,7 @@ public class TooltipHandler {
     // region Soul Storage
 
     private static void addSoulBindableTooltips(ItemStack itemStack, List<Component> components, boolean showAdvanced) {
-        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable != null && soulBindable.canBind()) {
             var soul = soulBindable.getBoundSoul();
 

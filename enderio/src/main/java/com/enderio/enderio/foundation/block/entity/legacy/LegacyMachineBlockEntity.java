@@ -1,5 +1,6 @@
 package com.enderio.enderio.foundation.block.entity.legacy;
 
+import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.core.common.blockentity.EnderBlockEntity;
 import com.enderio.core.common.network.NetworkDataSlot;
 import com.enderio.enderio.api.io.IOConfigurable;
@@ -40,12 +41,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import java.util.function.BiFunction;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.data.ModelProperty;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
@@ -57,9 +58,9 @@ import java.util.Set;
 public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
         implements MenuProvider, Wrenchable, IOConfigurable, MachineInventoryHolder {
 
-    public static final ICapabilityProvider<LegacyMachineBlockEntity, Direction, SideConfig> SIDE_CONFIG_PROVIDER = SidedIOConfigurable::new;
+    public static final BiFunction<LegacyMachineBlockEntity, Direction, SideConfig> SIDE_CONFIG_PROVIDER = SidedIOConfigurable::new;
 
-    public static final ICapabilityProvider<LegacyMachineBlockEntity, Direction, IItemHandler> ITEM_HANDLER_PROVIDER = (
+    public static final BiFunction<LegacyMachineBlockEntity, Direction, IItemHandler> ITEM_HANDLER_PROVIDER = (
             be, side) -> be.inventory != null ? be.inventory.getForSide(side) : null;
 
     // region IO Configuration
@@ -129,7 +130,7 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
                     onIOConfigChanged();
                 }
 
-                level.invalidateCapabilities(getBlockPos());
+                CapabilityUtil.refresh(this);
             }));
         } else {
             ioConfigDataSlot = null;
@@ -214,7 +215,7 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
         setChanged();
 
         // Invalidate capabilities
-        level.invalidateCapabilities(getBlockPos());
+        CapabilityUtil.refresh(this);
 
         // Notify neighbors of update
         level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
@@ -418,8 +419,8 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
      * Move items to and from via the given side.
      */
     private void moveItems(Direction side) {
-        IItemHandler selfHandler = getSelfCapability(Capabilities.ItemHandler.BLOCK, side);
-        IItemHandler otherHandler = getNeighbouringCapability(Capabilities.ItemHandler.BLOCK, side);
+        IItemHandler selfHandler = getSelfCapability(ForgeCapabilities.ITEM_HANDLER, side);
+        IItemHandler otherHandler = getNeighbouringCapability(ForgeCapabilities.ITEM_HANDLER, side);
         if (selfHandler == null || otherHandler == null) {
             return;
         }
@@ -431,8 +432,8 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
      * Move fluids to and from via the given side.
      */
     private void moveFluids(Direction side) {
-        IFluidHandler selfHandler = getSelfCapability(Capabilities.FluidHandler.BLOCK, side);
-        IFluidHandler otherHandler = getNeighbouringCapability(Capabilities.FluidHandler.BLOCK, side);
+        IFluidHandler selfHandler = getSelfCapability(ForgeCapabilities.FLUID_HANDLER, side);
+        IFluidHandler otherHandler = getNeighbouringCapability(ForgeCapabilities.FLUID_HANDLER, side);
         if (selfHandler == null || otherHandler == null) {
             return;
         }

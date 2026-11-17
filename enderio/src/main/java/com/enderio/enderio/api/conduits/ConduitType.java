@@ -18,7 +18,7 @@ import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.capabilities.BlockCapability;
+import net.minecraftforge.common.capabilities.Capability;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
@@ -42,7 +42,7 @@ import java.util.function.Function;
 public record ConduitType<T extends Conduit<T, U>, U extends ConnectionConfig>(
     MapCodec<T> codec,
     ConnectionConfigType<U> connectionConfigType,
-    Set<BlockCapability<?, ?>> exposedCapabilities,
+    Set<Capability<?>> exposedCapabilities,
     boolean doesRequireNetworkCaches,
     @Nullable
     ConduitTickerBase<T> ticker,
@@ -97,7 +97,7 @@ public record ConduitType<T extends Conduit<T, U>, U extends ConnectionConfig>(
     public static class Builder<T extends Conduit<T, U>, U extends ConnectionConfig> {
         private final MapCodec<T> codec;
         private final ConnectionConfigType<U> connectionConfigType;
-        private final Set<BlockCapability<?, ?>> exposedCapabilities;
+        private final Set<Capability<?>> exposedCapabilities;
         private boolean doesRequireNetworkCaches;
         @Nullable
         private ConduitTickerBase<T> ticker;
@@ -113,7 +113,7 @@ public record ConduitType<T extends Conduit<T, U>, U extends ConnectionConfig>(
             this.exposedCapabilities = new HashSet<>();
         }
 
-        public <V> Builder<T, U> exposeCapability(BlockCapability<V, ?> capability) {
+        public <V> Builder<T, U> exposeCapability(Capability<V> capability) {
             exposedCapabilities.add(capability);
             return this;
         }

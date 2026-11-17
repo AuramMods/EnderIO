@@ -31,9 +31,9 @@ public class ConduitServerPayloadHandler {
     public void handleDoubleChannelFilter(ServerboundDoubleChannelPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             ItemStack mainHandItem = context.player().getMainHandItem();
-            Object channels = mainHandItem.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER);
+            Object channels = mainHandItem.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER).orElse(null);
             if (channels == null) {
-                channels = mainHandItem.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER);
+                channels = mainHandItem.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER).orElse(null);
             }
 
             if (channels instanceof DoubleRedstoneChannel doubleRedstoneChannel) {
@@ -45,7 +45,7 @@ public class ConduitServerPayloadHandler {
     public void handleTimerFilter(ServerboundTimerFilterPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             ItemStack mainHandItem = context.player().getMainHandItem();
-            var channels = mainHandItem.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER);
+            var channels = mainHandItem.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER).orElse(null);
             if (channels instanceof RedstoneTimerFilter timer) {
                 timer.setTimer(packet.ticks(), packet.maxTicks());
             }
@@ -55,7 +55,7 @@ public class ConduitServerPayloadHandler {
     public void handleCountFilter(ServerboundCountFilterPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             ItemStack mainHandItem = context.player().getMainHandItem();
-            var channels = mainHandItem.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER);
+            var channels = mainHandItem.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER).orElse(null);
             if (channels instanceof RedstoneCountFilter count) {
                 count.setState(packet);
             }

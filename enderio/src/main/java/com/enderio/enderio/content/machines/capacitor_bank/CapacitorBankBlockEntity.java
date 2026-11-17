@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.capacitor_bank;
 
+import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.api.io.IOMode;
@@ -39,12 +40,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import com.enderio.core.common.capability.NeighborCapability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import java.util.function.BiFunction;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.data.ModelProperty;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,7 +59,7 @@ import java.util.UUID;
 
 public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProvider, Wrenchable, IOConfigurable {
 
-    public static final ICapabilityProvider<CapacitorBankBlockEntity, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER = CapacitorBankEnergyStorage::getSided;
+    public static final BiFunction<CapacitorBankBlockEntity, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER = CapacitorBankEnergyStorage::getSided;
     public static final int MAX_SIZE = 4_096;
     public static final String NODE_ID = "NODE_ID";
 
@@ -70,7 +71,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
     private int legacyEnergy = 0;
     private UUID uuid = UUID.randomUUID();
 
-    private final Map<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyStorageCaches = new EnumMap<>(Direction.class);
+    private final Map<Direction, NeighborCapability<IEnergyStorage>> energyStorageCaches = new EnumMap<>(Direction.class);
     private final Set<SidedEnergy> validPushTargetCache = new HashSet<>();
     private boolean isValidPushTargetCacheDirty = true;
 
@@ -161,11 +162,31 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
         }
     }
 
+    @Override
+    public void setRemoved() {
+        closeEnergyCapabilityCaches();
+        super.setRemoved();
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        closeEnergyCapabilityCaches();
+        super.onChunkUnloaded();
+    }
+
+    private void closeEnergyCapabilityCaches() {
+        energyStorageCaches.values().forEach(NeighborCapability::close);
+        energyStorageCaches.clear();
+        validPushTargetCache.clear();
+        isValidPushTargetCacheDirty = true;
+    }
+
     Set<SidedEnergy> getValidPushTargets() {
         if (!(level instanceof ServerLevel serverLevel)) {
             throw new IllegalStateException("getValidPushTargets can only be called on the server.");
         }
 
+        energyStorageCaches.values().forEach(NeighborCapability::refresh);
         if (isValidPushTargetCacheDirty) {
             validPushTargetCache.clear();
             for (Direction side : Direction.values()) {
@@ -173,8 +194,8 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
                     continue;
                 }
 
-                var cache = energyStorageCaches.computeIfAbsent(side, ignored -> BlockCapabilityCache.create(
-                    Capabilities.EnergyStorage.BLOCK,
+                var cache = energyStorageCaches.computeIfAbsent(side, ignored -> NeighborCapability.create(
+                    ForgeCapabilities.ENERGY,
                     serverLevel,
                     getBlockPos().relative(side),
                     side.getOpposite(),
@@ -223,7 +244,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
         setIOConfig(ioConfig.withMode(localSide, mode));
 
         // Invalidate caps
-        level.invalidateCapabilities(worldPosition);
+        CapabilityUtil.refresh(this);
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
         isValidPushTargetCacheDirty = true;
     }

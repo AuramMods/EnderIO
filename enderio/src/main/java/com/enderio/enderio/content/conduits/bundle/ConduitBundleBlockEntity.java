@@ -68,12 +68,13 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.loading.FMLLoader;
-import net.neoforged.neoforge.capabilities.BlockCapability;
-import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.capabilities.Capability;
+import com.enderio.core.common.capability.NeighborCapability;
+import com.enderio.core.common.capability.CapabilityUtil;
+import java.util.function.BiFunction;
 import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
-import net.neoforged.neoforge.items.ItemStackHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -176,6 +177,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
         super.serverTick();
 
         if (level != null) {
+            neighbouringCapabilityCaches.values().forEach(NeighboringCapabilityCaches::refresh);
             checkConnection = checkConnection.next();
             if (checkConnection.isInitialized()) {
                 updateConnections(level, getBlockPos(), null, false);
@@ -237,7 +239,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
         level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), Block.UPDATE_ALL);
         level.updateNeighborsAt(getBlockPos(), getBlockState().getBlock());
-        level.invalidateCapabilities(getBlockPos());
+        CapabilityUtil.refresh(this);
         setChanged();
         updateShape();
 
@@ -408,8 +410,8 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
     // region Capability Proxies
 
-    public static <TCap, TContext> ICapabilityProvider<ConduitBundleBlockEntity, TContext, TCap> createCapabilityProvider(
-            BlockCapability<TCap, TContext> cap) {
+    public static <TCap> BiFunction<ConduitBundleBlockEntity, Direction, TCap> createCapabilityProvider(
+            Capability<TCap> cap) {
         return (be, context) -> {
             for (Holder<Conduit<?, ?>> conduit : be.getConduits()) {
                 var proxiedCap = getProxiedCapability(cap, be, conduit, context);
@@ -423,8 +425,8 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     }
 
     @Nullable
-    private static <TCap, TContext> TCap getProxiedCapability(BlockCapability<TCap, TContext> capability, ConduitBundleBlockEntity blockEntity,
-        Holder<Conduit<?, ?>> conduit, @Nullable TContext context) {
+    private static <TCap> TCap getProxiedCapability(Capability<TCap> capability, ConduitBundleBlockEntity blockEntity,
+        Holder<Conduit<?, ?>> conduit, @Nullable Direction context) {
         // No capabilities if there's no level or the chunk is not loaded.
         // The chunk load check has been added as a prior version of Ender IO checked that the node was loaded.
         // I was unable to find any exact crashes or cause a crash when that check was removed, but I want to be cautious nonetheless.
@@ -564,7 +566,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
             conduitConnections.put(conduit, oldConnectionContainer.copyFor(conduit));
 
             // Remove caches for the replaced conduit
-            neighbouringCapabilityCaches.remove(replacementCandidate.get());
+            removeCapabilityCache(replacementCandidate.get());
 
             if (!level.isClientSide()) {
                 ConduitNodeImpl oldNode = conduitNodes.remove(replacementCandidate.get());
@@ -693,7 +695,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
         conduits.remove(conduit);
         conduitConnections.remove(conduit);
         conduitNodes.remove(conduit);
-        neighbouringCapabilityCaches.remove(conduit);
+        removeCapabilityCache(conduit);
 
         // Remove neighbour connections
         removeNeighborConnections(conduit);
@@ -1023,6 +1025,16 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
         checkConnection = checkConnection.activate();
     }
 
+    private void removeCapabilityCache(Holder<Conduit<?, ?>> conduit) {
+        var cache = neighbouringCapabilityCaches.remove(conduit);
+        if (cache != null) cache.close();
+    }
+
+    private void closeCapabilityCaches() {
+        neighbouringCapabilityCaches.values().forEach(NeighboringCapabilityCaches::close);
+        neighbouringCapabilityCaches.clear();
+    }
+
     private NeighboringCapabilityCaches getCacheFor(Holder<Conduit<?, ?>> conduit) {
         return neighbouringCapabilityCaches.computeIfAbsent(conduit,
             c -> new NeighboringCapabilityCaches(this::onCapabilityInvalidated));
@@ -1032,7 +1044,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     // caches that aren't needed when conduits are removed.
     // Probably an "early optimization" but I don't think this really hurts.
     @Override
-    public @Nullable <T, C> T getCapability(Holder<Conduit<?, ?>> conduit, BlockCapability<T, C> capability, Direction neighborSide, @Nullable C context) {
+    public @Nullable <T> T getCapability(Holder<Conduit<?, ?>> conduit, Capability<T> capability, Direction neighborSide, @Nullable Direction context) {
         return getCacheFor(conduit).getCapability(capability, neighborSide, context);
     }
 
@@ -1092,7 +1104,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
     @Override
     public boolean hasFacade() {
         return !facadeProvider.isEmpty()
-                && facadeProvider.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER) != null;
+                && facadeProvider.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null) != null;
     }
 
     @Override
@@ -1101,7 +1113,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
             throw new IllegalStateException("This bundle has no facade provider.");
         }
 
-        var provider = facadeProvider.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER);
+        var provider = facadeProvider.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
         if (provider == null) {
             // TODO: How to handle this error gracefully?
             // For now default to a bedrock facade.
@@ -1117,7 +1129,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
             throw new IllegalStateException("This bundle has no facade provider.");
         }
 
-        var provider = facadeProvider.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER);
+        var provider = facadeProvider.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
         if (provider == null) {
             return FacadeType.BASIC;
         }
@@ -1280,6 +1292,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
     @Override
     public void onChunkUnloaded() {
+        closeCapabilityCaches();
         super.onChunkUnloaded();
 
         if (level == null) {
@@ -1304,6 +1317,7 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
 
     @Override
     public void setRemoved() {
+        closeCapabilityCaches();
         super.setRemoved();
 
         if (level != null && level.isClientSide()) {
@@ -1681,25 +1695,37 @@ public final class ConduitBundleBlockEntity extends EnderBlockEntity
         }
     }
 
-    private class NeighboringCapabilityCaches implements ConduitCapabilityAccessor {
+    private class NeighboringCapabilityCaches implements ConduitCapabilityAccessor, AutoCloseable {
         private final Runnable invalidationListener;
 
-        private final Map<Direction, Map<BlockCapability<?, ?>, Map<Object, BlockCapabilityCache<?, ?>>>> cachesByNeighbor = new EnumMap<>(Direction.class);
+        private final Map<Direction, Map<Capability<?>, Map<Direction, NeighborCapability<?>>>> cachesByNeighbor = new EnumMap<>(Direction.class);
 
         private NeighboringCapabilityCaches(Runnable invalidationListener) {
             this.invalidationListener = invalidationListener;
         }
 
+        public void refresh() {
+            cachesByNeighbor.values().forEach(capabilities -> capabilities.values().forEach(
+                sides -> sides.values().forEach(NeighborCapability::refresh)));
+        }
+
         @Override
-        public @Nullable <T, C> T getCapability(BlockCapability<T, C> capability, Direction neighborSide, @Nullable C context) {
+        public void close() {
+            cachesByNeighbor.values().forEach(capabilities -> capabilities.values().forEach(
+                sides -> sides.values().forEach(NeighborCapability::close)));
+            cachesByNeighbor.clear();
+        }
+
+        @Override
+        public @Nullable <T> T getCapability(Capability<T> capability, Direction neighborSide, @Nullable Direction context) {
             if (!(level instanceof ServerLevel serverLevel)) {
-                return level.getCapability(capability, getBlockPos().relative(neighborSide), context);
+                return level == null ? null : CapabilityUtil.get(level, getBlockPos().relative(neighborSide), capability, context);
             }
 
             var cachesByCapability = cachesByNeighbor.computeIfAbsent(neighborSide, d -> new HashMap<>());
             var cachesByContext = cachesByCapability.computeIfAbsent(capability, c -> new HashMap<>());
             var cache = cachesByContext.computeIfAbsent(context, c ->
-                BlockCapabilityCache.create(capability, serverLevel, getBlockPos().relative(neighborSide), context, () -> !isRemoved(), invalidationListener));
+                NeighborCapability.create(capability, serverLevel, getBlockPos().relative(neighborSide), context, () -> !isRemoved(), invalidationListener));
 
             //noinspection unchecked
             return (T)cache.getCapability();

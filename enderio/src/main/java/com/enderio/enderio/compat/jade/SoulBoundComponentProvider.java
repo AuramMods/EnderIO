@@ -1,5 +1,6 @@
 package com.enderio.enderio.compat.jade;
 
+import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
@@ -47,7 +48,7 @@ public enum SoulBoundComponentProvider implements IBlockComponentProvider, IServ
 
     @Override
     public void appendServerData(CompoundTag compoundTag, BlockAccessor blockAccessor) {
-        var soulBindable = blockAccessor.getLevel().getCapability(EnderIOCapabilities.SOUL_BINDABLE_BLOCK, blockAccessor.getPosition());
+        var soulBindable = CapabilityUtil.get(blockAccessor.getLevel(), blockAccessor.getPosition(), EnderIOCapabilities.SOUL_BINDABLE_BLOCK, null);
         if (soulBindable != null && soulBindable.hasSoul()) {
             compoundTag.putString("enderio_soulbound", soulBindable.getBoundSoul().entityTypeId().toString());
         }

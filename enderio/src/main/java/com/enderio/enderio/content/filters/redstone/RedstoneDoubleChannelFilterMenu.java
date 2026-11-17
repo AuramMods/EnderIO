@@ -27,9 +27,9 @@ public class RedstoneDoubleChannelFilterMenu extends AbstractContainerMenu {
         this.stack = stack;
 
         // TODO: Gross workaround, I think these menus should be rewritten sometime.
-        Object resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER);
+        Object resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER).orElse(null);
         if (resourceFilter == null) {
-            resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER);
+            resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER).orElse(null);
         }
         if (!(resourceFilter instanceof RedstoneOutputFilter filter)) {
             throw new IllegalArgumentException();

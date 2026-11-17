@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.tools.vials;
 
+import net.minecraft.core.Direction;
 import com.enderio.core.common.capability.StrictFluidHandlerItemStack;
 import com.enderio.core.common.item.ICustomCreativeTabEntries;
 import com.enderio.core.common.util.TooltipUtil;
@@ -24,13 +25,13 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import java.util.function.BiFunction;
 import net.neoforged.neoforge.common.Tags;
 import net.minecraftforge.event.entity.player.PlayerXpEvent;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 import java.util.List;
 
@@ -39,7 +40,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
 
     public static final ResourceLocation FILLED_MODEL_PROPERTY = EnderIO.rl("void_vial_filled");
 
-    public static final ICapabilityProvider<ItemStack, Void, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack, v) -> new StrictFluidHandlerItemStack(
+    public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack, v) -> new StrictFluidHandlerItemStack(
         () -> EIODataComponents.ITEM_FLUID_CONTENT, stack, Ints.saturatedCast(ExperienceUtil.getFluidFromLevel(10)), Tags.Fluids.EXPERIENCE);
 
     public VoidVialItem(Properties properties) {
@@ -49,20 +50,20 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
     @Override
     public void addAdditionalCreativeTabEntries(CreativeModeTab.ItemDisplayParameters parameters, CreativeModeTab.Output output) {
         var filledStack = new ItemStack(this);
-        var fluidHandler = filledStack.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = filledStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         fluidHandler.fill(new FluidStack(EIOFluids.XP_JUICE.source(), Integer.MAX_VALUE), IFluidHandler.FluidAction.EXECUTE);
         output.accept(filledStack);
     }
 
     public static boolean isFilled(ItemStack stack) {
-        var fluidHandler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         return fluidHandler != null && !fluidHandler.getFluidInTank(0).isEmpty();
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
-        IFluidHandlerItem capability = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        IFluidHandlerItem capability = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (capability == null || capability.getFluidInTank(0).getAmount() < ExperienceUtil.EXP_TO_FLUID) {
             return InteractionResultHolder.fail(stack);
         }
@@ -73,7 +74,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
 
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
-        IFluidHandlerItem capability = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        IFluidHandlerItem capability = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (!(livingEntity instanceof Player player) || capability == null) {
             return stack;
         }
@@ -106,7 +107,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
 
     @Override
     public int getBarWidth(ItemStack stack) {
-        var fluidHandler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandler != null) {
             return Math.round(fluidHandler.getFluidInTank(0).getAmount() * 13f / fluidHandler.getTankCapacity(0));
         }
@@ -125,7 +126,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
 
         tooltipComponents.add(ToolsLang.VOID_VIAL_HINT);
 
-        var tankCap = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        var tankCap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (tankCap != null) {
             FluidStack storedFluid = tankCap.getFluidInTank(0);
             int amount = tankCap.getFluidInTank(0).getAmount();
@@ -155,7 +156,7 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
         }
 
         if (stack.getItem() instanceof VoidVialItem) {
-            IFluidHandler cap = stack.getCapability(Capabilities.FluidHandler.ITEM);
+            IFluidHandler cap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
             if (cap != null && event.getOrb().getValue() > 0 && cap.getFluidInTank(0).getAmount() < cap.getTankCapacity(0)) {
                 int orbFluidVolume = event.getOrb().getValue() * ExperienceUtil.EXP_TO_FLUID;
 

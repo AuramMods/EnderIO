@@ -89,9 +89,9 @@ public record RedstoneConduit(ResourceLocation texture, ResourceLocation activeT
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
         if (slot == EXTRACT_FILTER_SLOT) {
-            return stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER) != null;
+            return stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER).orElse(null) != null;
         } else if (slot == INSERT_FILTER_SLOT) {
-            return stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER) != null;
+            return stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER).orElse(null) != null;
         }
 
         return false;

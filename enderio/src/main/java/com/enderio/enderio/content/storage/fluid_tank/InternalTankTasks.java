@@ -11,13 +11,13 @@ import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.neoforged.neoforge.capabilities.Capabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidType;
-import net.neoforged.neoforge.fluids.FluidUtil;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidType;
+import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 public class InternalTankTasks {
 
@@ -34,7 +34,7 @@ public class InternalTankTasks {
 
         // Only ever handle a single item at a time.
         ItemStack singleInputItem = inputItem.copyWithCount(1);
-        IFluidHandlerItem fluidHandlerItem = singleInputItem.getCapability(Capabilities.FluidHandler.ITEM);
+        IFluidHandlerItem fluidHandlerItem = singleInputItem.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandlerItem == null) {
             return;
         }
@@ -80,7 +80,7 @@ public class InternalTankTasks {
 
         // Only ever handle a single item at a time.
         ItemStack singleInputItem = inputItem.copyWithCount(1);
-        IFluidHandlerItem fluidHandlerItem = singleInputItem.getCapability(Capabilities.FluidHandler.ITEM);
+        IFluidHandlerItem fluidHandlerItem = singleInputItem.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandlerItem == null) {
             return;
         }

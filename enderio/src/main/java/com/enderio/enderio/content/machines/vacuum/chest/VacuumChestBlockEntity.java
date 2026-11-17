@@ -34,7 +34,7 @@ public class VacuumChestBlockEntity extends VacuumMachineBlockEntity<ItemEntity>
         return extractableGUISlot(MachineInventoryLayout.builder(), 27)
                 .slot(slot -> slot.guiInsert()
                         .guiExtract()
-                        .filter((i, s) -> s.getCapability(EnderIOCapabilities.ITEM_FILTER) != null))
+                        .filter((i, s) -> s.getCapability(EnderIOCapabilities.ITEM_FILTER).orElse(null) != null))
                 .slotAccess(FILTER)
                 .build();
     }
@@ -45,7 +45,7 @@ public class VacuumChestBlockEntity extends VacuumMachineBlockEntity<ItemEntity>
             ItemStack itemToReceive = entity.getItem().copy();
 
             // Enable the filter to adjust the amount to accept (limited item filter)
-            var filter = FILTER.getItemStack(this).getCapability(EnderIOCapabilities.ITEM_FILTER);
+            var filter = FILTER.getItemStack(this).getCapability(EnderIOCapabilities.ITEM_FILTER).orElse(null);
             if (filter != null) {
                 itemToReceive = filter.test(itemToReceive, new ItemFilterContext(getInventory(), ItemFilterDirection.INSERT));
             }
@@ -72,7 +72,7 @@ public class VacuumChestBlockEntity extends VacuumMachineBlockEntity<ItemEntity>
 
     @Override
     public Predicate<ItemEntity> getFilter() {
-        var filter = FILTER.getItemStack(this).getCapability(EnderIOCapabilities.ITEM_FILTER);
+        var filter = FILTER.getItemStack(this).getCapability(EnderIOCapabilities.ITEM_FILTER).orElse(null);
         if (filter != null) {
             return itemEntity -> !filter.test(itemEntity.getItem(), new ItemFilterContext(getInventory(), ItemFilterDirection.INSERT)).isEmpty();
         }

@@ -1,6 +1,6 @@
 package com.enderio.enderio.content.machines.solar_panel;
 
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 
 public class SolarPanelEnergyStorage implements IEnergyStorage {
     private final SolarPanelNode node;

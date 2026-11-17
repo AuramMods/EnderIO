@@ -13,8 +13,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.world.item.DyeColor;
-import net.neoforged.neoforge.capabilities.BlockCapability;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,14 +109,14 @@ public interface ConduitNode extends ConduitCapabilityAccessor, ConnectionReader
      * @throws IllegalStateException if this node is not loaded
      */
     @Override
-    @Nullable <T, C> T getCapability(BlockCapability<T, C> capability, Direction neighborSide, @Nullable C context);
+    @Nullable <T> T getCapability(Capability<T> capability, Direction neighborSide, @Nullable Direction context);
 
     /**
      * @throws IllegalStateException if this node is not loaded
      */
     @Override
     @Nullable
-    default <T> T getSidedCapability(BlockCapability<T, Direction> capability, Direction neighborSide) {
+    default <T> T getSidedCapability(Capability<T> capability, Direction neighborSide) {
         return ConduitCapabilityAccessor.super.getSidedCapability(capability, neighborSide);
     }
 

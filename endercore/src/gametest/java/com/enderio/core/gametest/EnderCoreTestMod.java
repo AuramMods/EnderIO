@@ -3,6 +3,7 @@ package com.enderio.core.gametest;
 import net.minecraft.gametest.framework.GlobalTestReporter;
 import net.minecraft.gametest.framework.JUnitLikeTestReporter;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import java.io.File;
 import javax.xml.parsers.ParserConfigurationException;
@@ -11,6 +12,7 @@ import javax.xml.parsers.ParserConfigurationException;
 @Mod("endercore_tests")
 public class EnderCoreTestMod {
     public EnderCoreTestMod() throws ParserConfigurationException {
+        CapabilityTestBlocks.register(FMLJavaModLoadingContext.get().getModEventBus());
         File report = new File(System.getProperty("endercore.gametest.report", "gametest-results.xml"));
         report.getAbsoluteFile().getParentFile().mkdirs();
         GlobalTestReporter.replaceWith(new JUnitLikeTestReporter(report));

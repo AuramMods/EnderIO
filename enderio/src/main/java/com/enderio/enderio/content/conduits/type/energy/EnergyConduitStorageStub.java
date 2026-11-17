@@ -1,6 +1,6 @@
 package com.enderio.enderio.content.conduits.type.energy;
 
-import net.neoforged.neoforge.energy.EmptyEnergyStorage;
+import net.minecraftforge.energy.EmptyEnergyStorage;
 
 // TODO: 26.1 Use EmptyEnergyHandler.
 // We need this because EmptyEnergyStorage returns false on canExtract

@@ -102,7 +102,7 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
 
     @Nullable
     protected SoulFilter getSoulFilter() {
-        return FILTER.getItemStack(this).getCapability(EnderIOCapabilities.SOUL_FILTER);
+        return FILTER.getItemStack(this).getCapability(EnderIOCapabilities.SOUL_FILTER).orElse(null);
     }
 
     @Override

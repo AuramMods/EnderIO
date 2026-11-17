@@ -1,5 +1,6 @@
 package com.enderio.modded_conduits.common.modules.appeng;
 
+import net.minecraft.core.Direction;
 import appeng.api.ids.AEComponents;
 import com.enderio.enderio.api.conduits.facade.ConduitFacadeProvider;
 import com.enderio.enderio.api.conduits.facade.FacadeType;
@@ -9,14 +10,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import java.util.function.BiFunction;
 
 /**
  * Exposes AE2 facades to the Ender IO facade system.
  */
 public class AE2ConduitFacadeProvider implements ConduitFacadeProvider {
 
-    public static final ICapabilityProvider<ItemStack, Void, ConduitFacadeProvider> PROVIDER = (stack,
+    public static final BiFunction<ItemStack, Direction, ConduitFacadeProvider> PROVIDER = (stack,
             v) -> new AE2ConduitFacadeProvider(stack);
 
     private final ItemStack itemStack;

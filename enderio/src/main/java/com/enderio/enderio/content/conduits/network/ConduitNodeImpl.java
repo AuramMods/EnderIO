@@ -16,8 +16,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.world.item.DyeColor;
-import net.neoforged.neoforge.capabilities.BlockCapability;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -234,7 +234,7 @@ public final class ConduitNodeImpl implements INetworkNode<ConduitNetworkImpl, C
     // region World Interaction
 
     @Override
-    public @Nullable <T, C> T getCapability(BlockCapability<T, C> capability, Direction neighborSide, @Nullable C context) {
+    public @Nullable <T> T getCapability(Capability<T> capability, Direction neighborSide, @Nullable Direction context) {
         ensureValid();
         // noinspection DataFlowIssue
         return conduitBundle.getCapability(conduit, capability, neighborSide, context);

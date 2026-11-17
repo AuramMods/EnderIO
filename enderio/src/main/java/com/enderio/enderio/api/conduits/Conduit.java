@@ -28,7 +28,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipProvider;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.BlockCapability;
+import net.minecraftforge.common.capabilities.Capability;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -73,7 +73,7 @@ public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, 
 
     /**
      * Proxy a capability to the conduit bundle block.
-     * @deprecated Use {@link #proxyCapability(Level, ConnectionReader, ConduitNode, BlockCapability, Object)} instead.
+     * @deprecated Use {@link #proxyCapability(Level, ConnectionReader, ConduitNode, Capability, Direction)} instead.
      * @param level the level.
      * @param node the node that is being queried for proxying.
      * @param capability the capability being requested.
@@ -82,8 +82,8 @@ public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, 
      */
     @Deprecated(since = "8.2.8")
     @Nullable
-    default <TCapability, TContext> TCapability proxyCapability(Level level, ConduitNode node,
-            BlockCapability<TCapability, TContext> capability, @Nullable TContext context) {
+    default <TCapability> TCapability proxyCapability(Level level, ConduitNode node,
+            Capability<TCapability> capability, @Nullable Direction context) {
         return null;
     }
 
@@ -97,8 +97,8 @@ public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, 
      * @return the capability or null if it is not exposed.
      */
     @Nullable
-    default <TCapability, TContext> TCapability proxyCapability(Level level, ConnectionReader connectionReader, @Nullable ConduitNode node,
-        BlockCapability<TCapability, TContext> capability, @Nullable TContext context) {
+    default <TCapability> TCapability proxyCapability(Level level, ConnectionReader connectionReader, @Nullable ConduitNode node,
+        Capability<TCapability> capability, @Nullable Direction context) {
         // Old contract was non-null node - uphold this.
         if (node != null) {
             return proxyCapability(level, node, capability, context);

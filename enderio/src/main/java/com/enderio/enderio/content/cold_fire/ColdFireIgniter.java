@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.cold_fire;
 
+import net.minecraft.core.Direction;
 import com.enderio.core.common.capability.StrictFluidHandlerItemStack;
 import com.enderio.core.common.item.ICustomCreativeTabEntries;
 import com.enderio.enderio.foundation.tag.EIOTags;
@@ -24,18 +25,18 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import java.util.function.BiFunction;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import org.apache.logging.log4j.LogManager;
 
 import java.util.List;
 
 public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
 
-    public static final ICapabilityProvider<ItemStack, Void, IFluidHandlerItem> FLUID_HANDLER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER =
         (stack, v) -> new StrictFluidHandlerItemStack(() -> EIODataComponents.ITEM_FLUID_CONTENT, stack, 1000, EIOTags.Fluids.COLD_FIRE_IGNITER_FUEL);
 
     public ColdFireIgniter(Properties properties) {
@@ -46,7 +47,7 @@ public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
     public InteractionResult useOn(UseOnContext context) {
         ItemStack itemstack = context.getItemInHand();
 
-        var fluidHandler = itemstack.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = itemstack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandler != null) {
             if (fluidHandler.drain(10, IFluidHandler.FluidAction.SIMULATE).getAmount() == 10) {
                 fluidHandler.drain(10, IFluidHandler.FluidAction.EXECUTE);
@@ -73,7 +74,7 @@ public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
-        return stack.getCapability(Capabilities.FluidHandler.ITEM) != null;
+        return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null) != null;
     }
 
     @Override
@@ -83,7 +84,7 @@ public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
 
     @Override
     public int getBarWidth(ItemStack stack) {
-        var fluidHandler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandler != null) {
             return Math.round(fluidHandler.getFluidInTank(0).getAmount() * 13f / fluidHandler.getTankCapacity(0));
         }
@@ -95,7 +96,7 @@ public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
     public void appendHoverText(ItemStack stack, TooltipContext tooltipContext, List<Component> components, TooltipFlag flag) {
         super.appendHoverText(stack, tooltipContext, components, flag);
 
-        var tankCap = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        var tankCap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (tankCap != null) {
             boolean isOneTank = tankCap.getTanks() == 1;
             if (!isOneTank) {
@@ -113,7 +114,7 @@ public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
     public void addAdditionalCreativeTabEntries(CreativeModeTab.ItemDisplayParameters parameters, CreativeModeTab.Output output) {
         ItemStack is = new ItemStack(this);
 
-        var fluidHandler = is.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = is.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandler != null) {
             if (fluidHandler instanceof StrictFluidHandlerItemStack strictFluidHandlerItemStack) {
                 strictFluidHandlerItemStack.setFluid(new FluidStack(EIOFluids.VAPOR_OF_LEVITY.source(), fluidHandler.getTankCapacity(0)));

@@ -1,6 +1,6 @@
 package com.enderio.enderio.foundation.io.energy;
 
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 
 /**
  * Machine energy storage extensions.

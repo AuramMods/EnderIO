@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.filters.fluid;
 
+import net.minecraft.core.Direction;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.filter.FluidFilter;
 import com.enderio.enderio.content.filters.AbstractFilterItem;
@@ -16,14 +17,14 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import java.util.function.BiFunction;
 
 import java.util.List;
 import java.util.function.Supplier;
 
 public class EnderFluidFilterItem extends AbstractFilterItem<EnderFluidFilter> {
 
-    public static final ICapabilityProvider<ItemStack, Void, FluidFilter> FLUID_FILTER_PROVIDER = (stack, v) -> stack
+    public static final BiFunction<ItemStack, Direction, FluidFilter> FLUID_FILTER_PROVIDER = (stack, v) -> stack
             .getOrDefault(EIODataComponents.FLUID_FILTER, EnderFluidFilter.EMPTY);
 
     private final Type type;

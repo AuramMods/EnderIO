@@ -10,7 +10,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.common.util.INBTSerializable;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
 public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializable<IntTag>, IMachineEnergyStorage {

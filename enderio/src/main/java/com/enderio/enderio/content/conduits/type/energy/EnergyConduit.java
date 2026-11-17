@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.conduits.type.energy;
 
+import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.ConduitCapabilityAccessor;
@@ -26,10 +27,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.BlockCapability;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.EmptyEnergyStorage;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.energy.EmptyEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.function.Consumer;
@@ -72,7 +73,7 @@ public record EnergyConduit(ResourceLocation texture, Component description, int
 
     @Override
     public boolean canConnectToBlock(Level level, ConduitCapabilityAccessor capabilityAccessor, BlockPos conduitPos, Direction direction) {
-        IEnergyStorage capability = capabilityAccessor.getSidedCapability(Capabilities.EnergyStorage.BLOCK, direction);
+        IEnergyStorage capability = capabilityAccessor.getSidedCapability(ForgeCapabilities.ENERGY, direction);
         return capability != null;
     }
 
@@ -83,10 +84,11 @@ public record EnergyConduit(ResourceLocation texture, Component description, int
 
     @SuppressWarnings("unchecked")
     @Override
-    public @Nullable <TCapability, TContext> TCapability proxyCapability(Level level, ConnectionReader connectionReader, @Nullable ConduitNode node,
-        BlockCapability<TCapability, TContext> capability, @Nullable TContext context) {
+    public @Nullable <TCapability> TCapability proxyCapability(Level level, ConnectionReader connectionReader, @Nullable ConduitNode node,
+        Capability<TCapability> capability, @Nullable Direction context) {
 
-        if (Capabilities.EnergyStorage.BLOCK == capability && context instanceof Direction side) {
+        if (ForgeCapabilities.ENERGY == capability && context != null) {
+            Direction side = context;
             // Disabled, do not offer the capability (so if we're disconnected we allow auto connect).
             // Note that this will introduce a minor quirk - if disabled, the cap will be invisible until re-enabled.
             // in the case of Energizer rods in Powah, you will not be able to place one against the disabled conduit.
@@ -114,7 +116,7 @@ public record EnergyConduit(ResourceLocation texture, Component description, int
 
     @Override
     public void onRemoved(ConduitNode node, Level level, BlockPos pos) {
-        level.invalidateCapabilities(pos);
+        CapabilityUtil.refresh(level, pos);
     }
 
     @Override

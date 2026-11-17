@@ -40,7 +40,7 @@ public class EmptySoulBindableIngredient implements ICustomIngredient {
         // Attempt to get the unbound item.
         var stack = item.getDefaultInstance();
         if (!SoulBoundUtils.canBindSoul(stack)) {
-            SoulHandler soulHandler = stack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM);
+            SoulHandler soulHandler = stack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM).orElse(null);
             if (soulHandler != null && soulHandler.tryInsertSoul(Soul.EMPTY, true)) { //Can't bind a soul, but can store one
                 itemStack = stack;
                 return;

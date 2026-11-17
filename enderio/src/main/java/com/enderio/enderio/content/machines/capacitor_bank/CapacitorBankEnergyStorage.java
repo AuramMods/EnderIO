@@ -1,7 +1,7 @@
 package com.enderio.enderio.content.machines.capacitor_bank;
 
 import net.minecraft.core.Direction;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
 public record CapacitorBankEnergyStorage(CapacitorBankBlockEntity capacitorBank, @Nullable Direction side) implements IEnergyStorage {

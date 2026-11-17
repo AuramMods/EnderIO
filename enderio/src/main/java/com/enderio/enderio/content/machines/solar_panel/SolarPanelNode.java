@@ -2,7 +2,7 @@ package com.enderio.enderio.content.machines.solar_panel;
 
 import com.enderio.core.common.graph.INetworkNode;
 import com.enderio.enderio.foundation.io.TransferUtil;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;

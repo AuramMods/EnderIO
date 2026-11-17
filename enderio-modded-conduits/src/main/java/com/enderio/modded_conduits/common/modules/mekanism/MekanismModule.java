@@ -56,7 +56,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModList;
-import net.neoforged.neoforge.capabilities.BlockCapability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.neoforged.neoforge.capabilities.ItemCapability;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.conditions.ICondition;
@@ -140,10 +140,10 @@ public class MekanismModule implements ConduitCommonModule {
     public static class Capabilities {
         public static final ItemCapability<ChemicalFilter, Void> CHEMICAL_FILTER = ItemCapability.createVoid(EnderIO.rl("chemical_filter"), ChemicalFilter.class);
 
-        public static final BlockCapability<IChemicalHandler, Direction> CHEMICAL = BlockCapability.createSided(
+        public static final Capability<IChemicalHandler> CHEMICAL = BlockCapability.createSided(
                 ResourceLocation.fromNamespaceAndPath(MekanismAPI.MEKANISM_MODID, "chemical_handler"),
                 IChemicalHandler.class);
-        public static final BlockCapability<IHeatHandler, Direction> HEAT = BlockCapability.createSided(
+        public static final Capability<IHeatHandler> HEAT = BlockCapability.createSided(
                 ResourceLocation.fromNamespaceAndPath(MekanismAPI.MEKANISM_MODID, "heat_handler"), IHeatHandler.class);
 
         public static class Item {

@@ -20,10 +20,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import com.enderio.core.common.capability.NeighborCapability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import java.util.function.BiFunction;
+import net.minecraftforge.energy.IEnergyStorage;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -35,14 +35,14 @@ import java.util.Set;
 
 public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindable {
 
-    public static final ICapabilityProvider<SolarPanelBlockEntity, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER = (
+    public static final BiFunction<SolarPanelBlockEntity, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER = (
         be, side) -> side != Direction.UP ? be.energyStorage : null;
     
     private final ISolarPanelTier tier;
     private final SolarPanelNode node;
     private final SolarPanelEnergyStorage energyStorage;
 
-    private final Map<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyStorageCaches = new EnumMap<>(Direction.class);
+    private final Map<Direction, NeighborCapability<IEnergyStorage>> energyStorageCaches = new EnumMap<>(Direction.class);
     private final Set<IEnergyStorage> validPushTargetCache = new HashSet<>();
     private boolean isValidPushTargetCacheDirty = true;
 
@@ -67,6 +67,7 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
 
     @Override
     public void setRemoved() {
+        closeEnergyCapabilityCaches();
         if (node.isValid()) {
             node.getNetwork().remove(node);
         }
@@ -96,11 +97,25 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
         }
     }
 
+    @Override
+    public void onChunkUnloaded() {
+        closeEnergyCapabilityCaches();
+        super.onChunkUnloaded();
+    }
+
+    private void closeEnergyCapabilityCaches() {
+        energyStorageCaches.values().forEach(NeighborCapability::close);
+        energyStorageCaches.clear();
+        validPushTargetCache.clear();
+        isValidPushTargetCacheDirty = true;
+    }
+
     Set<IEnergyStorage> getValidPushTargets() {
         if (!(level instanceof ServerLevel serverLevel)) {
             throw new IllegalStateException("getValidPushTargets can only be called on the server.");
         }
 
+        energyStorageCaches.values().forEach(NeighborCapability::refresh);
         if (isValidPushTargetCacheDirty) {
             validPushTargetCache.clear();
             for (Direction side : Direction.values()) {
@@ -108,8 +123,8 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
                     continue;
                 }
 
-                var cache = energyStorageCaches.computeIfAbsent(side, ignored -> BlockCapabilityCache.create(
-                    Capabilities.EnergyStorage.BLOCK,
+                var cache = energyStorageCaches.computeIfAbsent(side, ignored -> NeighborCapability.create(
+                    ForgeCapabilities.ENERGY,
                     serverLevel,
                     getBlockPos().relative(side),
                     side.getOpposite(),

@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.travel;
 
+import net.minecraft.core.Direction;
 import com.enderio.core.client.item.AdvancedTooltipProvider;
 import com.enderio.core.client.item.EnergyBarDecorator;
 import com.enderio.core.common.energy.ItemStackEnergy;
@@ -18,16 +19,16 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import java.util.function.BiFunction;
 import net.neoforged.neoforge.energy.ComponentEnergyStorage;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 
 import java.util.List;
 
 public class TravelStaffItem extends Item implements AdvancedTooltipProvider, ICustomCreativeTabEntries {
 
-    public static final ICapabilityProvider<ItemStack, Void, IEnergyStorage> ENERGY_STORAGE_PROVIDER = (stack,
+    public static final BiFunction<ItemStack, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER = (stack,
             v) -> new ComponentEnergyStorage(stack, EIODataComponents.ENERGY, TravelStaffItem.getMaxEnergy());
 
     public TravelStaffItem(Properties properties) {
@@ -121,7 +122,7 @@ public class TravelStaffItem extends Item implements AdvancedTooltipProvider, IC
 
     @Override
     public int getBarWidth(ItemStack stack) {
-        var energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        var energyStorage = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
         if (energyStorage != null) {
             return Math.round(energyStorage.getEnergyStored() * 13.0F / energyStorage.getMaxEnergyStored());
         }

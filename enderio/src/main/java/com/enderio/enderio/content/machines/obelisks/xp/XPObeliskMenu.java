@@ -7,7 +7,7 @@ import com.enderio.enderio.init.EIOMenus;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 public class XPObeliskMenu extends MachineMenu<XPObeliskBlockEntity> {
 

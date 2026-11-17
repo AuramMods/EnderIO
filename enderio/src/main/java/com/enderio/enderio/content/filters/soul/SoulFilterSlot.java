@@ -22,7 +22,7 @@ public class SoulFilterSlot extends FilterSlot<Soul> {
 
     @Override
     public Optional<Soul> getResourceFrom(ItemStack itemStack) {
-        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable != null) {
             return Optional.of(soulBindable.getBoundSoul());
         }

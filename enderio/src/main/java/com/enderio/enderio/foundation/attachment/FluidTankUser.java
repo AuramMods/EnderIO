@@ -7,8 +7,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import java.util.function.BiFunction;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public interface FluidTankUser {
 
@@ -26,7 +26,7 @@ public interface FluidTankUser {
         getFluidHandler().deserializeNBT(lookupProvider, tag.getCompound(MachineNBTKeys.FLUIDS));
     }
 
-    ICapabilityProvider<BlockEntity, Direction, IFluidHandler> FLUID_HANDLER_PROVIDER = (be, side) -> {
+    BiFunction<BlockEntity, Direction, IFluidHandler> FLUID_HANDLER_PROVIDER = (be, side) -> {
         if (be instanceof FluidTankUser user) {
             return user.getFluidHandler().getForSide(side);
         }

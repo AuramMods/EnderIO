@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.filters.item.limited;
 
+import net.minecraft.core.Direction;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.filter.ItemFilter;
 import com.enderio.enderio.content.filters.AbstractFilterItem;
@@ -14,14 +15,14 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraft.world.item.TooltipFlag;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import java.util.function.BiFunction;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
 public class LimitedItemFilterItem extends AbstractFilterItem<LimitedItemFilter> {
 
-    public static final ICapabilityProvider<ItemStack, Void, ItemFilter> ITEM_FILTER_PROVIDER = (stack, v) -> stack
+    public static final BiFunction<ItemStack, Direction, ItemFilter> ITEM_FILTER_PROVIDER = (stack, v) -> stack
             .getOrDefault(EIODataComponents.LIMITED_ITEM_FILTER, LimitedItemFilter.EMPTY);
 
     public LimitedItemFilterItem(Properties properties) {

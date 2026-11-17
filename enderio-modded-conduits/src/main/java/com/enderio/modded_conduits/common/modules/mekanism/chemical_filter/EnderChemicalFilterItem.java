@@ -1,5 +1,6 @@
 package com.enderio.modded_conduits.common.modules.mekanism.chemical_filter;
 
+import net.minecraft.core.Direction;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.content.filters.AbstractFilterItem;
 import com.enderio.enderio.content.filters.AbstractFilterMenu;
@@ -14,7 +15,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import java.util.function.BiFunction;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.function.Supplier;
 
 public class EnderChemicalFilterItem extends AbstractFilterItem<EnderChemicalFilter> {
 
-    public static final ICapabilityProvider<ItemStack, Void, ChemicalFilter> CHEMICAL_FILTER_PROVIDER = (stack, v) -> stack
+    public static final BiFunction<ItemStack, Direction, ChemicalFilter> CHEMICAL_FILTER_PROVIDER = (stack, v) -> stack
         .getOrDefault(MekanismModule.CHEMICAL_FILTER, EnderChemicalFilter.EMPTY);
 
     private final Type type;

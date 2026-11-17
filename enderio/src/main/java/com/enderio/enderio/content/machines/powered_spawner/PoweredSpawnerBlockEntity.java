@@ -232,7 +232,7 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
         return MachineInventoryLayout.builder()
                 .capacitor()
                 .inputSlot((i, stack) -> {
-                    var soulHandler = stack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM);
+                    var soulHandler = stack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM).orElse(null);
                     return soulHandler != null && soulHandler.tryInsertSoul(getSoulForCapture(), true);
                 })
                 .slotAccess(INPUT)

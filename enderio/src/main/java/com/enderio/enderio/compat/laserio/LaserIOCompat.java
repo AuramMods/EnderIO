@@ -1,5 +1,6 @@
 package com.enderio.enderio.compat.laserio;
 
+import net.minecraft.core.Direction;
 import com.direwolf20.laserio.common.items.cards.BaseCard;
 import com.direwolf20.laserio.setup.Registration;
 import com.enderio.enderio.api.EnderIOCapabilities;
@@ -7,20 +8,20 @@ import com.enderio.enderio.api.filter.FluidFilter;
 import com.enderio.enderio.api.filter.ItemFilter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import java.util.function.BiFunction;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
 public class LaserIOCompat {
-    public static final ICapabilityProvider<ItemStack, Void, ItemFilter> CARD_ITEM_FILTER_PROVIDER = (stack,
+    public static final BiFunction<ItemStack, Direction, ItemFilter> CARD_ITEM_FILTER_PROVIDER = (stack,
         v) -> new LaserItemFilter(BaseCard.getFilter(stack));
 
-    public static final ICapabilityProvider<ItemStack, Void, ItemFilter> ITEM_FILTER_PROVIDER = (stack,
+    public static final BiFunction<ItemStack, Direction, ItemFilter> ITEM_FILTER_PROVIDER = (stack,
         v) -> new LaserItemFilter(stack);
 
-    public static final ICapabilityProvider<ItemStack, Void, FluidFilter> CARD_FLUID_FILTER_PROVIDER = (stack,
+    public static final BiFunction<ItemStack, Direction, FluidFilter> CARD_FLUID_FILTER_PROVIDER = (stack,
         v) -> new LaserFluidFilter(BaseCard.getFilter(stack));
 
-    public static final ICapabilityProvider<ItemStack, Void, FluidFilter> FLUID_FILTER_PROVIDER = (stack,
+    public static final BiFunction<ItemStack, Direction, FluidFilter> FLUID_FILTER_PROVIDER = (stack,
         v) -> new LaserFluidFilter(stack);
 
     public static void init(IEventBus eventBus) {

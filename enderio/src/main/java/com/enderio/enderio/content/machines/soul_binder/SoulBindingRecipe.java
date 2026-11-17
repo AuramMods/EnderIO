@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import java.util.List;
 import java.util.Objects;
@@ -57,8 +57,8 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
             result.applyComponents(input.itemToBind.getComponents());
         }
 
-        var vialSoulBindable = vial.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
-        var resultSoulBinding = result.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var vialSoulBindable = vial.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
+        var resultSoulBinding = result.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
 
         if (vialSoulBindable != null && resultSoulBinding != null) {
             resultSoulBinding.bindSoul(vialSoulBindable.getBoundSoul());
@@ -87,7 +87,7 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
             return false;
         }
 
-        var soulBindable = recipeInput.getItem(0).getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = recipeInput.getItem(0).getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable == null || !soulBindable.hasSoul()) {
             return false;
         }

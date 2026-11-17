@@ -33,9 +33,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.capabilities.Capabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -85,7 +85,7 @@ public class WirelessChargerBlockEntity extends PoweredMachineBlockEntity implem
             for (int i = 0; i < inventory.getContainerSize(); i++) {
                 ItemStack stack = inventory.getItem(i);
                 @Nullable
-                IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+                IEnergyStorage cap = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
                 if (cap != null && cap.canReceive()) {
                     int received = cap.receiveEnergy(toDistribute, false);
                     energyStorage.consumeEnergy(received);
@@ -103,7 +103,7 @@ public class WirelessChargerBlockEntity extends PoweredMachineBlockEntity implem
                         continue;
                     }
                     @Nullable
-                    IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+                    IEnergyStorage cap = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
                     if (cap != null && cap.canReceive()) {
                         int received = cap.receiveEnergy(toDistribute, false);
                         energyStorage.consumeEnergy(received);

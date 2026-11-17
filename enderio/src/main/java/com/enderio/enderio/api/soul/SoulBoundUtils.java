@@ -20,7 +20,7 @@ public class SoulBoundUtils {
      * @return whether the item can be bound.
      */
     public static boolean canBindSoul(ItemStack itemStack) {
-        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable == null) {
             return false;
         }
@@ -35,7 +35,7 @@ public class SoulBoundUtils {
      * @return whether it can be bound.
      */
     public static boolean canBindSoul(ItemStack itemStack, Soul soul) {
-        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable == null) {
             return false;
         }
@@ -49,7 +49,7 @@ public class SoulBoundUtils {
      * @return the bound soul, or {@link Soul#EMPTY} if there is no soul bound.
      */
     public static Soul getBoundSoul(ItemStack itemStack) {
-        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable == null) {
             return Soul.EMPTY;
         }
@@ -63,7 +63,7 @@ public class SoulBoundUtils {
      * @return whether there is a bound soul.
      */
     public static boolean isBound(ItemStack itemStack) {
-        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable == null) {
             return false;
         }
@@ -78,7 +78,7 @@ public class SoulBoundUtils {
      * @return whether the binding was successful
      */
     public static boolean tryBindSoul(ItemStack itemStack, Soul soul) {
-        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable == null) {
             return false;
         }
@@ -122,7 +122,7 @@ public class SoulBoundUtils {
         ItemStack result = itemStack.copy();
 
         // If there's no binding possible, allow it through
-        var soulBindable = result.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = result.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable == null) {
             return Optional.of(result);
         }

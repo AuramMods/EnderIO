@@ -65,7 +65,7 @@ public class ShapedEntityStorageCategoryExtension implements ICraftingCategoryEx
             }
         } else if (output.isPresent()) {
             ItemStack itemStack = output.get().getTypedValue().getIngredient();
-            var outputSoulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+            var outputSoulBindable = itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
 
             if (outputSoulBindable != null) {
                 results = List.of(itemStack);

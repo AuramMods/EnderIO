@@ -1,0 +1,27 @@
+// Export the real main compile classpath/source list for a direct diagnostic javac run.
+// This avoids transferring thousands of compiler diagnostics through Gradle's worker protocol.
+// It is supplemental: the normal Gradle build still checks annotation processors and packaging.
+gradle.projectsEvaluated {
+    def target = gradle.rootProject.findProject(':enderio')
+    if (target != null) {
+        def compile = target.tasks.named('compileJava')
+        target.tasks.register('portCompilerArguments') {
+            dependsOn(compile.get().classpath)
+            doLast {
+                def output = new File(gradle.rootProject.projectDir, 'build/port-evidence')
+                output.mkdirs()
+                def classes = new File(output, 'diagnostic-classes')
+                classes.mkdirs()
+                def task = compile.get()
+                def args = ['--release', '17', '-encoding', 'UTF-8', '-proc:none',
+                            '-Xmaxerrs', '10000', '-Xmaxwarns', '100',
+                            '-classpath', task.classpath.asPath, '-d', classes.absolutePath]
+                args.addAll(task.source.files.collect { it.absolutePath }.sort())
+                new File(output, 'main-javac.args').text = args.collect {
+                    '"' + it.replace('\\', '\\\\').replace('"', '\\"') + '"'
+                }.join('\n') + '\n'
+                println('Wrote build/port-evidence/main-javac.args for supplemental javac diagnostics')
+            }
+        }
+    }
+}

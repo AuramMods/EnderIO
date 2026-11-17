@@ -31,8 +31,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
@@ -112,7 +112,7 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
 
     @Override
     public boolean canConnectToBlock(Level level, ConduitCapabilityAccessor capabilityAccessor, BlockPos conduitPos, Direction direction) {
-        IItemHandler capability = capabilityAccessor.getSidedCapability(Capabilities.ItemHandler.BLOCK, direction);
+        IItemHandler capability = capabilityAccessor.getSidedCapability(ForgeCapabilities.ITEM_HANDLER, direction);
         return capability != null;
     }
 
@@ -152,7 +152,7 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
 
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
-        return stack.getCapability(EnderIOCapabilities.ITEM_FILTER) != null;
+        return stack.getCapability(EnderIOCapabilities.ITEM_FILTER).orElse(null) != null;
     }
 
     @Override

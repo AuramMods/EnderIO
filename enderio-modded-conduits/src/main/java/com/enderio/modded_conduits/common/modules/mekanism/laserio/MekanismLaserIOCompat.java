@@ -1,5 +1,6 @@
 package com.enderio.modded_conduits.common.modules.mekanism.laserio;
 
+import net.minecraft.core.Direction;
 import com.direwolf20.laserio.common.items.cards.BaseCard;
 import com.direwolf20.laserio.setup.Registration;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
@@ -7,14 +8,14 @@ import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.Chemi
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import java.util.function.BiFunction;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
 public class MekanismLaserIOCompat {
-    public static final ICapabilityProvider<ItemStack, Void, ChemicalFilter> CARD_CHEMICAL_FILTER_PROVIDER = (stack,
+    public static final BiFunction<ItemStack, Direction, ChemicalFilter> CARD_CHEMICAL_FILTER_PROVIDER = (stack,
             v) -> new LaserChemicalFilter(BaseCard.getFilter(stack));
 
-    public static final ICapabilityProvider<ItemStack, Void, ChemicalFilter> CHEMICAL_FILTER_PROVIDER = (stack,
+    public static final BiFunction<ItemStack, Direction, ChemicalFilter> CHEMICAL_FILTER_PROVIDER = (stack,
             v) -> new LaserChemicalFilter(stack);
 
     public static void init(IEventBus eventBus) {

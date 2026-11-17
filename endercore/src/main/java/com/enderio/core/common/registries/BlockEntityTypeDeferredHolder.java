@@ -4,14 +4,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
+import com.enderio.core.common.capability.BoundCapabilityProvider;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -44,40 +41,13 @@ public final class BlockEntityTypeDeferredHolder<B extends BlockEntity> implemen
     }
 
     /** Lazily constructs one provider per capability/side and participates in Forge invalidation. */
-    public static final class BoundCapabilities<B extends BlockEntity> implements ICapabilityProvider {
-        private final B entity;
-        private final List<AttachedCapability<B, ?>> factories;
-        private final Map<Capability<?>, Map<Direction, LazyOptional<?>>> instances = new HashMap<>();
-
+    public static final class BoundCapabilities<B extends BlockEntity> extends BoundCapabilityProvider<B> {
         public BoundCapabilities(B entity, List<AttachedCapability<B, ?>> factories) {
-            this.entity = entity;
-            this.factories = List.copyOf(factories);
+            super(entity, factories.stream().<Binding<B, ?>>map(BoundCapabilities::binding).toList());
         }
 
-        @Override
-        public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction side) {
-            var sides = instances.get(capability);
-            if (sides != null && sides.containsKey(side)) {
-                return sides.get(side).cast();
-            }
-            for (var binding : factories) {
-                if (binding.capability() != capability) continue;
-                Object value = binding.factory().apply(entity, side);
-                if (value != null) {
-                    LazyOptional<?> instance = LazyOptional.of(() -> value);
-                    instances.computeIfAbsent(capability, ignored -> new HashMap<>()).put(side, instance);
-                    return instance.cast();
-                }
-            }
-            return LazyOptional.empty();
-        }
-
-        public void invalidate() {
-            // Remove before notifying listeners, so an observer cannot retrieve
-            // an optional which is being invalidated from this cache.
-            var previous = List.copyOf(instances.values());
-            instances.clear();
-            previous.forEach(sides -> sides.values().forEach(LazyOptional::invalidate));
+        private static <B extends BlockEntity, C> Binding<B, C> binding(AttachedCapability<B, C> binding) {
+            return new Binding<>(binding.capability(), binding.factory());
         }
     }
 }

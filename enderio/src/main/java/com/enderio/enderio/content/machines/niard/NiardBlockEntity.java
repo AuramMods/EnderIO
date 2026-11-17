@@ -35,11 +35,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.fluids.FluidType;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.fluids.FluidType;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
@@ -232,7 +232,7 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
     }
 
     public boolean acceptItemDrain(ItemStack item) {
-        IFluidHandlerItem fluidHandlerCap = item.getCapability(Capabilities.FluidHandler.ITEM);
+        IFluidHandlerItem fluidHandlerCap = item.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         return fluidHandlerCap != null;
     }
 

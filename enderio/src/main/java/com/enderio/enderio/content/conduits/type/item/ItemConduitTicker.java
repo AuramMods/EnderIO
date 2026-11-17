@@ -15,9 +15,9 @@ import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -55,7 +55,7 @@ public class ItemConduitTicker extends ConduitTickerBase<ItemConduit> {
             }
 
             // Get extract handler from the connection.
-            IItemHandler extractHandler = extractConnection.getSidedCapability(Capabilities.ItemHandler.BLOCK);
+            IItemHandler extractHandler = extractConnection.getSidedCapability(ForgeCapabilities.ITEM_HANDLER);
             if (extractHandler == null) {
                 continue;
             }
@@ -67,7 +67,7 @@ public class ItemConduitTicker extends ConduitTickerBase<ItemConduit> {
             // Get extraction filter
             var extractFilter = extractConnection.inventory()
                 .getStackInSlot(ItemConduit.EXTRACT_FILTER_SLOT)
-                .getCapability(EnderIOCapabilities.ITEM_FILTER);
+                .getCapability(EnderIOCapabilities.ITEM_FILTER).orElse(null);
 
             int extracted = 0;
             int speed = extractConduit.value().transferRatePerCycle();
@@ -114,7 +114,7 @@ public class ItemConduitTicker extends ConduitTickerBase<ItemConduit> {
                         continue;
                     }
 
-                    var insertHandler = insertConnection.getSidedCapability(Capabilities.ItemHandler.BLOCK);
+                    var insertHandler = insertConnection.getSidedCapability(ForgeCapabilities.ITEM_HANDLER);
                     if (insertHandler == null) {
                         continue;
                     }
@@ -137,10 +137,10 @@ public class ItemConduitTicker extends ConduitTickerBase<ItemConduit> {
 
                     var insertFilter = insertConnection.inventory()
                         .getStackInSlot(ItemConduit.INSERT_FILTER_SLOT)
-                        .getCapability(EnderIOCapabilities.ITEM_FILTER);
+                        .getCapability(EnderIOCapabilities.ITEM_FILTER).orElse(null);
 
                     if (insertFilter != null) {
-                        itemToInsert = insertFilter.test(itemToInsert, new ItemFilterContext(insertConnection.getSidedCapability(Capabilities.ItemHandler.BLOCK),
+                        itemToInsert = insertFilter.test(itemToInsert, new ItemFilterContext(insertConnection.getSidedCapability(ForgeCapabilities.ITEM_HANDLER),
                             ItemFilterDirection.INSERT));
                         if (itemToInsert.isEmpty()) {
                             continue;

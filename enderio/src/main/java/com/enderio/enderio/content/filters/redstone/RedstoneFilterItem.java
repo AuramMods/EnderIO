@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.filters.redstone;
 
+import net.minecraft.core.Direction;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.filter.RedstoneFilter;
 import com.enderio.enderio.api.filter.RedstoneInputFilter;
@@ -20,7 +21,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import java.util.function.BiFunction;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,33 +31,33 @@ import java.util.function.UnaryOperator;
 public class RedstoneFilterItem extends Item {
 
     // Insert filters
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneOutputFilter> AND_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneOutputFilter> AND_FILTER_PROVIDER =
         (stack, v) -> new RedstoneANDFilter(stack);
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneOutputFilter> COUNT_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneOutputFilter> COUNT_FILTER_PROVIDER =
         (stack, v) -> new RedstoneCountFilter(stack);
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneOutputFilter> NAND_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneOutputFilter> NAND_FILTER_PROVIDER =
         (stack, v) -> new RedstoneNANDFilter(stack);
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneOutputFilter> NOR_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneOutputFilter> NOR_FILTER_PROVIDER =
         (stack, v) -> new RedstoneNORFilter(stack);
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneOutputFilter> OR_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneOutputFilter> OR_FILTER_PROVIDER =
         (stack, v) -> new RedstoneORFilter(stack);
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneOutputFilter> TLATCH_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneOutputFilter> TLATCH_FILTER_PROVIDER =
         (stack, v) -> new RedstoneTLatchFilter(stack);
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneOutputFilter> XNOR_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneOutputFilter> XNOR_FILTER_PROVIDER =
         (stack, v) -> new RedstoneXNORFilter(stack);
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneOutputFilter> XOR_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneOutputFilter> XOR_FILTER_PROVIDER =
         (stack, v) -> new RedstoneXORFilter(stack);
 
     // Extract filters
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneInputFilter> SENSOR_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneInputFilter> SENSOR_FILTER_PROVIDER =
         (stack, v) -> RedstoneSensorFilter.INSTANCE;
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneInputFilter> TIMER_FILTER_PROVIDER =
+    public static final BiFunction<ItemStack, Direction, RedstoneInputFilter> TIMER_FILTER_PROVIDER =
         (stack, v) -> new RedstoneTimerFilter(stack);
 
     // Insert & Extract filters
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneOutputFilter> NOT_FILTER_PROVIDER_INSERT =
+    public static final BiFunction<ItemStack, Direction, RedstoneOutputFilter> NOT_FILTER_PROVIDER_INSERT =
         (stack, v) -> RedstoneNOTFilter.INSTANCE;
-    public static final ICapabilityProvider<ItemStack, Void, RedstoneInputFilter> NOT_FILTER_PROVIDER_EXTRACT =
+    public static final BiFunction<ItemStack, Direction, RedstoneInputFilter> NOT_FILTER_PROVIDER_EXTRACT =
         (stack, v) -> RedstoneNOTFilter.INSTANCE;
 
     private final Type type;
@@ -94,9 +95,9 @@ public class RedstoneFilterItem extends Item {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         
         // Create a filter instance to check if it's configured
-        RedstoneFilter filter = stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER, null);
+        RedstoneFilter filter = stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER, null).orElse(null);
         if (filter == null) {
-            filter = stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER, null);
+            filter = stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER, null).orElse(null);
         }
 
         if (filter != null) {

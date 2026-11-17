@@ -29,7 +29,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.BlockCapability;
+import net.minecraftforge.common.capabilities.Capability;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -157,8 +157,8 @@ public record MEConduit(ResourceLocation texture, Component description, AEColor
 
     @SuppressWarnings("unchecked")
     @Override
-    public @Nullable <TCapability, TContext> TCapability proxyCapability(Level level, ConnectionReader connectionReader, @Nullable ConduitNode node,
-        BlockCapability<TCapability, TContext> capability, @Nullable TContext tContext) {
+    public @Nullable <TCapability> TCapability proxyCapability(Level level, ConnectionReader connectionReader, @Nullable ConduitNode node,
+        Capability<TCapability> capability, @Nullable Direction tContext) {
         if (node != null && capability == AECapabilities.IN_WORLD_GRID_NODE_HOST) {
             return (TCapability) node.getOrCreateNodeData(MEConduitNodeData.TYPE);
         }

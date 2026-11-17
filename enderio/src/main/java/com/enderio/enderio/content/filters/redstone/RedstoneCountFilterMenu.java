@@ -23,7 +23,7 @@ public class RedstoneCountFilterMenu extends AbstractContainerMenu {
     public RedstoneCountFilterMenu(@Nullable MenuType<?> menuType, int containerId, Inventory inventory, ItemStack stack) {
         super(menuType, containerId);
         this.stack = stack;
-        var resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER);
+        var resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER).orElse(null);
         if (!(resourceFilter instanceof RedstoneCountFilter filter)) {
             throw new IllegalArgumentException();
         }

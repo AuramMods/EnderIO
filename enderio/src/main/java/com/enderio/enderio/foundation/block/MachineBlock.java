@@ -1,5 +1,6 @@
 package com.enderio.enderio.foundation.block;
 
+import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.api.soul.binding.SoulBindable;
@@ -112,9 +113,9 @@ public class MachineBlock<T extends MachineBlockEntity> extends EIOEntityBlock<T
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
         }
 
-        SoulBindable soulBindable = level.getCapability(EnderIOCapabilities.SOUL_BINDABLE_BLOCK, pos);
+        SoulBindable soulBindable = CapabilityUtil.get(level, pos, EnderIOCapabilities.SOUL_BINDABLE_BLOCK, null);
         if (soulBindable != null && soulBindable.canBind()) {
-            SoulHandler soulHandler = stack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM);
+            SoulHandler soulHandler = stack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM).orElse(null);
             if (soulHandler != null) {
                 for (int i = 0; i < soulHandler.getSlots(); i++) {
                     Soul soul = soulHandler.getSoulInSlot(i);

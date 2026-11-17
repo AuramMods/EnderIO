@@ -1,5 +1,6 @@
 package com.enderio.enderio.foundation.block.entity;
 
+import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.api.io.IOMode;
@@ -42,12 +43,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import java.util.function.BiFunction;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.data.ModelProperty;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.IItemHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,13 +65,13 @@ import java.util.UUID;
 public abstract class MachineBlockEntity extends EIOBlockEntity
         implements MenuProvider, Wrenchable, IOConfigurable, MachineInventoryHolder {
 
-    public static final ICapabilityProvider<MachineBlockEntity, Direction, SideConfig> SIDE_CONFIG_PROVIDER = (be,
+    public static final BiFunction<MachineBlockEntity, Direction, SideConfig> SIDE_CONFIG_PROVIDER = (be,
                                                                                                                 side) -> side != null && be.isIOConfigMutable() ? new SidedIOConfigurable(be, side) : null;
 
-    public static final ICapabilityProvider<MachineBlockEntity, Direction, IItemHandler> ITEM_HANDLER_PROVIDER = (be,
+    public static final BiFunction<MachineBlockEntity, Direction, IItemHandler> ITEM_HANDLER_PROVIDER = (be,
             side) -> be.inventory != null ? be.inventory.getForSide(side) : null;
 
-    public static final ICapabilityProvider<BlockEntity, Void, SoulBindable> SOUL_BINDABLE = (be, ctx)
+    public static final BiFunction<BlockEntity, Direction, SoulBindable> SOUL_BINDABLE = (be, ctx)
         -> be instanceof SoulBindable bindable ? bindable : null;
 
     private static final ModelProperty<IOConfigurable> IO_CONFIG_PROPERTY = LegacyMachineBlockEntity.IO_CONFIG_PROPERTY;
@@ -273,7 +274,7 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
         setIOConfig(ioConfig.withMode(localSide, mode));
 
         // Invalidate caps
-        level.invalidateCapabilities(worldPosition);
+        CapabilityUtil.refresh(this);
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
     }
 
@@ -364,8 +365,8 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     }
 
     private void distributeItems(Direction side) {
-        IItemHandler selfHandler = getSelfCapability(Capabilities.ItemHandler.BLOCK, side);
-        IItemHandler otherHandler = getNeighbouringCapability(Capabilities.ItemHandler.BLOCK, side);
+        IItemHandler selfHandler = getSelfCapability(ForgeCapabilities.ITEM_HANDLER, side);
+        IItemHandler otherHandler = getNeighbouringCapability(ForgeCapabilities.ITEM_HANDLER, side);
         if (selfHandler == null || otherHandler == null) {
             return;
         }
@@ -374,8 +375,8 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     }
 
     private void distributeFluids(Direction side) {
-        IFluidHandler selfHandler = getSelfCapability(Capabilities.FluidHandler.BLOCK, side);
-        IFluidHandler otherHandler = getNeighbouringCapability(Capabilities.FluidHandler.BLOCK, side);
+        IFluidHandler selfHandler = getSelfCapability(ForgeCapabilities.FLUID_HANDLER, side);
+        IFluidHandler otherHandler = getNeighbouringCapability(ForgeCapabilities.FLUID_HANDLER, side);
         if (selfHandler == null || otherHandler == null) {
             return;
         }

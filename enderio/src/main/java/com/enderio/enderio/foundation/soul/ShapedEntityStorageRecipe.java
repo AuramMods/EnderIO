@@ -28,7 +28,7 @@ public class ShapedEntityStorageRecipe extends WrappedShapedRecipe {
         ItemStack result = getWrapped().assemble(container, lookupProvider);
 
         getItemStoringEntity(container).ifPresent(itemStack -> {
-            var inputSoulStorage = Objects.requireNonNull(itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM));
+            var inputSoulStorage = Objects.requireNonNull(itemStack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null));
             SoulBoundUtils.tryBindSoul(result, inputSoulStorage.getBoundSoul());
         });
         
@@ -44,7 +44,7 @@ public class ShapedEntityStorageRecipe extends WrappedShapedRecipe {
     private Optional<ItemStack> getItemStoringEntity(CraftingInput container) {
         for (int slot = 0; slot < container.size(); slot++) {
             ItemStack stack = container.getItem(slot);
-            var soulStorage = stack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+            var soulStorage = stack.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
             if (soulStorage != null && soulStorage.hasSoul()) {
                 return Optional.of(stack);
             }

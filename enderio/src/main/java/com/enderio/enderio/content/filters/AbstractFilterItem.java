@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.filters;
 
+import net.minecraft.core.Direction;
 import com.enderio.enderio.api.filter.FilterMenuProvider;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.component.DataComponentType;
@@ -18,8 +19,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import java.util.function.BiFunction;
+import net.minecraftforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.Optional;
 
 public abstract class AbstractFilterItem<T> extends Item implements FilterMenuProvider {
 
-    public static final ICapabilityProvider<ItemStack, Void, FilterMenuProvider> FILTER_MENU_PROVIDER = (stack, v) -> (AbstractFilterItem<?>) stack.getItem();
+    public static final BiFunction<ItemStack, Direction, FilterMenuProvider> FILTER_MENU_PROVIDER = (stack, v) -> (AbstractFilterItem<?>) stack.getItem();
 
     public AbstractFilterItem(Properties properties) {
         super(properties);

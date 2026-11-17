@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 public class SoulBindableSubtypeInterpreter implements ISubtypeInterpreter<ItemStack> {
     @Override
     public @Nullable Object getSubtypeData(ItemStack ingredient, UidContext context) {
-        var soulBindable = ingredient.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = ingredient.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable != null) {
             return soulBindable.getBoundSoul();
         }
@@ -19,7 +19,7 @@ public class SoulBindableSubtypeInterpreter implements ISubtypeInterpreter<ItemS
 
     @Override
     public String getLegacyStringSubtypeInfo(ItemStack ingredient, UidContext context) {
-        var soulBindable = ingredient.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM);
+        var soulBindable = ingredient.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         if (soulBindable != null && soulBindable.hasSoul()) {
             return soulBindable.getBoundSoul().entityTypeId().toString();
         }

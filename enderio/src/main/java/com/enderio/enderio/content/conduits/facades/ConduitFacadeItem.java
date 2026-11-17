@@ -49,7 +49,7 @@ public class ConduitFacadeItem extends BlockItem {
     @Override
     protected boolean canPlace(BlockPlaceContext context, BlockState state) {
         // Must have a valid facade
-        var facade = context.getItemInHand().getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER);
+        var facade = context.getItemInHand().getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
         if (facade == null || !facade.isValid()) {
             return false;
         }
@@ -72,7 +72,7 @@ public class ConduitFacadeItem extends BlockItem {
             TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 
-        var facade = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER);
+        var facade = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
         boolean hasFacadeTooltip = facade != null
                 && (facade.type().isBlastResistant() || facade.type().doesHideConduits());
 

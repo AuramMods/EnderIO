@@ -27,7 +27,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.DyeColor;
-import net.neoforged.neoforge.items.SlotItemHandler;
+import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -234,7 +234,7 @@ public class ConduitScreen extends EnderContainerScreen<ConduitMenu> {
             addPreRenderAction(() -> {
                 var inventory = menu.getConduitInventory();
                 widget.visible = inventory != null
-                        && inventory.getStackInSlot(slot).getCapability(EnderIOCapabilities.FILTER_MENU_PROVIDER) != null;
+                        && inventory.getStackInSlot(slot).getCapability(EnderIOCapabilities.FILTER_MENU_PROVIDER).orElse(null) != null;
             });
             return widget;
         }

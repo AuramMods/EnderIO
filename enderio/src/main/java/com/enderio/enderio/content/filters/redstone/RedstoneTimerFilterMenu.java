@@ -22,7 +22,7 @@ public class RedstoneTimerFilterMenu extends AbstractContainerMenu {
     protected RedstoneTimerFilterMenu(@Nullable MenuType<?> menuType, int containerId, Inventory inventory, ItemStack stack) {
         super(menuType, containerId);
         this.stack = stack;
-        var resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER);
+        var resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER).orElse(null);
         if (!(resourceFilter instanceof RedstoneTimerFilter filter)) {
             throw new IllegalArgumentException();
         }

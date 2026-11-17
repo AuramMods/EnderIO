@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.tools;
 
+import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.core.common.network.EmitParticlePacket;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import com.enderio.enderio.foundation.util.ExperienceUtil;
@@ -18,10 +19,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.Capabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class ExperienceRodItem extends Item {
@@ -68,7 +69,7 @@ public class ExperienceRodItem extends Item {
 
     private static boolean transferFromBlockToPlayer(Player player, Level level, BlockPos pos, Direction side) {
         try {
-            var fluidHandler = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, side);
+            var fluidHandler = CapabilityUtil.get(level, pos, ForgeCapabilities.FLUID_HANDLER, side);
             if (fluidHandler != null) {
                 FluidStack availableFluid = fluidHandler.getFluidInTank(0);
                 if (availableFluid.is(Tags.Fluids.EXPERIENCE) && availableFluid.getAmount() > 0) {
@@ -101,7 +102,7 @@ public class ExperienceRodItem extends Item {
                 return false;
             }
 
-            var fluidHandler = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, direction);
+            var fluidHandler = CapabilityUtil.get(level, pos, ForgeCapabilities.FLUID_HANDLER, direction);
             if (fluidHandler != null) {
                 long fluidVolume = ExperienceUtil.getPlayerTotalXp(player) * ExperienceUtil.EXP_TO_FLUID;
                 int cappedVolume = (int) Math.min(Integer.MAX_VALUE, fluidVolume);

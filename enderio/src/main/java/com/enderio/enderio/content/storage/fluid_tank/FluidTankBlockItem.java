@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.storage.fluid_tank;
 
+import net.minecraft.core.Direction;
 import com.enderio.core.client.item.AdvancedTooltipProvider;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
@@ -8,17 +9,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
-import net.neoforged.neoforge.fluids.capability.templates.FluidHandlerItemStack;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import java.util.function.BiFunction;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class FluidTankBlockItem extends BlockItem implements AdvancedTooltipProvider {
 
-    public static final ICapabilityProvider<ItemStack, Void, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack,
+    public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack,
             v) -> new FluidHandlerItemStack(() -> EIODataComponents.ITEM_FLUID_CONTENT, stack,
                     ((FluidTankBlockItem) stack.getItem()).capacity);
 
@@ -43,7 +44,7 @@ public class FluidTankBlockItem extends BlockItem implements AdvancedTooltipProv
 
     @Override
     public void addCommonTooltips(ItemStack itemStack, @Nullable Player player, List<Component> tooltips) {
-        var fluidHandler = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = itemStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandler != null) {
             if (fluidHandler instanceof FluidHandlerItemStack itemFluidHandler) {
                 if (itemFluidHandler.getFluid().isEmpty()) {

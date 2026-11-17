@@ -5,8 +5,8 @@ import com.enderio.enderio.api.conduits.connection.config.ConnectionConfigType;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.neoforged.neoforge.capabilities.BlockCapability;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,7 +34,7 @@ public record ConduitBlockConnection(ConduitNode node, Direction connectionSide)
      * @return the capability or null if it is not available.
      */
     @Nullable
-    public <T, C> T getCapability(BlockCapability<T, C> capability, @Nullable C context) {
+    public <T> T getCapability(Capability<T> capability, @Nullable Direction context) {
         return node.getCapability(capability, connectionSide, context);
     }
 
@@ -45,7 +45,7 @@ public record ConduitBlockConnection(ConduitNode node, Direction connectionSide)
      * @return the capability or null if it is not available.
      */
     @Nullable
-    public <T> T getSidedCapability(BlockCapability<T, Direction> capability) {
+    public <T> T getSidedCapability(Capability<T> capability) {
         return getCapability(capability, connectionSide.getOpposite());
     }
 

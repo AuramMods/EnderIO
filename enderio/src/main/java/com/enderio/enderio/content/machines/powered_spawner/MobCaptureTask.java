@@ -21,7 +21,7 @@ public class MobCaptureTask extends PoweredSpawnerTask {
     public boolean isCompleted() {
         // Ensure we have an item to take from
         var inputStack = PoweredSpawnerBlockEntity.INPUT.getItemStack(blockEntity);
-        var inputSoulHandler = inputStack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM);
+        var inputSoulHandler = inputStack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM).orElse(null);
         if (inputStack.isEmpty() || inputSoulHandler == null || !inputSoulHandler.tryInsertSoul(getSoulForCapture(), true)) {
             return true;
         }
@@ -43,7 +43,7 @@ public class MobCaptureTask extends PoweredSpawnerTask {
 
         // Clone the input
         var resultStack = inputStack.copyWithCount(1);
-        var resultSoulHandler = resultStack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM);
+        var resultSoulHandler = resultStack.getCapability(EnderIOCapabilities.SOUL_HANDLER_ITEM).orElse(null);
         if (resultSoulHandler == null || !resultSoulHandler.tryInsertSoul(capturedSoul, true)) {
             // Cannot insert soul into the input, so give up
             isComplete = true;

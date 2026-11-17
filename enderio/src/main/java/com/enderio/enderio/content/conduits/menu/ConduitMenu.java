@@ -26,10 +26,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
-import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.SlotItemHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
@@ -221,7 +221,7 @@ public class ConduitMenu extends BaseEnderMenu {
     public void tryOpenFilterMenu(int slot) {
         if (getPlayerInventory().player instanceof ServerPlayer serverPlayer) {
             var stack = conduitInventory.getStackInSlot(slot);
-            var menuProvider = stack.getCapability(EnderIOCapabilities.FILTER_MENU_PROVIDER);
+            var menuProvider = stack.getCapability(EnderIOCapabilities.FILTER_MENU_PROVIDER).orElse(null);
             if (menuProvider != null) {
                 menuProvider.openMenu(serverPlayer, conduitInventory, slot, () -> openConduitMenu(serverPlayer,
                         (ConduitBundleBlockEntity) connectionAccessor, side, conduit));

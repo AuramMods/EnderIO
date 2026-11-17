@@ -29,13 +29,13 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.capabilities.Capabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidType;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidType;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
 
@@ -116,7 +116,7 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
 
     public boolean acceptItemFill(ItemStack item) {
         // bucket types
-        IFluidHandlerItem fluidHandlerCap = item.copyWithCount(1).getCapability(Capabilities.FluidHandler.ITEM);
+        IFluidHandlerItem fluidHandlerCap = item.copyWithCount(1).getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandlerCap != null && !fluidHandlerCap.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE).isEmpty()) {
             return true;
         }
@@ -137,7 +137,7 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
         FluidStack fluid = TANK.getFluid(this);
 
         // Receive items that can accept our current fluid as input -or- if our current contents are empty.
-        IFluidHandlerItem fluidHandlerCap = item.copyWithCount(1).getCapability(Capabilities.FluidHandler.ITEM);
+        IFluidHandlerItem fluidHandlerCap = item.copyWithCount(1).getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
         if (fluidHandlerCap != null && (fluid.isEmpty() || fluidHandlerCap.fill(fluid.copyWithAmount(Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0)) {
             return true;
         }

@@ -82,7 +82,7 @@ public class ConduitBlockItem extends BlockItem implements ICustomCreativeTabEnt
         // Ensure the originalStack being used is valid for placement.
         var stack = context.getItemInHand();
         if (!stack.has(EnderIODataComponents.CONDUIT)) {
-            var facadeProvider = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER);
+            var facadeProvider = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
             if (facadeProvider == null || !facadeProvider.isValid()) {
                 return false;
             }
