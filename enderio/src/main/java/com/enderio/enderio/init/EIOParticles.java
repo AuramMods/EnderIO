@@ -16,6 +16,12 @@ public class EIOParticles {
     public static final RegistryObject<RangeParticleType> RANGE_PARTICLE = PARTICLE_TYPES
             .register("range_particle", RangeParticleType::new);
 
+    public static final RegistryObject<net.minecraft.core.particles.SimpleParticleType> EXPERIENCE_EFFECT =
+        PARTICLE_TYPES.register("experience_effect", () -> new net.minecraft.core.particles.SimpleParticleType(false));
+
+    public static final RegistryObject<net.minecraft.core.particles.SimpleParticleType> MACHINE_DUST =
+        PARTICLE_TYPES.register("machine_dust", () -> new net.minecraft.core.particles.SimpleParticleType(false));
+
     public static void register(IEventBus bus) {
         PARTICLE_TYPES.register(bus);
     }

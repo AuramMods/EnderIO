@@ -4,8 +4,7 @@ import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.client.content.conduits.model.facades.FacadeUtil;
 import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
 import com.enderio.enderio.init.EIOBlocks;
-import dev.ftb.mods.ftbultimine.api.blockbreaking.BlockBreakHandler;
-import dev.ftb.mods.ftbultimine.api.shape.Shape;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -19,14 +18,13 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public enum ConduitBlockBreakHandler implements BlockBreakHandler {
+public enum ConduitBlockBreakHandler {
     INSTANCE;
 
     // Should only ever happen from the main thread, but it cannot hurt to protect against.
     private final ConcurrentHashMap<Player, BreakOperation> breakOperations = new ConcurrentHashMap<>();
 
-    @Override
-    public Result breakBlock(Player player, BlockPos pos, BlockState state, Shape shape, BlockHitResult hitResult) {
+    public InteractionResult breakBlock(Player player, BlockPos pos, BlockState state, BlockHitResult hitResult) {
         // Now that we have filtering in the selection handler, instead of returning SUCCESS for invalid bundles we should FAIL.
 
         // Note: Success means we've performed our actions (if any).
@@ -35,7 +33,7 @@ public enum ConduitBlockBreakHandler implements BlockBreakHandler {
         var blockEntity = level.getBlockEntity(pos);
         if (!state.is(EIOBlocks.CONDUIT_BUNDLE.get()) ||
             !(blockEntity instanceof ConduitBundleBlockEntity conduitBundle)) {
-            return Result.PASS;
+            return InteractionResult.PASS;
         }
 
         // TODO GH-1116: Find a way to share more logic with ConduitBundleBlock...
@@ -49,7 +47,7 @@ public enum ConduitBlockBreakHandler implements BlockBreakHandler {
             } else {
                 Holder<Conduit<?, ?>> conduit = conduitBundle.getShape().getConduit(originPos, hitResult);
                 if (conduit == null) {
-                    return Result.FAIL;
+                    return InteractionResult.FAIL;
                 }
 
                 breakOperations.put(player, new ConduitBreakOperation(conduit));
@@ -59,18 +57,18 @@ public enum ConduitBlockBreakHandler implements BlockBreakHandler {
         // Get operation
         BreakOperation operation = breakOperations.get(player);
         if (operation == null) {
-            return Result.FAIL;
+            return InteractionResult.FAIL;
         }
 
         // Attempt to apply operations
         if (operation instanceof FacadeBreakOperation facadeOperation) {
             Block facadeBlock = facadeOperation.facadeBlock();
             if (!conduitBundle.hasFacade()) {
-                return Result.FAIL;
+                return InteractionResult.FAIL;
             }
 
             if (!conduitBundle.getFacadeBlock().defaultBlockState().is(facadeBlock)) {
-                return Result.FAIL;
+                return InteractionResult.FAIL;
             }
 
             // Drop the facade item
@@ -88,7 +86,7 @@ public enum ConduitBlockBreakHandler implements BlockBreakHandler {
         } else if (operation instanceof ConduitBreakOperation conduitOperation) {
             Holder<Conduit<?, ?>> conduit = conduitOperation.conduit();
             if (!conduitBundle.hasConduitStrict(conduit)) {
-                return Result.FAIL;
+                return InteractionResult.FAIL;
             }
 
             conduitBundle.removeConduit(conduit, droppedStack -> {
@@ -104,15 +102,14 @@ public enum ConduitBlockBreakHandler implements BlockBreakHandler {
             level.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(player, state));
         }
 
-        return Result.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     private void dropItem(Level level, BlockPos pos, ItemStack stack) {
-        var center = pos.getCenter();
+        var center = net.minecraft.world.phys.Vec3.atCenterOf(pos);
         level.addFreshEntity(new ItemEntity(level, center.x, center.y, center.z, stack.copy()));
     }
 
-    @Override
     public void postBreak(Player player) {
         breakOperations.remove(player);
     }

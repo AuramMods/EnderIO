@@ -11,7 +11,7 @@ import com.enderio.enderio.init.EIOBlocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.neoforge.NeoForgeTypes;
+import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
@@ -67,7 +67,7 @@ public class TankCategory implements IRecipeCategory<TankRecipe> {
 
             // Convert SizedFluidIngredient to FluidStack list for JEI display
             builder.addSlot(RecipeIngredientRole.OUTPUT, 39, 3)
-                    .addIngredients(NeoForgeTypes.FLUID_STACK, fluidStacks)
+                    .addIngredients(ForgeTypes.FLUID_STACK, fluidStacks)
                     .setFluidRenderer(FluidTankBlockEntity.Standard.CAPACITY, false, 16, 47);
         } else if (recipe.mode() == TankRecipe.Mode.FILL) {
             builder.addSlot(RecipeIngredientRole.INPUT, 75, 3).addIngredients(recipe.input());
@@ -76,7 +76,7 @@ public class TankCategory implements IRecipeCategory<TankRecipe> {
 
             // Convert SizedFluidIngredient to FluidStack list for JEI display
             builder.addSlot(RecipeIngredientRole.INPUT, 39, 3)
-                    .addIngredients(NeoForgeTypes.FLUID_STACK, fluidStacks)
+                    .addIngredients(ForgeTypes.FLUID_STACK, fluidStacks)
                     .setFluidRenderer(FluidTankBlockEntity.Standard.CAPACITY, false, 16, 47);
         }
     }

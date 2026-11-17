@@ -79,7 +79,7 @@ public class EnchanterCategory extends MachineRecipeCategory<WrappedEnchanterRec
             double mouseX, double mouseY) {
         Minecraft mc = Minecraft.getInstance();
 
-        Component title = Enchantment.getFullname(recipe.getEnchantment(), recipe.getLevel());
+        Component title = recipe.getEnchantment().value().getFullname(recipe.getLevel());
 
         guiGraphics.drawString(mc.font, title, 146 - mc.font.width(title), 0, 0xff8b8b8b, false);
 

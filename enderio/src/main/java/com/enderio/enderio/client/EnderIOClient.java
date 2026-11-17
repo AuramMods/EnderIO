@@ -369,6 +369,16 @@ public class EnderIOClient {
     @SubscribeEvent
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(EIOParticles.RANGE_PARTICLE.get(), RangeParticle.Provider::new);
+        event.registerSpriteSet(EIOParticles.EXPERIENCE_EFFECT.get(), sprites -> {
+            var provider = new net.minecraft.client.particle.SpellParticle.Provider(sprites);
+            return (type, level, x, y, z, xSpeed, ySpeed, zSpeed) -> {
+                var particle = provider.createParticle(type, level, x, y, z, xSpeed, ySpeed, zSpeed);
+                if (particle != null) particle.setColor(0.27450980F, 0.88627451F, 0.29411765F);
+                return particle;
+            };
+        });
+        event.registerSpriteSet(EIOParticles.MACHINE_DUST.get(),
+            com.enderio.enderio.client.foundation.particle.MachineDustParticle.Provider::new);
     }
 
     private static Optional<Item> findGliderForModelRL(ResourceLocation rl) {

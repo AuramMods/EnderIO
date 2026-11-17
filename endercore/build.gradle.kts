@@ -93,6 +93,7 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
         "content/tools/vials/SoulVialItem.java",
         "content/tools/ToolsLang.java",
         "foundation/util/EntityCaptureUtils.java",
+        "foundation/util/BlockEntitySpawner.java",
         "api/soul/SoulBoundUtils.java",
         "foundation/soul/SoulCapabilityProviders.java",
         "content/paint/block/entity/PaintedBlockEntity.java",
@@ -151,10 +152,12 @@ dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
+    testRuntimeOnly("org.openjdk.nashorn:nashorn-core:15.4")
 }
 
 tasks.test {
     useJUnitPlatform()
+    systemProperty("enderio.port.root", rootProject.projectDir.absolutePath)
     workingDir = layout.buildDirectory.dir("test-runtime").get().asFile
     doFirst { workingDir.mkdirs() }
 }

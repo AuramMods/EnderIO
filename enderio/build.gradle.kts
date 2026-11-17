@@ -136,6 +136,7 @@ dependencies {
     // Dependencies of optional mods (legacy remapping configurations are non-transitive).
     "modLocalRuntime"(libs.guideMe)
     "modLocalRuntime"(libs.ftbLibrary)
+    modCompileOnly(libs.architectury)
     "modLocalRuntime"(libs.architectury)
 
     // Graphlib

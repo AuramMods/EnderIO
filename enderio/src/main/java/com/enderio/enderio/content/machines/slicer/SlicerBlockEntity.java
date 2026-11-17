@@ -163,6 +163,17 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
 
     // region Crafting Task
 
+    private net.minecraftforge.common.util.FakePlayer toolPlayer;
+
+    private net.minecraftforge.common.util.FakePlayer getToolPlayer(ServerLevel level) {
+        if (toolPlayer == null || toolPlayer.level() != level) {
+            toolPlayer = new net.minecraftforge.common.util.FakePlayer(level,
+                new com.mojang.authlib.GameProfile(getMachineOwnerOrRandom(), "enderio:slicer:" + worldPosition));
+        }
+        toolPlayer.setPos(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5);
+        return toolPlayer;
+    }
+
     public float getCraftingProgress() {
         return craftingTaskHost.getProgress();
     }
@@ -185,9 +196,9 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
                 }
 
                 if (level instanceof ServerLevel serverLevel) {
-                    AXE.getItemStack(inv).hurtAndBreak(1, serverLevel, null, item -> {
+                    AXE.getItemStack(inv).hurtAndBreak(1, getToolPlayer(serverLevel), item -> {
                     });
-                    SHEARS.getItemStack(inv).hurtAndBreak(1, serverLevel, null, item -> {
+                    SHEARS.getItemStack(inv).hurtAndBreak(1, getToolPlayer(serverLevel), item -> {
                     });
                 }
             }

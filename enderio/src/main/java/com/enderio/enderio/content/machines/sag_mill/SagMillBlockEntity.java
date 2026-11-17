@@ -115,7 +115,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
             double dx = axis == Direction.Axis.X ? direction.getStepX() * r : ss;
             double dy = random.nextDouble();
             double dz = axis == Direction.Axis.Z ? direction.getStepZ() * r : ss;
-            level.addParticle(ParticleTypes.DUST_PLUME, x + dx, y + dy, z + dz, 0.0, 0.0, 0.0);
+            level.addParticle(com.enderio.enderio.init.EIOParticles.MACHINE_DUST.get(), x + dx, y + dy, z + dz, 0.0, 0.0, 0.0);
             ItemStack input = INPUT.getItemStack(this);
             if (input.getItem() instanceof BlockItem blockItem) {
                 level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockItem.getBlock().defaultBlockState()), x + dx, y + dy, z + dz, 0.0, 0.0, 0.0);

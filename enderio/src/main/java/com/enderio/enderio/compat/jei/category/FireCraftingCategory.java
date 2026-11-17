@@ -148,7 +148,7 @@ public class FireCraftingCategory implements IRecipeCategory<FireCraftingRecipe>
         }
 
         IRecipeSlotBuilder catalyst = builder.addSlot(RecipeIngredientRole.CATALYST, 88, 8).setSlotName("catalyst");
-        catalyst.addIngredients(Ingredient.of(Items.FLINT_AND_STEEL, EIOFluids.FIRE_WATER.bucket()));
+        catalyst.addIngredients(Ingredient.of(Items.FLINT_AND_STEEL, EIOFluids.FIRE_WATER.bucket().get()));
     }
 
     @Override

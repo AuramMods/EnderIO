@@ -43,12 +43,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.LogicalSide;
-import net.neoforged.neoforge.common.extensions.IOwnedSpawner;
+import com.enderio.enderio.foundation.util.BlockEntitySpawner;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity implements IOwnedSpawner, SoulBindable {
+public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity implements SoulBindable {
     public static final SingleSlotAccess INPUT = new SingleSlotAccess();
     public static final SingleSlotAccess OUTPUT = new SingleSlotAccess();
 
@@ -218,9 +218,14 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
         mindKiller = level.getBlockState(worldPosition.above()).is(EIOTags.Blocks.MIND_KILLER);
     }
 
-    @Override
     public @Nullable Either<BlockEntity, Entity> getOwner() {
         return Either.left(this);
+    }
+
+    private final BlockEntitySpawner forgeSpawner = new BlockEntitySpawner(this);
+
+    public BlockEntitySpawner getForgeSpawner() {
+        return forgeSpawner;
     }
 
     // region Inventory

@@ -40,9 +40,6 @@ public abstract class BaseBlockEntityMenu<T extends BlockEntity> extends BaseEnd
 
     @Override
     public boolean stillValid(Player player) {
-        var level = blockEntity.getLevel();
-        var pos = blockEntity.getBlockPos();
-        return level != null && level.getBlockEntity(pos) == blockEntity
-            && player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 64.0;
+        return net.minecraft.world.Container.stillValidBlockEntity(blockEntity, player);
     }
 }

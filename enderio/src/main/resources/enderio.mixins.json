@@ -6,7 +6,10 @@
         "FeatureFlagsMixin",
         "FeatureFlagRegistryAccessor",
         "PlayerMixin",
-        "RecipeManagerMixin"
+        "RecipeManagerMixin",
+        "ContainerMenuMixin",
+        "ftbultimine.ShapeContextMixin",
+        "ftbultimine.FTBUltimineMixin"
     ],
     "client": [
         "GliderRotationMixin",
@@ -16,5 +19,6 @@
         "MouseHandlerMixin"
     ],
     "minVersion": "0.8",
-    "refmap": "enderio.refmap.json"
+    "refmap": "enderio.refmap.json",
+    "plugin": "com.enderio.enderio.mixin.OptionalIntegrationMixinPlugin"
 }

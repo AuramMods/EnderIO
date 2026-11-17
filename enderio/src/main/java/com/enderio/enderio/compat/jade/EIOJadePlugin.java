@@ -42,6 +42,6 @@ public class EIOJadePlugin implements IWailaPlugin {
 
     @Override
     public void register(IWailaCommonRegistration registration) {
-        registration.registerBlockDataProvider(SoulBoundComponentProvider.INSTANCE, Block.class);
+        registration.registerBlockDataProvider(SoulBoundComponentProvider.INSTANCE, net.minecraft.world.level.block.entity.BlockEntity.class);
     }
 }

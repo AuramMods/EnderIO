@@ -9,7 +9,7 @@ import com.enderio.enderio.foundation.network.packets.ServerboundSetItemFilterSl
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.handlers.IGhostIngredientHandler;
 import mezz.jei.api.ingredients.ITypedIngredient;
-import mezz.jei.api.neoforge.NeoForgeTypes;
+import mezz.jei.api.forge.ForgeTypes;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
@@ -45,7 +45,7 @@ public class FilterGhostIngredientHandler implements IGhostIngredientHandler<End
                         targets.add(new IndirectItemStackTarget<>(bounds, menu.containerId, i, otherFilterSlot));
                     }
                 }
-            } else if (ingredient.getType() == NeoForgeTypes.FLUID_STACK) {
+            } else if (ingredient.getType() == ForgeTypes.FLUID_STACK) {
                 if (slot instanceof FluidFilterSlot fluidFilterSlot) {
                     targets.add(new FluidStackTarget<>(bounds, menu.containerId, i, fluidFilterSlot));
                 }

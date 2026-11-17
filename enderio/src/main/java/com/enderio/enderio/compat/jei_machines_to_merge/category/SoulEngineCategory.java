@@ -13,7 +13,7 @@ import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.drawable.IDrawableStatic;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.neoforge.NeoForgeTypes;
+import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
@@ -76,7 +76,7 @@ public class SoulEngineCategory implements IRecipeCategory<EngineSoul.SoulData> 
         if (fluid.startsWith("#")) { // We have a fluid tag instead
             TagKey<Fluid> tag = TagKey.create(Registries.FLUID, ResourceLocation.parse(fluid.substring(1)));
             BuiltInRegistries.FLUID.getTag(tag)
-                    .ifPresent(s -> s.forEach(f -> list.add(new FluidStack(f, SoulEngineBlockEntity.FLUID_CAPACITY))));
+                    .ifPresent(s -> s.forEach(f -> list.add(new FluidStack(f.value(), SoulEngineBlockEntity.FLUID_CAPACITY))));
         } else {
             Optional<Holder.Reference<Fluid>> delegate = BuiltInRegistries.FLUID
                     .getHolder(ResourceKey.create(Registries.FLUID, ResourceLocation.parse(fluid)));
@@ -85,7 +85,7 @@ public class SoulEngineCategory implements IRecipeCategory<EngineSoul.SoulData> 
         }
 
         builder.addSlot(RecipeIngredientRole.INPUT, 31, 3)
-                .addIngredients(NeoForgeTypes.FLUID_STACK, list)
+                .addIngredients(ForgeTypes.FLUID_STACK, list)
                 .setFluidRenderer(SoulEngineBlockEntity.FLUID_CAPACITY, false, 16, 47);
 
         EntityType<?> value = BuiltInRegistries.ENTITY_TYPE.get(recipe.entitytype());

@@ -1,6 +1,6 @@
 package com.enderio.enderio.compat.almostunified;
 
-import com.almostreliable.unified.api.AlmostUnified;
+import com.almostreliable.unified.api.AlmostUnifiedLookup;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.fml.ModList;
@@ -21,7 +21,7 @@ public class AlmostUnifiedCompat {
 
     private static class Adapter {
         private static @Nullable Item getTagTargetItem(TagKey<Item> tag) {
-            return AlmostUnified.INSTANCE.getTagTargetItem(tag);
+            return AlmostUnifiedLookup.INSTANCE.getPreferredItemForTag(tag);
         }
     }
 }

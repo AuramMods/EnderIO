@@ -17,7 +17,9 @@ public class CuriosCompat {
     public static Optional<List<ItemStack>> getActiveCurios(Player player, @Nullable Predicate<ItemStack> filter){
         if(ModList.get().isLoaded("curios")) {
             List<ItemStack> result = new ArrayList<>();
-            var handlers = CuriosApi.getCuriosInventory(player).get().getCurios().values().stream()
+            var inventory = CuriosApi.getCuriosInventory(player).resolve();
+            if (inventory.isEmpty()) return Optional.empty();
+            var handlers = inventory.get().getCurios().values().stream()
                 .map(ICurioStacksHandler::getStacks)
                 .toList();
             for (var stackHandler : handlers) {
