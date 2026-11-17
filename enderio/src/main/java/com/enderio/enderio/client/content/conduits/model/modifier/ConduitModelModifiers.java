@@ -4,7 +4,7 @@ import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.model.ConduitModelModifier;
 import com.enderio.enderio.api.conduits.model.RegisterConduitModelModifiersEvent;
-import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.ModLoader;
 import org.jetbrains.annotations.Nullable;
@@ -34,7 +34,7 @@ public class ConduitModelModifiers {
     }
 
     @UseOnly(LogicalSide.CLIENT)
-    public static Set<ModelResourceLocation> getAllModelDependencies() {
+    public static Set<ResourceLocation> getAllModelDependencies() {
         return MODIFIERS.values()
                 .stream()
                 .flatMap(modifier -> modifier.getModelDependencies().stream())

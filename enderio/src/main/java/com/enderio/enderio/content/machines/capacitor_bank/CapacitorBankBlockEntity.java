@@ -39,8 +39,8 @@ import net.minecraftforge.fml.LogicalSide;
 import com.enderio.core.common.capability.NeighborCapability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import java.util.function.BiFunction;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 

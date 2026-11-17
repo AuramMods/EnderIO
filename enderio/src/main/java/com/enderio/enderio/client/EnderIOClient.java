@@ -7,7 +7,6 @@ import com.enderio.enderio.api.conduits.model.RegisterConduitModelModifiersEvent
 import com.enderio.enderio.api.conduits.screen.RegisterConduitScreenTypesEvent;
 import com.enderio.enderio.api.soul.SoulBoundUtils;
 import com.enderio.enderio.api.travel.RegisterTravelRenderersEvent;
-import com.enderio.enderio.client.content.conduits.ConduitBundleExtension;
 import com.enderio.enderio.client.content.conduits.ConduitFacadeColor;
 import com.enderio.enderio.client.content.conduits.gui.ConduitScreen;
 import com.enderio.enderio.client.content.conduits.gui.screen_type.ConduitScreenTypes;
@@ -32,7 +31,6 @@ import com.enderio.enderio.client.content.filters.redstone.RedstoneCountFilterSc
 import com.enderio.enderio.client.content.filters.redstone.RedstoneDoubleChannelFilterScreen;
 import com.enderio.enderio.client.content.filters.redstone.RedstoneTimerFilterScreen;
 import com.enderio.enderio.client.content.filters.soul.ClientEnderSoulFilterTooltip;
-import com.enderio.enderio.client.content.fluid_tank.FluidTankBEWLR;
 import com.enderio.enderio.client.content.glass.GlassIconDecorator;
 import com.enderio.enderio.client.content.machines.IOOverlayBakedModel;
 import com.enderio.enderio.client.content.machines.gui.screen.AlloySmelterScreen;
@@ -97,7 +95,7 @@ import com.enderio.enderio.init.EIOMenus;
 import com.enderio.enderio.init.EIOParticles;
 import com.enderio.enderio.init.EIOTravelTargets;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.SkullBlockRenderer;
@@ -105,11 +103,9 @@ import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.item.ClampedItemPropertyFunction;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.contents.PlainTextContents;
+import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -121,14 +117,10 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
-import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterItemDecorationsEvent;
-import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
-import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
-import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
-import net.neoforged.neoforge.common.util.Lazy;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -138,12 +130,11 @@ import java.util.Set;
 @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public class EnderIOClient {
 
-    private static final Map<Item, ModelResourceLocation> HANG_GLIDER_MODEL_LOCATION = new HashMap<>();
+    private static final Map<Item, ResourceLocation> HANG_GLIDER_MODEL_LOCATION = new HashMap<>();
     public static final Map<Item, BakedModel> GLIDER_MODELS = new HashMap<>();
 
-    public static final ModelResourceLocation TRAVEL_ANCHOR_BACKDROP_MODEL_LOCATION = ModelResourceLocation.standalone(
-        ResourceLocation.fromNamespaceAndPath(EnderIOAPI.MOD_ID, "block/travel_anchor_backdrop")
-    );
+    public static final ResourceLocation TRAVEL_ANCHOR_BACKDROP_MODEL_LOCATION =
+        ResourceLocation.fromNamespaceAndPath(EnderIOAPI.MOD_ID, "block/travel_anchor_backdrop");
 
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
@@ -151,6 +142,7 @@ public class EnderIOClient {
         ConduitScreenTypes.init();
 
         event.enqueueWork(() -> {
+            registerScreens();
             //switch to item model component in 1.21.2
             ItemProperties.register(EIOItems.SOUL_VIAL.get(), SoulVialItem.FILLED_MODEL_PROPERTY,
                 (stack, level, player, seed) -> SoulBoundUtils.isBound(stack) ? 1 : 0);
@@ -160,8 +152,8 @@ public class EnderIOClient {
 
             ItemProperties.register(EIOItems.ENDERIOS.asItem(), EnderiosItem.INVERTED_PROPERTY,
                 (ClampedItemPropertyFunction) (itemStack, clientLevel, livingEntity, seed) -> {
-                    Component name = itemStack.get(DataComponents.CUSTOM_NAME);
-                    if (name != null && name.getContents() instanceof PlainTextContents literal && literal.text().equalsIgnoreCase("soiredne")) {
+                    Component name = itemStack.hasCustomHoverName() ? itemStack.getHoverName() : null;
+                    if (name != null && name.getContents() instanceof LiteralContents literal && literal.text().equalsIgnoreCase("soiredne")) {
                         return 1;
                     }
                     return 0;
@@ -190,55 +182,54 @@ public class EnderIOClient {
         event.register(EnderFluidFilter.class, ClientEnderFluidFilterTooltip::new);
     }
 
-    @SubscribeEvent
-    public static void registerScreens(RegisterMenuScreensEvent event) {
+    private static void registerScreens() {
         // Filter screens
-        event.register(EIOMenus.BASIC_ITEM_FILTER.get(), EnderItemFilterScreen::new);
-        event.register(EIOMenus.ADVANCED_ITEM_FILTER.get(), EnderItemFilterScreen::new);
-        event.register(EIOMenus.BIG_ITEM_FILTER.get(), EnderItemFilterScreen::new);
-        event.register(EIOMenus.BIG_ADVANCED_ITEM_FILTER.get(), EnderItemFilterScreen::new);
-        event.register(EIOMenus.LIMITED_ITEM_FILTER.get(), LimitedItemFilterScreen::new);
-        event.register(EIOMenus.BASIC_FLUID_FILTER.get(), EnderFluidFilterScreen::new);
-        event.register(EIOMenus.BASIC_SOUL_FILTER.get(), EnderSoulFilterScreen::new);
-        event.register(EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER.get(), RedstoneDoubleChannelFilterScreen::new);
-        event.register(EIOMenus.REDSTONE_TIMER_FILTER.get(), RedstoneTimerFilterScreen::new);
-        event.register(EIOMenus.REDSTONE_COUNT_FILTER.get(), RedstoneCountFilterScreen::new);
+        MenuScreens.register(EIOMenus.BASIC_ITEM_FILTER.get(), EnderItemFilterScreen::new);
+        MenuScreens.register(EIOMenus.ADVANCED_ITEM_FILTER.get(), EnderItemFilterScreen::new);
+        MenuScreens.register(EIOMenus.BIG_ITEM_FILTER.get(), EnderItemFilterScreen::new);
+        MenuScreens.register(EIOMenus.BIG_ADVANCED_ITEM_FILTER.get(), EnderItemFilterScreen::new);
+        MenuScreens.register(EIOMenus.LIMITED_ITEM_FILTER.get(), LimitedItemFilterScreen::new);
+        MenuScreens.register(EIOMenus.BASIC_FLUID_FILTER.get(), EnderFluidFilterScreen::new);
+        MenuScreens.register(EIOMenus.BASIC_SOUL_FILTER.get(), EnderSoulFilterScreen::new);
+        MenuScreens.register(EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER.get(), RedstoneDoubleChannelFilterScreen::new);
+        MenuScreens.register(EIOMenus.REDSTONE_TIMER_FILTER.get(), RedstoneTimerFilterScreen::new);
+        MenuScreens.register(EIOMenus.REDSTONE_COUNT_FILTER.get(), RedstoneCountFilterScreen::new);
 
         // Machines
-        event.register(EIOMenus.ALLOY_SMELTER.get(), AlloySmelterScreen::new);
-        event.register(EIOMenus.SAG_MILL.get(), SagMillScreen::new);
-        event.register(EIOMenus.STIRLING_GENERATOR.get(), StirlingGeneratorScreen::new);
-        event.register(EIOMenus.SLICE_N_SPLICE.get(), SlicerScreen::new);
-        event.register(EIOMenus.IMPULSE_HOPPER.get(), ImpulseHopperScreen::new);
-        event.register(EIOMenus.SOUL_BINDER.get(), SoulBinderScreen::new);
-        event.register(EIOMenus.POWERED_SPAWNER.get(), PoweredSpawnerScreen::new);
-        event.register(EIOMenus.VACUUM_CHEST.get(), VacuumChestScreen::new);
-        event.register(EIOMenus.XP_VACUUM.get(), XPVacuumScreen::new);
-        event.register(EIOMenus.CRAFTER.get(), CrafterScreen::new);
-        event.register(EIOMenus.DRAIN.get(), DrainScreen::new);
-        event.register(EIOMenus.NIARD.get(), NiardScreen::new);
-        event.register(EIOMenus.WIRED_CHARGER.get(), WiredChargerScreen::new);
-        event.register(EIOMenus.WIRELESS_CHARGER.get(), WirelessChargerScreen::new);
-        event.register(EIOMenus.PAINTING_MACHINE.get(), PaintingMachineScreen::new);
-        event.register(EIOMenus.SOUL_ENGINE.get(), SoulEngineScreen::new);
-        event.register(EIOMenus.TRAVEL_ANCHOR.get(), TravelAnchorScreen::new);
-        event.register(EIOMenus.XP_OBELISK.get(), XPObeliskScreen::new);
-        event.register(EIOMenus.FARMING_STATION.get(), FarmingStationScreen::new);
-        event.register(EIOMenus.INHIBITOR_OBELISK.get(), InhibitorObeliskScreen::new);
-        event.register(EIOMenus.AVERSION_OBELISK.get(), AversionObeliskScreen::new);
-        event.register(EIOMenus.RELOCATOR_OBELISK.get(), RelocatorObeliskScreen::new);
-        event.register(EIOMenus.ATTRACTOR_OBELISK.get(), AttractorObeliskScreen::new);
-        event.register(EIOMenus.WEATHER_OBELISK.get(), WeatherObeliskScreen::new);
-        event.register(EIOMenus.VAT.get(), VatScreen::new);
+        MenuScreens.register(EIOMenus.ALLOY_SMELTER.get(), AlloySmelterScreen::new);
+        MenuScreens.register(EIOMenus.SAG_MILL.get(), SagMillScreen::new);
+        MenuScreens.register(EIOMenus.STIRLING_GENERATOR.get(), StirlingGeneratorScreen::new);
+        MenuScreens.register(EIOMenus.SLICE_N_SPLICE.get(), SlicerScreen::new);
+        MenuScreens.register(EIOMenus.IMPULSE_HOPPER.get(), ImpulseHopperScreen::new);
+        MenuScreens.register(EIOMenus.SOUL_BINDER.get(), SoulBinderScreen::new);
+        MenuScreens.register(EIOMenus.POWERED_SPAWNER.get(), PoweredSpawnerScreen::new);
+        MenuScreens.register(EIOMenus.VACUUM_CHEST.get(), VacuumChestScreen::new);
+        MenuScreens.register(EIOMenus.XP_VACUUM.get(), XPVacuumScreen::new);
+        MenuScreens.register(EIOMenus.CRAFTER.get(), CrafterScreen::new);
+        MenuScreens.register(EIOMenus.DRAIN.get(), DrainScreen::new);
+        MenuScreens.register(EIOMenus.NIARD.get(), NiardScreen::new);
+        MenuScreens.register(EIOMenus.WIRED_CHARGER.get(), WiredChargerScreen::new);
+        MenuScreens.register(EIOMenus.WIRELESS_CHARGER.get(), WirelessChargerScreen::new);
+        MenuScreens.register(EIOMenus.PAINTING_MACHINE.get(), PaintingMachineScreen::new);
+        MenuScreens.register(EIOMenus.SOUL_ENGINE.get(), SoulEngineScreen::new);
+        MenuScreens.register(EIOMenus.TRAVEL_ANCHOR.get(), TravelAnchorScreen::new);
+        MenuScreens.register(EIOMenus.XP_OBELISK.get(), XPObeliskScreen::new);
+        MenuScreens.register(EIOMenus.FARMING_STATION.get(), FarmingStationScreen::new);
+        MenuScreens.register(EIOMenus.INHIBITOR_OBELISK.get(), InhibitorObeliskScreen::new);
+        MenuScreens.register(EIOMenus.AVERSION_OBELISK.get(), AversionObeliskScreen::new);
+        MenuScreens.register(EIOMenus.RELOCATOR_OBELISK.get(), RelocatorObeliskScreen::new);
+        MenuScreens.register(EIOMenus.ATTRACTOR_OBELISK.get(), AttractorObeliskScreen::new);
+        MenuScreens.register(EIOMenus.WEATHER_OBELISK.get(), WeatherObeliskScreen::new);
+        MenuScreens.register(EIOMenus.VAT.get(), VatScreen::new);
 
         // Storage
-        event.register(EIOMenus.CAPACITOR_BANK.get(), CapacitorBankScreen::new);
-        event.register(EIOMenus.FLUID_TANK.get(), FluidTankScreen::new);
+        MenuScreens.register(EIOMenus.CAPACITOR_BANK.get(), CapacitorBankScreen::new);
+        MenuScreens.register(EIOMenus.FLUID_TANK.get(), FluidTankScreen::new);
 
         // Misc screens
-        event.register(EIOMenus.COORDINATE.get(), CoordinateMenuScreen::new);
-        event.register(EIOMenus.CONDUIT_MENU.get(), ConduitScreen::new);
-        event.register(EIOMenus.ENCHANTER.get(), EnchanterScreen::new);
+        MenuScreens.register(EIOMenus.COORDINATE.get(), CoordinateMenuScreen::new);
+        MenuScreens.register(EIOMenus.CONDUIT_MENU.get(), ConduitScreen::new);
+        MenuScreens.register(EIOMenus.ENCHANTER.get(), EnchanterScreen::new);
     }
 
     @SubscribeEvent
@@ -332,9 +323,8 @@ public class EnderIOClient {
                         .fromNamespaceAndPath(gliderModelPath.getNamespace(), gliderModelPath.getPath()
                                 .substring("models/".length(), gliderModelPath.getPath().length() - 5));
 
-                ModelResourceLocation modelLocation = ModelResourceLocation.standalone(modelLookupLocation);
-                event.register(modelLocation);
-                HANG_GLIDER_MODEL_LOCATION.put(gliderItem.get(), modelLocation);
+                event.register(modelLookupLocation);
+                HANG_GLIDER_MODEL_LOCATION.put(gliderItem.get(), modelLookupLocation);
             }
         }
 
@@ -386,11 +376,11 @@ public class EnderIOClient {
 
     @SubscribeEvent
     public static void registerGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
-        event.register(EnderIO.rl("painted_block"), new PaintedBlockGeometry.Loader());
-        event.register(EnderIO.rl("io_overlay"), new IOOverlayBakedModel.Loader());
-        event.register(EnderIO.rl("conduit"), new ConduitBundleGeometry.Loader());
-        event.register(EnderIO.rl("conduit_item"), new ConduitItemModelLoader());
-        event.register(EnderIO.rl("facades_item"), new FacadeItemGeometry.Loader());
+        event.register("painted_block", new PaintedBlockGeometry.Loader());
+        event.register("io_overlay", new IOOverlayBakedModel.Loader());
+        event.register("conduit", new ConduitBundleGeometry.Loader());
+        event.register("conduit_item", new ConduitItemModelLoader());
+        event.register("facades_item", new FacadeItemGeometry.Loader());
     }
 
     @SubscribeEvent
@@ -408,23 +398,8 @@ public class EnderIOClient {
     }
 
     @SubscribeEvent
-    public static void registerOverlays(RegisterGuiLayersEvent event) {
-        event.registerAbove(VanillaGuiLayers.CROSSHAIR, EnderIO.rl("anchor_hud"), TravelAnchorHud.INSTANCE);
-    }
-
-    @SubscribeEvent
-    public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
-        event.registerBlock(ConduitBundleExtension.INSTANCE, EIOBlocks.CONDUIT_BUNDLE);
-
-        event.registerItem(new IClientItemExtensions() {
-            // Minecraft can be null during datagen
-            final Lazy<BlockEntityWithoutLevelRenderer> renderer = Lazy.of(() -> FluidTankBEWLR.INSTANCE);
-
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return renderer.get();
-            }
-        }, EIOBlocks.FLUID_TANK.asItem(), EIOBlocks.PRESSURIZED_FLUID_TANK.asItem());
+    public static void registerOverlays(RegisterGuiOverlaysEvent event) {
+        event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "anchor_hud", TravelAnchorHud.INSTANCE);
     }
 
     @SubscribeEvent

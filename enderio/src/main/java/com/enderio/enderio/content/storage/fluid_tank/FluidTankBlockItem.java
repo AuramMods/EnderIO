@@ -1,6 +1,9 @@
 package com.enderio.enderio.content.storage.fluid_tank;
 
 import net.minecraft.core.Direction;
+import com.enderio.enderio.client.content.fluid_tank.FluidTankBEWLR;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import com.enderio.core.client.item.AdvancedTooltipProvider;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
@@ -10,13 +13,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import java.util.function.BiFunction;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import com.enderio.core.common.capability.NbtFluidHandlerItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 public class FluidTankBlockItem extends BlockItem implements AdvancedTooltipProvider {
 
@@ -29,6 +33,17 @@ public class FluidTankBlockItem extends BlockItem implements AdvancedTooltipProv
     public FluidTankBlockItem(FluidTankBlock block, Properties properties, int capacity) {
         super(block, properties);
         this.capacity = capacity;
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                // Resolve only when rendering; Minecraft is unavailable during datagen.
+                return FluidTankBEWLR.INSTANCE;
+            }
+        });
     }
 
     public int getCapacity() {

@@ -4,7 +4,7 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.util.FastColor;
-import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
+import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
 import org.joml.Vector3f;
 
 public class ModelRenderUtil {
@@ -76,20 +76,22 @@ public class ModelRenderUtil {
         float ny = normal.y;
         float nz = normal.z;
 
-        float tw = sprite.contents().width() / 16f;
-        float th = sprite.contents().height() / 16f;
+        // 1.20.1 sprite UV methods take sixteenths, not normalized coordinates.
+        float tw = sprite.contents().width();
+        float th = sprite.contents().height();
 
         float r = FastColor.ARGB32.red(color) / 255.0f;
         float g = FastColor.ARGB32.green(color) / 255.0f;
         float b = FastColor.ARGB32.blue(color) / 255.0f;
 
-        QuadBakingVertexConsumer baker = new QuadBakingVertexConsumer();
+        QuadBakingVertexConsumer.Buffered baker = new QuadBakingVertexConsumer.Buffered();
         baker.setSprite(sprite);
+        baker.setTintIndex(-1);
         baker.setDirection(Direction.getNearest(normal.x, normal.y, normal.z));
-        baker.addVertex(v1.x, v1.y, v1.z).setNormal(nx, ny, nz).setUv(sprite.getU(0), sprite.getV(0)).setColor(r, g, b, alpha);
-        baker.addVertex(v2.x, v2.y, v2.z).setNormal(nx, ny, nz).setUv(sprite.getU(0), sprite.getV(th)).setColor(r, g, b, alpha);
-        baker.addVertex(v3.x, v3.y, v3.z).setNormal(nx, ny, nz).setUv(sprite.getU(tw), sprite.getV(th)).setColor(r, g, b, alpha);
-        baker.addVertex(v4.x, v4.y, v4.z).setNormal(nx, ny, nz).setUv(sprite.getU(tw), sprite.getV(0)).setColor(r, g, b, alpha);
-        return baker.bakeQuad();
+        baker.vertex(v1.x, v1.y, v1.z).normal(nx, ny, nz).uv(sprite.getU(0), sprite.getV(0)).color(r, g, b, alpha).endVertex();
+        baker.vertex(v2.x, v2.y, v2.z).normal(nx, ny, nz).uv(sprite.getU(0), sprite.getV(th)).color(r, g, b, alpha).endVertex();
+        baker.vertex(v3.x, v3.y, v3.z).normal(nx, ny, nz).uv(sprite.getU(tw), sprite.getV(th)).color(r, g, b, alpha).endVertex();
+        baker.vertex(v4.x, v4.y, v4.z).normal(nx, ny, nz).uv(sprite.getU(tw), sprite.getV(0)).color(r, g, b, alpha).endVertex();
+        return baker.getQuad();
     }
 }

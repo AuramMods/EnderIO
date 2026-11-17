@@ -28,12 +28,12 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
-import net.neoforged.neoforge.client.model.IDynamicBakedModel;
-import net.neoforged.neoforge.client.model.IQuadTransformer;
-import net.neoforged.neoforge.client.model.QuadTransformers;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
+import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.model.IDynamicBakedModel;
+import net.minecraftforge.client.model.IQuadTransformer;
+import net.minecraftforge.client.model.QuadTransformers;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
@@ -186,7 +186,7 @@ public class ConduitBundleModel implements IDynamicBakedModel {
             // rendered have only one distinct pos, so I can safely assume get(0) is valid
             List<Vec3i> duplicatePositions = rendered.stream()
                     .map(offsets::get)
-                    .map(List::getFirst)
+                    .map(list -> list.get(0))
                     .filter(n -> !duplicateFinder.add(n))
                     .toList();
             for (Vec3i duplicatePosition : duplicatePositions) {
@@ -198,9 +198,9 @@ public class ConduitBundleModel implements IDynamicBakedModel {
             }
             for (Holder<Conduit<?, ?>> toRender : rendered) {
                 List<Vec3i> offsetsForType = offsets.get(toRender);
-                if (box == null || !box.contains(offsetsForType.getFirst())) {
+                if (box == null || !box.contains(offsetsForType.get(0))) {
                     quads.addAll(new ConduitTextureEmissiveQuadTransformer(sprite(bundleState.getTexture(toRender)), 0)
-                            .andThen(QuadTransformers.applying(translateTransformation(offsetsForType.getFirst())))
+                            .andThen(QuadTransformers.applying(translateTransformation(offsetsForType.get(0))))
                             .process(modelOf(CONDUIT_CORE).getQuads(state, side, rand, extraData, renderType)));
                 }
             }
@@ -329,7 +329,7 @@ public class ConduitBundleModel implements IDynamicBakedModel {
             return ModelHelper.getMissingTexture();
         }
 
-        return sprite(bundleState.getTexture(bundleState.conduits().getFirst()));
+        return sprite(bundleState.getTexture(bundleState.conduits().get(0)));
     }
 
     @Override

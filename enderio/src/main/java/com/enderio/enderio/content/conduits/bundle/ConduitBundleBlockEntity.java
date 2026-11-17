@@ -73,7 +73,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import com.enderio.core.common.capability.NeighborCapability;
 import com.enderio.core.common.capability.CapabilityUtil;
 import java.util.function.BiFunction;
-import net.neoforged.neoforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;

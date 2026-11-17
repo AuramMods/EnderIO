@@ -8,7 +8,7 @@ import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
@@ -18,7 +18,8 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
  */
 @Mixin(BlockRenderDispatcher.class)
 public class BlockRenderDispatcherMixin {
-    @ModifyVariable(method = "renderBreakingTexture(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/BlockAndTintGetter;Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/neoforged/neoforge/client/model/data/ModelData;)V", at = @At("HEAD"), ordinal = 0, argsOnly = true)
+    // This six-argument overload is added by Forge and has no vanilla obfuscation mapping.
+    @ModifyVariable(method = "renderBreakingTexture(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/BlockAndTintGetter;Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraftforge/client/model/data/ModelData;)V", at = @At("HEAD"), ordinal = 0, argsOnly = true, remap = false)
     private BlockState enderio$getFacade(BlockState state, BlockState argState, BlockPos argPos, BlockAndTintGetter argLevel, PoseStack argPoseStack, VertexConsumer argConsumer, ModelData argModelData) {
         BlockState facadeState = null;
         if (argLevel instanceof ClientLevel clientLevel) {

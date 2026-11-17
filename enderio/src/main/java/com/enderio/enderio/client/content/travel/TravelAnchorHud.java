@@ -4,18 +4,18 @@ import com.enderio.enderio.api.travel.TravelTarget;
 import com.enderio.enderio.content.travel.TravelHandler;
 import com.enderio.enderio.content.travel.travel_anchor.AnchorTravelTarget;
 import com.enderio.enderio.init.EIOBlocks;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.LayeredDraw;
+import net.minecraftforge.client.gui.overlay.ForgeGui;
+import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 
-public class TravelAnchorHud implements LayeredDraw.Layer {
+public class TravelAnchorHud implements IGuiOverlay {
     public static final TravelAnchorHud INSTANCE = new TravelAnchorHud();
 
     private TravelAnchorHud() {
@@ -26,11 +26,11 @@ public class TravelAnchorHud implements LayeredDraw.Layer {
     static final int ITEM_SIZE = 16;
 
     @Override
-    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
 
-        if (player == null || !TravelHandler.canBlockTeleport(player)) {
+        if (minecraft.options.hideGui || player == null || !TravelHandler.canBlockTeleport(player)) {
             return;
         }
 

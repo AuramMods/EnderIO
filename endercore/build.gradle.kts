@@ -105,6 +105,14 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
 }
 
 
+// CPU-only model regression tests use the real main-mod helper and native Forge
+// quad builder. They never initialize Minecraft or create a display, and the
+// bridged sources remain confined to test output.
+tasks.named<JavaCompile>(sourceSets.test.get().compileJavaTaskName) {
+    source(rootProject.file("enderio/src/main/java/com/enderio/enderio/client/foundation/model/ModelRenderUtil.java"))
+    source(rootProject.file("enderio/src/test/java/com/enderio/enderio/client/ModelRenderUtilTests.java"))
+}
+
 dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
     testImplementation(libs.junitJupiter)

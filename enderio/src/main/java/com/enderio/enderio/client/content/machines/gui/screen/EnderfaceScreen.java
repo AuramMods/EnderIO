@@ -35,7 +35,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
+import net.minecraftforge.client.model.pipeline.VertexConsumerWrapper;
 import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;

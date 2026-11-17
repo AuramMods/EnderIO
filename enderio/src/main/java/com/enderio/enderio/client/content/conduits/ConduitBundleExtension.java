@@ -3,16 +3,13 @@ package com.enderio.enderio.client.content.conduits;
 import com.enderio.enderio.api.conduits.bundle.ConduitBundle;
 import com.enderio.enderio.client.content.conduits.model.facades.ClientFacadeVisibility;
 import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.core.BlockPos;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.neoforge.client.extensions.common.IClientBlockExtensions;
+import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 
 public class ConduitBundleExtension implements IClientBlockExtensions {
 
@@ -53,29 +50,6 @@ public class ConduitBundleExtension implements IClientBlockExtensions {
         }
 
         // Not a bundle
-        return false;
-    }
-
-    @Override
-    public boolean playBreakSound(BlockState state, Level level, BlockPos pos) {
-        if (level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity conduitBundle) {
-            // Get default conduit sound
-            var player = Minecraft.getInstance().player;
-            SoundType soundType = state.getSoundType(level, pos, player);
-
-            // Get facade sound.
-            if (conduitBundle.hasFacade()) {
-                var facadeBlock = conduitBundle.getFacadeBlock();
-                if (ClientFacadeVisibility.areFacadesVisible()) {
-                    soundType = facadeBlock.getSoundType(facadeBlock.defaultBlockState(), level, pos, player);
-                }
-            }
-
-            level.playSound(player, pos, soundType.getBreakSound(), SoundSource.BLOCKS,
-                (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
-            return true;
-        }
-
         return false;
     }
 }

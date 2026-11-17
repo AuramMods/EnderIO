@@ -8,7 +8,9 @@ import com.enderio.enderio.api.conduits.ConduitRedstoneSignalAware;
 import com.enderio.enderio.api.conduits.bundle.AddConduitResult;
 import com.enderio.enderio.api.conduits.connection.ConnectionStatus;
 import com.enderio.enderio.client.content.conduits.ConduitBreakParticle;
+import com.enderio.enderio.client.content.conduits.ConduitBundleExtension;
 import com.enderio.enderio.client.content.conduits.model.facades.FacadeUtil;
+import com.enderio.enderio.client.content.conduits.model.facades.ClientFacadeVisibility;
 import com.enderio.enderio.content.conduits.ConduitBlockItem;
 import com.enderio.enderio.content.conduits.menu.ConduitMenu;
 import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduit;
@@ -57,6 +59,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -66,6 +69,7 @@ import net.minecraftforge.event.level.BlockEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWaterloggedBlock {
@@ -75,6 +79,11 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     public ConduitBundleBlock(Properties properties) {
         super(properties);
         registerDefaultState(getStateDefinition().any().setValue(WATERLOGGED, false));
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
+        consumer.accept(ConduitBundleExtension.INSTANCE);
     }
 
     @Override
@@ -686,7 +695,11 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     public SoundType getSoundType(BlockState state, LevelReader level, BlockPos pos, @Nullable Entity entity) {
         Optional<Block> facade = getFacadeBlock(level, pos);
         if (facade.isPresent()) {
-            if (!(entity instanceof Player) || FacadeUtil.areFacadesVisible((Player) entity)) {
+            // Forge break effects query this hook with a null entity. Use the
+            // local facade visibility there, replacing NeoForge's playBreakSound hook.
+            boolean visible = entity instanceof Player player ? FacadeUtil.areFacadesVisible(player)
+                : entity != null || !level.isClientSide() || ClientFacadeVisibility.areFacadesVisible();
+            if (visible) {
                 return facade.get().getSoundType(facade.get().defaultBlockState(), level, pos, entity);
             }
         }

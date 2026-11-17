@@ -19,7 +19,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.AddSectionGeometryEvent;
-import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
+import net.minecraftforge.client.model.pipeline.VertexConsumerWrapper;
 
 import java.util.Map;
 
