@@ -1,27 +1,27 @@
 package com.enderio.core.common.energy;
 
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.capabilities.Capabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 public class ItemStackEnergy {
 
     public static int getMaxEnergyStored(ItemStack stack) {
-        var energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        var energyStorage = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
         return energyStorage != null ? energyStorage.getMaxEnergyStored() : 0;
     }
 
     public static int getEnergyStored(ItemStack stack) {
-        var energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        var energyStorage = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
         return energyStorage != null ? energyStorage.getEnergyStored() : 0;
     }
 
     public static boolean hasEnergy(ItemStack stack, int amount) {
-        var energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        var energyStorage = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
         return energyStorage != null && energyStorage.getEnergyStored() >= amount;
     }
 
     public static void setFull(ItemStack stack) {
-        var energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        var energyStorage = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
 
         if (energyStorage != null) {
             energyStorage.receiveEnergy(energyStorage.getMaxEnergyStored(), false);
@@ -29,7 +29,7 @@ public class ItemStackEnergy {
     }
 
     public static void setEmpty(ItemStack stack) {
-        var energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        var energyStorage = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
 
         if (energyStorage != null) {
             energyStorage.extractEnergy(energyStorage.getEnergyStored(), false);
@@ -37,7 +37,7 @@ public class ItemStackEnergy {
     }
 
     public static void set(ItemStack stack, int energy) {
-        var energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        var energyStorage = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
 
         if (energyStorage != null) {
             int delta = energy - energyStorage.getEnergyStored();
@@ -57,7 +57,7 @@ public class ItemStackEnergy {
      * @return Amount of energy that was (or would have been, if simulated) accepted by the storage.
      */
     public static int receiveEnergy(ItemStack stack, int maxReceive, boolean simulate) {
-        var energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        var energyStorage = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
         return energyStorage != null ? energyStorage.receiveEnergy(maxReceive, simulate) : 0;
     }
 
@@ -69,7 +69,7 @@ public class ItemStackEnergy {
      * @return Amount of energy that was (or would have been, if simulated) extracted from the storage.
      */
     public static int extractEnergy(ItemStack stack, int maxExtract, boolean simulate) {
-        var energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        var energyStorage = stack.getCapability(ForgeCapabilities.ENERGY).orElse(null);
         return energyStorage != null ? energyStorage.extractEnergy(maxExtract, simulate) : 0;
     }
 }

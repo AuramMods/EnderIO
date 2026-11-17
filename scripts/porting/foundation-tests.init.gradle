@@ -1,0 +1,28 @@
+// Scoped regression tests while unrelated EnderCore sources are being ported.
+// This does not alter/skip the normal compileJava or test tasks and is not a
+// replacement for the full test suite. Remove the isolation once it is unneeded.
+allprojects {
+    afterEvaluate { project ->
+        if (project.path == ':endercore') {
+            def classes = layout.buildDirectory.dir('port-foundation-tests/classes')
+            def compileTests = tasks.register('compilePortFoundationTests', JavaCompile) {
+                source files(
+                    'src/main/java/com/enderio/core/common/serialization/OrderedListCodec.java',
+                    'src/test/java/com/enderio/core/serialization/OrderedListCodecTests.java'
+                )
+                classpath = configurations.testRuntimeClasspath
+                destinationDirectory = classes
+                javaCompiler = javaToolchains.compilerFor(java.toolchain)
+                options.encoding = 'UTF-8'
+            }
+            tasks.register('portFoundationTest', Test) {
+                dependsOn compileTests
+                testClassesDirs = files(classes)
+                classpath = files(classes) + configurations.testRuntimeClasspath
+                javaLauncher = javaToolchains.launcherFor(java.toolchain)
+                useJUnitPlatform()
+                filter { includeTestsMatching 'com.enderio.core.serialization.OrderedListCodecTests' }
+            }
+        }
+    }
+}

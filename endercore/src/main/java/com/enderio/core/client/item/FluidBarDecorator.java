@@ -3,9 +3,9 @@ package com.enderio.core.client.item;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.client.IItemDecorator;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.client.IItemDecorator;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 
 public class FluidBarDecorator implements IItemDecorator {
     public static final FluidBarDecorator INSTANCE = new FluidBarDecorator();
@@ -14,7 +14,7 @@ public class FluidBarDecorator implements IItemDecorator {
 
     @Override
     public boolean render(GuiGraphics guiGraphics, Font font, ItemStack stack, int xOffset, int yOffset) {
-        var fluidHandler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
 
         if (fluidHandler == null) {
             return false;

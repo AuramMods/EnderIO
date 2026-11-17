@@ -10,8 +10,8 @@ import java.util.List;
 
 public abstract class AbstractClientSlotListTooltip implements ClientTooltipComponent {
 
-    private static final ResourceLocation BACKGROUND_SPRITE = ResourceLocation.withDefaultNamespace("container/bundle/background");
-    private static final ResourceLocation SLOT_SPRITE = ResourceLocation.withDefaultNamespace("container/bundle/slot");
+    private static final ResourceLocation BACKGROUND_SPRITE = new ResourceLocation("container/bundle/background");
+    private static final ResourceLocation SLOT_SPRITE = new ResourceLocation("container/bundle/slot");
 
     private static final int SLOT_SIZE_X = 18;
     private static final int SLOT_SIZE_Y = 20;

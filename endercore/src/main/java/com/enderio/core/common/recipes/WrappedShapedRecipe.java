@@ -1,13 +1,13 @@
 package com.enderio.core.common.recipes;
 
-import com.mojang.serialization.MapCodec;
-import net.minecraft.core.HolderLookup;
+import com.google.gson.JsonObject;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.NonNullList;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -23,7 +23,8 @@ public abstract class WrappedShapedRecipe extends ShapedRecipe implements Crafti
     private final ShapedRecipe wrapped;
 
     protected WrappedShapedRecipe(ShapedRecipe wrapped) {
-        super(wrapped.getGroup(), wrapped.category(), wrapped.pattern, ItemStack.EMPTY, wrapped.showNotification());
+        super(wrapped.getId(), wrapped.getGroup(), wrapped.category(), wrapped.getWidth(), wrapped.getHeight(),
+            wrapped.getIngredients(), ItemStack.EMPTY, wrapped.showNotification());
         this.wrapped = wrapped;
     }
 
@@ -37,10 +38,10 @@ public abstract class WrappedShapedRecipe extends ShapedRecipe implements Crafti
     }
 
     @Override
-    public abstract ItemStack assemble(CraftingInput inv, HolderLookup.Provider lookupProvider);
+    public abstract ItemStack assemble(CraftingContainer inv, RegistryAccess lookupProvider);
 
     @Override
-    public boolean matches(CraftingInput inv, Level world) {
+    public boolean matches(CraftingContainer inv, Level world) {
         // Note: We do not override the matches method if it matches ignoring NBT,
         // to ensure that we return the proper value for if there is a match that gives
         // a proper output
@@ -53,12 +54,12 @@ public abstract class WrappedShapedRecipe extends ShapedRecipe implements Crafti
     }
 
     @Override
-    public ItemStack getResultItem(HolderLookup.Provider lookupProvider) {
+    public ItemStack getResultItem(RegistryAccess lookupProvider) {
         return wrapped.getResultItem(lookupProvider);
     }
 
     @Override
-    public NonNullList<ItemStack> getRemainingItems(CraftingInput inv) {
+    public NonNullList<ItemStack> getRemainingItems(CraftingContainer inv) {
         return wrapped.getRemainingItems(inv);
     }
 
@@ -99,8 +100,6 @@ public abstract class WrappedShapedRecipe extends ShapedRecipe implements Crafti
 
     public static class Serializer<T extends WrappedShapedRecipe> implements RecipeSerializer<T> {
         private final Function<ShapedRecipe, T> wrapper;
-        private MapCodec<T> codec;
-        private StreamCodec<RegistryFriendlyByteBuf, T> streamCodec;
 
         public Serializer(Function<ShapedRecipe, T> wrapper) {
             this.wrapper = wrapper;
@@ -108,22 +107,18 @@ public abstract class WrappedShapedRecipe extends ShapedRecipe implements Crafti
 
         @NotNull
         @Override
-        public MapCodec<T> codec() {
-            if (codec == null) {
-                codec = RecipeSerializer.SHAPED_RECIPE.codec().xmap(wrapper, WrappedShapedRecipe::getWrapped);
-            }
-
-            return codec;
+        public T fromJson(ResourceLocation id, JsonObject json) {
+            return wrapper.apply(RecipeSerializer.SHAPED_RECIPE.fromJson(id, json));
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, T> streamCodec() {
-            if (streamCodec == null) {
-                streamCodec = RecipeSerializer.SHAPED_RECIPE.streamCodec()
-                        .map(wrapper, WrappedShapedRecipe::getWrapped);
-            }
+        public T fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
+            return wrapper.apply(RecipeSerializer.SHAPED_RECIPE.fromNetwork(id, buffer));
+        }
 
-            return streamCodec;
+        @Override
+        public void toNetwork(FriendlyByteBuf buffer, T recipe) {
+            RecipeSerializer.SHAPED_RECIPE.toNetwork(buffer, recipe.getWrapped());
         }
     }
 }

@@ -38,7 +38,9 @@ public abstract class AthenaDefinitionProvider implements DataProvider {
         List<CompletableFuture<?>> list = new ArrayList<>();
         for (var entry : definitions.entrySet()) {
             Path path = athenaPathProvider.json(entry.getKey().builtInRegistryHolder().key().location());
-            JsonElement element = Athena.CODEC.encodeStart(JsonOps.INSTANCE, entry.getValue()).getOrThrow();
+            JsonElement element = Athena.CODEC.encodeStart(JsonOps.INSTANCE, entry.getValue()).getOrThrow(false, message -> {
+                throw new IllegalStateException("Cannot encode Athena definition: " + message);
+            });
             list.add(DataProvider.saveStable(cache, element, path));
         }
 
@@ -72,7 +74,7 @@ public abstract class AthenaDefinitionProvider implements DataProvider {
         map.put("horizontal", horizontal);
         map.put("vertical", vertical);
         map.put("particle", particle);
-        Athena definition = new Athena(ResourceLocation.parse("athena:ctm"), map, tint, renderType);
+        Athena definition = new Athena(new ResourceLocation("athena:ctm"), map, tint, renderType);
         register(block, definition);
     }
 }

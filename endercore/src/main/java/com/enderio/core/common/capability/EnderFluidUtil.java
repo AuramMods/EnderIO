@@ -1,6 +1,6 @@
 package com.enderio.core.common.capability;
 
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class EnderFluidUtil {
     public static boolean isEmpty(IFluidHandler fluidHandler) {

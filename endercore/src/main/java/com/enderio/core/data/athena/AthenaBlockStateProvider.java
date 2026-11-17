@@ -2,9 +2,9 @@ package com.enderio.core.data.athena;
 
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
-import net.neoforged.neoforge.client.model.generators.VariantBlockStateBuilder;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraftforge.client.model.generators.BlockStateProvider;
+import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.ApiStatus;
 
 /**

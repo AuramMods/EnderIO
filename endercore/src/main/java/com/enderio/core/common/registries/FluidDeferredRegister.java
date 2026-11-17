@@ -10,12 +10,13 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.neoforged.neoforge.fluids.BaseFlowingFluid;
-import net.neoforged.neoforge.fluids.FluidType;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraftforge.fluids.ForgeFlowingFluid;
+import net.minecraftforge.fluids.FluidType;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiFunction;
@@ -27,8 +28,8 @@ public class FluidDeferredRegister {
     private final String namespace;
     private final DeferredRegister<FluidType> fluidTypes;
     private final DeferredRegister<Fluid> fluids;
-    private final DeferredRegister.Blocks blocks;
-    private final DeferredRegister.Items items;
+    private final DeferredRegister<Block> blocks;
+    private final DeferredRegister<Item> items;
 
     public static FluidDeferredRegister create(String namespace) {
         return new FluidDeferredRegister(namespace);
@@ -36,10 +37,10 @@ public class FluidDeferredRegister {
 
     protected FluidDeferredRegister(String namespace) {
         this.namespace = namespace;
-        fluidTypes = DeferredRegister.create(NeoForgeRegistries.FLUID_TYPES, namespace);
+        fluidTypes = DeferredRegister.create(ForgeRegistries.Keys.FLUID_TYPES, namespace);
         fluids = DeferredRegister.create(Registries.FLUID, namespace);
-        blocks = DeferredRegister.createBlocks(namespace);
-        items = DeferredRegister.createItems(namespace);
+        blocks = DeferredRegister.create(Registries.BLOCK, namespace);
+        items = DeferredRegister.create(Registries.ITEM, namespace);
     }
 
     public Builder builder(String name) {
@@ -54,11 +55,11 @@ public class FluidDeferredRegister {
         return fluids;
     }
 
-    public DeferredRegister.Items itemsRegister() {
+    public DeferredRegister<Item> itemsRegister() {
         return items;
     }
 
-    public DeferredRegister.Blocks blocksRegister() {
+    public DeferredRegister<Block> blocksRegister() {
         return blocks;
     }
 
@@ -73,8 +74,8 @@ public class FluidDeferredRegister {
         private final String name;
 
         private Function<FluidType.Properties, FluidType> fluidTypeFactory;
-        private Function<BaseFlowingFluid.Properties, BaseFlowingFluid> sourceFluidFactory;
-        private Function<BaseFlowingFluid.Properties, BaseFlowingFluid> flowingFluidFactory;
+        private Function<ForgeFlowingFluid.Properties, ForgeFlowingFluid> sourceFluidFactory;
+        private Function<ForgeFlowingFluid.Properties, ForgeFlowingFluid> flowingFluidFactory;
         private FluidType.Properties fluidTypeProperties;
         private BiFunction<FlowingFluid, BlockBehaviour.Properties, ? extends LiquidBlock> blockFactory;
         private BlockBehaviour.Properties blockProperties;
@@ -96,12 +97,12 @@ public class FluidDeferredRegister {
                     consumer.accept(new IClientFluidTypeExtensions() {
                         @Override
                         public ResourceLocation getStillTexture() {
-                            return ResourceLocation.fromNamespaceAndPath(namespace, "block/" + name + "_still");
+                            return new ResourceLocation(namespace, "block/" + name + "_still");
                         }
 
                         @Override
                         public ResourceLocation getFlowingTexture() {
-                            return ResourceLocation.fromNamespaceAndPath(namespace, "block/" + name + "_flowing");
+                            return new ResourceLocation(namespace, "block/" + name + "_flowing");
                         }
 
                         @Override
@@ -112,11 +113,11 @@ public class FluidDeferredRegister {
                 }
             };
 
-            sourceFluidFactory = BaseFlowingFluid.Source::new;
-            flowingFluidFactory = BaseFlowingFluid.Flowing::new;
+            sourceFluidFactory = ForgeFlowingFluid.Source::new;
+            flowingFluidFactory = ForgeFlowingFluid.Flowing::new;
 
-            blockFactory = LiquidBlock::new;
-            blockProperties = BlockBehaviour.Properties.ofFullCopy(Blocks.WATER);
+            blockFactory = (fluid, properties) -> new LiquidBlock(() -> fluid, properties);
+            blockProperties = BlockBehaviour.Properties.copy(Blocks.WATER);
         }
 
         public Builder fluidTypeFactory(Function<FluidType.Properties, FluidType> fluidTypeFactory) {
@@ -125,8 +126,8 @@ public class FluidDeferredRegister {
         }
 
         public Builder customFluid(
-            Function<BaseFlowingFluid.Properties, BaseFlowingFluid> sourceFluidFactory,
-            Function<BaseFlowingFluid.Properties, BaseFlowingFluid> flowingFluidFactory) {
+            Function<ForgeFlowingFluid.Properties, ForgeFlowingFluid> sourceFluidFactory,
+            Function<ForgeFlowingFluid.Properties, ForgeFlowingFluid> flowingFluidFactory) {
             this.sourceFluidFactory = sourceFluidFactory;
             this.flowingFluidFactory = flowingFluidFactory;
             return this;

@@ -6,7 +6,7 @@ import com.enderio.core.common.network.menu.ServerboundSetSyncSlotDataPacket;
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraftforge.network.handling.IPayloadContext;
 
 public class ServerPayloadHandler {
 

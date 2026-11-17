@@ -1,40 +1,83 @@
 package com.enderio.core.common.registries;
 
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.neoforged.neoforge.capabilities.BlockCapability;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.registries.RegistryObject;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
-public class BlockEntityTypeDeferredHolder<T extends BlockEntity> extends DeferredHolder<BlockEntityType<?>, BlockEntityType<T>> {
-    Set<AttachedCapability<T, ?, ?>> attachedCapabilities = Set.of();
+/** A registered block entity type and its Forge capability factories. */
+public final class BlockEntityTypeDeferredHolder<B extends BlockEntity> implements Supplier<BlockEntityType<B>> {
+    private final RegistryObject<BlockEntityType<B>> type;
+    private final List<AttachedCapability<B, ?>> capabilities;
 
-    public BlockEntityTypeDeferredHolder(ResourceKey<? extends Registry<BlockEntityType<?>>> registryKey, ResourceLocation valueName) {
-        this(ResourceKey.create(registryKey, valueName));
+    public BlockEntityTypeDeferredHolder(RegistryObject<BlockEntityType<B>> type, List<AttachedCapability<B, ?>> capabilities) {
+        this.type = type;
+        this.capabilities = List.copyOf(capabilities);
     }
 
-    protected BlockEntityTypeDeferredHolder(ResourceKey<BlockEntityType<?>> key) {
-        super(key);
+    @Override
+    public BlockEntityType<B> get() {
+        return type.get();
     }
 
-    public void registerCapabilityProviders(RegisterCapabilitiesEvent event) {
-        for (AttachedCapability<T, ?, ?> capabilityProvider : attachedCapabilities) {
-            capabilityProvider.registerProvider(event, value());
+    public BoundCapabilities<B> bind(BlockEntity entity) {
+        if (entity.getType() != get()) {
+            throw new IllegalArgumentException("Capability factories belong to a different block entity type");
         }
+        @SuppressWarnings("unchecked")
+        B typedEntity = (B) entity;
+        return new BoundCapabilities<>(typedEntity, capabilities);
     }
 
-    public record AttachedCapability<T extends BlockEntity, TCap, TContext>(
-        BlockCapability<TCap, TContext> capability,
-        ICapabilityProvider<? super T, TContext, TCap> provider) {
+    public record AttachedCapability<B extends BlockEntity, C>(
+        Capability<C> capability, BiFunction<? super B, @Nullable Direction, @Nullable C> factory) {
+    }
 
-        private void registerProvider(RegisterCapabilitiesEvent event, BlockEntityType<T> type) {
-            event.registerBlockEntity(capability, type, provider);
+    /** Lazily constructs one provider per capability/side and participates in Forge invalidation. */
+    public static final class BoundCapabilities<B extends BlockEntity> implements ICapabilityProvider {
+        private final B entity;
+        private final List<AttachedCapability<B, ?>> factories;
+        private final Map<Capability<?>, Map<Direction, LazyOptional<?>>> instances = new HashMap<>();
+
+        public BoundCapabilities(B entity, List<AttachedCapability<B, ?>> factories) {
+            this.entity = entity;
+            this.factories = List.copyOf(factories);
+        }
+
+        @Override
+        public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction side) {
+            var sides = instances.get(capability);
+            if (sides != null && sides.containsKey(side)) {
+                return sides.get(side).cast();
+            }
+            for (var binding : factories) {
+                if (binding.capability() != capability) continue;
+                Object value = binding.factory().apply(entity, side);
+                if (value != null) {
+                    LazyOptional<?> instance = LazyOptional.of(() -> value);
+                    instances.computeIfAbsent(capability, ignored -> new HashMap<>()).put(side, instance);
+                    return instance.cast();
+                }
+            }
+            return LazyOptional.empty();
+        }
+
+        public void invalidate() {
+            // Remove before notifying listeners, so an observer cannot retrieve
+            // an optional which is being invalidated from this cache.
+            var previous = List.copyOf(instances.values());
+            instances.clear();
+            previous.forEach(sides -> sides.values().forEach(LazyOptional::invalidate));
         }
     }
 }

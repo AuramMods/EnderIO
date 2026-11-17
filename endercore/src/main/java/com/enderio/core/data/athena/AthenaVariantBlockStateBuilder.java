@@ -2,8 +2,8 @@ package com.enderio.core.data.athena;
 
 import com.google.gson.JsonObject;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.client.model.generators.IGeneratedBlockState;
-import net.neoforged.neoforge.client.model.generators.VariantBlockStateBuilder;
+import net.minecraftforge.client.model.generators.IGeneratedBlockState;
+import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class AthenaVariantBlockStateBuilder implements IGeneratedBlockState {
     private final VariantBlockStateBuilder variants;
-    private ResourceLocation loader = ResourceLocation.parse("athena:ctm");
+    private ResourceLocation loader = new ResourceLocation("athena:ctm");
     private final Map<String, ResourceLocation> textures = new LinkedHashMap<>();
     private String renderType;
     private Integer tint;

@@ -3,10 +3,10 @@ package com.enderio.core.common.network;
 import com.enderio.core.EnderCore;
 import com.enderio.core.common.network.menu.ClientboundSyncSlotDataPacket;
 import com.enderio.core.common.network.menu.ServerboundSetSyncSlotDataPacket;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.network.event.RegisterPayloadHandlersEvent;
+import net.minecraftforge.network.registration.PayloadRegistrar;
 
 @EventBusSubscriber(modid = EnderCore.MOD_ID)
 public class CoreNetwork {

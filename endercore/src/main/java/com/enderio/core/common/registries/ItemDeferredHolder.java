@@ -6,23 +6,49 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.neoforged.neoforge.registries.DeferredItem;
+import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiConsumer;
 
-public class ItemDeferredHolder<T extends Item> extends DeferredItem<T> {
+public class ItemDeferredHolder<T extends Item> implements Supplier<T>, ItemLike {
+    private final RegistryObject<T> delegate;
+
     @Nullable Multimap<ResourceKey<CreativeModeTab>, BiConsumer<T, CreativeModeTab.Output>> tabOutputs;
 
-    public static <T extends Item> DeferredItem<T> createItem(ResourceLocation key) {
+    public static <T extends Item> ItemDeferredHolder<T> createItem(ResourceLocation key) {
         return createItem(ResourceKey.create(Registries.ITEM, key));
     }
 
-    public static <T extends Item> DeferredItem<T> createItem(ResourceKey<Item> key) {
+    public static <T extends Item> ItemDeferredHolder<T> createItem(ResourceKey<Item> key) {
         return new ItemDeferredHolder<T>(key);
     }
 
     protected ItemDeferredHolder(ResourceKey<Item> key) {
-        super(key);
+        delegate = RegistryObject.create(key.location(), Registries.ITEM, key.location().getNamespace());
+    }
+    @Override
+    public T get() {
+        return delegate.get();
+    }
+
+    @Override
+    public Item asItem() {
+        return get();
+    }
+
+    public ResourceLocation getId() {
+        return delegate.getId();
+    }
+
+    public ItemStack toStack() {
+        return new ItemStack(get());
+    }
+
+    public ItemStack toStack(int count) {
+        return new ItemStack(get(), count);
     }
 }

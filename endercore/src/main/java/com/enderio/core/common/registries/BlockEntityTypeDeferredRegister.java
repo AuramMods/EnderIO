@@ -1,28 +1,30 @@
 package com.enderio.core.common.registries;
 
-import net.minecraft.core.Registry;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.capabilities.BlockCapability;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class BlockEntityTypeDeferredRegister extends DeferredRegister<BlockEntityType<?>> {
+public class BlockEntityTypeDeferredRegister extends EnderDeferredRegister<BlockEntityType<?>> {
+    private final Map<ResourceLocation, BlockEntityTypeDeferredHolder<?>> capabilityHolders = new HashMap<>();
 
     public static BlockEntityTypeDeferredRegister create(String namespace) {
         return new BlockEntityTypeDeferredRegister(namespace);
@@ -32,15 +34,13 @@ public class BlockEntityTypeDeferredRegister extends DeferredRegister<BlockEntit
         super(Registries.BLOCK_ENTITY_TYPE, namespace);
     }
 
-    // Some shortcuts
     @SafeVarargs
-    public final <T extends BlockEntity> DeferredHolder<BlockEntityType<?>, BlockEntityType<T>> register(String name,
+    public final <T extends BlockEntity> RegistryObject<BlockEntityType<T>> register(String name,
         BlockEntityType.BlockEntitySupplier<? extends T> factory, Supplier<Block>... validBlocks) {
         return register(name, () -> BlockEntityType.Builder.<T>of(factory,
             Arrays.stream(validBlocks).map(Supplier::get).toArray(Block[]::new)).build(null));
     }
 
-    // Builder for complex block entities with multiple valid blocks or capabilities.
     public <T extends BlockEntity> Builder<T> builder(String name, BlockEntityType.BlockEntitySupplier<? extends T> factory) {
         return new Builder<>(name, factory);
     }
@@ -52,23 +52,17 @@ public class BlockEntityTypeDeferredRegister extends DeferredRegister<BlockEntit
     }
 
     @Override
-    protected <I extends BlockEntityType<?>> DeferredHolder<BlockEntityType<?>, I> createHolder(ResourceKey<? extends Registry<BlockEntityType<?>>> registryKey,
-        ResourceLocation key) {
-        //noinspection unchecked,rawtypes
-        return (DeferredHolder<BlockEntityType<?>, I>) new BlockEntityTypeDeferredHolder(registryKey, key);
-    }
-
-    @Override
     public void register(IEventBus bus) {
         super.register(bus);
-        bus.addListener(this::registerCapabilities);
+        MinecraftForge.EVENT_BUS.addGenericListener(BlockEntity.class, this::attachCapabilities);
     }
 
-    private void registerCapabilities(RegisterCapabilitiesEvent event) {
-        for (var entry : getEntries()) {
-            if (entry instanceof BlockEntityTypeDeferredHolder<?> holder) {
-                holder.registerCapabilityProviders(event);
-            }
+    private void attachCapabilities(AttachCapabilitiesEvent<BlockEntity> event) {
+        var holder = capabilityHolders.get(ForgeRegistries.BLOCK_ENTITY_TYPES.getKey(event.getObject().getType()));
+        if (holder != null) {
+            var provider = holder.bind(event.getObject());
+            event.addCapability(new ResourceLocation(getNamespace(), "block_capabilities"), provider);
+            event.addListener(provider::invalidate);
         }
     }
 
@@ -76,7 +70,7 @@ public class BlockEntityTypeDeferredRegister extends DeferredRegister<BlockEntit
         private final String name;
         private final BlockEntityType.BlockEntitySupplier<? extends T> factory;
         private final List<Supplier<Block>> validBlocks = new ArrayList<>();
-        private final Set<BlockEntityTypeDeferredHolder.AttachedCapability<T, ?, ?>> attachedCapabilities = new HashSet<>();
+        private final List<BlockEntityTypeDeferredHolder.AttachedCapability<T, ?>> attachedCapabilities = new ArrayList<>();
 
         private Builder(String name, BlockEntityType.BlockEntitySupplier<? extends T> factory) {
             this.name = name;
@@ -84,8 +78,7 @@ public class BlockEntityTypeDeferredRegister extends DeferredRegister<BlockEntit
         }
 
         private Builder(String name, BlockEntityType.BlockEntitySupplier<? extends T> factory, List<Supplier<Block>> validBlocks) {
-            this.name = name;
-            this.factory = factory;
+            this(name, factory);
             this.validBlocks.addAll(validBlocks);
         }
 
@@ -94,7 +87,7 @@ public class BlockEntityTypeDeferredRegister extends DeferredRegister<BlockEntit
             return this;
         }
 
-        public <TCap, TContext> Builder<T> capability(BlockCapability<TCap, TContext> capability, ICapabilityProvider<? super T, TContext, TCap> provider) {
+        public <C> Builder<T> capability(Capability<C> capability, BiFunction<? super T, @Nullable Direction, @Nullable C> provider) {
             attachedCapabilities.add(new BlockEntityTypeDeferredHolder.AttachedCapability<>(capability, provider));
             return this;
         }
@@ -104,12 +97,12 @@ public class BlockEntityTypeDeferredRegister extends DeferredRegister<BlockEntit
             return this;
         }
 
-        public DeferredHolder<BlockEntityType<?>, BlockEntityType<T>> build() {
-            var holder = (BlockEntityTypeDeferredHolder<T>)register(name, () -> BlockEntityType.Builder.<T>of(factory,
+        public RegistryObject<BlockEntityType<T>> build() {
+            var holder = register(name, () -> BlockEntityType.Builder.<T>of(factory,
                 validBlocks.stream().map(Supplier::get).toArray(Block[]::new)).build(null));
-
-            holder.attachedCapabilities = attachedCapabilities;
-
+            if (!attachedCapabilities.isEmpty()) {
+                capabilityHolders.put(holder.getId(), new BlockEntityTypeDeferredHolder<>(holder, attachedCapabilities));
+            }
             return holder;
         }
     }

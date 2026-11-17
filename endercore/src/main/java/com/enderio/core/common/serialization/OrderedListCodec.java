@@ -1,6 +1,7 @@
 package com.enderio.core.common.serialization;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 
@@ -11,7 +12,7 @@ import java.util.OptionalInt;
 /**
  * Ensures the serialized list retains it's order.
  * WARNING: Editing this class *will* mess up saves.
- * If you're still sure you need to, remember to use {@link Codec#withAlternative(Codec, Codec)} to provide backwards-compatibility.
+ * Preserve the index/value representation, or provide an explicit legacy decoder.
  */
 public class OrderedListCodec {
 
@@ -20,8 +21,14 @@ public class OrderedListCodec {
     }
 
     public static <T> Codec<List<T>> create(int maxSize, Codec<T> itemCodec, T defaultValue) {
-        return createItemCodec(itemCodec, maxSize).sizeLimitedListOf(maxSize)
-                .xmap(list -> fromItems(list, defaultValue), OrderedListCodec::toItems);
+        return createItemCodec(itemCodec, maxSize).listOf()
+                .flatXmap(list -> fromItems(list, defaultValue, maxSize),
+                    list -> checkSize(list, maxSize).map(OrderedListCodec::toItems));
+    }
+
+    private static <T> DataResult<List<T>> checkSize(List<T> values, int maxSize) {
+        return values.size() <= maxSize ? DataResult.success(values)
+            : DataResult.error(() -> "List has " + values.size() + " entries; maximum is " + maxSize);
     }
 
     private static <T> Codec<Item<T>> createItemCodec(Codec<T> itemCodec, int maxSize) {
@@ -43,17 +50,27 @@ public class OrderedListCodec {
         return items;
     }
 
-    private static <T> List<T> fromItems(List<Item<T>> slots, T defaultValue) {
+    private static <T> DataResult<List<T>> fromItems(List<Item<T>> slots, T defaultValue, int maxSize) {
+        if (slots.size() > maxSize) {
+            return DataResult.error(() -> "List has " + slots.size() + " entries; maximum is " + maxSize);
+        }
+        // DFU 6 can retain an out-of-range integer as a partial result. Never
+        // use that partial index to allocate or address the restored list.
+        for (Item<T> slot : slots) {
+            if (slot.index() < 0 || slot.index() >= maxSize) {
+                return DataResult.error(() -> "Slot index out of range: " + slot.index());
+            }
+        }
         OptionalInt optionalint = slots.stream().mapToInt(Item::index).max();
         if (optionalint.isEmpty()) {
-            return List.of();
+            return DataResult.success(List.of());
         }
 
         List<T> fluids = NonNullList.withSize(optionalint.getAsInt() + 1, defaultValue);
         for (Item<T> slot : slots) {
             fluids.set(slot.index, slot.value);
         }
-        return fluids;
+        return DataResult.success(fluids);
     }
 
     private record Item<T>(int index, T value) {

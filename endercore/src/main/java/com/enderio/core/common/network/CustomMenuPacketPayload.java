@@ -2,7 +2,7 @@ package com.enderio.core.common.network;
 
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraftforge.network.handling.IPayloadContext;
 
 public interface CustomMenuPacketPayload<Menu extends AbstractContainerMenu> extends CustomPacketPayload {
 

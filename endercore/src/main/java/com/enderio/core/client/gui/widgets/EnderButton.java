@@ -10,9 +10,9 @@ import net.minecraft.resources.ResourceLocation;
 // The same as AbstractButton but does not show the white outline when focussed.
 public abstract class EnderButton extends AbstractWidget {
     protected static final WidgetSprites SPRITES = new WidgetSprites(
-            ResourceLocation.withDefaultNamespace("widget/button"),
-            ResourceLocation.withDefaultNamespace("widget/button_disabled"),
-            ResourceLocation.withDefaultNamespace("widget/button_highlighted"));
+            new ResourceLocation("widget/button"),
+            new ResourceLocation("widget/button_disabled"),
+            new ResourceLocation("widget/button_highlighted"));
 
     public EnderButton(int x, int y, int width, int height, Component message) {
         super(x, y, width, height, message);

@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 002 establishes the Forge build/compiler loop; gameplay code and tests are not yet ported. No game or server has been launched.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 003 adapts core registration, recipe and serialization utilities. Eight isolated ordered-list codec tests pass; full EnderCore compilation still fails with 319 errors. No game or server has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -37,7 +37,7 @@ EnderCore is already part of this repository and bundled by the Ender IO build. 
 
 Current build ownership is in `settings.gradle.kts`, `gradle/libs.versions.toml`, `buildSrc/src/main/kotlin/mod-common-conventions.gradle.kts`, and the three module build files. It uses ModDevGradle 2.0.148 and Gradle 9.8.2. The historical build uses ForgeGradle 6 with additional mapping/mixin plugins; its old repositories and versions are reference material, not assumed to remain resolvable.
 
-Current tests include 33 Java files under `src/test` and 34 under `src/gametest`, including helpers and package descriptors. These are file counts, not executed test counts. The build and CI use NeoForge's test framework and Java 21; these must also be ported.
+The baseline tests include 33 Java files under `src/test` and 34 under `src/gametest`, including helpers and package descriptors. These are file counts, not executed test counts. The build now targets Java 17; remaining NeoForge test-framework sources and game bootstrap must still be ported.
 
 ## Main conversion areas
 
@@ -72,7 +72,7 @@ Prefer Forge-native adapters and shared utilities in this project's namespaces. 
 | --- | --- | --- |
 | Preparation | Record source references, create local branch, write tracker and goal | Complete |
 | Inventory and build | Expand parity/dependency matrix; establish Forge 1.20.1 toolchain, metadata, artifacts and silent test profiles | In progress: platform artifacts/compiler and metadata work; final packaging and non-activating client launch pending |
-| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | Pending |
+| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | In progress: core registry/recipe helpers adapted, eight isolated codec tests pass; full module compilation and runtime validation pending |
 | Core content | Port every implemented block/item/entity, machine, conduit, filter, tool, soul and travel feature | Pending |
 | Assets and client | Data generation, recipes/tags, models, textures, rendering, screens, particles, input, mixins | Pending |
 | Integrations | Adapt each supported integration and modded conduit; test with dependencies present and absent | Pending |
@@ -134,8 +134,8 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 | Cycle | Result | Verification | Commit |
 | --- | --- | --- | --- |
 | 001: preparation | Created local `1.20.1` from the fixed 1.21.1 baseline; recorded architecture, historical Forge reference, work areas and goal | Read-only source/build/test inspection, fetched fork refs and compared upstream tips; documentation diff review; no build/runtime tests | `82e957e17` |
-
-| 002: Forge build foundation | Legacy Forge build plugin, Forge 47.4.28/Java 17, metadata/refmap/reobfuscation configuration, dependency pins, CI platform settings, isolated muted profiles, source inventory and feature matrix | Minecraft artifacts generated; EnderCore compilation reached source errors (400-report cap); metadata/profile tasks passed; no gameplay tests or client/server launch. [Evidence](porting/1.20.1/cycle-002.md) | Commit containing cycle 002 |
+| 002: Forge build foundation | Legacy Forge build plugin, Forge 47.4.28/Java 17, metadata/refmap/reobfuscation configuration, dependency pins, CI platform settings, isolated muted profiles, source inventory and feature matrix | Minecraft artifacts generated; EnderCore compilation reached source errors (400-report cap); metadata/profile tasks passed; no gameplay tests or client/server launch. [Evidence](porting/1.20.1/cycle-002.md) | `7cf58a36d` |
+| 003: core registration and serialization | Native Forge registration/capability factories, NBT fluid/item helpers, recipe/datagen API adaptations and bounded ordered-list codec | Eight isolated codec tests passed; full EnderCore compile fails with 319 errors; runtime remains unverified. [Evidence](porting/1.20.1/cycle-003.md) | Commit containing cycle 003 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
