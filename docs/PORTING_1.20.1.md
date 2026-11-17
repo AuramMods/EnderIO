@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 025 ports grinding-ball, vat-reagent and range-extender data maps onto native Forge reload events, scoped snapshots, chunked synchronization and datagen. EnderCore passes 57 unit tests and 138 headless GameTests and reobfuscates successfully. Both normal main compilation and supplemental direct Java 17 compilation report 350 source errors. Actual client synchronization, full machine/conduit gameplay, integrations, complete resources and packaged runtime remain incomplete. No client has been launched.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 026 ports native global loot modifiers, capacitor/paint loot functions, painting/glider criteria and their targeted generators/resources. EnderCore passes 57 unit tests and 146 headless GameTests and reobfuscates successfully. Normal main compilation stops with 80 early symbol errors; supplemental direct Java 17 compilation reports 309 errors, down from 350. Complete resources, actual machine/conduit gameplay, client synchronization/rendering, integrations and packaged runtime remain incomplete. No client has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -159,7 +159,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 024: transient level state and native hooks | Forge-owned lazy managers, obelisk load/unload indexes, native spawn/teleport and fire-water hooks | Core passes 57 unit/131 headless GameTests and jar/reobf; normal and supplemental main compilation report 372 errors. Actual obelisk/fire-crafting gameplay, data maps and complete runtime remain unverified. [Evidence](porting/1.20.1/cycle-024.md) | `8d379f52c` |
 
-| 025: reloadable registry data maps | Forge reload/conditions/tag resolution, scoped immutable snapshots, bounded atomic synchronization, datagen and actual vat/grinding-ball state | Core passes 57 unit/138 headless GameTests and jar/reobf. Normal and supplemental main compilation report 350 errors. Actual client sync, full machine gameplay and packaged runtime remain unverified. [Evidence](porting/1.20.1/cycle-025.md) | Commit containing cycle 025 |
+| 025: reloadable registry data maps | Forge reload/conditions/tag resolution, scoped immutable snapshots, bounded atomic synchronization, datagen and actual vat/grinding-ball state | Core passes 57 unit/138 headless GameTests and jar/reobf. Normal and supplemental main compilation report 350 errors. Actual client sync, full machine gameplay and packaged runtime remain unverified. [Evidence](porting/1.20.1/cycle-025.md) | `a09e040fc` |
+
+| 026: native loot and advancement criteria | Forge global modifiers/subtable rolls, capacitor/paint loot serialization, spawner souls, native triggers, targeted resources and actual generators | Core passes 57 unit/146 headless GameTests and jar/reobf. Normal main compilation stops at 80 early symbol errors; supplemental compile reports 309 errors. Full loot/resources, actual painting-machine/glider gameplay and packaged runtime remain unverified. [Evidence](porting/1.20.1/cycle-026.md) | Commit containing cycle 026 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

@@ -82,6 +82,22 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
         "foundation/datamap/VatReagent.java",
         "api/components/GrindingBallData.java",
         "content/machines/vat/FermentingRecipe.java",
+        "content/broken_spawner/BrokenSpawnerLootModifier.java",
+        "content/capacitors/SetLootCapacitorFunction.java",
+        "content/paint/BlockPaintData.java",
+        "content/paint/CopyPaintFunction.java",
+        "content/paint/PaintingTrigger.java",
+        "content/advancements/AdvancementsLang.java",
+        "content/paint/block/entity/PaintedBlockEntity.java",
+        "content/tools/hang_glider/UseGliderTrigger.java",
+        "init/EIOLootModifiers.java",
+        "init/EIOCriterions.java",
+        "config/base/BaseConfig.java",
+        "config/base/client/BaseClientConfig.java",
+        "config/base/common/BaseCommonConfig.java",
+        "config/base/common/BlocksConfig.java",
+        "config/base/common/InfinityConfig.java",
+        "config/base/common/ItemsConfig.java",
         "content/machines/obelisks/weather/WeatherChangeRecipe.java",
         "api/filter/ItemFilter.java",
         "api/filter/ItemFilterContext.java",
@@ -106,6 +122,8 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
         "compat/vanilla/SpawnEggSoulBindable.java",
         "compat/vanilla/SpawnEggSoulHandler.java"
     ).map { mainSource.resolve(it) })
+    source(rootProject.file("enderio/src/datagen/java/com/enderio/enderio/datagen/common/loot/EIOLootModifiersProvider.java"))
+    source(rootProject.file("enderio/src/datagen/java/com/enderio/enderio/datagen/common/advancement/EIOAdvancementGenerator.java"))
 }
 
 
@@ -232,4 +250,13 @@ mixin {
 
 tasks.named<Jar>("jar") {
     manifest.attributes["MixinConfigs"] = "endercore.mixins.json"
+}
+
+// Load the actual production spawner modifier and painting advancements in the native test server.
+tasks.named<ProcessResources>(gameTestSourceSet.processResourcesTaskName) {
+    from(rootProject.file("enderio/src/generated/resources")) {
+        include("data/enderio/loot_modifiers/*.json")
+        include("data/enderio/advancements/adventure/rich.json")
+        include("data/enderio/advancements/adventure/richer.json")
+    }
 }

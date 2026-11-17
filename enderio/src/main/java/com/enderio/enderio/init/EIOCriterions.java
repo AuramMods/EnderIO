@@ -1,25 +1,21 @@
 package com.enderio.enderio.init;
 
-import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.paint.PaintingTrigger;
 import com.enderio.enderio.content.tools.hang_glider.UseGliderTrigger;
-import net.minecraft.advancements.CriterionTrigger;
-import net.minecraft.core.registries.Registries;
+import com.google.common.base.Suppliers;
+import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.RegistryObject;
-import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import java.util.function.Supplier;
 
-public class EIOCriterions {
-    private static final DeferredRegister<CriterionTrigger<?>> TRIGGERS = DeferredRegister
-            .create(Registries.TRIGGER_TYPE, EnderIO.MOD_ID);
-
-    public static final RegistryObject<UseGliderTrigger> USE_GLIDER = TRIGGERS.register("use_glider",
-            UseGliderTrigger::new);
-    public static final RegistryObject<PaintingTrigger> PAINTING_TRIGGER = TRIGGERS.register("painting",
-            PaintingTrigger::new);
-
+public final class EIOCriterions {
+    public static final Supplier<UseGliderTrigger> USE_GLIDER = Suppliers.memoize(UseGliderTrigger::new);
+    public static final Supplier<PaintingTrigger> PAINTING_TRIGGER = Suppliers.memoize(PaintingTrigger::new);
+    private EIOCriterions() {}
     public static void register(IEventBus modEventBus) {
-        TRIGGERS.register(modEventBus);
+        modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> {
+            CriteriaTriggers.register(USE_GLIDER.get());
+            CriteriaTriggers.register(PAINTING_TRIGGER.get());
+        }));
     }
-
 }

@@ -14,6 +14,7 @@ public class EnderCore {
 
     public EnderCore() {
         com.enderio.core.common.loot.CoreLootFunctions.register(net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext.get().getModEventBus());
+        com.enderio.core.common.loot.CoreLootModifiers.register(net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext.get().getModEventBus());
         CoreNetwork.register();
         com.enderio.core.common.datamap.DataMapSync.registerNetwork();
     }

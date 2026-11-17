@@ -1,25 +1,27 @@
 package com.enderio.enderio.api.soul;
 
+import com.enderio.core.common.item.ItemDataKey;
+import com.enderio.core.common.network.codec.PacketCodec;
+import com.enderio.enderio.api.EnderIOAPI;
+import com.mojang.datafixers.util.Either;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.MapLike;
+import com.mojang.serialization.RecordBuilder;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.handler.codec.DecoderException;
+import io.netty.handler.codec.EncoderException;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import com.enderio.core.common.network.codec.PacketCodec;
-import com.mojang.datafixers.util.Either;
-import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.DynamicOps;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.MapLike;
-import com.mojang.serialization.RecordBuilder;
 import net.minecraft.resources.RegistryOps;
-import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.EncoderException;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -142,6 +144,10 @@ public record Soul(@Nullable EntityType<?> entityType, CompoundTag entityTag) {
             }
         };
     }
+
+    public static final ItemDataKey<Soul> ITEM_DATA =
+        new ItemDataKey<>(EnderIOAPI.rl("soul"), OPTIONAL_CODEC,
+            false, EnderIOAPI.rl("stored_entity"));
 
     private static DataResult<Soul> requireEntity(Soul soul) {
         return soul.entityType == null ? DataResult.error(() -> "Entity type cannot be null") : DataResult.success(soul);

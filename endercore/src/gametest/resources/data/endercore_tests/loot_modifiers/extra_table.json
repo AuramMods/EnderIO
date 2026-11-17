@@ -1,0 +1,1 @@
+{"type":"endercore:add_table","conditions":[{"condition":"forge:loot_table_id","loot_table_id":"endercore_tests:loot_target"}],"table":"endercore_tests:loot_extra"}

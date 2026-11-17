@@ -1,19 +1,17 @@
 package com.enderio.enderio.datagen.common.loot;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.enderio.content.broken_spawner.BrokenSpawnerLootModifier;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.loot.predicates.AnyOfCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
-import net.neoforged.neoforge.common.data.GlobalLootModifierProvider;
-import net.neoforged.neoforge.common.loot.AddTableLootModifier;
-import net.neoforged.neoforge.common.loot.LootTableIdCondition;
+import net.minecraftforge.common.data.GlobalLootModifierProvider;
+import com.enderio.core.common.loot.AddTableLootModifier;
+import net.minecraftforge.common.loot.LootTableIdCondition;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
@@ -21,14 +19,11 @@ import java.util.stream.Stream;
 public class EIOLootModifiersProvider extends GlobalLootModifierProvider {
 
     public EIOLootModifiersProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
-        super(output, registries, EnderIO.MOD_ID);
+        super(output, EnderIOAPI.MOD_ID);
     }
 
     @Override
     protected void start() {
-        // TODO: NEO-PORT: neoforge:global_loot_modifiers file gets overwritten when
-        // armory is enabled.
-
         add("broken_spawner", new BrokenSpawnerLootModifier(new LootItemCondition[] {
                 LootItemBlockStatePropertyCondition.hasBlockStateProperties(Blocks.SPAWNER).build() }));
 
@@ -59,6 +54,6 @@ public class EIOLootModifiersProvider extends GlobalLootModifierProvider {
         add(modifierName,
                 new AddTableLootModifier(
                         new LootItemCondition[] { AnyOfCondition.anyOf(mappedTargetConditions).build() },
-                        ResourceKey.create(Registries.LOOT_TABLE, EnderIO.rl("chests/" + modifierName))));
+                        EnderIOAPI.rl("chests/" + modifierName)));
     }
 }

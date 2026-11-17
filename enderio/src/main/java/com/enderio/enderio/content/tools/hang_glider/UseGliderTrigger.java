@@ -1,35 +1,23 @@
 package com.enderio.enderio.content.tools.hang_glider;
 
-import com.enderio.enderio.EnderIO;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.enderio.enderio.api.EnderIOAPI;
+import com.google.gson.JsonObject;
+import net.minecraft.advancements.critereon.AbstractCriterionTriggerInstance;
 import net.minecraft.advancements.critereon.ContextAwarePredicate;
-import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.advancements.critereon.DeserializationContext;
 import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.Optional;
-
 public class UseGliderTrigger extends SimpleCriterionTrigger<UseGliderTrigger.TriggerInstance> {
-    static final ResourceLocation ID = EnderIO.rl("use_glider");
-    public ResourceLocation getId() {
-        return ID;
-    }
-
-    public void trigger(ServerPlayer player) {
-        super.trigger(player, triggerInstance -> true);
-    }
-
+    public static final ResourceLocation ID = EnderIOAPI.rl("use_glider");
+    @Override public ResourceLocation getId() { return ID; }
+    public void trigger(ServerPlayer player) { super.trigger(player, instance -> true); }
     @Override
-    public Codec<TriggerInstance> codec() {
-        return TriggerInstance.CODEC;
+    protected TriggerInstance createInstance(JsonObject json, ContextAwarePredicate player, DeserializationContext context) {
+        return new TriggerInstance(player);
     }
-
-    public record TriggerInstance(Optional<ContextAwarePredicate> player)
-        implements SimpleInstance {
-        private static final Codec<TriggerInstance> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player)
-        ).apply(instance, TriggerInstance::new));
+    public static final class TriggerInstance extends AbstractCriterionTriggerInstance {
+        public TriggerInstance(ContextAwarePredicate player) { super(ID, player); }
     }
 }

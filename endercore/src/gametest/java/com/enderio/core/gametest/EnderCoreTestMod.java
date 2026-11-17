@@ -23,6 +23,11 @@ public class EnderCoreTestMod {
         RegistryBlockEntityTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         NetworkTestContent.register();
         DataMapTests.register();
+        LootTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
+        com.enderio.enderio.init.EIOLootModifiers.register(FMLJavaModLoadingContext.get().getModEventBus());
+        com.enderio.enderio.init.EIOCriterions.register(FMLJavaModLoadingContext.get().getModEventBus());
+        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON,
+            com.enderio.enderio.config.base.BaseConfig.COMMON_SPEC, "endercore-loot-tests.toml");
         File report = new File(System.getProperty("endercore.gametest.report", "gametest-results.xml"));
         report.getAbsoluteFile().getParentFile().mkdirs();
         GlobalTestReporter.replaceWith(new JUnitLikeTestReporter(report));

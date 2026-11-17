@@ -1,23 +1,22 @@
 {
-  "parent": "minecraft:adventure/root",
+  "parent": "enderio:adventure/rich",
   "criteria": {
     "paint": {
       "conditions": {
-        "paint": "minecraft:diamond_block"
+        "paint": "minecraft:netherite_block"
       },
       "trigger": "enderio:painting"
     }
   },
   "display": {
     "description": {
-      "translate": "advancements.enderio.rich.description"
+      "translate": "advancements.enderio.richer.description"
     },
     "icon": {
-      "count": 1,
-      "id": "minecraft:diamond_block"
+      "item": "minecraft:netherite_block"
     },
     "title": {
-      "translate": "advancements.enderio.rich.title"
+      "translate": "advancements.enderio.richer.title"
     }
   },
   "requirements": [

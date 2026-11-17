@@ -1,11 +1,11 @@
 package com.enderio.enderio.content.paint;
 
 import com.enderio.enderio.content.paint.block.entity.PaintedBlockEntity;
-import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOLootModifiers;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSyntaxException;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -15,26 +15,19 @@ import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
-import java.util.List;
 import java.util.Optional;
 
 public class CopyPaintFunction extends LootItemConditionalFunction {
 
-    public static final MapCodec<CopyPaintFunction> CODEC = RecordCodecBuilder.mapCodec(
-        inst -> commonFields(inst)
-            .and(Codec.BOOL.fieldOf("should_copy_primary").forGetter(m -> m.shouldCopyPrimary))
-            .apply(inst, CopyPaintFunction::new)
-    );
-
     private final boolean shouldCopyPrimary;
 
-    CopyPaintFunction(List<LootItemCondition> conditions, boolean shouldCopyPrimary) {
+    CopyPaintFunction(LootItemCondition[] conditions, boolean shouldCopyPrimary) {
         super(conditions);
         this.shouldCopyPrimary = shouldCopyPrimary;
     }
 
     @Override
-    public LootItemFunctionType<? extends LootItemConditionalFunction> getType() {
+    public LootItemFunctionType getType() {
         return EIOLootModifiers.COPY_PAINT.get();
     }
 
@@ -47,7 +40,7 @@ public class CopyPaintFunction extends LootItemConditionalFunction {
                 ? paintedBlockEntity.getPrimaryPaint()
                 : paintedBlockEntity.getSecondaryPaint();
 
-            currentPaint.ifPresent(paint -> EIODataComponents.BLOCK_PAINT.set(stack, BlockPaintData.of(paint)));
+            currentPaint.ifPresent(paint -> BlockPaintData.ITEM_DATA.set(stack, BlockPaintData.of(paint)));
         }
 
         return stack;
@@ -59,5 +52,24 @@ public class CopyPaintFunction extends LootItemConditionalFunction {
 
     public static Builder<?> copySecondary() {
         return simpleBuilder((conditions) -> new CopyPaintFunction(conditions, false));
+    }
+
+    public static final class Serializer extends LootItemConditionalFunction.Serializer<CopyPaintFunction> {
+        @Override
+        public void serialize(JsonObject json, CopyPaintFunction function,
+                              JsonSerializationContext context) {
+            super.serialize(json, function, context);
+            json.addProperty("should_copy_primary", function.shouldCopyPrimary);
+        }
+
+        @Override
+        public CopyPaintFunction deserialize(JsonObject json,
+                JsonDeserializationContext context, LootItemCondition[] conditions) {
+            var value = json.get("should_copy_primary");
+            if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
+                throw new JsonSyntaxException("should_copy_primary must be a boolean");
+            }
+            return new CopyPaintFunction(conditions, value.getAsBoolean());
+        }
     }
 }

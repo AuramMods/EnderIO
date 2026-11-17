@@ -1,51 +1,52 @@
 package com.enderio.enderio.content.paint;
 
-import com.enderio.enderio.EnderIO;
-import com.enderio.enderio.init.EIOCriterions;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.enderio.enderio.api.EnderIOAPI;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import net.minecraft.advancements.Criterion;
+import net.minecraft.advancements.critereon.AbstractCriterionTriggerInstance;
 import net.minecraft.advancements.critereon.ContextAwarePredicate;
-import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.advancements.critereon.DeserializationContext;
+import net.minecraft.advancements.critereon.SerializationContext;
 import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.level.block.Block;
 
-import java.util.Optional;
-
 public class PaintingTrigger extends SimpleCriterionTrigger<PaintingTrigger.TriggerInstance> {
-
-    static final ResourceLocation ID = EnderIO.rl("create_painted_block");
-    public ResourceLocation getId() {
-        return ID;
-    }
+    // The actual 1.21.1 registration and generated advancements use 'painting'.
+    public static final ResourceLocation ID = EnderIOAPI.rl("painting");
+    @Override public ResourceLocation getId() { return ID; }
 
     public void trigger(ServerPlayer player, Block paint) {
-        super.trigger(player, triggerInstance -> triggerInstance.matches(paint));
+        super.trigger(player, instance -> instance.matches(paint));
     }
 
     @Override
-    public Codec<TriggerInstance> codec() {
-        return TriggerInstance.CODEC;
+    protected TriggerInstance createInstance(JsonObject json, ContextAwarePredicate player, DeserializationContext context) {
+        var id = ResourceLocation.parse(GsonHelper.getAsString(json, "paint"));
+        var paint = BuiltInRegistries.BLOCK.getOptional(id)
+            .orElseThrow(() -> new JsonSyntaxException("Unknown paint block: " + id));
+        return new TriggerInstance(player, paint);
     }
 
-    public record TriggerInstance(Optional<ContextAwarePredicate> player, Block paint)
-        implements SimpleInstance {
-
-        private static final Codec<TriggerInstance> CODEC = RecordCodecBuilder.create(
-            instance -> instance.group(
-                EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
-                BuiltInRegistries.BLOCK.byNameCodec().fieldOf("paint").forGetter(TriggerInstance::paint)
-            ).apply(instance, TriggerInstance::new));
-
-        public boolean matches(Block paint) {
-            return this.paint == paint;
+    public static final class TriggerInstance extends AbstractCriterionTriggerInstance {
+        private final Block paint;
+        public TriggerInstance(ContextAwarePredicate player, Block paint) {
+            super(ID, player);
+            this.paint = paint;
         }
-
-        public static Criterion<TriggerInstance> painted(Block paint) {
-            return EIOCriterions.PAINTING_TRIGGER.get().createCriterion(new TriggerInstance(Optional.empty(), paint));
+        public boolean matches(Block paint) { return this.paint == paint; }
+        @Override
+        public JsonObject serializeToJson(SerializationContext context) {
+            var json = super.serializeToJson(context);
+            json.addProperty("paint", BuiltInRegistries.BLOCK.getKey(paint).toString());
+            return json;
+        }
+        public static Criterion painted(Block paint) {
+            return new Criterion(new TriggerInstance(ContextAwarePredicate.ANY, paint));
         }
     }
 }

@@ -37,7 +37,7 @@ public class EIODataComponents {
 
     public static final ItemDataKey<Integer> ENERGY = com.enderio.enderio.foundation.energy.PoweredMachineEnergyStorage.ITEM_DATA;
 
-    public static final ItemDataKey<Soul> SOUL = new ItemDataKey<>(EnderIO.rl("soul"), Soul.OPTIONAL_CODEC, false, EnderIO.rl("stored_entity"));
+    public static final ItemDataKey<Soul> SOUL = Soul.ITEM_DATA;
 
     // endregion
 
@@ -99,7 +99,7 @@ public class EIODataComponents {
 
     // region Paint
 
-    public static final ItemDataKey<BlockPaintData> BLOCK_PAINT = new ItemDataKey<>(EnderIO.rl("block_paint"), BlockPaintData.CODEC);
+    public static final ItemDataKey<BlockPaintData> BLOCK_PAINT = BlockPaintData.ITEM_DATA;
 
     // endregion
 
