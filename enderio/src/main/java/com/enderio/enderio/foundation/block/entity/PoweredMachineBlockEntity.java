@@ -1,6 +1,6 @@
 package com.enderio.enderio.foundation.block.entity;
 
-import com.enderio.enderio.api.EnderIOCapabilities;
+import com.enderio.enderio.api.capacitor.ICapacitorExtension;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.capacitor.CapacitorData;
 import com.enderio.enderio.api.capacitor.CapacitorScalable;
@@ -12,7 +12,6 @@ import com.enderio.enderio.foundation.energy.PoweredMachineEnergyStorage;
 import com.enderio.enderio.foundation.inventory.MachineInventory;
 import com.enderio.enderio.foundation.io.TransferUtil;
 import com.enderio.enderio.foundation.state.MachineState;
-import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -36,7 +35,6 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
 
     private final CapacitorSupport capacitorSupport;
     private CapacitorData capacitorData = CapacitorData.NONE;
-    private boolean isCapacitorDataDirty;
 
     private final EnergyIOMode energyIOMode;
     private final CapacitorScalable scalableEnergyCapacity;
@@ -111,11 +109,11 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
 
     public final int getMaxEnergyStored() {
         // TODO: Scalable might need redesigned to just scale directly...
-        return scalableEnergyCapacity.scaleI(this::getCapacitorData).get();
+        return Math.max(0, scalableEnergyCapacity.scaleI(this::getCapacitorData).get());
     }
 
     public final int getMaxEnergyUse() {
-        return scalableMaxEnergyUse.scaleI(this::getCapacitorData).get();
+        return Math.max(0, scalableMaxEnergyUse.scaleI(this::getCapacitorData).get());
     }
 
     public final EnergyIOMode energyIOMode() {
@@ -170,10 +168,6 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
             return !getCapacitorItem().isEmpty();
         }
 
-        if (isCapacitorDataDirty) {
-            updateCapacitorData();
-        }
-
         return !capacitorData.equals(CapacitorData.NONE);
     }
 
@@ -183,19 +177,14 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
             throw new IllegalStateException("Unable to get capacitor data, this machine does not support capacitors!");
         }
 
-        if (isCapacitorDataDirty) {
-            updateCapacitorData();
-        }
-
         return capacitorData;
     }
 
     public final ItemStack getCapacitorItem() {
-        MachineInventory inventory = getInventory();
-        if (inventory == null) {
+        if (!supportsCapacitor() || !hasInventory()) {
             return ItemStack.EMPTY;
         }
-
+        MachineInventory inventory = getInventory();
         return inventory.getStackInSlot(inventory.layout().getCapacitorSlot());
     }
 
@@ -218,15 +207,14 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
             return;
         }
 
-        isCapacitorDataDirty = false;
-
         if (supportsCapacitor()) {
             var capacitorItem = getCapacitorItem();
-            var capacitorExtension = capacitorItem.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION).orElse(null);
+            var capacitorExtension = capacitorItem.getCapability(ICapacitorExtension.CAPABILITY).orElse(null);
             if (capacitorExtension != null) {
-                capacitorData = capacitorExtension.getCapacitorData(capacitorItem, level.registryAccess());
+                capacitorData = java.util.Objects.requireNonNullElse(
+                    capacitorExtension.getCapacitorData(capacitorItem, level.registryAccess()), CapacitorData.NONE);
             } else {
-                capacitorData = EIODataComponents.CAPACITOR_DATA.getOrDefault(getCapacitorItem(), CapacitorData.NONE);
+                capacitorData = CapacitorData.ITEM_DATA.getOrDefault(getCapacitorItem(), CapacitorData.NONE);
             }
 
             updateCapacitorState();
@@ -245,9 +233,11 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
             }
 
             var capacitorItem = getCapacitorItem();
-            var capacitorExtension = capacitorItem.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION).orElse(null);
+            var capacitorExtension = capacitorItem.getCapability(ICapacitorExtension.CAPABILITY).orElse(null);
             if (capacitorExtension != null) {
                 capacitorExtension.onMachineUsed(capacitorItem, serverLevel);
+                updateCapacitorData();
+                setChanged();
             }
         }
     }
@@ -256,11 +246,13 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
 
     @Override
     public InteractionResult tryItemInstall(ItemStack stack, UseOnContext context) {
-        if (stack.getItem() instanceof CapacitorItem && supportsCapacitor() && !isCapacitorInstalled()) {
+        if (!stack.isEmpty() && stack.getItem() instanceof CapacitorItem && supportsCapacitor()) {
             MachineInventory inventory = getInventory();
-            if (inventory != null) {
-                inventory.setStackInSlot(inventory.layout().getCapacitorSlot(), stack.copyWithCount(1));
-                stack.shrink(1);
+            int slot = inventory.layout().getCapacitorSlot();
+            if (inventory.getStackInSlot(slot).isEmpty() && inventory.isItemValid(slot, stack)) {
+                if (context.getLevel().isClientSide) return InteractionResult.SUCCESS;
+                if (!inventory.insertItem(slot, stack.copyWithCount(1), false).isEmpty()) return InteractionResult.PASS;
+                if (context.getPlayer() == null || !context.getPlayer().getAbilities().instabuild) stack.shrink(1);
                 return InteractionResult.sidedSuccess(context.getLevel().isClientSide());
             }
         }
@@ -298,25 +290,27 @@ public abstract class PoweredMachineBlockEntity extends MachineBlockEntity imple
         }
 
         updateCapacitorData();
+        updatePowerState();
     }
 
     @Override
     protected void readItemData(ItemStack componentInput) {
         super.readItemData(componentInput);
-        energyStorage.setEnergyStored(EIODataComponents.ENERGY.getOrDefault(componentInput, 0));
+        energyStorage.setEnergyStored(PoweredMachineEnergyStorage.ITEM_DATA.getOrDefault(componentInput, 0));
         updateCapacitorData();
     }
 
     @Override
     protected void writeItemData(ItemStack components) {
         super.writeItemData(components);
-        EIODataComponents.ENERGY.set(components, energyStorage.getEnergyStored());
+        PoweredMachineEnergyStorage.ITEM_DATA.set(components, energyStorage.getEnergyStored());
     }
 
     @Override
     public void removeItemDataFromTag(CompoundTag tag) {
         super.removeItemDataFromTag(tag);
         tag.remove(MachineNBTKeys.ENERGY_STORED);
+        tag.remove(MachineNBTKeys.ENERGY);
     }
 
     // endregion

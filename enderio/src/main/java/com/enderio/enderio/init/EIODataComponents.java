@@ -35,7 +35,7 @@ public class EIODataComponents {
 
     public static final ItemDataKey<NamedFluidContents> NAMED_FLUID_CONTENTS = new ItemDataKey<>(EnderIO.rl("named_fluid_contents"), NamedFluidContents.CODEC);
 
-    public static final ItemDataKey<Integer> ENERGY = new ItemDataKey<>(EnderIO.rl("energy"), Codec.intRange(0, Integer.MAX_VALUE), false);
+    public static final ItemDataKey<Integer> ENERGY = com.enderio.enderio.foundation.energy.PoweredMachineEnergyStorage.ITEM_DATA;
 
     public static final ItemDataKey<Soul> SOUL = new ItemDataKey<>(EnderIO.rl("soul"), Soul.OPTIONAL_CODEC, false, EnderIO.rl("stored_entity"));
 

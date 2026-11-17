@@ -45,7 +45,7 @@ import static com.enderio.core.gametest.MachineInteractionTestContent.*;
 @GameTestHolder("endercore_tests")
 @PrefixGameTestTemplate(false)
 public class MachineInteractionTests {
-    private static final class Peer implements AutoCloseable {
+    static final class Peer implements AutoCloseable {
         final ServerPlayer player;
         final Connection connection = new Connection(PacketFlow.SERVERBOUND);
         final EmbeddedChannel socket = new EmbeddedChannel(connection);

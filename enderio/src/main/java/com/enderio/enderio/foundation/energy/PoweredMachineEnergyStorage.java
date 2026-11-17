@@ -1,18 +1,22 @@
 package com.enderio.enderio.foundation.energy;
 
 import com.enderio.enderio.api.io.IOConfigurable;
+import com.enderio.core.common.item.ItemDataKey;
+import com.enderio.enderio.api.EnderIOAPI;
+import com.mojang.serialization.Codec;
 import com.enderio.enderio.api.io.energy.EnergyIOMode;
 import com.enderio.enderio.foundation.block.entity.PoweredMachineBlockEntity;
 import com.enderio.enderio.foundation.io.energy.IMachineEnergyStorage;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.IntTag;
-import net.minecraft.util.Mth;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
 public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializable<IntTag>, IMachineEnergyStorage {
+
+    public static final ItemDataKey<Integer> ITEM_DATA = new ItemDataKey<>(EnderIOAPI.rl("energy"), Codec.intRange(0, Integer.MAX_VALUE), false);
 
     private final PoweredMachineBlockEntity machine;
 
@@ -28,8 +32,11 @@ public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializ
     }
 
     public void setEnergyStored(int energyStored) {
-        this.energyStored = energyStored;
-        machine.setChanged();
+        int value = Math.max(0, energyStored);
+        if (this.energyStored != value) {
+            this.energyStored = value;
+            machine.setChanged();
+        }
     }
 
     @Override
@@ -42,14 +49,12 @@ public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializ
     }
 
     public final int addEnergy(int energyToAdd, boolean simulate) {
-        int energyBefore = energyStored;
-        int energyAfter = Math.min(energyBefore + energyToAdd, getMaxEnergyStored());
-
-        if (!simulate) {
-            setEnergyStored(energyAfter);
+        // Preserve charge loaded before capacity is known, or retained after a capacitor downgrade.
+        int accepted = Math.min(Math.max(0, energyToAdd), Math.max(0, getMaxEnergyStored() - energyStored));
+        if (!simulate && accepted > 0) {
+            setEnergyStored(energyStored + accepted);
         }
-
-        return energyAfter - energyBefore;
+        return accepted;
     }
 
     public final int consumeEnergy(int energyToConsume) {
@@ -58,11 +63,11 @@ public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializ
 
     public final int consumeEnergy(int energyToConsume, boolean simulate) {
         // Capped consumption rate
-        energyToConsume = Math.min(energyToConsume, machine.getMaxEnergyUse());
+        energyToConsume = Math.min(Math.max(0, energyToConsume), getMaxEnergyUse());
 
         int energyExtracted = Math.min(energyStored, energyToConsume);
 
-        if (!simulate) {
+        if (!simulate && energyExtracted > 0) {
             setEnergyStored(energyStored - energyExtracted);
         }
 
@@ -86,12 +91,15 @@ public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializ
 
     @Override
     public int takeEnergy(int energy) {
-        return extractEnergy(energy, false);
+        // Internal use is independent of whether external consumers may extract energy.
+        int taken = Math.min(Math.max(0, energy), energyStored);
+        if (taken > 0) setEnergyStored(energyStored - taken);
+        return taken;
     }
 
     @Override
     public int getMaxEnergyUse() {
-        return machine.getMaxEnergyUse();
+        return Math.max(0, machine.getMaxEnergyUse());
     }
 
     @Override
@@ -114,12 +122,7 @@ public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializ
             return 0;
         }
 
-        int energyReceived = Mth.clamp(getMaxEnergyStored() - energyStored, 0, maxReceive);
-        if (!simulate) {
-            setEnergyStored(energyStored + energyReceived);
-        }
-
-        return energyReceived;
+        return addEnergy(maxReceive, simulate);
     }
 
     @Override
@@ -130,7 +133,7 @@ public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializ
 
         int energyExtracted = Math.min(energyStored, maxExtract);
 
-        if (!simulate) {
+        if (!simulate && energyExtracted > 0) {
             setEnergyStored(energyStored - energyExtracted);
         }
 
@@ -139,12 +142,12 @@ public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializ
 
     @Override
     public boolean canExtract() {
-        return machine.energyIOMode().canOutput();
+        return !machine.isRemoved() && machine.energyIOMode().canOutput();
     }
 
     @Override
     public boolean canReceive() {
-        return machine.energyIOMode().canInput();
+        return !machine.isRemoved() && machine.energyIOMode().canInput();
     }
 
     @Override
@@ -193,30 +196,14 @@ public class PoweredMachineEnergyStorage implements IEnergyStorage, INBTSerializ
 
         @Override
         public boolean canExtract() {
-            if (!wrapped.machine.energyIOMode().canOutput()) {
-                return false;
-            }
-
-            if (side != null && wrapped.machine.energyIOMode().respectIOConfig()
-                    && !wrapped.machine.getIOMode(side).canOutput()) {
-                return false;
-            }
-
-            return wrapped.canExtract();
+            return wrapped.canExtract() && (side == null || wrapped.machine.getIOMode(side).canConnect()
+                && (!wrapped.machine.energyIOMode().respectIOConfig() || wrapped.machine.getIOMode(side).canOutput()));
         }
 
         @Override
         public boolean canReceive() {
-            if (!wrapped.machine.energyIOMode().canInput()) {
-                return false;
-            }
-
-            if (side != null && wrapped.machine.energyIOMode().respectIOConfig()
-                    && !wrapped.machine.getIOMode(side).canInput()) {
-                return false;
-            }
-
-            return wrapped.canReceive();
+            return wrapped.canReceive() && (side == null || wrapped.machine.getIOMode(side).canConnect()
+                && (!wrapped.machine.energyIOMode().respectIOConfig() || wrapped.machine.getIOMode(side).canInput()));
         }
     }
 }

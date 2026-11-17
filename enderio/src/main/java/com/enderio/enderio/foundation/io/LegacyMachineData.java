@@ -9,6 +9,8 @@ public final class LegacyMachineData {
 
     public static CompoundTag withNativeFields(CompoundTag source) {
         var result = source.copy();
+        // Forge 6.x used a different capitalization for the world-save I/O field.
+        copyIfMissing(result, source, MachineNBTKeys.IO_CONFIG, "IoConfig");
         var attachments = source.getCompound("neoforge:attachments");
         copyIfMissing(result, attachments, MachineNBTKeys.IO_CONFIG, "enderio:io_config");
         copyIfMissing(result, attachments, MachineNBTKeys.REDSTONE_CONTROL, "enderio:redstone_control");
@@ -20,7 +22,7 @@ public final class LegacyMachineData {
         return result;
     }
 
-    private static void copyIfMissing(CompoundTag target, CompoundTag attachments, String key, String id) {
-        if (!target.contains(key) && attachments.contains(id)) target.put(key, attachments.get(id).copy());
+    private static void copyIfMissing(CompoundTag target, CompoundTag source, String key, String id) {
+        if (!target.contains(key) && source.contains(id)) target.put(key, source.get(id).copy());
     }
 }
