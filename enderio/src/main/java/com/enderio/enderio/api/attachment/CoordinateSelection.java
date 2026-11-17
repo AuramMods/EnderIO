@@ -1,11 +1,11 @@
 package com.enderio.enderio.api.attachment;
 
+import com.enderio.core.common.network.codec.PacketCodecs;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -23,10 +23,10 @@ public record CoordinateSelection(ResourceKey<Level> level, BlockPos pos) {
         ).apply(instance, CoordinateSelection::new)
     );
 
-    public static final StreamCodec<ByteBuf, CoordinateSelection> STREAM_CODEC = StreamCodec.composite(
-        ResourceKey.streamCodec(Registries.DIMENSION),
+    public static final PacketCodec<CoordinateSelection> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.resourceKey(Registries.DIMENSION),
         CoordinateSelection::level,
-        BlockPos.STREAM_CODEC,
+        PacketCodecs.BLOCK_POS,
         CoordinateSelection::pos,
         CoordinateSelection::new
     );

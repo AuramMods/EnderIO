@@ -9,7 +9,7 @@ import com.enderio.enderio.content.filters.FiltersLang;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOMenus;
 import com.enderio.core.common.item.ItemDataKey;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -47,7 +47,7 @@ public class LimitedItemFilterItem extends AbstractFilterItem<LimitedItemFilter>
 
     @UseOnly(LogicalSide.CLIENT)
     public static LimitedItemFilterMenu openMenuClient(int containerId, Inventory playerInventory,
-            RegistryFriendlyByteBuf buf) {
+            FriendlyByteBuf buf) {
         return new LimitedItemFilterMenu(EIOMenus.LIMITED_ITEM_FILTER.get(), containerId, playerInventory);
     }
 

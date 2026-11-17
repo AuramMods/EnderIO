@@ -1,18 +1,18 @@
 package com.enderio.enderio.foundation.network.packets;
 
+import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.enderio.EnderIO;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record ServerboundCycleIOConfigPacket(BlockPos pos, Direction side) implements CustomPacketPayload {
 
     public static final Type<ServerboundCycleIOConfigPacket> TYPE = new Type<>(EnderIO.rl("cycle_io_config"));
 
-    public static final StreamCodec<ByteBuf, ServerboundCycleIOConfigPacket> STREAM_CODEC = StreamCodec.composite(BlockPos.STREAM_CODEC,
-            ServerboundCycleIOConfigPacket::pos, Direction.STREAM_CODEC, ServerboundCycleIOConfigPacket::side, ServerboundCycleIOConfigPacket::new);
+    public static final PacketCodec<ServerboundCycleIOConfigPacket> STREAM_CODEC = PacketCodec.composite(PacketCodecs.BLOCK_POS,
+            ServerboundCycleIOConfigPacket::pos, PacketCodecs.DIRECTION, ServerboundCycleIOConfigPacket::side, ServerboundCycleIOConfigPacket::new);
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

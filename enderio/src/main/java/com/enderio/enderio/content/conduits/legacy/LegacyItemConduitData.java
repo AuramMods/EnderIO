@@ -8,11 +8,9 @@ import com.enderio.enderio.init.EIOConduitTypes;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.Direction;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -27,11 +25,10 @@ public class LegacyItemConduitData implements ConduitData<LegacyItemConduitData>
                     .fieldOf("item_sided_data")
                     .forGetter(i -> i.itemSidedData)).apply(instance, LegacyItemConduitData::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, LegacyItemConduitData> STREAM_CODEC = ByteBufCodecs
-            .map(i -> (Map<Direction, ItemSidedData>) new HashMap<Direction, ItemSidedData>(i), Direction.STREAM_CODEC,
+    public static final PacketCodec<LegacyItemConduitData> STREAM_CODEC = PacketCodec.map(i -> (Map<Direction, ItemSidedData>) new HashMap<Direction, ItemSidedData>(i), PacketCodecs.DIRECTION,
                     ItemSidedData.STREAM_CODEC)
             .map(LegacyItemConduitData::new, i -> i.itemSidedData)
-            .cast();
+            ;
 
     public final Map<Direction, ItemSidedData> itemSidedData;
 
@@ -106,8 +103,8 @@ public class LegacyItemConduitData implements ConduitData<LegacyItemConduitData>
                                 Codec.INT.fieldOf("priority").forGetter(i -> i.priority))
                         .apply(instance, ItemSidedData::new));
 
-        public static final StreamCodec<ByteBuf, ItemSidedData> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.BOOL,
-                i -> i.isRoundRobin, ByteBufCodecs.BOOL, i -> i.isSelfFeed, ByteBufCodecs.INT, i -> i.priority,
+        public static final PacketCodec<ItemSidedData> STREAM_CODEC = PacketCodec.composite(PacketCodecs.BOOL,
+                i -> i.isRoundRobin, PacketCodecs.BOOL, i -> i.isSelfFeed, PacketCodecs.INT, i -> i.priority,
                 ItemSidedData::new);
 
         public static final ItemSidedData EMPTY = new ItemSidedData(false, 0, false, 0);

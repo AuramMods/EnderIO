@@ -12,8 +12,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import org.jetbrains.annotations.Nullable;
 
 public class ConduitInWorldGridNodeHost implements IInWorldGridNodeHost, ConduitData<ConduitInWorldGridNodeHost> {
@@ -22,9 +21,9 @@ public class ConduitInWorldGridNodeHost implements IInWorldGridNodeHost, Conduit
             .group(CompoundTag.CODEC.fieldOf("main_node").forGetter(ConduitInWorldGridNodeHost::saveMainNode))
             .apply(instance, ConduitInWorldGridNodeHost::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ConduitInWorldGridNodeHost> STREAM_CODEC = DumbStreamCodec
+    public static final PacketCodec<ConduitInWorldGridNodeHost> STREAM_CODEC = DumbStreamCodec
             .of(ConduitInWorldGridNodeHost::new)
-            .cast();
+            ;
 
     @Nullable
     private IManagedGridNode mainNode = null;

@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.painting;
 
+import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.recipes.OutputStack;
 import com.enderio.enderio.config.machines.MachinesConfig;
 import com.enderio.enderio.content.paint.BlockPaintData;
@@ -11,8 +12,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -107,8 +107,8 @@ public record PaintingRecipe(Ingredient input, ItemStack output) implements Mach
                         ItemStack.CODEC.fieldOf("output").forGetter(PaintingRecipe::output))
                 .apply(instance, PaintingRecipe::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, PaintingRecipe> STREAM_CODEC = StreamCodec.composite(
-                Ingredient.CONTENTS_STREAM_CODEC, PaintingRecipe::input, ItemStack.STREAM_CODEC, PaintingRecipe::output,
+        public static final PacketCodec<PaintingRecipe> STREAM_CODEC = PacketCodec.composite(
+                PacketCodecs.INGREDIENT, PaintingRecipe::input, PacketCodecs.REQUIRED_ITEM_STACK, PaintingRecipe::output,
                 PaintingRecipe::new);
 
         @Override
@@ -117,7 +117,7 @@ public record PaintingRecipe(Ingredient input, ItemStack output) implements Mach
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, PaintingRecipe> streamCodec() {
+        public PacketCodec<PaintingRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }

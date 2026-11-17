@@ -1,10 +1,9 @@
 package com.enderio.enderio.api.travel;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 
 public interface TravelTargetSerializer<T extends TravelTarget> {
     MapCodec<T> codec();
-    StreamCodec<RegistryFriendlyByteBuf, T> streamCodec();
+    PacketCodec<T> streamCodec();
 }

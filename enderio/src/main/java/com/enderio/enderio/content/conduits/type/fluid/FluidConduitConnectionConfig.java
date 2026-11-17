@@ -10,9 +10,8 @@ import com.enderio.enderio.api.network.MassiveStreamCodec;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.DyeColor;
 
 import java.util.List;
@@ -38,26 +37,26 @@ public record FluidConduitConnectionConfig(boolean isInsert, DyeColor insertChan
             .apply(instance, FluidConduitConnectionConfig::new));
 
     // @formatter:off
-    public static final StreamCodec<ByteBuf, FluidConduitConnectionConfig> STREAM_CODEC = MassiveStreamCodec.composite(
-        ByteBufCodecs.BOOL,
+    public static final PacketCodec<FluidConduitConnectionConfig> STREAM_CODEC = MassiveStreamCodec.composite(
+        PacketCodecs.BOOL,
         FluidConduitConnectionConfig::isInsert,
-        DyeColor.STREAM_CODEC,
+        PacketCodecs.DYE_COLOR,
         FluidConduitConnectionConfig::insertChannel,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         FluidConduitConnectionConfig::isExtract,
-        DyeColor.STREAM_CODEC,
+        PacketCodecs.DYE_COLOR,
         FluidConduitConnectionConfig::extractChannel,
         RedstoneControl.STREAM_CODEC,
         FluidConduitConnectionConfig::extractRedstoneControl,
-        DyeColor.STREAM_CODEC,
+        PacketCodecs.DYE_COLOR,
         FluidConduitConnectionConfig::extractRedstoneChannel,
-        ByteBufCodecs.INT,
+        PacketCodecs.INT,
         FluidConduitConnectionConfig::insertPriority,
         FluidConduitConnectionConfig::new);
     // @formatter:on
 
     public static final ConnectionConfigType<FluidConduitConnectionConfig> TYPE = new ConnectionConfigType<>(CODEC,
-            STREAM_CODEC.cast(), () -> DEFAULT);
+            STREAM_CODEC, () -> DEFAULT);
 
     @Override
     public ConnectionConfig reconnected() {

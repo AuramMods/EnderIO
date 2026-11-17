@@ -1,11 +1,9 @@
 package com.enderio.enderio.foundation.network.packets;
 
 import com.enderio.enderio.EnderIO;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.phys.Vec3;
 
@@ -13,8 +11,8 @@ public record ServerboundRequestShortTravelPacket() implements CustomPacketPaylo
 
     public static final Type<ServerboundRequestShortTravelPacket> TYPE = new Type<>(EnderIO.rl("request_short_travel"));
 
-    public static final StreamCodec<ByteBuf, ServerboundRequestShortTravelPacket> STREAM_CODEC =
-        StreamCodec.unit(new ServerboundRequestShortTravelPacket());
+    public static final PacketCodec<ServerboundRequestShortTravelPacket> STREAM_CODEC =
+        PacketCodec.unit(new ServerboundRequestShortTravelPacket());
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

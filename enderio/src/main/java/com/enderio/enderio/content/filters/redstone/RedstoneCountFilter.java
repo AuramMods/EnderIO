@@ -6,9 +6,8 @@ import com.enderio.enderio.foundation.network.packets.ServerboundCountFilterPack
 import com.enderio.enderio.init.EIODataComponents;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
@@ -102,8 +101,8 @@ public class RedstoneCountFilter implements RedstoneOutputFilter {
                         Codec.BOOL.fieldOf("deactivated").forGetter(Component::deactivated))
                 .apply(instance, Component::new));
 
-        public static final StreamCodec<ByteBuf, Component> STREAM_CODEC = StreamCodec.composite(DyeColor.STREAM_CODEC,
-                Component::channel1, ByteBufCodecs.VAR_INT, Component::maxCount, ByteBufCodecs.VAR_INT,
-                Component::count, ByteBufCodecs.BOOL, Component::deactivated, Component::new);
+        public static final PacketCodec<Component> STREAM_CODEC = PacketCodec.composite(PacketCodecs.DYE_COLOR,
+                Component::channel1, PacketCodecs.VAR_INT, Component::maxCount, PacketCodecs.VAR_INT,
+                Component::count, PacketCodecs.BOOL, Component::deactivated, Component::new);
     }
 }

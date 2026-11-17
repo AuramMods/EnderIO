@@ -5,9 +5,8 @@ import com.enderio.enderio.foundation.io.energy.ILargeMachineEnergyStorage;
 import com.enderio.enderio.foundation.io.energy.LargeImmutableMachineEnergyStorage;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 
 @Deprecated(forRemoval = true, since = "7.1")
 public record LargeEnergyData(long energyStored, long maxEnergyStored) {
@@ -18,10 +17,10 @@ public record LargeEnergyData(long energyStored, long maxEnergyStored) {
         ).apply(instance, LargeEnergyData::new)
     );
 
-    public static final StreamCodec<ByteBuf, LargeEnergyData> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.VAR_LONG,
+    public static final PacketCodec<LargeEnergyData> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.VAR_LONG,
         LargeEnergyData::energyStored,
-        ByteBufCodecs.VAR_LONG,
+        PacketCodecs.VAR_LONG,
         LargeEnergyData::maxEnergyStored,
         LargeEnergyData::new
     );
@@ -34,7 +33,7 @@ public record LargeEnergyData(long energyStored, long maxEnergyStored) {
     }
 
     public static final NetworkDataSlot.CodecType<LargeEnergyData> DATA_SLOT_TYPE
-        = new NetworkDataSlot.CodecType<>(CODEC, STREAM_CODEC.cast());
+        = new NetworkDataSlot.CodecType<>(CODEC, STREAM_CODEC);
 
     public LargeImmutableMachineEnergyStorage toImmutableStorage() {
         return new LargeImmutableMachineEnergyStorage(energyStored, maxEnergyStored);

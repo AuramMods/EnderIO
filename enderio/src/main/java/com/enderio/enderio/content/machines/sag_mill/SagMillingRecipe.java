@@ -9,13 +9,11 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.ByIdMap;
@@ -139,7 +137,7 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
         public static final Codec<BonusType> CODEC = StringRepresentable.fromEnum(BonusType::values);
         public static final IntFunction<BonusType> BY_ID = ByIdMap.continuous(key -> key.id, values(),
                 ByIdMap.OutOfBoundsStrategy.ZERO);
-        public static final StreamCodec<ByteBuf, BonusType> STREAM_CODEC = ByteBufCodecs.idMapper(BY_ID, v -> v.id);
+        public static final PacketCodec<BonusType> STREAM_CODEC = PacketCodecs.idMapper(BY_ID, v -> v.id);
 
         private final int id;
         private final boolean multiply;
@@ -177,9 +175,9 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
                 Codec.BOOL.optionalFieldOf("optional", false).forGetter(OutputItem::isOptional))
                 .apply(instance, OutputItem::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, OutputItem> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.either(ItemStack.STREAM_CODEC, SizedTagOutput.STREAM_CODEC), OutputItem::output,
-                ByteBufCodecs.FLOAT, OutputItem::chance, ByteBufCodecs.BOOL, OutputItem::isOptional, OutputItem::new);
+        public static final PacketCodec<OutputItem> STREAM_CODEC = PacketCodec.composite(
+                PacketCodecs.either(PacketCodecs.REQUIRED_ITEM_STACK, SizedTagOutput.STREAM_CODEC), OutputItem::output,
+                PacketCodecs.FLOAT, OutputItem::chance, PacketCodecs.BOOL, OutputItem::isOptional, OutputItem::new);
 
         public static OutputItem of(Item item, int count, float chance, boolean optional) {
             return of(new ItemStack(item, count), chance, optional);
@@ -207,11 +205,11 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
                             Codec.intRange(0, Integer.MAX_VALUE).fieldOf("count").forGetter(SizedTagOutput::count))
                     .apply(instance, SizedTagOutput::new));
 
-            private static final StreamCodec<RegistryFriendlyByteBuf, SizedTagOutput> STREAM_CODEC = StreamCodec
+            private static final PacketCodec<SizedTagOutput> STREAM_CODEC = PacketCodec
                     .composite(
-                            ResourceLocation.STREAM_CODEC.map(loc -> TagKey.create(Registries.ITEM, loc),
+                            PacketCodecs.RESOURCE_LOCATION.map(loc -> TagKey.create(Registries.ITEM, loc),
                                     TagKey::location),
-                            SizedTagOutput::itemTag, ByteBufCodecs.INT, SizedTagOutput::count, SizedTagOutput::new);
+                            SizedTagOutput::itemTag, PacketCodecs.INT, SizedTagOutput::count, SizedTagOutput::new);
 
             public ItemStack getItemStack() {
                 return OptionalItemUtility.getOptionalItem(itemTag).map(item -> new ItemStack(item, count)).orElse(ItemStack.EMPTY);
@@ -247,9 +245,9 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
                                         .forGetter(SagMillingRecipe::bonusType))
                         .apply(instance, SagMillingRecipe::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, SagMillingRecipe> STREAM_CODEC = StreamCodec.composite(
-                Ingredient.CONTENTS_STREAM_CODEC, SagMillingRecipe::input,
-                OutputItem.STREAM_CODEC.apply(ByteBufCodecs.list()), SagMillingRecipe::outputs, ByteBufCodecs.INT,
+        public static final PacketCodec<SagMillingRecipe> STREAM_CODEC = PacketCodec.composite(
+                PacketCodecs.INGREDIENT, SagMillingRecipe::input,
+                OutputItem.STREAM_CODEC.list(), SagMillingRecipe::outputs, PacketCodecs.INT,
                 SagMillingRecipe::energy, BonusType.STREAM_CODEC, SagMillingRecipe::bonusType, SagMillingRecipe::new);
 
         @Override
@@ -258,7 +256,7 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, SagMillingRecipe> streamCodec() {
+        public PacketCodec<SagMillingRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }

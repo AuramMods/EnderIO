@@ -1,13 +1,12 @@
 package com.enderio.enderio.api.network;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 
 import java.util.function.Supplier;
 
 public class DumbStreamCodec {
-    public static <T> StreamCodec<ByteBuf, T> of(Supplier<T> factory) {
-        return StreamCodec.of(
+    public static <T> PacketCodec<T> of(Supplier<T> factory) {
+        return PacketCodec.of(
             (buf, obj) -> {},
             buf -> factory.get());
     }

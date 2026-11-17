@@ -5,14 +5,13 @@ import com.enderio.enderio.api.io.IOMode;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import org.slf4j.Logger;
 
 import java.util.EnumMap;
@@ -29,12 +28,12 @@ public record IOConfig(Map<Direction, IOMode> modes) {
             .group(Codec.unboundedMap(Direction.CODEC, IOMode.CODEC).fieldOf("Modes").forGetter(IOConfig::modes))
             .apply(instance, IOConfig::new));
 
-    public static final StreamCodec<ByteBuf, IOConfig> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.map(c -> new EnumMap<>(Direction.class), Direction.STREAM_CODEC, IOMode.STREAM_CODEC),
+    public static final PacketCodec<IOConfig> STREAM_CODEC = PacketCodec.composite(
+            PacketCodec.map(c -> new EnumMap<>(Direction.class), PacketCodecs.DIRECTION, IOMode.STREAM_CODEC),
             IOConfig::modes, IOConfig::new);
 
     public static final NetworkDataSlot.CodecType<IOConfig> DATA_SLOT_TYPE = new NetworkDataSlot.CodecType<>(CODEC,
-            STREAM_CODEC.cast());
+            STREAM_CODEC);
 
     public static IOConfig copyOf(IOConfig other) {
         return new IOConfig(new EnumMap<>(other.modes()));

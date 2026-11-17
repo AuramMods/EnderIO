@@ -6,9 +6,8 @@ import com.enderio.enderio.api.soul.Soul;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
@@ -34,12 +33,12 @@ public record EnderSoulFilter(NonNullList<Soul> matches, boolean isDenyList, boo
             .apply(componentInstance, EnderSoulFilter::new));
 
     // @formatter:off
-    public static final StreamCodec<RegistryFriendlyByteBuf, EnderSoulFilter> STREAM_CODEC = StreamCodec.composite(
-        Soul.OPTIONAL_STREAM_CODEC.apply(ByteBufCodecs.list(256)),
+    public static final PacketCodec<EnderSoulFilter> STREAM_CODEC = PacketCodec.composite(
+        Soul.OPTIONAL_STREAM_CODEC.list(256),
         EnderSoulFilter::matches,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         EnderSoulFilter::isDenyList,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         EnderSoulFilter::shouldCompareTags,
         EnderSoulFilter::new);
     // @formatter:on

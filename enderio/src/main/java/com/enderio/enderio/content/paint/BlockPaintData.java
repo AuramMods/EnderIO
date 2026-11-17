@@ -4,9 +4,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.level.block.Block;
 
 public record BlockPaintData(Block paint) {
@@ -15,7 +14,7 @@ public record BlockPaintData(Block paint) {
             BuiltInRegistries.BLOCK.byNameCodec().fieldOf("paint").forGetter(BlockPaintData::paint)
         ).apply(instance, BlockPaintData::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, BlockPaintData> STREAM_CODEC = ByteBufCodecs.registry(Registries.BLOCK)
+    public static final PacketCodec<BlockPaintData> STREAM_CODEC = PacketCodecs.registry(net.minecraft.core.registries.BuiltInRegistries.BLOCK)
         .map(BlockPaintData::new, BlockPaintData::paint);
 
     public static BlockPaintData of(Block paint) {

@@ -15,10 +15,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.RegistryFixedCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -46,7 +45,7 @@ public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, 
 
     Codec<Holder<Conduit<?, ?>>> CODEC = RegistryFixedCodec.create(EnderIORegistries.Keys.CONDUIT);
 
-    StreamCodec<RegistryFriendlyByteBuf, Holder<Conduit<?, ?>>> STREAM_CODEC = ByteBufCodecs
+    PacketCodec<Holder<Conduit<?, ?>>> STREAM_CODEC = PacketCodecs
             .holderRegistry(EnderIORegistries.Keys.CONDUIT);
 
     /**

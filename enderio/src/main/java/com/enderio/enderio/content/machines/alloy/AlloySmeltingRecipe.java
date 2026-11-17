@@ -8,9 +8,8 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeInput;
@@ -194,11 +193,11 @@ public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.In
                         Codec.BOOL.optionalFieldOf("is_smelting", false).forGetter(AlloySmeltingRecipe::isSmelting))
                 .apply(inst, AlloySmeltingRecipe::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, AlloySmeltingRecipe> STREAM_CODEC = StreamCodec
-                .composite(SizedIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), AlloySmeltingRecipe::inputs,
-                        ItemStack.STREAM_CODEC, AlloySmeltingRecipe::output, ByteBufCodecs.INT,
-                        AlloySmeltingRecipe::energy, ByteBufCodecs.FLOAT, AlloySmeltingRecipe::experience,
-                        ByteBufCodecs.BOOL, AlloySmeltingRecipe::isSmelting, AlloySmeltingRecipe::new);
+        public static final PacketCodec<AlloySmeltingRecipe> STREAM_CODEC = PacketCodec
+                .composite(SizedIngredient.STREAM_CODEC.list(), AlloySmeltingRecipe::inputs,
+                        PacketCodecs.REQUIRED_ITEM_STACK, AlloySmeltingRecipe::output, PacketCodecs.INT,
+                        AlloySmeltingRecipe::energy, PacketCodecs.FLOAT, AlloySmeltingRecipe::experience,
+                        PacketCodecs.BOOL, AlloySmeltingRecipe::isSmelting, AlloySmeltingRecipe::new);
 
         @Override
         public MapCodec<AlloySmeltingRecipe> codec() {
@@ -206,7 +205,7 @@ public class AlloySmeltingRecipe implements MachineRecipe<AlloySmeltingRecipe.In
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, AlloySmeltingRecipe> streamCodec() {
+        public PacketCodec<AlloySmeltingRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }

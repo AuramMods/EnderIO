@@ -2,9 +2,8 @@ package com.enderio.enderio.api.capacitor;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,11 +25,11 @@ public record CapacitorData(float base, Map<CapacitorModifier, Float> modifiers)
         ).apply(instance, CapacitorData::new)
     );
 
-    public static final StreamCodec<FriendlyByteBuf, Map<CapacitorModifier, Float>> MODIFIER_STREAM_CODEC
-        = ByteBufCodecs.map(HashMap::new, CapacitorModifier.STREAM_CODEC, ByteBufCodecs.FLOAT);
+    public static final PacketCodec<Map<CapacitorModifier, Float>> MODIFIER_STREAM_CODEC
+        = PacketCodec.map(HashMap::new, CapacitorModifier.STREAM_CODEC, PacketCodecs.FLOAT);
 
-    public static final StreamCodec<FriendlyByteBuf, CapacitorData> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.FLOAT,
+    public static final PacketCodec<CapacitorData> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.FLOAT,
         CapacitorData::base,
         MODIFIER_STREAM_CODEC,
         CapacitorData::modifiers,

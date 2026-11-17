@@ -8,11 +8,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
@@ -39,7 +37,7 @@ public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredien
         public static final Codec<Mode> CODEC = StringRepresentable.fromEnum(Mode::values);
         public static final IntFunction<Mode> BY_ID = ByIdMap.continuous(key -> key.id, values(),
                 ByIdMap.OutOfBoundsStrategy.ZERO);
-        public static final StreamCodec<ByteBuf, Mode> STREAM_CODEC = ByteBufCodecs.idMapper(BY_ID, v -> v.id);
+        public static final PacketCodec<Mode> STREAM_CODEC = PacketCodecs.idMapper(BY_ID, v -> v.id);
 
         private final int id;
         private final String name;
@@ -148,8 +146,8 @@ public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredien
                             Mode.CODEC.fieldOf("mode").forGetter(TankRecipe::mode))
                     .apply(instance, TankRecipe::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, TankRecipe> STREAM_CODEC = StreamCodec.composite(
-                Ingredient.CONTENTS_STREAM_CODEC, TankRecipe::input, ItemStack.STREAM_CODEC, TankRecipe::output,
+        public static final PacketCodec<TankRecipe> STREAM_CODEC = PacketCodec.composite(
+                PacketCodecs.INGREDIENT, TankRecipe::input, PacketCodecs.REQUIRED_ITEM_STACK, TankRecipe::output,
                 SizedFluidIngredient.STREAM_CODEC, TankRecipe::fluid, Mode.STREAM_CODEC, TankRecipe::mode, TankRecipe::new);
 
         @Override
@@ -158,7 +156,7 @@ public record TankRecipe(Ingredient input, ItemStack output, SizedFluidIngredien
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, TankRecipe> streamCodec() {
+        public PacketCodec<TankRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }

@@ -6,9 +6,8 @@ import com.enderio.enderio.api.conduits.connection.config.IOConnectionConfig;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.DyeColor;
 
 public record RedstoneConduitConnectionConfig(boolean isInsert, DyeColor insertChannel, boolean isExtract,
@@ -27,15 +26,15 @@ public record RedstoneConduitConnectionConfig(boolean isInsert, DyeColor insertC
                             .forGetter(RedstoneConduitConnectionConfig::isStrongOutputSignal))
             .apply(instance, RedstoneConduitConnectionConfig::new));
 
-    public static final StreamCodec<ByteBuf, RedstoneConduitConnectionConfig> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL, RedstoneConduitConnectionConfig::isInsert, DyeColor.STREAM_CODEC,
-            RedstoneConduitConnectionConfig::insertChannel, ByteBufCodecs.BOOL,
-            RedstoneConduitConnectionConfig::isExtract, DyeColor.STREAM_CODEC,
-            RedstoneConduitConnectionConfig::extractChannel, ByteBufCodecs.BOOL,
+    public static final PacketCodec<RedstoneConduitConnectionConfig> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.BOOL, RedstoneConduitConnectionConfig::isInsert, PacketCodecs.DYE_COLOR,
+            RedstoneConduitConnectionConfig::insertChannel, PacketCodecs.BOOL,
+            RedstoneConduitConnectionConfig::isExtract, PacketCodecs.DYE_COLOR,
+            RedstoneConduitConnectionConfig::extractChannel, PacketCodecs.BOOL,
             RedstoneConduitConnectionConfig::isStrongOutputSignal, RedstoneConduitConnectionConfig::new);
 
     public static final ConnectionConfigType<RedstoneConduitConnectionConfig> TYPE = new ConnectionConfigType<>(CODEC,
-            STREAM_CODEC.cast(), () -> DEFAULT);
+            STREAM_CODEC, () -> DEFAULT);
 
     @Override
     public ConnectionConfig reconnected() {

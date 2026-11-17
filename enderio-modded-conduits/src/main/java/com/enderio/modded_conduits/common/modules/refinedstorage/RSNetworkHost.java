@@ -8,8 +8,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.refinedmods.refinedstorage.common.support.network.NetworkNodeContainerProviderImpl;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import org.jetbrains.annotations.Nullable;
 
 public class RSNetworkHost extends NetworkNodeContainerProviderImpl implements ConduitData<RSNetworkHost> {
@@ -17,9 +16,9 @@ public class RSNetworkHost extends NetworkNodeContainerProviderImpl implements C
             .mapCodec(rsNetworkHostInstance -> rsNetworkHostInstance.group(Codec.INT.fieldOf("int").forGetter(i -> i.i))
                     .apply(rsNetworkHostInstance, RSNetworkHost::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, RSNetworkHost> STREAM_CODEC = DumbStreamCodec
+    public static final PacketCodec<RSNetworkHost> STREAM_CODEC = DumbStreamCodec
             .of(RSNetworkHost::new)
-            .cast();
+            ;
 
     private final int i = 0;
 

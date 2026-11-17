@@ -13,11 +13,10 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
@@ -224,9 +223,9 @@ public class ConduitProbeItem extends Item {
             State::name
         );
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, State> STREAM_CODEC = ByteBufCodecs.STRING_UTF8
+        public static final PacketCodec<State> STREAM_CODEC = PacketCodecs.STRING_UTF8
             .map(State::valueOf, State::name)
-            .cast();
+            ;
     }
 
     public record ProbeConfigData(Map<ResourceLocation, ConnectionConfig> conduitData) {
@@ -238,8 +237,8 @@ public class ConduitProbeItem extends Item {
                         .forGetter(ProbeConfigData::conduitData))
                 .apply(componentInstance, ProbeConfigData::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, ProbeConfigData> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ConnectionConfig.STREAM_CODEC),
+        public static final PacketCodec<ProbeConfigData> STREAM_CODEC = PacketCodec.composite(
+            PacketCodec.map(HashMap::new, PacketCodecs.RESOURCE_LOCATION, ConnectionConfig.STREAM_CODEC),
             ProbeConfigData::conduitData,
             ProbeConfigData::new);
     }

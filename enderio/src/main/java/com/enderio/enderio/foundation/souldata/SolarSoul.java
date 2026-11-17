@@ -2,10 +2,9 @@ package com.enderio.enderio.foundation.souldata;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -34,14 +33,14 @@ public class SolarSoul {
             ResourceKey.codec(Registries.DIMENSION).optionalFieldOf("level").forGetter(SoulData::level)
             ).apply(instance, SoulData::new));
 
-    public static final StreamCodec<ByteBuf, SoulData> STREAM_CODEC = StreamCodec.composite(
-        ResourceLocation.STREAM_CODEC,
+    public static final PacketCodec<SoulData> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.RESOURCE_LOCATION,
         SoulData::entitytype,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         SoulData::daytime,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         SoulData::nighttime,
-        ByteBufCodecs.optional(ResourceKey.streamCodec(Registries.DIMENSION)),
+        PacketCodecs.resourceKey(Registries.DIMENSION).optional(),
         SoulData::level,
         SoulData::new
     );

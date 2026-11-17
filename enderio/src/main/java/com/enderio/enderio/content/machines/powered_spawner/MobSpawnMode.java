@@ -1,12 +1,11 @@
 package com.enderio.enderio.content.machines.powered_spawner;
 
 import com.mojang.serialization.Codec;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 
@@ -27,7 +26,7 @@ public enum MobSpawnMode implements StringRepresentable {
     public static final Codec<MobSpawnMode> CODEC = StringRepresentable.fromEnum(MobSpawnMode::values);
     public static final IntFunction<MobSpawnMode> BY_ID = ByIdMap.continuous(key -> key.id, values(),
             ByIdMap.OutOfBoundsStrategy.ZERO);
-    public static final StreamCodec<ByteBuf, MobSpawnMode> STREAM_CODEC = ByteBufCodecs.idMapper(BY_ID, v -> v.id);
+    public static final PacketCodec<MobSpawnMode> STREAM_CODEC = PacketCodecs.idMapper(BY_ID, v -> v.id);
 
     private final int id;
     private final String name;

@@ -1,6 +1,7 @@
 package com.enderio.enderio.content.conduits.menu;
 
 import com.enderio.core.common.menu.BaseEnderMenu;
+import com.enderio.core.common.network.codec.RegistryPacketBuffer;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.conduits.Conduit;
@@ -17,9 +18,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.codec.ByteBufCodecs;
+import com.enderio.core.common.network.codec.PacketCodecs;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -41,7 +42,8 @@ public class ConduitMenu extends BaseEnderMenu {
 
     public static void openConduitMenu(ServerPlayer serverPlayer, ConduitBundleBlockEntity conduitBundle,
             Direction side, Holder<Conduit<?, ?>> conduit) {
-        serverPlayer.openMenu(new MenuProvider(conduitBundle, side, conduit), buf -> {
+        net.minecraftforge.network.NetworkHooks.openScreen(serverPlayer, new MenuProvider(conduitBundle, side, conduit), raw -> {
+            var buf = new RegistryPacketBuffer(raw, serverPlayer.level().registryAccess());
             buf.writeBlockPos(conduitBundle.getBlockPos());
             buf.writeEnum(side);
             Conduit.STREAM_CODEC.encode(buf, conduit);
@@ -85,8 +87,9 @@ public class ConduitMenu extends BaseEnderMenu {
         addSlots();
     }
 
-    public ConduitMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
+    public ConduitMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         super(EIOMenus.CONDUIT_MENU.get(), containerId, playerInventory);
+        buf = new RegistryPacketBuffer(buf, playerInventory.player.level().registryAccess());
 
         pos = buf.readBlockPos();
         side = buf.readEnum(Direction.class);
@@ -282,27 +285,27 @@ public class ConduitMenu extends BaseEnderMenu {
         @Nullable
         private CompoundTag extraGuiData;
 
-        public ClientConnectionAccessor(RegistryFriendlyByteBuf buf) {
+        public ClientConnectionAccessor(FriendlyByteBuf buf) {
             this.connectedConduits = Conduit.STREAM_CODEC
-                    .apply(ByteBufCodecs.list(ConduitBundleBlockEntity.MAX_CONDUITS))
+                    .list(ConduitBundleBlockEntity.MAX_CONDUITS)
                     .decode(buf);
 
             this.connectionConfig = ConnectionConfig.STREAM_CODEC.decode(buf);
 
-            extraGuiData = ByteBufCodecs.optional(ByteBufCodecs.COMPOUND_TAG)
+            extraGuiData = PacketCodecs.COMPOUND_TAG.optional()
                     .map(opt -> opt.orElse(null), Optional::ofNullable)
                     .decode(buf);
         }
 
         private static void writeStartingSyncData(ConduitBundleBlockEntity conduitBundle, Holder<Conduit<?, ?>> conduit,
-                Direction side, RegistryFriendlyByteBuf buf) {
-            Conduit.STREAM_CODEC.apply(ByteBufCodecs.list(ConduitBundleBlockEntity.MAX_CONDUITS))
+                Direction side, FriendlyByteBuf buf) {
+            Conduit.STREAM_CODEC.list(ConduitBundleBlockEntity.MAX_CONDUITS)
                     .encode(buf, conduitBundle.getAllOpenableConduits(side));
 
             ConnectionConfig.STREAM_CODEC.encode(buf, conduitBundle.getConnectionConfig(conduit, side));
 
             // noinspection DataFlowIssue
-            ByteBufCodecs.optional(ByteBufCodecs.COMPOUND_TAG)
+            PacketCodecs.COMPOUND_TAG.optional()
                     .map(opt -> opt.orElse(null), Optional::ofNullable)
                     .encode(buf, conduitBundle.getConduitExtraGuiData(conduit, side));
         }

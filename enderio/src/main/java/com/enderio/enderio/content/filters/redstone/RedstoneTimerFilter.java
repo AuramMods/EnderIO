@@ -4,11 +4,10 @@ import com.enderio.enderio.api.filter.RedstoneInputFilter;
 import com.enderio.enderio.init.EIODataComponents;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -65,10 +64,10 @@ public class RedstoneTimerFilter implements RedstoneInputFilter {
                 .apply(instance, Component::new)
         );
 
-        public static final StreamCodec<ByteBuf, Component> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT,
+        public static final PacketCodec<Component> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.VAR_INT,
             Component::ticks,
-            ByteBufCodecs.VAR_INT,
+            PacketCodecs.VAR_INT,
             Component::maxTicks,
             Component::new
         );

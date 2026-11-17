@@ -6,9 +6,8 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
@@ -95,7 +94,7 @@ public record EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplie
      * Get the enchanted book with the correct enchantment of level.
      */
     public ItemStack getBookForLevel(int level) {
-        return EnchantedBookItem.createForEnchantment(new EnchantmentInstance(enchantment, level));
+        return EnchantedBookItem.createForEnchantment(new EnchantmentInstance(enchantment.value(), level));
     }
 
     // endregion
@@ -168,14 +167,15 @@ public record EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplie
     public static class Serializer implements RecipeSerializer<EnchanterRecipe> {
         public static final MapCodec<EnchanterRecipe> CODEC = RecordCodecBuilder
                 .mapCodec(inst -> inst
-                        .group(Enchantment.CODEC.fieldOf("enchantment").forGetter(EnchanterRecipe::enchantment),
+                        .group(net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.holderByNameCodec().fieldOf("enchantment").forGetter(EnchanterRecipe::enchantment),
                                 ExtraCodecs.POSITIVE_INT.fieldOf("cost_multiplier")
                                         .forGetter(EnchanterRecipe::costMultiplier),
                                 SizedIngredient.FLAT_CODEC.fieldOf("input").forGetter(EnchanterRecipe::input))
                         .apply(inst, EnchanterRecipe::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, EnchanterRecipe> STREAM_CODEC = StreamCodec.composite(
-                Enchantment.STREAM_CODEC, EnchanterRecipe::enchantment, ByteBufCodecs.INT,
+        public static final PacketCodec<EnchanterRecipe> STREAM_CODEC = PacketCodec.composite(
+                PacketCodecs.registry(net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT)
+                        .map(net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT::wrapAsHolder, Holder::value), EnchanterRecipe::enchantment, PacketCodecs.INT,
                 EnchanterRecipe::costMultiplier, SizedIngredient.STREAM_CODEC, EnchanterRecipe::input,
                 EnchanterRecipe::new);
 
@@ -185,7 +185,7 @@ public record EnchanterRecipe(Holder<Enchantment> enchantment, int costMultiplie
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, EnchanterRecipe> streamCodec() {
+        public PacketCodec<EnchanterRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }

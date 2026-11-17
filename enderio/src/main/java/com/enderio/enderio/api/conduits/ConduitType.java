@@ -12,11 +12,10 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.capabilities.Capability;
 import org.jetbrains.annotations.Nullable;
@@ -53,8 +52,7 @@ public record ConduitType<T extends Conduit<T, U>, U extends ConnectionConfig>(
     Comparator<ConduitConnectionPath> connectionPathComparator
 ) {
     public static final Codec<ConduitType<?, ?>> CODEC = EnderIORegistries.codec(EnderIORegistries.CONDUIT_TYPE);
-    public static final StreamCodec<RegistryFriendlyByteBuf, ConduitType<?, ?>> STREAM_CODEC = StreamCodec
-        .recursive(streamCodec -> ByteBufCodecs.registry(EnderIORegistries.Keys.CONDUIT_TYPE));
+    public static final PacketCodec<ConduitType<?, ?>> STREAM_CODEC = PacketCodecs.forgeRegistry(EnderIORegistries.CONDUIT_TYPE);
 
     public static <T extends Conduit<T, U>, U extends ConnectionConfig> Builder<T, U> builder(MapCodec<T> codec, ConnectionConfigType<U> connectionConfigType) {
         return new Builder<T, U>(codec, connectionConfigType);

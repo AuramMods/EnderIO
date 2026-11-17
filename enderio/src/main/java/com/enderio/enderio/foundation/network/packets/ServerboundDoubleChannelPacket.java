@@ -1,8 +1,8 @@
 package com.enderio.enderio.foundation.network.packets;
 
+import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.enderio.EnderIO;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.item.DyeColor;
 
@@ -10,10 +10,10 @@ public record ServerboundDoubleChannelPacket(DyeColor channel1, DyeColor channel
 
     public static final Type<ServerboundDoubleChannelPacket> TYPE = new Type<>(EnderIO.rl("double_channel_packet"));
 
-    public static final StreamCodec<ByteBuf, ServerboundDoubleChannelPacket> STREAM_CODEC = StreamCodec.composite(
-        DyeColor.STREAM_CODEC,
+    public static final PacketCodec<ServerboundDoubleChannelPacket> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.DYE_COLOR,
         ServerboundDoubleChannelPacket::channel1,
-        DyeColor.STREAM_CODEC,
+        PacketCodecs.DYE_COLOR,
         ServerboundDoubleChannelPacket::channel2,
         ServerboundDoubleChannelPacket::new
     );

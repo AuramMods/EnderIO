@@ -7,7 +7,7 @@ import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.enderio.content.filters.FiltersLang;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
 import com.enderio.core.common.item.ItemDataKey;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -85,7 +85,7 @@ public class EnderChemicalFilterItem extends AbstractFilterItem<EnderChemicalFil
         }
 
         @UseOnly(LogicalSide.CLIENT)
-        public EnderChemicalFilterMenu openMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
+        public EnderChemicalFilterMenu openMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
             return new EnderChemicalFilterMenu(menuType.get().get(), this, containerId, playerInventory);
         }
     }

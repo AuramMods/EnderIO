@@ -2,8 +2,7 @@ package com.enderio.enderio.foundation.particle;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.particles.ParticleType;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import org.jetbrains.annotations.NotNull;
 
 public class RangeParticleType extends ParticleType<RangeParticleData> {
@@ -19,7 +18,7 @@ public class RangeParticleType extends ParticleType<RangeParticleData> {
     }
 
     @Override
-    public StreamCodec<? super RegistryFriendlyByteBuf, RangeParticleData> streamCodec() {
+    public PacketCodec<RangeParticleData> streamCodec() {
         return RangeParticleData.STREAM_CODEC;
     }
 }

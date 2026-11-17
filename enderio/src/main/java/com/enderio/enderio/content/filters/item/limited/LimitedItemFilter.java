@@ -10,9 +10,8 @@ import com.enderio.enderio.content.filters.item.general.DamageFilterMode;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
@@ -47,9 +46,9 @@ public record LimitedItemFilter(NonNullList<ItemStack> matches, boolean shouldCo
                             .forGetter(LimitedItemFilter::damageFilterMode))
             .apply(instance, LimitedItemFilter::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, LimitedItemFilter> STREAM_CODEC = StreamCodec.composite(
-            ItemStack.OPTIONAL_STREAM_CODEC.apply(ByteBufCodecs.list(256)), LimitedItemFilter::matches,
-            ByteBufCodecs.BOOL, LimitedItemFilter::shouldCompareComponents,
+    public static final PacketCodec<LimitedItemFilter> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.ITEM_STACK.list(256), LimitedItemFilter::matches,
+            PacketCodecs.BOOL, LimitedItemFilter::shouldCompareComponents,
             DamageFilterMode.STREAM_CODEC, LimitedItemFilter::damageFilterMode,
             LimitedItemFilter::new);
 

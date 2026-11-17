@@ -6,12 +6,10 @@ import com.enderio.enderio.init.EIORecipes;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.DyeColor;
@@ -98,7 +96,7 @@ public record WeatherChangeRecipe(FluidStack fluid, WeatherMode mode)
         public static final Codec<WeatherMode> CODEC = StringRepresentable.fromEnum(WeatherMode::values);
         public static final IntFunction<WeatherMode> BY_ID = ByIdMap.continuous(Enum::ordinal, values(),
                 ByIdMap.OutOfBoundsStrategy.ZERO);
-        public static final StreamCodec<ByteBuf, WeatherMode> STREAM_CODEC = ByteBufCodecs.idMapper(BY_ID,
+        public static final PacketCodec<WeatherMode> STREAM_CODEC = PacketCodecs.idMapper(BY_ID,
                 Enum::ordinal);
         private final String type;
         private final Fireworks fireworks;
@@ -136,8 +134,8 @@ public record WeatherChangeRecipe(FluidStack fluid, WeatherMode mode)
                         WeatherMode.CODEC.fieldOf("mode").forGetter(WeatherChangeRecipe::mode))
                 .apply(inst, WeatherChangeRecipe::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, WeatherChangeRecipe> STREAM_CODEC = StreamCodec
-                .composite(FluidStack.STREAM_CODEC, WeatherChangeRecipe::fluid, WeatherMode.STREAM_CODEC,
+        public static final PacketCodec<WeatherChangeRecipe> STREAM_CODEC = PacketCodec
+                .composite(PacketCodecs.FLUID_STACK, WeatherChangeRecipe::fluid, WeatherMode.STREAM_CODEC,
                         WeatherChangeRecipe::mode, WeatherChangeRecipe::new);
 
         @Override
@@ -146,7 +144,7 @@ public record WeatherChangeRecipe(FluidStack fluid, WeatherMode mode)
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, WeatherChangeRecipe> streamCodec() {
+        public PacketCodec<WeatherChangeRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }

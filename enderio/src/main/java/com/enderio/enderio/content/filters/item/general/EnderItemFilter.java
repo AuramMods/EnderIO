@@ -7,9 +7,8 @@ import com.enderio.enderio.content.filters.item.ItemFilterUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
@@ -34,9 +33,9 @@ public record EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList
                             .forGetter(EnderItemFilter::damageFilterMode))
             .apply(componentInstance, EnderItemFilter::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, EnderItemFilter> STREAM_CODEC = StreamCodec.composite(
-            ItemStack.OPTIONAL_STREAM_CODEC.apply(ByteBufCodecs.list(256)), EnderItemFilter::matches,
-            ByteBufCodecs.BOOL, EnderItemFilter::isDenyList, ByteBufCodecs.BOOL,
+    public static final PacketCodec<EnderItemFilter> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.ITEM_STACK.list(256), EnderItemFilter::matches,
+            PacketCodecs.BOOL, EnderItemFilter::isDenyList, PacketCodecs.BOOL,
             EnderItemFilter::shouldCompareComponents, DamageFilterMode.STREAM_CODEC, EnderItemFilter::damageFilterMode,
             EnderItemFilter::new);
 

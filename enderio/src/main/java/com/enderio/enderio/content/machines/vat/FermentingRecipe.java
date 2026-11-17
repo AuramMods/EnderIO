@@ -7,13 +7,11 @@ import com.enderio.enderio.init.EIORecipes;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -118,7 +116,7 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
     }
 
     public static class Serializer implements RecipeSerializer<FermentingRecipe> {
-        private static final StreamCodec<ByteBuf, TagKey<Item>> ITEM_TAG_STREAM_CODEC = ResourceLocation.STREAM_CODEC
+        private static final PacketCodec<TagKey<Item>> ITEM_TAG_STREAM_CODEC = PacketCodecs.RESOURCE_LOCATION
                 .map(loc -> TagKey.create(Registries.ITEM, loc), TagKey::location);
 
         // TODO: 1.21.11: Rename left and right to first and second
@@ -129,10 +127,10 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
                 FluidStack.CODEC.fieldOf("output").forGetter(FermentingRecipe::output),
                 Codec.INT.fieldOf("ticks").forGetter(FermentingRecipe::ticks)).apply(instance, FermentingRecipe::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, FermentingRecipe> STREAM_CODEC = StreamCodec.composite(
+        public static final PacketCodec<FermentingRecipe> STREAM_CODEC = PacketCodec.composite(
                 SizedFluidIngredient.STREAM_CODEC, FermentingRecipe::input, ITEM_TAG_STREAM_CODEC,
                 FermentingRecipe::firstReagent, ITEM_TAG_STREAM_CODEC, FermentingRecipe::secondReagent,
-                FluidStack.STREAM_CODEC, FermentingRecipe::output, ByteBufCodecs.INT, FermentingRecipe::ticks,
+                PacketCodecs.FLUID_STACK, FermentingRecipe::output, PacketCodecs.INT, FermentingRecipe::ticks,
                 FermentingRecipe::new);
 
         @Override
@@ -141,7 +139,7 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, FermentingRecipe> streamCodec() {
+        public PacketCodec<FermentingRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }

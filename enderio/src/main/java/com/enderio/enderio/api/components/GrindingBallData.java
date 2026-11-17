@@ -4,14 +4,13 @@ import com.enderio.enderio.EnderIO;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 import org.slf4j.Logger;
@@ -29,14 +28,14 @@ public record GrindingBallData(float outputMultiplier, float bonusMultiplier, fl
         ).apply(instance, GrindingBallData::new)
     );
 
-    public static final StreamCodec<ByteBuf, GrindingBallData> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.FLOAT,
+    public static final PacketCodec<GrindingBallData> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.FLOAT,
         GrindingBallData::outputMultiplier,
-        ByteBufCodecs.FLOAT,
+        PacketCodecs.FLOAT,
         GrindingBallData::bonusMultiplier,
-        ByteBufCodecs.FLOAT,
+        PacketCodecs.FLOAT,
         GrindingBallData::powerUse,
-        ByteBufCodecs.INT,
+        PacketCodecs.INT,
         GrindingBallData::durability,
         GrindingBallData::new
     );

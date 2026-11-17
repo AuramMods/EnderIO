@@ -8,9 +8,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import mekanism.api.chemical.ChemicalStack;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -25,8 +24,8 @@ public class ChemicalConduitData implements ConduitData<ChemicalConduitData> {
                                             .forGetter(i -> i.lockedChemical))
                             .apply(instance, ChemicalConduitData::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ChemicalConduitData> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL, i -> i.shouldReset, ChemicalStack.OPTIONAL_STREAM_CODEC, i -> i.lockedChemical,
+    public static final PacketCodec<ChemicalConduitData> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.BOOL, i -> i.shouldReset, ChemicalStack.OPTIONAL_STREAM_CODEC, i -> i.lockedChemical,
             ChemicalConduitData::new);
 
     private ChemicalStack lockedChemical = ChemicalStack.EMPTY;

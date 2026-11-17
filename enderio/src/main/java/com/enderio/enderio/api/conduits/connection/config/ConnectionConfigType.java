@@ -1,15 +1,14 @@
 package com.enderio.enderio.api.conduits.connection.config;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Supplier;
 
 @ApiStatus.Experimental
 public record ConnectionConfigType<T extends ConnectionConfig>(MapCodec<T> codec,
-                                                               StreamCodec<RegistryFriendlyByteBuf, T> streamCodec, Supplier<T> defaultSupplier) {
+                                                               PacketCodec<T> streamCodec, Supplier<T> defaultSupplier) {
     public T getDefault() {
         return defaultSupplier.get();
     }

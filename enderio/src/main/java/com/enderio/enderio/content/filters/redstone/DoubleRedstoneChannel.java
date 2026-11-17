@@ -1,11 +1,11 @@
 package com.enderio.enderio.content.filters.redstone;
 
+import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.enderio.api.filter.RedstoneFilter;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import com.enderio.core.common.item.ItemDataKey;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 
@@ -55,10 +55,10 @@ public class DoubleRedstoneChannel implements RedstoneFilter {
                 .apply(instance, Component::new)
         );
 
-        public static final StreamCodec<ByteBuf, Component> STREAM_CODEC = StreamCodec.composite(
-            DyeColor.STREAM_CODEC,
+        public static final PacketCodec<Component> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.DYE_COLOR,
             Component::channel1,
-            DyeColor.STREAM_CODEC,
+            PacketCodecs.DYE_COLOR,
             Component::channel2,
             Component::new
         );

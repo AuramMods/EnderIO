@@ -9,9 +9,8 @@ import com.enderio.enderio.api.io.RedstoneControl;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.DyeColor;
 
 import java.util.List;
@@ -36,24 +35,24 @@ public record ChemicalConduitConnectionConfig(boolean isInsert, DyeColor insertC
             .apply(instance, ChemicalConduitConnectionConfig::new));
 
     // @formatter:off
-    public static final StreamCodec<ByteBuf, ChemicalConduitConnectionConfig> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.BOOL,
+    public static final PacketCodec<ChemicalConduitConnectionConfig> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.BOOL,
         ChemicalConduitConnectionConfig::isInsert,
-        DyeColor.STREAM_CODEC,
+        PacketCodecs.DYE_COLOR,
         ChemicalConduitConnectionConfig::insertChannel,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         ChemicalConduitConnectionConfig::isExtract,
-        DyeColor.STREAM_CODEC,
+        PacketCodecs.DYE_COLOR,
         ChemicalConduitConnectionConfig::extractChannel,
         RedstoneControl.STREAM_CODEC,
         ChemicalConduitConnectionConfig::extractRedstoneControl,
-        DyeColor.STREAM_CODEC,
+        PacketCodecs.DYE_COLOR,
         ChemicalConduitConnectionConfig::extractRedstoneChannel,
         ChemicalConduitConnectionConfig::new);
     // @formatter:on
 
     public static final ConnectionConfigType<ChemicalConduitConnectionConfig> TYPE = new ConnectionConfigType<>(CODEC,
-            STREAM_CODEC.cast(), () -> DEFAULT);
+            STREAM_CODEC, () -> DEFAULT);
 
     @Override
     public ConnectionConfig reconnected() {

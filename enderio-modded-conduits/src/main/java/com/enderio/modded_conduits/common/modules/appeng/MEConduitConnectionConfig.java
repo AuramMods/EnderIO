@@ -5,9 +5,8 @@ import com.enderio.enderio.api.conduits.connection.config.ConnectionConfigType;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 
 public record MEConduitConnectionConfig(boolean isConnected) implements ConnectionConfig {
 
@@ -17,11 +16,11 @@ public record MEConduitConnectionConfig(boolean isConnected) implements Connecti
             inst -> inst.group(Codec.BOOL.fieldOf("isConnected").forGetter(MEConduitConnectionConfig::isConnected))
                     .apply(inst, MEConduitConnectionConfig::new));
 
-    public static final StreamCodec<ByteBuf, MEConduitConnectionConfig> STREAM_CODEC = ByteBufCodecs.BOOL
+    public static final PacketCodec<MEConduitConnectionConfig> STREAM_CODEC = PacketCodecs.BOOL
             .map(MEConduitConnectionConfig::new, MEConduitConnectionConfig::isConnected);
 
     public static final ConnectionConfigType<MEConduitConnectionConfig> TYPE = new ConnectionConfigType<>(CODEC,
-            STREAM_CODEC.cast(), () -> DEFAULT);
+            STREAM_CODEC, () -> DEFAULT);
 
     @Override
     public ConnectionConfigType<?> type() {

@@ -14,6 +14,7 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
     val mainSource = rootProject.file("enderio/src/main/java/com/enderio/enderio")
     source(listOf(
         "api/soul/Soul.java",
+        "api/attachment/CoordinateSelection.java",
         "api/soul/binding/SoulBindable.java",
         "api/soul/binding/ComponentSoulBindable.java",
         "api/soul/binding/ReadOnlyComponentSoulBindable.java",

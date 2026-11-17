@@ -1,9 +1,8 @@
 package com.enderio.enderio.foundation.network.packets;
 
 import com.enderio.enderio.EnderIO;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.item.DyeColor;
 
@@ -11,14 +10,14 @@ public record ServerboundCountFilterPacket(DyeColor channel1, int maxCount, int 
 
     public static final Type<ServerboundCountFilterPacket> TYPE = new Type<>(EnderIO.rl("count_filter_packet"));
 
-    public static final StreamCodec<ByteBuf, ServerboundCountFilterPacket> STREAM_CODEC = StreamCodec.composite(
-        DyeColor.STREAM_CODEC,
+    public static final PacketCodec<ServerboundCountFilterPacket> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.DYE_COLOR,
         ServerboundCountFilterPacket::channel1,
-        ByteBufCodecs.VAR_INT,
+        PacketCodecs.VAR_INT,
         ServerboundCountFilterPacket::maxCount,
-        ByteBufCodecs.VAR_INT,
+        PacketCodecs.VAR_INT,
         ServerboundCountFilterPacket::count,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         ServerboundCountFilterPacket::active,
         ServerboundCountFilterPacket::new
     );

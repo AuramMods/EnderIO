@@ -6,7 +6,7 @@ import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.foundation.io.energy.ILargeMachineEnergyStorage;
 import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIOMenus;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -28,7 +28,7 @@ public class CapacitorBankMenu extends BaseBlockEntityMenu<CapacitorBankBlockEnt
         addPlayerInventorySlots(8, 84);
     }
 
-    public CapacitorBankMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
+    public CapacitorBankMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         super(EIOMenus.CAPACITOR_BANK.get(), containerId, playerInventory, buf,
             EIOBlockEntities.CAPACITOR_BANKS.values().stream().map(DeferredHolder::get).toArray(BlockEntityType[]::new));
 

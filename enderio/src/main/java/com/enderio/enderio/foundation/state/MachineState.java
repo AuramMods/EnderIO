@@ -5,11 +5,10 @@ import com.enderio.enderio.content.machines.MachinesLang;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 
 import java.util.Set;
 
@@ -44,13 +43,13 @@ public record MachineState(MachineStateType type, MutableComponent component) {
                             .forGetter(MachineState::component))
                     .apply(instance, MachineState::new));
 
-    public static final StreamCodec<ByteBuf, MachineState> STREAM_CODEC = StreamCodec.composite(
+    public static final PacketCodec<MachineState> STREAM_CODEC = PacketCodec.composite(
             MachineStateType.STREAM_CODEC, MachineState::type,
-            ByteBufCodecs.STRING_UTF8.map(Component::translatable, Component::getString), MachineState::component,
+            PacketCodecs.STRING_UTF8.map(Component::translatable, Component::getString), MachineState::component,
             MachineState::new);
 
     public static final NetworkDataSlot.CodecType<Set<MachineState>> DATA_SLOT_TYPE = NetworkDataSlot.CodecType
-            .createSet(CODEC, STREAM_CODEC.cast());
+            .createSet(CODEC, STREAM_CODEC);
 
     @Override
     public boolean equals(Object obj) {

@@ -15,10 +15,64 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import com.mojang.datafixers.util.Either;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class PacketCodecTests {
+    private record Nine(int a, int b, int c, int d, int e, int f, int g, int h, int i) {}
+    private sealed interface Choice permits NumberChoice, TextChoice { int kind(); }
+    private record NumberChoice(int value) implements Choice { public int kind() { return 0; } }
+    private record TextChoice(String value) implements Choice { public int kind() { return 1; } }
+
+    @Test
+    void optionalEitherAndUnitPreserveTheirBranches() {
+        var codec = PacketCodecs.either(PacketCodecs.INT, PacketCodecs.STRING_UTF8).optional();
+        for (Optional<Either<Integer, String>> value : List.<Optional<Either<Integer, String>>>of(Optional.empty(),
+                Optional.of(Either.left(-7)), Optional.of(Either.right("soul")))) {
+            assertEquals(value, roundTrip(codec, value));
+        }
+        assertEquals("toggle", roundTrip(PacketCodec.unit("toggle"), "toggle"));
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try { assertThrows(EncoderException.class, () -> PacketCodec.unit("toggle").encode(buffer, "different")); }
+        finally { buffer.release(); }
+    }
+
+    @Test
+    void largeRecordCodecPreservesEveryFieldInWireOrder() {
+        var codec = PacketCodec.composite(PacketCodecs.INT, Nine::a, PacketCodecs.INT, Nine::b,
+            PacketCodecs.INT, Nine::c, PacketCodecs.INT, Nine::d, PacketCodecs.INT, Nine::e,
+            PacketCodecs.INT, Nine::f, PacketCodecs.INT, Nine::g, PacketCodecs.INT, Nine::h,
+            PacketCodecs.INT, Nine::i, Nine::new);
+        var value = new Nine(19, -4, 312, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 7, 8, 9);
+        assertEquals(value, roundTrip(codec, value));
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            codec.encode(buffer, value);
+            for (int expected : new int[] {19, -4, 312, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 7, 8, 9})
+                assertEquals(expected, buffer.readInt());
+        } finally { buffer.release(); }
+    }
+
+    @Test
+    void dispatchSelectsConcreteCodecsAndRejectsUnknownDiscriminators() {
+        var ids = PacketCodecs.idMapper(id -> id < 2 ? id : 0, Integer::intValue);
+        PacketCodec<Choice> codec = ids.dispatch(Choice::kind, kind -> kind == 0
+            ? PacketCodecs.INT.map(NumberChoice::new, NumberChoice::value)
+            : PacketCodecs.STRING_UTF8.map(TextChoice::new, TextChoice::value));
+        assertEquals(new NumberChoice(742), roundTrip(codec, new NumberChoice(742)));
+        assertEquals(new TextChoice("anchor"), roundTrip(codec, new TextChoice("anchor")));
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            for (int invalid : new int[] {-1, 2, Integer.MAX_VALUE}) {
+                buffer.clear();
+                buffer.writeVarInt(invalid);
+                assertThrows(DecoderException.class, () -> codec.decode(buffer));
+            }
+            assertThrows(EncoderException.class, () -> ids.encode(buffer, 2));
+        } finally { buffer.release(); }
+    }
     static <T> T roundTrip(PacketCodec<T> codec, T value) {
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
         try {

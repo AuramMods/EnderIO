@@ -12,9 +12,8 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.Item;
 
 public record AnchorTravelTarget(BlockPos pos, String name, Item icon, boolean isVisible) implements TravelTarget {
@@ -79,9 +78,9 @@ public record AnchorTravelTarget(BlockPos pos, String name, Item icon, boolean i
                         Codec.BOOL.fieldOf("is_visible").forGetter(AnchorTravelTarget::isVisible))
                 .apply(instance, AnchorTravelTarget::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, AnchorTravelTarget> STREAM_CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC, AnchorTravelTarget::pos, ByteBufCodecs.STRING_UTF8, AnchorTravelTarget::name,
-                ByteBufCodecs.registry(Registries.ITEM), AnchorTravelTarget::icon, ByteBufCodecs.BOOL,
+        public static final PacketCodec<AnchorTravelTarget> STREAM_CODEC = PacketCodec.composite(
+                PacketCodecs.BLOCK_POS, AnchorTravelTarget::pos, PacketCodecs.STRING_UTF8, AnchorTravelTarget::name,
+                PacketCodecs.registry(net.minecraft.core.registries.BuiltInRegistries.ITEM), AnchorTravelTarget::icon, PacketCodecs.BOOL,
                 AnchorTravelTarget::isVisible, AnchorTravelTarget::new);
 
         @Override
@@ -90,7 +89,7 @@ public record AnchorTravelTarget(BlockPos pos, String name, Item icon, boolean i
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, AnchorTravelTarget> streamCodec() {
+        public PacketCodec<AnchorTravelTarget> streamCodec() {
             return STREAM_CODEC;
         }
     }

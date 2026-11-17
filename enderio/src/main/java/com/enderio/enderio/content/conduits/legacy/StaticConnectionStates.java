@@ -1,9 +1,8 @@
 package com.enderio.enderio.content.conduits.legacy;
 
 import com.mojang.serialization.Codec;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 
@@ -26,7 +25,7 @@ public enum StaticConnectionStates implements ConnectionState, StringRepresentab
             .fromEnum(StaticConnectionStates::values);
     public static final IntFunction<StaticConnectionStates> BY_ID = ByIdMap.continuous(key -> key.id, values(),
             ByIdMap.OutOfBoundsStrategy.ZERO);
-    public static final StreamCodec<ByteBuf, StaticConnectionStates> STREAM_CODEC = ByteBufCodecs.idMapper(BY_ID,
+    public static final PacketCodec<StaticConnectionStates> STREAM_CODEC = PacketCodecs.idMapper(BY_ID,
             v -> v.id);
 
     private final int id;

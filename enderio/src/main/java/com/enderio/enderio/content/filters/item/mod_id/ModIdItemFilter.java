@@ -7,9 +7,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
@@ -25,9 +24,9 @@ public record ModIdItemFilter(NonNullList<ItemStack> examples, boolean isDenyLis
                     Codec.BOOL.fieldOf("isDenyList").forGetter(ModIdItemFilter::isDenyList))
             .apply(componentInstance, ModIdItemFilter::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ModIdItemFilter> STREAM_CODEC = StreamCodec.composite(
-            ItemStack.OPTIONAL_STREAM_CODEC.apply(ByteBufCodecs.list(256)), ModIdItemFilter::examples,
-            ByteBufCodecs.BOOL, ModIdItemFilter::isDenyList, ModIdItemFilter::new);
+    public static final PacketCodec<ModIdItemFilter> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.ITEM_STACK.list(256), ModIdItemFilter::examples,
+            PacketCodecs.BOOL, ModIdItemFilter::isDenyList, ModIdItemFilter::new);
 
     public ModIdItemFilter(List<ItemStack> examples, boolean isDenyList) {
         this(NonNullList.withSize(examples.size(), ItemStack.EMPTY), isDenyList);

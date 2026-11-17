@@ -4,7 +4,7 @@ import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.filter.RedstoneOutputFilter;
 import com.enderio.enderio.foundation.network.packets.ServerboundDoubleChannelPacket;
 import com.enderio.enderio.init.EIOMenus;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -47,7 +47,7 @@ public class RedstoneDoubleChannelFilterMenu extends AbstractContainerMenu {
     }
 
 
-    public static RedstoneDoubleChannelFilterMenu factory(int i, Inventory inventory, RegistryFriendlyByteBuf registryFriendlyByteBuf) {
+    public static RedstoneDoubleChannelFilterMenu factory(int i, Inventory inventory, FriendlyByteBuf registryFriendlyByteBuf) {
         return new RedstoneDoubleChannelFilterMenu(i, inventory, inventory.player.getMainHandItem());
     }
 

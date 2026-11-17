@@ -1,8 +1,7 @@
 package com.enderio.enderio.api.conduits.connection;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 
@@ -34,7 +33,7 @@ public enum ConnectionStatus implements StringRepresentable {
             .fromEnum(ConnectionStatus::values);
     public static final IntFunction<ConnectionStatus> BY_ID = ByIdMap.continuous(Enum::ordinal, values(),
             ByIdMap.OutOfBoundsStrategy.ZERO);
-    public static final StreamCodec<ByteBuf, ConnectionStatus> STREAM_CODEC = ByteBufCodecs.idMapper(BY_ID,
+    public static final PacketCodec<ConnectionStatus> STREAM_CODEC = PacketCodecs.idMapper(BY_ID,
             Enum::ordinal);
 
     private final String name;

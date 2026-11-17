@@ -5,9 +5,8 @@ import com.enderio.enderio.api.filter.RedstoneOutputFilterContext;
 import com.enderio.enderio.init.EIODataComponents;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 
@@ -59,7 +58,7 @@ public class RedstoneTLatchFilter implements RedstoneOutputFilter {
                         Codec.BOOL.fieldOf("deactivated").forGetter(Component::deactivated))
                 .apply(instance, Component::new));
 
-        public static final StreamCodec<ByteBuf, Component> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.BOOL,
-                Component::active, ByteBufCodecs.BOOL, Component::deactivated, Component::new);
+        public static final PacketCodec<Component> STREAM_CODEC = PacketCodec.composite(PacketCodecs.BOOL,
+                Component::active, PacketCodecs.BOOL, Component::deactivated, Component::new);
     }
 }

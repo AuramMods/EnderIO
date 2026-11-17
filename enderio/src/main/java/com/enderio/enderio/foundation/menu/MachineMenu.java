@@ -7,7 +7,7 @@ import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
 import com.enderio.enderio.foundation.inventory.MachineInventory;
 import com.enderio.enderio.foundation.network.menu_sync.MachineStatesSyncSlot;
 import com.enderio.enderio.foundation.state.MachineState;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
@@ -44,7 +44,7 @@ public abstract class MachineMenu<T extends MachineBlockEntity> extends BaseBloc
     }
 
     protected MachineMenu(@Nullable MenuType<?> menuType, int containerId, Inventory playerInventory,
-            RegistryFriendlyByteBuf buf, BlockEntityType<? extends T>... blockEntityTypes) {
+            FriendlyByteBuf buf, BlockEntityType<? extends T>... blockEntityTypes) {
         super(menuType, containerId, playerInventory, buf, blockEntityTypes);
 
         if (getBlockEntity().supportsRedstoneControl()) {

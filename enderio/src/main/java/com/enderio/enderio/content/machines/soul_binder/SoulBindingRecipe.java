@@ -16,9 +16,8 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.MobCategory;
@@ -185,17 +184,17 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
                     return DataResult.success(recipe);
                 });
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, SoulBindingRecipe> STREAM_CODEC = MassiveStreamCodec
-                .composite(ItemStack.STREAM_CODEC, SoulBindingRecipe::output, Ingredient.CONTENTS_STREAM_CODEC,
-                        SoulBindingRecipe::input, ByteBufCodecs.INT, SoulBindingRecipe::energy, ByteBufCodecs.INT,
-                        SoulBindingRecipe::experience, ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs::optional),
+        public static final PacketCodec<SoulBindingRecipe> STREAM_CODEC = MassiveStreamCodec
+                .composite(PacketCodecs.REQUIRED_ITEM_STACK, SoulBindingRecipe::output, PacketCodecs.INGREDIENT,
+                        SoulBindingRecipe::input, PacketCodecs.INT, SoulBindingRecipe::energy, PacketCodecs.INT,
+                        SoulBindingRecipe::experience, PacketCodecs.RESOURCE_LOCATION.optional(),
                         SoulBindingRecipe::entityType,
                         // TODO: 1.21: This is a very gross, could do better.
-                        ByteBufCodecs.STRING_UTF8.map(
+                        PacketCodecs.STRING_UTF8.map(
                                 name -> ((StringRepresentable.EnumCodec<MobCategory>) MobCategory.CODEC).byName(name),
-                                MobCategory::getName).apply(ByteBufCodecs::optional),
-                        SoulBindingRecipe::mobCategory, ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs::optional),
-                        SoulBindingRecipe::soulData, ByteBufCodecs.BOOL, SoulBindingRecipe::copyInputComponents,
+                                MobCategory::getName).optional(),
+                        SoulBindingRecipe::mobCategory, PacketCodecs.STRING_UTF8.optional(),
+                        SoulBindingRecipe::soulData, PacketCodecs.BOOL, SoulBindingRecipe::copyInputComponents,
                         SoulBindingRecipe::new);
 
         @Override
@@ -204,7 +203,7 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, SoulBindingRecipe> streamCodec() {
+        public PacketCodec<SoulBindingRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }

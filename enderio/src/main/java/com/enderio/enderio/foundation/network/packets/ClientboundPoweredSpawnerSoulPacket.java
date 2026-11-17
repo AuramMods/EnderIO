@@ -3,10 +3,9 @@ package com.enderio.enderio.foundation.network.packets;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.machines.powered_spawner.MobSpawnMode;
 import com.enderio.enderio.foundation.souldata.SpawnerSoul;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
@@ -17,8 +16,8 @@ public record ClientboundPoweredSpawnerSoulPacket(Map<ResourceLocation, SpawnerS
 
     public static final Type<ClientboundPoweredSpawnerSoulPacket> TYPE = new Type<>(EnderIO.rl("powered_spawner_soul"));
 
-    public static final StreamCodec<ByteBuf, ClientboundPoweredSpawnerSoulPacket> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, SpawnerSoul.STREAM_CODEC),
+    public static final PacketCodec<ClientboundPoweredSpawnerSoulPacket> STREAM_CODEC = PacketCodec.composite(
+            PacketCodec.map(HashMap::new, PacketCodecs.RESOURCE_LOCATION, SpawnerSoul.STREAM_CODEC),
             ClientboundPoweredSpawnerSoulPacket::map, ClientboundPoweredSpawnerSoulPacket::new);
 
     public ClientboundPoweredSpawnerSoulPacket(FriendlyByteBuf buf) {

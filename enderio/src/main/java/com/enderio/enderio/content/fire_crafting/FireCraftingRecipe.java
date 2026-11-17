@@ -9,9 +9,8 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -113,15 +112,15 @@ public record FireCraftingRecipe(List<Result> results, List<Block> bases, List<T
                                 .forGetter(FireCraftingRecipe::blockAfterBurning))
                 .apply(inst, FireCraftingRecipe::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, FireCraftingRecipe> STREAM_CODEC = StreamCodec
-                .composite(Result.STREAM_CODEC.apply(ByteBufCodecs.list()), FireCraftingRecipe::results,
-                        ByteBufCodecs.registry(Registries.BLOCK).apply(ByteBufCodecs.list()), FireCraftingRecipe::bases,
-                        ResourceLocation.STREAM_CODEC.map(loc -> TagKey.create(Registries.BLOCK, loc), TagKey::location)
-                                .apply(ByteBufCodecs.list()),
+        public static final PacketCodec<FireCraftingRecipe> STREAM_CODEC = PacketCodec
+                .composite(Result.STREAM_CODEC.list(), FireCraftingRecipe::results,
+                        PacketCodecs.registry(net.minecraft.core.registries.BuiltInRegistries.BLOCK).list(), FireCraftingRecipe::bases,
+                        PacketCodecs.RESOURCE_LOCATION.map(loc -> TagKey.create(Registries.BLOCK, loc), TagKey::location)
+                                .list(),
                         FireCraftingRecipe::baseTags,
-                        ResourceKey.streamCodec(Registries.DIMENSION).apply(ByteBufCodecs.list()),
+                        PacketCodecs.resourceKey(Registries.DIMENSION).list(),
                         FireCraftingRecipe::dimensions,
-                        ByteBufCodecs.optional(ByteBufCodecs.registry(Registries.BLOCK)),
+                        PacketCodecs.registry(net.minecraft.core.registries.BuiltInRegistries.BLOCK).optional(),
                         FireCraftingRecipe::blockAfterBurning, FireCraftingRecipe::new);
 
         @Override
@@ -130,7 +129,7 @@ public record FireCraftingRecipe(List<Result> results, List<Block> bases, List<T
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, FireCraftingRecipe> streamCodec() {
+        public PacketCodec<FireCraftingRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }
@@ -144,8 +143,8 @@ public record FireCraftingRecipe(List<Result> results, List<Block> bases, List<T
                                 Codec.FLOAT.fieldOf("chance").forGetter(Result::chance))
                         .apply(resultInstance, Result::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, Result> STREAM_CODEC = StreamCodec.composite(
-                ItemStack.STREAM_CODEC, Result::result, ByteBufCodecs.INT, Result::minCount, ByteBufCodecs.INT,
-                Result::maxCount, ByteBufCodecs.FLOAT, Result::chance, Result::new);
+        public static final PacketCodec<Result> STREAM_CODEC = PacketCodec.composite(
+                PacketCodecs.REQUIRED_ITEM_STACK, Result::result, PacketCodecs.INT, Result::minCount, PacketCodecs.INT,
+                Result::maxCount, PacketCodecs.FLOAT, Result::chance, Result::new);
     }
 }

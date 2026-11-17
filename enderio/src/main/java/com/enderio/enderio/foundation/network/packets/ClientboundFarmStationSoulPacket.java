@@ -2,10 +2,9 @@ package com.enderio.enderio.foundation.network.packets;
 
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.foundation.souldata.FarmSoul;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
@@ -16,8 +15,8 @@ public record ClientboundFarmStationSoulPacket(Map<ResourceLocation, FarmSoul.So
 
     public static final Type<ClientboundFarmStationSoulPacket> TYPE = new Type<>(EnderIO.rl("farm_soul"));
 
-    public static final StreamCodec<ByteBuf, ClientboundFarmStationSoulPacket> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, FarmSoul.STREAM_CODEC),
+    public static final PacketCodec<ClientboundFarmStationSoulPacket> STREAM_CODEC = PacketCodec.composite(
+            PacketCodec.map(HashMap::new, PacketCodecs.RESOURCE_LOCATION, FarmSoul.STREAM_CODEC),
             ClientboundFarmStationSoulPacket::map, ClientboundFarmStationSoulPacket::new);
 
     public ClientboundFarmStationSoulPacket(FriendlyByteBuf buf) {

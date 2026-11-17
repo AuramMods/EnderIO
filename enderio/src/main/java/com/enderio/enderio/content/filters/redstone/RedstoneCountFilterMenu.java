@@ -3,7 +3,7 @@ package com.enderio.enderio.content.filters.redstone;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.foundation.network.packets.ServerboundCountFilterPacket;
 import com.enderio.enderio.init.EIOMenus;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -35,7 +35,7 @@ public class RedstoneCountFilterMenu extends AbstractContainerMenu {
         this(EIOMenus.REDSTONE_COUNT_FILTER.get(), containerId, inventory, stack);
     }
 
-    public static RedstoneCountFilterMenu factory(int i, Inventory inventory, RegistryFriendlyByteBuf registryFriendlyByteBuf) {
+    public static RedstoneCountFilterMenu factory(int i, Inventory inventory, FriendlyByteBuf registryFriendlyByteBuf) {
         return new RedstoneCountFilterMenu(i, inventory, inventory.player.getMainHandItem());
     }
 

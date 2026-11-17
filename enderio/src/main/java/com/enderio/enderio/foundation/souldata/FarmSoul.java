@@ -2,9 +2,8 @@ package com.enderio.enderio.foundation.souldata;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -28,9 +27,9 @@ public class FarmSoul {
                     Codec.FLOAT.optionalFieldOf("power", 1f).forGetter(FarmSoul.SoulData::power))
             .apply(soulDataInstance, FarmSoul.SoulData::new));
 
-    public static final StreamCodec<ByteBuf, FarmSoul.SoulData> STREAM_CODEC = StreamCodec.composite(
-            ResourceLocation.STREAM_CODEC, FarmSoul.SoulData::entitytype, ByteBufCodecs.FLOAT,
-            FarmSoul.SoulData::bonemeal, ByteBufCodecs.INT, FarmSoul.SoulData::seeds, ByteBufCodecs.FLOAT,
+    public static final PacketCodec<FarmSoul.SoulData> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.RESOURCE_LOCATION, FarmSoul.SoulData::entitytype, PacketCodecs.FLOAT,
+            FarmSoul.SoulData::bonemeal, PacketCodecs.INT, FarmSoul.SoulData::seeds, PacketCodecs.FLOAT,
             FarmSoul.SoulData::power, FarmSoul.SoulData::new);
 
     public static final String NAME = "farm";

@@ -1,9 +1,8 @@
 package com.enderio.enderio.foundation.network.packets;
 
 import com.enderio.enderio.EnderIO;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.item.ItemStack;
 
@@ -12,9 +11,9 @@ public record ServerboundSetGhostSlotPacket(int containerId, int slotIndex, Item
     public static final CustomPacketPayload.Type<ServerboundSetGhostSlotPacket> TYPE = new CustomPacketPayload.Type<>(
         EnderIO.rl("set_ghost_slot"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ServerboundSetGhostSlotPacket> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.INT, ServerboundSetGhostSlotPacket::containerId, ByteBufCodecs.INT, ServerboundSetGhostSlotPacket::slotIndex,
-        ItemStack.STREAM_CODEC, ServerboundSetGhostSlotPacket::itemStack, ServerboundSetGhostSlotPacket::new);
+    public static final PacketCodec<ServerboundSetGhostSlotPacket> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.INT, ServerboundSetGhostSlotPacket::containerId, PacketCodecs.INT, ServerboundSetGhostSlotPacket::slotIndex,
+        PacketCodecs.REQUIRED_ITEM_STACK, ServerboundSetGhostSlotPacket::itemStack, ServerboundSetGhostSlotPacket::new);
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

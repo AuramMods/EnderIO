@@ -1,9 +1,8 @@
 package com.enderio.enderio.content.machines.capacitor_bank;
 
 import com.mojang.serialization.Codec;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 
@@ -16,7 +15,7 @@ public enum DisplayMode implements StringRepresentable {
 
     public static final Codec<DisplayMode> CODEC = StringRepresentable.fromEnum(DisplayMode::values);
     public static final IntFunction<DisplayMode> BY_ID = ByIdMap.continuous(key -> key.id, values(), ByIdMap.OutOfBoundsStrategy.ZERO);
-    public static final StreamCodec<ByteBuf, DisplayMode> STREAM_CODEC = ByteBufCodecs.idMapper(BY_ID, v -> v.id);
+    public static final PacketCodec<DisplayMode> STREAM_CODEC = PacketCodecs.idMapper(BY_ID, v -> v.id);
 
     private final int id;
     private final String name;

@@ -10,9 +10,8 @@ import com.enderio.enderio.api.network.MassiveStreamCodec;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.DyeColor;
 
 import java.util.List;
@@ -39,17 +38,17 @@ public record ItemConduitConnectionConfig(boolean isInsert, DyeColor insertChann
                     Codec.INT.fieldOf("priority").forGetter(ItemConduitConnectionConfig::priority))
             .apply(instance, ItemConduitConnectionConfig::new));
 
-    public static final StreamCodec<ByteBuf, ItemConduitConnectionConfig> STREAM_CODEC = MassiveStreamCodec.composite(
-            ByteBufCodecs.BOOL, ItemConduitConnectionConfig::isInsert, DyeColor.STREAM_CODEC,
-            ItemConduitConnectionConfig::insertChannel, ByteBufCodecs.BOOL, ItemConduitConnectionConfig::isExtract,
-            DyeColor.STREAM_CODEC, ItemConduitConnectionConfig::extractChannel, RedstoneControl.STREAM_CODEC,
-            ItemConduitConnectionConfig::extractRedstoneControl, DyeColor.STREAM_CODEC,
-            ItemConduitConnectionConfig::extractRedstoneChannel, ByteBufCodecs.BOOL,
-            ItemConduitConnectionConfig::isRoundRobin, ByteBufCodecs.BOOL, ItemConduitConnectionConfig::isSelfFeed,
-            ByteBufCodecs.INT, ItemConduitConnectionConfig::priority, ItemConduitConnectionConfig::new);
+    public static final PacketCodec<ItemConduitConnectionConfig> STREAM_CODEC = MassiveStreamCodec.composite(
+            PacketCodecs.BOOL, ItemConduitConnectionConfig::isInsert, PacketCodecs.DYE_COLOR,
+            ItemConduitConnectionConfig::insertChannel, PacketCodecs.BOOL, ItemConduitConnectionConfig::isExtract,
+            PacketCodecs.DYE_COLOR, ItemConduitConnectionConfig::extractChannel, RedstoneControl.STREAM_CODEC,
+            ItemConduitConnectionConfig::extractRedstoneControl, PacketCodecs.DYE_COLOR,
+            ItemConduitConnectionConfig::extractRedstoneChannel, PacketCodecs.BOOL,
+            ItemConduitConnectionConfig::isRoundRobin, PacketCodecs.BOOL, ItemConduitConnectionConfig::isSelfFeed,
+            PacketCodecs.INT, ItemConduitConnectionConfig::priority, ItemConduitConnectionConfig::new);
 
     public static final ConnectionConfigType<ItemConduitConnectionConfig> TYPE = new ConnectionConfigType<>(CODEC,
-            STREAM_CODEC.cast(), () -> DEFAULT);
+            STREAM_CODEC, () -> DEFAULT);
 
     @Override
     public ConnectionConfig reconnected() {

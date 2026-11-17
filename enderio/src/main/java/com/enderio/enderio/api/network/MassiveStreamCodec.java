@@ -1,34 +1,35 @@
 package com.enderio.enderio.api.network;
 
+import net.minecraft.network.FriendlyByteBuf;
 import com.mojang.datafixers.util.Function7;
 import com.mojang.datafixers.util.Function8;
 import com.mojang.datafixers.util.Function9;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 
 import java.util.function.Function;
 
 public class MassiveStreamCodec {
-    public static <B, C, T1, T2, T3, T4, T5, T6, T7, T8> StreamCodec<B, C> composite(
-        final StreamCodec<? super B, T1> codec1,
+    public static <C, T1, T2, T3, T4, T5, T6, T7, T8> PacketCodec<C> composite(
+        final PacketCodec<T1> codec1,
         final Function<C, T1> getter1,
-        final StreamCodec<? super B, T2> codec2,
+        final PacketCodec<T2> codec2,
         final Function<C, T2> getter2,
-        final StreamCodec<? super B, T3> codec3,
+        final PacketCodec<T3> codec3,
         final Function<C, T3> getter3,
-        final StreamCodec<? super B, T4> codec4,
+        final PacketCodec<T4> codec4,
         final Function<C, T4> getter4,
-        final StreamCodec<? super B, T5> codec5,
+        final PacketCodec<T5> codec5,
         final Function<C, T5> getter5,
-        final StreamCodec<? super B, T6> codec6,
+        final PacketCodec<T6> codec6,
         final Function<C, T6> getter6,
-        final StreamCodec<? super B, T7> codec7,
+        final PacketCodec<T7> codec7,
         final Function<C, T7> getter7,
-        final StreamCodec<? super B, T8> codec8,
+        final PacketCodec<T8> codec8,
         final Function<C, T8> getter8,
         final Function8<T1, T2, T3, T4, T5, T6, T7, T8, C> p_331335_) {
-        return new StreamCodec<>() {
+        return new PacketCodec<>() {
             @Override
-            public C decode(B p_330310_) {
+            public C decode(FriendlyByteBuf p_330310_) {
                 T1 t1 = codec1.decode(p_330310_);
                 T2 t2 = codec2.decode(p_330310_);
                 T3 t3 = codec3.decode(p_330310_);
@@ -41,7 +42,7 @@ public class MassiveStreamCodec {
             }
 
             @Override
-            public void encode(B p_332052_, C p_331912_) {
+            public void encode(FriendlyByteBuf p_332052_, C p_331912_) {
                 codec1.encode(p_332052_, getter1.apply(p_331912_));
                 codec2.encode(p_332052_, getter2.apply(p_331912_));
                 codec3.encode(p_332052_, getter3.apply(p_331912_));
@@ -53,25 +54,25 @@ public class MassiveStreamCodec {
             }
         };
     }
-    public static <B, C, T1, T2, T3, T4, T5, T6, T7> StreamCodec<B, C> composite(
-        final StreamCodec<? super B, T1> codec1,
+    public static <C, T1, T2, T3, T4, T5, T6, T7> PacketCodec<C> composite(
+        final PacketCodec<T1> codec1,
         final Function<C, T1> getter1,
-        final StreamCodec<? super B, T2> codec2,
+        final PacketCodec<T2> codec2,
         final Function<C, T2> getter2,
-        final StreamCodec<? super B, T3> codec3,
+        final PacketCodec<T3> codec3,
         final Function<C, T3> getter3,
-        final StreamCodec<? super B, T4> codec4,
+        final PacketCodec<T4> codec4,
         final Function<C, T4> getter4,
-        final StreamCodec<? super B, T5> codec5,
+        final PacketCodec<T5> codec5,
         final Function<C, T5> getter5,
-        final StreamCodec<? super B, T6> codec6,
+        final PacketCodec<T6> codec6,
         final Function<C, T6> getter6,
-        final StreamCodec<? super B, T7> codec7,
+        final PacketCodec<T7> codec7,
         final Function<C, T7> getter7,
         final Function7<T1, T2, T3, T4, T5, T6, T7, C> p_331335_) {
-        return new StreamCodec<>() {
+        return new PacketCodec<>() {
             @Override
-            public C decode(B p_330310_) {
+            public C decode(FriendlyByteBuf p_330310_) {
                 T1 t1 = codec1.decode(p_330310_);
                 T2 t2 = codec2.decode(p_330310_);
                 T3 t3 = codec3.decode(p_330310_);
@@ -83,7 +84,7 @@ public class MassiveStreamCodec {
             }
 
             @Override
-            public void encode(B p_332052_, C p_331912_) {
+            public void encode(FriendlyByteBuf p_332052_, C p_331912_) {
                 codec1.encode(p_332052_, getter1.apply(p_331912_));
                 codec2.encode(p_332052_, getter2.apply(p_331912_));
                 codec3.encode(p_332052_, getter3.apply(p_331912_));
@@ -96,29 +97,29 @@ public class MassiveStreamCodec {
     }
 
 
-    public static <B, C, T1, T2, T3, T4, T5, T6, T7, T8, T9> StreamCodec<B, C> composite(
-        final StreamCodec<? super B, T1> codec1,
+    public static <C, T1, T2, T3, T4, T5, T6, T7, T8, T9> PacketCodec<C> composite(
+        final PacketCodec<T1> codec1,
         final Function<C, T1> getter1,
-        final StreamCodec<? super B, T2> codec2,
+        final PacketCodec<T2> codec2,
         final Function<C, T2> getter2,
-        final StreamCodec<? super B, T3> codec3,
+        final PacketCodec<T3> codec3,
         final Function<C, T3> getter3,
-        final StreamCodec<? super B, T4> codec4,
+        final PacketCodec<T4> codec4,
         final Function<C, T4> getter4,
-        final StreamCodec<? super B, T5> codec5,
+        final PacketCodec<T5> codec5,
         final Function<C, T5> getter5,
-        final StreamCodec<? super B, T6> codec6,
+        final PacketCodec<T6> codec6,
         final Function<C, T6> getter6,
-        final StreamCodec<? super B, T7> codec7,
+        final PacketCodec<T7> codec7,
         final Function<C, T7> getter7,
-        final StreamCodec<? super B, T8> codec8,
+        final PacketCodec<T8> codec8,
         final Function<C, T8> getter8,
-        final StreamCodec<? super B, T9> codec9,
+        final PacketCodec<T9> codec9,
         final Function<C, T9> getter9,
         final Function9<T1, T2, T3, T4, T5, T6, T7, T8, T9, C> p_331335_) {
-        return new StreamCodec<>() {
+        return new PacketCodec<>() {
             @Override
-            public C decode(B p_330310_) {
+            public C decode(FriendlyByteBuf p_330310_) {
                 T1 t1 = codec1.decode(p_330310_);
                 T2 t2 = codec2.decode(p_330310_);
                 T3 t3 = codec3.decode(p_330310_);
@@ -132,7 +133,7 @@ public class MassiveStreamCodec {
             }
 
             @Override
-            public void encode(B p_332052_, C p_331912_) {
+            public void encode(FriendlyByteBuf p_332052_, C p_331912_) {
                 codec1.encode(p_332052_, getter1.apply(p_331912_));
                 codec2.encode(p_332052_, getter2.apply(p_331912_));
                 codec3.encode(p_332052_, getter3.apply(p_331912_));

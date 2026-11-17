@@ -2,13 +2,13 @@ package com.enderio.enderio.foundation.network.packets;
 
 import com.enderio.enderio.EnderIO;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.phys.BlockHitResult;
 
 public class ServerboundEnderfaceInteractPacket implements CustomPacketPayload {
     public static final Type<ServerboundEnderfaceInteractPacket> TYPE = new Type<>(EnderIO.rl("enderface_interact"));
-    public static final StreamCodec<FriendlyByteBuf, ServerboundEnderfaceInteractPacket> STREAM_CODEC = StreamCodec
+    public static final PacketCodec<ServerboundEnderfaceInteractPacket> STREAM_CODEC = PacketCodec
             .ofMember(ServerboundEnderfaceInteractPacket::write, ServerboundEnderfaceInteractPacket::new);
 
     private final BlockHitResult blockHit;

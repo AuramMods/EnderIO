@@ -9,9 +9,8 @@ import com.enderio.enderio.api.io.RedstoneControl;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.DyeColor;
 
 import java.util.List;
@@ -32,15 +31,15 @@ public record EnergyConduitConnectionConfig(boolean isInsert, boolean isExtract,
                 Codec.INT.optionalFieldOf("priority", 0).forGetter(EnergyConduitConnectionConfig::priority))
             .apply(instance, EnergyConduitConnectionConfig::new));
 
-    public static final StreamCodec<ByteBuf, EnergyConduitConnectionConfig> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL, EnergyConduitConnectionConfig::isInsert, ByteBufCodecs.BOOL,
+    public static final PacketCodec<EnergyConduitConnectionConfig> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.BOOL, EnergyConduitConnectionConfig::isInsert, PacketCodecs.BOOL,
             EnergyConduitConnectionConfig::isExtract, RedstoneControl.STREAM_CODEC,
-            EnergyConduitConnectionConfig::extractRedstoneControl, DyeColor.STREAM_CODEC,
-            EnergyConduitConnectionConfig::extractRedstoneChannel, ByteBufCodecs.INT,
+            EnergyConduitConnectionConfig::extractRedstoneControl, PacketCodecs.DYE_COLOR,
+            EnergyConduitConnectionConfig::extractRedstoneChannel, PacketCodecs.INT,
             EnergyConduitConnectionConfig::priority, EnergyConduitConnectionConfig::new);
 
     public static final ConnectionConfigType<EnergyConduitConnectionConfig> TYPE = new ConnectionConfigType<>(CODEC,
-            STREAM_CODEC.cast(), () -> DEFAULT);
+            STREAM_CODEC, () -> DEFAULT);
 
     @Override
     public ConnectionConfig reconnected() {

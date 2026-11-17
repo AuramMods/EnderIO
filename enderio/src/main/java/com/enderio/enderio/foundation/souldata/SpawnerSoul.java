@@ -3,9 +3,8 @@ package com.enderio.enderio.foundation.souldata;
 import com.enderio.enderio.content.machines.powered_spawner.MobSpawnMode;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -37,8 +36,8 @@ public class SpawnerSoul {
                     MobSpawnMode.CODEC.fieldOf("type").forGetter(SoulData::spawnType))
             .apply(soulDataInstance, SoulData::new));
 
-    public static final StreamCodec<ByteBuf, SoulData> STREAM_CODEC = StreamCodec.composite(ResourceLocation.STREAM_CODEC,
-            SoulData::entityType, ByteBufCodecs.INT, SoulData::power, MobSpawnMode.STREAM_CODEC, SoulData::spawnType,
+    public static final PacketCodec<SoulData> STREAM_CODEC = PacketCodec.composite(PacketCodecs.RESOURCE_LOCATION,
+            SoulData::entityType, PacketCodecs.INT, SoulData::power, MobSpawnMode.STREAM_CODEC, SoulData::spawnType,
             SoulData::new);
 
     public static final String NAME = "spawner";

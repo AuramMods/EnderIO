@@ -4,9 +4,8 @@ import com.enderio.enderio.api.EnderIORegistries;
 import com.enderio.enderio.api.conduits.network.ConduitNetworkContext;
 import com.enderio.enderio.api.conduits.network.node.NodeData;
 import com.mojang.serialization.Codec;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -20,8 +19,7 @@ public interface ConnectionConfig {
     Codec<ConnectionConfig> GENERIC_CODEC = EnderIORegistries.codec(EnderIORegistries.CONDUIT_CONNECTION_CONFIG_TYPE)
             .dispatch(ConnectionConfig::type, type -> type.codec().codec());
 
-    StreamCodec<RegistryFriendlyByteBuf, ConnectionConfig> STREAM_CODEC = ByteBufCodecs
-            .registry(EnderIORegistries.Keys.CONDUIT_CONNECTION_CONFIG_TYPE)
+    PacketCodec<ConnectionConfig> STREAM_CODEC = PacketCodecs.forgeRegistry(EnderIORegistries.CONDUIT_CONNECTION_CONFIG_TYPE)
             .dispatch(ConnectionConfig::type, ConnectionConfigType::streamCodec);
 
     /**

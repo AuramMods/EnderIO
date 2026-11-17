@@ -1,9 +1,8 @@
 package com.enderio.enderio.foundation.network.packets;
 
 import com.enderio.enderio.EnderIO;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.item.crafting.Ingredient;
 
@@ -13,14 +12,14 @@ public record ServerboundTransferItemsPacket(List<Ingredient> stacks, int starts
 
     public static final Type<ServerboundTransferItemsPacket> TYPE = new Type<>(EnderIO.rl("transfer_items"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ServerboundTransferItemsPacket> STREAM_CODEC = StreamCodec.composite(
-        Ingredient.CONTENTS_STREAM_CODEC.apply(ByteBufCodecs.list()),
+    public static final PacketCodec<ServerboundTransferItemsPacket> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.INGREDIENT.list(),
         ServerboundTransferItemsPacket::stacks,
-        ByteBufCodecs.INT,
+        PacketCodecs.INT,
         ServerboundTransferItemsPacket::startslot,
-        ByteBufCodecs.INT,
+        PacketCodecs.INT,
         ServerboundTransferItemsPacket::endslot,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         ServerboundTransferItemsPacket::maxTransfer,
         ServerboundTransferItemsPacket::new
     );

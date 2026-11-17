@@ -10,7 +10,7 @@ import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOMenus;
 import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -128,7 +128,7 @@ public class EnderItemFilterItem extends AbstractFilterItem<EnderItemFilter> {
         }
 
         @UseOnly(LogicalSide.CLIENT)
-        public EnderItemFilterMenu openMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
+        public EnderItemFilterMenu openMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
             return new EnderItemFilterMenu(menuType.get().get(), this, containerId, playerInventory);
         }
     }

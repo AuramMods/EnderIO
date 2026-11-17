@@ -1,9 +1,8 @@
 package com.enderio.enderio.api.capacitor;
 
 import com.mojang.serialization.Codec;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ByIdMap;
 import net.minecraft.util.RandomSource;
@@ -33,7 +32,7 @@ public enum CapacitorModifier implements StringRepresentable {
 
     public static final Codec<CapacitorModifier> CODEC = StringRepresentable.fromEnum(CapacitorModifier::values);
     public static final IntFunction<CapacitorModifier> BY_ID = ByIdMap.continuous(key -> key.id, values(), ByIdMap.OutOfBoundsStrategy.ZERO);
-    public static final StreamCodec<ByteBuf, CapacitorModifier> STREAM_CODEC = ByteBufCodecs.idMapper(BY_ID, v -> v.id);
+    public static final PacketCodec<CapacitorModifier> STREAM_CODEC = PacketCodecs.idMapper(BY_ID, v -> v.id);
 
     private final int id;
     public final ResourceLocation modifierId;

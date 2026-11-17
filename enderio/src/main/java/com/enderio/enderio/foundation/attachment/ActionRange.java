@@ -5,14 +5,13 @@ import com.enderio.core.common.network.NetworkDataSlot;
 import com.enderio.enderio.foundation.particle.RangeParticleData;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.util.Mth;
 import net.minecraftforge.fml.LogicalSide;
 
@@ -24,8 +23,8 @@ public record ActionRange(int range, boolean isVisible) {
                             Codec.BOOL.fieldOf("isVisible").forGetter(ActionRange::isVisible))
                     .apply(instance, ActionRange::new));
 
-    public static final StreamCodec<ByteBuf, ActionRange> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.INT,
-            ActionRange::range, ByteBufCodecs.BOOL, ActionRange::isVisible, ActionRange::new);
+    public static final PacketCodec<ActionRange> STREAM_CODEC = PacketCodec.composite(PacketCodecs.INT,
+            ActionRange::range, PacketCodecs.BOOL, ActionRange::isVisible, ActionRange::new);
 
     public ActionRange visible() {
         return new ActionRange(range, true);

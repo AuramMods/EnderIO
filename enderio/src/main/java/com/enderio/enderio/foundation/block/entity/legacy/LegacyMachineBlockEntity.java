@@ -87,7 +87,7 @@ public abstract class LegacyMachineBlockEntity extends EnderBlockEntity
     // region Common Dataslots
 
     public static final NetworkDataSlot.CodecType<RedstoneControl> REDSTONE_CONTROL_DATA_SLOT_TYPE = new NetworkDataSlot.CodecType<>(
-            RedstoneControl.CODEC, RedstoneControl.STREAM_CODEC.cast());
+            RedstoneControl.CODEC, RedstoneControl.STREAM_CODEC);
 
     private final NetworkDataSlot<RedstoneControl> redstoneControlDataSlot;
     private final @Nullable NetworkDataSlot<IOConfig> ioConfigDataSlot;

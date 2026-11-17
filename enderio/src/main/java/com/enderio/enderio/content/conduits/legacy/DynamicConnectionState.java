@@ -10,9 +10,8 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -40,14 +39,14 @@ public record DynamicConnectionState(boolean isInsert, DyeColor insertChannel, b
                             .forGetter(DynamicConnectionState::upgradeExtract))
             .apply(instance, DynamicConnectionState::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, DynamicConnectionState> STREAM_CODEC = MassiveStreamCodec
-            .composite(ByteBufCodecs.BOOL, DynamicConnectionState::isInsert, DyeColor.STREAM_CODEC,
-                    DynamicConnectionState::insertChannel, ByteBufCodecs.BOOL, DynamicConnectionState::isExtract,
-                    DyeColor.STREAM_CODEC, DynamicConnectionState::extractChannel, RedstoneControl.STREAM_CODEC,
-                    DynamicConnectionState::control, DyeColor.STREAM_CODEC, DynamicConnectionState::redstoneChannel,
-                    ItemStack.OPTIONAL_STREAM_CODEC, DynamicConnectionState::filterInsert,
-                    ItemStack.OPTIONAL_STREAM_CODEC, DynamicConnectionState::filterExtract,
-                    ItemStack.OPTIONAL_STREAM_CODEC, DynamicConnectionState::upgradeExtract,
+    public static final PacketCodec<DynamicConnectionState> STREAM_CODEC = MassiveStreamCodec
+            .composite(PacketCodecs.BOOL, DynamicConnectionState::isInsert, PacketCodecs.DYE_COLOR,
+                    DynamicConnectionState::insertChannel, PacketCodecs.BOOL, DynamicConnectionState::isExtract,
+                    PacketCodecs.DYE_COLOR, DynamicConnectionState::extractChannel, RedstoneControl.STREAM_CODEC,
+                    DynamicConnectionState::control, PacketCodecs.DYE_COLOR, DynamicConnectionState::redstoneChannel,
+                    PacketCodecs.ITEM_STACK, DynamicConnectionState::filterInsert,
+                    PacketCodecs.ITEM_STACK, DynamicConnectionState::filterExtract,
+                    PacketCodecs.ITEM_STACK, DynamicConnectionState::upgradeExtract,
                     DynamicConnectionState::new);
 
     public static DynamicConnectionState defaultConnection(Level level, BlockPos pos, Direction direction,

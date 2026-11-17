@@ -9,7 +9,7 @@ import com.enderio.enderio.foundation.menu.MachineSlot;
 import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIOMenus;
 import com.enderio.enderio.init.EIORecipes;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -41,7 +41,7 @@ public class VatMenu extends MachineMenu<VatBlockEntity> {
                 RecipeSyncSlot.readOnly(EIORecipes.VAT_FERMENTING.type().get(), blockEntity::getRecipe));
     }
 
-    public VatMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
+    public VatMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         super(EIOMenus.VAT.get(), containerId, playerInventory, buf, EIOBlockEntities.VAT.get());
         addSlots();
 

@@ -1,9 +1,8 @@
 package com.enderio.enderio.foundation.network.packets;
 
 import com.enderio.enderio.EnderIO;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.item.ItemStack;
 
@@ -13,8 +12,8 @@ public record ServerboundUpdateCrafterTemplatePacket(List<ItemStack> recipeInput
 
     public static final Type<ServerboundUpdateCrafterTemplatePacket> TYPE = new Type<>(EnderIO.rl("update_crafter_template"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ServerboundUpdateCrafterTemplatePacket> STREAM_CODEC =
-        ItemStack.OPTIONAL_STREAM_CODEC.apply(ByteBufCodecs.list())
+    public static final PacketCodec<ServerboundUpdateCrafterTemplatePacket> STREAM_CODEC =
+        PacketCodecs.ITEM_STACK.list()
             .map(ServerboundUpdateCrafterTemplatePacket::new, ServerboundUpdateCrafterTemplatePacket::recipeInputs);
 
     @Override

@@ -7,9 +7,8 @@ import com.enderio.enderio.init.EIOConduitTypes;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.DyeColor;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,9 +29,9 @@ public class LegacyRedstoneConduitData implements ConduitData<LegacyRedstoneCond
                                             .forGetter(i -> i.activeColors))
                             .apply(instance, LegacyRedstoneConduitData::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, LegacyRedstoneConduitData> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL, r -> r.isActive,
-            ByteBufCodecs.map(HashMap::new, DyeColor.STREAM_CODEC, ByteBufCodecs.INT), r -> r.activeColors,
+    public static final PacketCodec<LegacyRedstoneConduitData> STREAM_CODEC = PacketCodec.composite(
+            PacketCodecs.BOOL, r -> r.isActive,
+            PacketCodec.map(HashMap::new, PacketCodecs.DYE_COLOR, PacketCodecs.INT), r -> r.activeColors,
             LegacyRedstoneConduitData::new);
 
     private boolean isActive = false;

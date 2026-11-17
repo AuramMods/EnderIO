@@ -9,9 +9,8 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeInput;
@@ -89,9 +88,9 @@ public record SlicingRecipe(ItemStack output, List<Ingredient> inputs, int energ
                         Codec.INT.fieldOf("energy").forGetter(SlicingRecipe::energy))
                 .apply(instance, SlicingRecipe::new));
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, SlicingRecipe> STREAM_CODEC = StreamCodec.composite(
-                ItemStack.STREAM_CODEC, SlicingRecipe::output,
-                Ingredient.CONTENTS_STREAM_CODEC.apply(ByteBufCodecs.list()), SlicingRecipe::inputs, ByteBufCodecs.INT,
+        public static final PacketCodec<SlicingRecipe> STREAM_CODEC = PacketCodec.composite(
+                PacketCodecs.REQUIRED_ITEM_STACK, SlicingRecipe::output,
+                PacketCodecs.INGREDIENT.list(), SlicingRecipe::inputs, PacketCodecs.INT,
                 SlicingRecipe::energy, SlicingRecipe::new);
 
         @Override
@@ -100,7 +99,7 @@ public record SlicingRecipe(ItemStack output, List<Ingredient> inputs, int energ
         }
 
         @Override
-        public StreamCodec<RegistryFriendlyByteBuf, SlicingRecipe> streamCodec() {
+        public PacketCodec<SlicingRecipe> streamCodec() {
             return STREAM_CODEC;
         }
     }

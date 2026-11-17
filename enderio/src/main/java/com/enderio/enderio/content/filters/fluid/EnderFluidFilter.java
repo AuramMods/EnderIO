@@ -6,9 +6,8 @@ import com.enderio.enderio.api.filter.FluidFilter;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import com.enderio.core.common.network.codec.PacketCodecs;
+import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -32,12 +31,12 @@ public record EnderFluidFilter(NonNullList<FluidStack> matches, boolean isDenyLi
             .apply(inst, EnderFluidFilter::new));
 
     // @formatter:off
-    public static final StreamCodec<RegistryFriendlyByteBuf, EnderFluidFilter> STREAM_CODEC = StreamCodec.composite(
-        FluidStack.OPTIONAL_STREAM_CODEC.apply(ByteBufCodecs.list(256)),
+    public static final PacketCodec<EnderFluidFilter> STREAM_CODEC = PacketCodec.composite(
+        FluidStack.OPTIONAL_STREAM_CODEC.list(256),
         EnderFluidFilter::matches,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         EnderFluidFilter::isDenyList,
-        ByteBufCodecs.BOOL,
+        PacketCodecs.BOOL,
         EnderFluidFilter::shouldCompareComponents,
         EnderFluidFilter::new);
     // @formatter:on
