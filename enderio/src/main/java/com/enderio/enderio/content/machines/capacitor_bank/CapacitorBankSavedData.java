@@ -10,9 +10,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.event.TickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class CapacitorBankSavedData extends SavedData {
 
     public static final Codec<CapacitorBankSavedData> CODEC = CapacitorBankNetwork.CODEC.listOf()
@@ -93,8 +93,11 @@ public class CapacitorBankSavedData extends SavedData {
     }
 
     @SubscribeEvent
-    public static void onLevelTick(LevelTickEvent.Post event) {
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
+    public static void onLevelTick(TickEvent.LevelTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        if (event.level instanceof ServerLevel serverLevel) {
             get(serverLevel).tick(serverLevel);
         }
     }

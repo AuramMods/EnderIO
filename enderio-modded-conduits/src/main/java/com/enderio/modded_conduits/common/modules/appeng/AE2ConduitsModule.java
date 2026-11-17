@@ -27,12 +27,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.conditions.ICondition;
 import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -44,16 +44,16 @@ public class AE2ConduitsModule implements ConduitCommonModule {
     private static final ModLoadedCondition CONDITION = new ModLoadedCondition("ae2");
 
     public static final DeferredRegister<ConduitType<?, ?>> CONDUIT_TYPES = DeferredRegister
-            .create(EnderIORegistries.CONDUIT_TYPE, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.CONDUIT_TYPE, EnderIO.MOD_ID);
 
     public static final DeferredRegister<ConnectionConfigType<?>> CONDUIT_CONNECTION_CONFIG_TYPES = DeferredRegister
-            .create(EnderIORegistries.CONDUIT_CONNECTION_CONFIG_TYPE, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.CONDUIT_CONNECTION_CONFIG_TYPE, EnderIO.MOD_ID);
 
     public static final DeferredRegister<ConduitDataType<?>> CONDUIT_DATA_TYPES = DeferredRegister
-            .create(EnderIORegistries.CONDUIT_DATA_TYPE, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.CONDUIT_DATA_TYPE, EnderIO.MOD_ID);
 
     public static final DeferredRegister<NodeDataType<?>> CONDUIT_NODE_DATA_TYPES = DeferredRegister
-            .create(EnderIORegistries.CONDUIT_NODE_DATA_TYPE, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.CONDUIT_NODE_DATA_TYPE, EnderIO.MOD_ID);
 
     public static final DeferredHolder<ConduitType<?, ?>, ConduitType<MEConduit, MEConduitConnectionConfig>> AE2_CONDUIT = CONDUIT_TYPES.register(
             "me",

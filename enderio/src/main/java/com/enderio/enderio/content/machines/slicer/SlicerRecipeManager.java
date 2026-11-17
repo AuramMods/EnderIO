@@ -7,11 +7,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.util.thread.EffectiveSide;
-import net.neoforged.neoforge.client.event.RecipesUpdatedEvent;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.util.thread.EffectiveSide;
+import net.minecraftforge.client.event.RecipesUpdatedEvent;
+import net.minecraftforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class SlicerRecipeManager {
     private static final List<Set<Item>> ITEMS = Util.make(() -> {
         List<Set<Item>> tempList = new ArrayList<>();
@@ -60,9 +61,12 @@ public class SlicerRecipeManager {
         clearCache = true;
     }
 
-    @SubscribeEvent
-    public static void onRecipesUpdated(RecipesUpdatedEvent event) {
-        rebuildCache(event.getRecipeManager());
+    @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
+    public static class ClientEvents {
+        @SubscribeEvent
+        public static void onRecipesUpdated(RecipesUpdatedEvent event) {
+            rebuildCache(event.getRecipeManager());
+        }
     }
 
     private static void checkCacheRebuild() {

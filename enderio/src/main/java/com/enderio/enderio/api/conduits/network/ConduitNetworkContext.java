@@ -11,8 +11,8 @@ import java.util.Set;
  * @param <T>
  */
 public interface ConduitNetworkContext<T extends ConduitNetworkContext<T>> {
-    Codec<ConduitNetworkContext<?>> GENERIC_CODEC = EnderIORegistries.CONDUIT_NETWORK_CONTEXT_TYPE.byNameCodec()
-            .dispatch(ConduitNetworkContext::type, ConduitNetworkContextType::codecOrThrow);
+    Codec<ConduitNetworkContext<?>> GENERIC_CODEC = EnderIORegistries.codec(EnderIORegistries.CONDUIT_NETWORK_CONTEXT_TYPE)
+            .dispatch(ConduitNetworkContext::type, type -> type.codecOrThrow().codec());
 
     /**
      * Merges this context with another.

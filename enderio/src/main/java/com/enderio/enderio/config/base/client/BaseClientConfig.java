@@ -1,15 +1,15 @@
 package com.enderio.enderio.config.base.client;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 public class BaseClientConfig {
-    public final ModConfigSpec.BooleanValue MACHINE_PARTICLES;
-    public final ModConfigSpec.IntValue TRAVEL_KEY_HOLD_DELAY;
-    public final ModConfigSpec.BooleanValue ANCHORS_USE_ICON_AS_BLOCK;
-    public final ModConfigSpec.ConfigValue<String> ANCHORS_BACKGROUND_COLOR;
-    public final ModConfigSpec.ConfigValue<String> ANCHORS_ACTIVE_COLOR;
+    public final ForgeConfigSpec.BooleanValue MACHINE_PARTICLES;
+    public final ForgeConfigSpec.IntValue TRAVEL_KEY_HOLD_DELAY;
+    public final ForgeConfigSpec.BooleanValue ANCHORS_USE_ICON_AS_BLOCK;
+    public final ForgeConfigSpec.ConfigValue<String> ANCHORS_BACKGROUND_COLOR;
+    public final ForgeConfigSpec.ConfigValue<String> ANCHORS_ACTIVE_COLOR;
 
-    public BaseClientConfig(ModConfigSpec.Builder builder) {
+    public BaseClientConfig(ForgeConfigSpec.Builder builder) {
         builder.push("behavior");
         TRAVEL_KEY_HOLD_DELAY = builder.comment("Ticks before Staff Of Traveling Keybind is considered 'held' for anchor teleports ")
             .defineInRange("travelKeyHoldDelayTicks", 8, 0, Integer.MAX_VALUE);

@@ -8,9 +8,9 @@ import com.enderio.enderio.content.machines.obelisks.inhibitor.InhibitorObeliskM
 import com.enderio.enderio.content.machines.obelisks.relocator.RelocatorObeliskManager;
 import com.enderio.enderio.foundation.attachment.ActionRange;
 import com.enderio.enderio.foundation.io.IOConfig;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import java.util.function.Supplier;

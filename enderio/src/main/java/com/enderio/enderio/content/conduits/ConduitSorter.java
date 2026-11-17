@@ -5,10 +5,11 @@ import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.ConduitType;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -20,7 +21,7 @@ import java.util.Objects;
  * This is needed, so upgrading conduits doesn't require shifting of types, but just recalculating the current connection
  */
 @SuppressWarnings("unused")
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class ConduitSorter {
     private static final List<Holder<Conduit<?, ?>>> SORTED_CONDUITS = new ArrayList<>();
 
@@ -32,21 +33,24 @@ public class ConduitSorter {
         sortTypes(conduitRegistry);
     }
 
-    @SubscribeEvent
-    public static void clientSortTypes(ClientPlayerNetworkEvent.LoggingIn event) {
-        var conduitRegistry = event.getPlayer()
-                .registryAccess()
-                .registryOrThrow(EnderIORegistries.Keys.CONDUIT);
-        sortTypes(conduitRegistry);
+    @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
+    public static class ClientEvents {
+        @SubscribeEvent
+        public static void clientSortTypes(ClientPlayerNetworkEvent.LoggingIn event) {
+            var conduitRegistry = event.getPlayer()
+                    .registryAccess()
+                    .registryOrThrow(EnderIORegistries.Keys.CONDUIT);
+            sortTypes(conduitRegistry);
+        }
     }
 
     private static void sortTypes(Registry<Conduit<?, ?>> registry) {
         SORTED_CONDUITS.clear();
 
         // Group like types together.
-        List<ConduitType<?, ?>> conduitTypes = EnderIORegistries.CONDUIT_TYPE.stream()
+        List<ConduitType<?, ?>> conduitTypes = EnderIORegistries.CONDUIT_TYPE.get().getValues().stream()
                 .sorted(Comparator.comparing(
-                        i -> Objects.requireNonNull(EnderIORegistries.CONDUIT_TYPE.getKey(i)).toString()))
+                        i -> Objects.requireNonNull(EnderIORegistries.CONDUIT_TYPE.get().getKey(i)).toString()))
                 .toList();
 
         List<Holder<Conduit<?, ?>>> sortedConduits = new ArrayList<>();

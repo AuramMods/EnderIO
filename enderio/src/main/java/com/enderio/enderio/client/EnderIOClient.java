@@ -113,20 +113,18 @@ import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.ModelEvent;
-import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
-import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
+import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
-import net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent;
+import net.minecraftforge.client.event.RegisterItemDecorationsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -137,8 +135,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-@EventBusSubscriber(value = Dist.CLIENT)
-@Mod(value = EnderIO.MOD_ID, dist = Dist.CLIENT)
+@EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public class EnderIOClient {
 
     private static final Map<Item, ModelResourceLocation> HANG_GLIDER_MODEL_LOCATION = new HashMap<>();
@@ -147,11 +144,6 @@ public class EnderIOClient {
     public static final ModelResourceLocation TRAVEL_ANCHOR_BACKDROP_MODEL_LOCATION = ModelResourceLocation.standalone(
         ResourceLocation.fromNamespaceAndPath(EnderIOAPI.MOD_ID, "block/travel_anchor_backdrop")
     );
-
-    public EnderIOClient(ModContainer modContainer) {
-        // TODO: Re-enable after config rework.
-//        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-    }
 
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {

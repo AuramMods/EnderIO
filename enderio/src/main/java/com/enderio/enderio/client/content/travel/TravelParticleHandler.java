@@ -7,21 +7,24 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.event.TickEvent;
 import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Calendar;
 
-@EventBusSubscriber(value = Dist.CLIENT)
+@EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
 public class TravelParticleHandler {
     private static int tick = 0;
 
     @SubscribeEvent
-    public static void clientTick(ClientTickEvent.Post e) {
+    public static void clientTick(TickEvent.ClientTickEvent e) {
+        if (e.phase != TickEvent.Phase.END) {
+            return;
+        }
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
             tick++;

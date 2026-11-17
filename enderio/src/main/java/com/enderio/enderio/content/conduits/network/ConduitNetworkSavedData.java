@@ -27,10 +27,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.level.ChunkEvent;
-import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.registries.RegistryManager;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -40,7 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class ConduitNetworkSavedData extends SavedData {
 
     public static final Codec<ConduitNetworkSavedData> CODEC = ConduitNetworkImpl.CODEC.listOf()
@@ -193,8 +194,11 @@ public class ConduitNetworkSavedData extends SavedData {
     }
 
     @SubscribeEvent
-    public static void onLevelTick(LevelTickEvent.Post event) {
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
+    public static void onLevelTick(TickEvent.LevelTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        if (event.level instanceof ServerLevel serverLevel) {
             get(serverLevel).tick(serverLevel);
         }
     }
@@ -232,13 +236,13 @@ public class ConduitNetworkSavedData extends SavedData {
             }
 
             // TODO: GH-1269
-            int conduitId = EnderIORegistries.CONDUIT_TYPE.getId(conduitType);
+            int conduitId = RegistryManager.ACTIVE.getRegistry(EnderIORegistries.Keys.CONDUIT_TYPE).getID(conduitType);
             for (var network : networks.get(conduitType)) {
                 try {
                     ticker.tick(serverLevel, network, conduitId);
                 } catch (Throwable t) {
                     var report = CrashReport.forThrowable(t, "Ticking conduit network");
-                    var category = report.addCategory(EnderIORegistries.CONDUIT_TYPE.getKey(conduitType) + " network being ticked");
+                    var category = report.addCategory(EnderIORegistries.CONDUIT_TYPE.get().getKey(conduitType) + " network being ticked");
                     network.addCrashInfo(category);
                     throw new ReportedException(report);
                 }
@@ -360,7 +364,7 @@ public class ConduitNetworkSavedData extends SavedData {
             CompoundTag contextTag) {
         ResourceLocation serializerKey = ResourceLocation.parse(contextTag.getString("Type"));
         ConduitNetworkContextType<?> contextType = Objects.requireNonNull(
-                EnderIORegistries.CONDUIT_NETWORK_CONTEXT_TYPE.get(serializerKey),
+                EnderIORegistries.CONDUIT_NETWORK_CONTEXT_TYPE.get().getValue(serializerKey),
                 "Unable to find conduit network context type with key " + serializerKey);
 
         if (contextType.codec() == null) {

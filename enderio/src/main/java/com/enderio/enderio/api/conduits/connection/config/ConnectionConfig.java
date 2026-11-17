@@ -17,8 +17,8 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Experimental
 public interface ConnectionConfig {
 
-    Codec<ConnectionConfig> GENERIC_CODEC = EnderIORegistries.CONDUIT_CONNECTION_CONFIG_TYPE.byNameCodec()
-            .dispatch(ConnectionConfig::type, ConnectionConfigType::codec);
+    Codec<ConnectionConfig> GENERIC_CODEC = EnderIORegistries.codec(EnderIORegistries.CONDUIT_CONNECTION_CONFIG_TYPE)
+            .dispatch(ConnectionConfig::type, type -> type.codec().codec());
 
     StreamCodec<RegistryFriendlyByteBuf, ConnectionConfig> STREAM_CODEC = ByteBufCodecs
             .registry(EnderIORegistries.Keys.CONDUIT_CONNECTION_CONFIG_TYPE)

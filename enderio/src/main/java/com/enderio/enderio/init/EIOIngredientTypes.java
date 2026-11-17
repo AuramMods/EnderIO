@@ -5,9 +5,9 @@ import com.enderio.enderio.api.conduits.ConduitIngredient;
 import com.enderio.enderio.api.soul.binding.ingredients.AnySoulBindableIngredient;
 import com.enderio.enderio.api.soul.binding.ingredients.EmptySoulBindableIngredient;
 import com.enderio.enderio.api.soul.binding.ingredients.FilledSoulStorageIngredient;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.common.crafting.IngredientType;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 public class EIOIngredientTypes {

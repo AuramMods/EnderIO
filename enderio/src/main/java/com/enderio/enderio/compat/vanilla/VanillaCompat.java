@@ -5,12 +5,12 @@ import com.enderio.enderio.api.soul.binding.SoulBindable;
 import com.enderio.enderio.api.soul.storage.SoulHandler;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.MOD)
 public class VanillaCompat {
 
     public static final ICapabilityProvider<ItemStack, Void, SoulBindable> SPAWN_EGG_BINDABLE_PROVIDER =

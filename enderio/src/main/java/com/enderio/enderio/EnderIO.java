@@ -36,15 +36,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModList;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.loading.FMLPaths;
-import net.neoforged.neoforge.event.AddPackFindersEvent;
-import net.neoforged.neoforge.registries.DataPackRegistryEvent;
-import net.neoforged.neoforge.registries.NewRegistryEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.event.AddPackFindersEvent;
+import net.minecraftforge.registries.DataPackRegistryEvent;
+import net.minecraftforge.resource.PathPackResources;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -73,9 +74,10 @@ public class EnderIO {
 
     private final Logger logger = LogUtils.getLogger();
 
-    public EnderIO(IEventBus modEventBus, ModContainer modContainer) {
-        EnderIO.modEventBus = modEventBus;
-        EnderIO.modContainer = modContainer;
+    public EnderIO() {
+        var context = FMLJavaModLoadingContext.get();
+        modEventBus = context.getModEventBus();
+        modContainer = context.getContainer();
 
         // Ensure the enderio config subdirectory is present.
         try {
@@ -85,14 +87,15 @@ public class EnderIO {
         }
 
         // Register config files
-        modContainer.registerConfig(ModConfig.Type.COMMON, BaseConfig.COMMON_SPEC, "enderio/base-common.toml");
-        modContainer.registerConfig(ModConfig.Type.CLIENT, BaseConfig.CLIENT_SPEC, "enderio/base-client.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, MachinesConfig.COMMON_SPEC, "enderio/machines-common.toml");
-        modContainer.registerConfig(ModConfig.Type.CLIENT, MachinesConfig.CLIENT_SPEC, "enderio/machines-client.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, ConduitsConfig.COMMON_SPEC, "enderio/conduits-common.toml");
+        context.registerConfig(ModConfig.Type.COMMON, BaseConfig.COMMON_SPEC, "enderio/base-common.toml");
+        context.registerConfig(ModConfig.Type.CLIENT, BaseConfig.CLIENT_SPEC, "enderio/base-client.toml");
+        context.registerConfig(ModConfig.Type.COMMON, MachinesConfig.COMMON_SPEC, "enderio/machines-common.toml");
+        context.registerConfig(ModConfig.Type.CLIENT, MachinesConfig.CLIENT_SPEC, "enderio/machines-client.toml");
+        context.registerConfig(ModConfig.Type.COMMON, ConduitsConfig.COMMON_SPEC, "enderio/conduits-common.toml");
 
         // Perform initialization and registration for everything so things are
         // registered.
+        EnderIORegistries.register(modEventBus);
         EIODataComponents.register(modEventBus);
         EIOCreativeTabs.register(modEventBus);
         EIOItems.register(modEventBus);
@@ -119,22 +122,10 @@ public class EnderIO {
             }
         }
 
-        // Run datagen after registrate is finished.
-        modEventBus.addListener(this::registerRegistries);
         modEventBus.addListener(this::registerDatapackRegistries);
         modEventBus.addListener(this::addBuiltInPacks);
 
         Integrations.register();
-    }
-
-    private void registerRegistries(NewRegistryEvent event) {
-        event.register(EnderIORegistries.TRAVEL_TARGET_TYPES);
-        event.register(EnderIORegistries.TRAVEL_TARGET_SERIALIZERS);
-        event.register(EnderIORegistries.CONDUIT_TYPE);
-        event.register(EnderIORegistries.CONDUIT_DATA_TYPE);
-        event.register(EnderIORegistries.CONDUIT_CONNECTION_CONFIG_TYPE);
-        event.register(EnderIORegistries.CONDUIT_NODE_DATA_TYPE);
-        event.register(EnderIORegistries.CONDUIT_NETWORK_CONTEXT_TYPE);
     }
 
     private void registerDatapackRegistries(DataPackRegistryEvent.NewRegistry event) {
@@ -143,21 +134,33 @@ public class EnderIO {
 
     public void addBuiltInPacks(final AddPackFindersEvent event) {
         if (event.getPackType() == PackType.CLIENT_RESOURCES && ModList.get().isLoaded("athena")) {
-            event.addPackFinders(rl(ATHENA_RESOURCE_PACK_PATH), PackType.CLIENT_RESOURCES,
+            addBuiltInPack(event, ATHENA_RESOURCE_PACK_PATH, PackType.CLIENT_RESOURCES,
                 EIOCommonLang.RESOURCE_PACK_ATHENA, PackSource.BUILT_IN, false, Pack.Position.TOP);
         }
 
-        event.addPackFinders(
-            ResourceLocation.fromNamespaceAndPath(EnderIO.MOD_ID, "data/enderio/datapacks/farming_station"),
+        addBuiltInPack(event, "data/enderio/datapacks/farming_station",
             PackType.SERVER_DATA, MachinesLang.FARMING_STATION_EXPERIMENT, PackSource.FEATURE, false,
             Pack.Position.TOP);
 
-        event.addPackFinders(
-            ResourceLocation.fromNamespaceAndPath(EnderIO.MOD_ID, "data/enderio/datapacks/enderface"),
+        addBuiltInPack(event, "data/enderio/datapacks/enderface",
             PackType.SERVER_DATA, MachinesLang.ENDERFACE_EXPERIMENT, PackSource.FEATURE, false, Pack.Position.TOP);
 
-        event.addPackFinders(
-            ResourceLocation.fromNamespaceAndPath(EnderIO.MOD_ID, "data/enderio/datapacks/niard"),
+        addBuiltInPack(event, "data/enderio/datapacks/niard",
             PackType.SERVER_DATA, MachinesLang.NIARD_EXPERIMENT, PackSource.FEATURE, false, Pack.Position.TOP);
+    }
+
+    private void addBuiltInPack(AddPackFindersEvent event, String path, PackType type, Component title,
+            PackSource source, boolean required, Pack.Position position) {
+        if (event.getPackType() != type) {
+            return;
+        }
+        var resources = ModList.get().getModFileById(MOD_ID).getFile().findResource(path);
+        event.addRepositorySource(consumer -> {
+            var pack = Pack.readMetaAndCreate("mod/" + rl(path), title, required,
+                id -> new PathPackResources(id, true, resources), type, position, source);
+            if (pack != null) {
+                consumer.accept(pack);
+            }
+        });
     }
 }

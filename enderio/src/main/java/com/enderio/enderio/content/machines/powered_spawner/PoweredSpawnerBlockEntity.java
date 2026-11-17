@@ -44,7 +44,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSide;
 import net.neoforged.neoforge.common.extensions.IOwnedSpawner;
 import org.jetbrains.annotations.Nullable;
 

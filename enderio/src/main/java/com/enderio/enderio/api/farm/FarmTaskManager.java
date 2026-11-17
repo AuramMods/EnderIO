@@ -1,7 +1,7 @@
 package com.enderio.enderio.api.farm;
 
 import it.unimi.dsi.fastutil.Pair;
-import net.neoforged.fml.ModLoader;
+import net.minecraftforge.fml.ModLoader;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Comparator;
@@ -18,7 +18,7 @@ public class FarmTaskManager {
     public static List<FarmTask> getTasks() {
         if (TASKS_IMMUTABLE == null) {
             var event = new RegisterFarmTasksEvent();
-            ModLoader.postEvent(event);
+            ModLoader.get().postEvent(event);
 
             TASKS_IMMUTABLE = event.getTasks().stream()
                 .sorted(Comparator.comparingInt(pair -> pair.first().priority()))

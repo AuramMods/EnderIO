@@ -24,15 +24,15 @@ import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduitTicker;
 import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduit;
 import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduitConnectionConfig;
 import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduitNetworkContext;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
 
 public class EIOConduitTypes {
     private static final DeferredRegister<ConduitType<?, ?>> CONDUIT_TYPES = DeferredRegister
-        .create(EnderIORegistries.CONDUIT_TYPE, EnderIO.MOD_ID);
+        .create(EnderIORegistries.Keys.CONDUIT_TYPE, EnderIO.MOD_ID);
 
     public static final Supplier<ConduitType<EnergyConduit, EnergyConduitConnectionConfig>> ENERGY = CONDUIT_TYPES.register("energy",
         () -> ConduitType
@@ -73,7 +73,7 @@ public class EIOConduitTypes {
 
     public static class Data {
         private static final DeferredRegister<ConduitDataType<?>> CONDUIT_DATA_TYPES = DeferredRegister
-                .create(EnderIORegistries.CONDUIT_DATA_TYPE, EnderIO.MOD_ID);
+                .create(EnderIORegistries.Keys.CONDUIT_DATA_TYPE, EnderIO.MOD_ID);
 
         public static final Supplier<ConduitDataType<LegacyItemConduitData>> ITEM = CONDUIT_DATA_TYPES.register("item",
                 () -> new ConduitDataType<>(LegacyItemConduitData.CODEC, LegacyItemConduitData.STREAM_CODEC,
@@ -90,7 +90,7 @@ public class EIOConduitTypes {
 
     public static class ConnectionTypes {
         private static final DeferredRegister<ConnectionConfigType<?>> CONNECTION_TYPES = DeferredRegister
-                .create(EnderIORegistries.CONDUIT_CONNECTION_CONFIG_TYPE, EnderIO.MOD_ID);
+                .create(EnderIORegistries.Keys.CONDUIT_CONNECTION_CONFIG_TYPE, EnderIO.MOD_ID);
 
         public static final Supplier<ConnectionConfigType<ItemConduitConnectionConfig>> ITEM = CONNECTION_TYPES
                 .register("item", () -> ItemConduitConnectionConfig.TYPE);
@@ -107,7 +107,7 @@ public class EIOConduitTypes {
 
     public static class NodeData {
         private static final DeferredRegister<NodeDataType<?>> NODE_DATA_TYPES = DeferredRegister
-                .create(EnderIORegistries.CONDUIT_NODE_DATA_TYPE, EnderIO.MOD_ID);
+                .create(EnderIORegistries.Keys.CONDUIT_NODE_DATA_TYPE, EnderIO.MOD_ID);
 
         public static final Supplier<NodeDataType<ItemConduitNodeData>> ITEM = NODE_DATA_TYPES.register("item",
                 () -> ItemConduitNodeData.TYPE);
@@ -115,7 +115,7 @@ public class EIOConduitTypes {
 
     public static class ContextTypes {
         public static final DeferredRegister<ConduitNetworkContextType<?>> CONDUIT_NETWORK_CONTEXT_TYPES = DeferredRegister
-                .create(EnderIORegistries.CONDUIT_NETWORK_CONTEXT_TYPE, EnderIO.MOD_ID);
+                .create(EnderIORegistries.Keys.CONDUIT_NETWORK_CONTEXT_TYPE, EnderIO.MOD_ID);
 
         public static final Supplier<ConduitNetworkContextType<RedstoneConduitNetworkContext>> REDSTONE = CONDUIT_NETWORK_CONTEXT_TYPES
                 .register("redstone", () -> RedstoneConduitNetworkContext.TYPE);

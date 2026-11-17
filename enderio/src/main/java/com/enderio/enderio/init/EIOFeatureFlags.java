@@ -1,14 +1,18 @@
 package com.enderio.enderio.init;
 
 import com.enderio.enderio.EnderIO;
-import net.minecraft.resources.ResourceLocation;
+import com.enderio.enderio.mixin.FeatureFlagRegistryAccessor;
 import net.minecraft.world.flag.FeatureFlag;
 import net.minecraft.world.flag.FeatureFlags;
 
-public class EIOFeatureFlags {
-    public static final FeatureFlag ENDERFACE = FeatureFlags.REGISTRY
-        .getFlag(ResourceLocation.fromNamespaceAndPath(EnderIO.MOD_ID, "enderface"));
+import java.util.Objects;
 
-    public static final FeatureFlag NIARD = FeatureFlags.REGISTRY
-        .getFlag(ResourceLocation.fromNamespaceAndPath(EnderIO.MOD_ID, "niard"));
+public class EIOFeatureFlags {
+    public static final FeatureFlag ENDERFACE = getFlag("enderface");
+    public static final FeatureFlag NIARD = getFlag("niard");
+
+    private static FeatureFlag getFlag(String name) {
+        return Objects.requireNonNull(((FeatureFlagRegistryAccessor) FeatureFlags.REGISTRY)
+            .enderio$getFlags().get(EnderIO.rl(name)), "Unregistered Ender IO feature flag: " + name);
+    }
 }

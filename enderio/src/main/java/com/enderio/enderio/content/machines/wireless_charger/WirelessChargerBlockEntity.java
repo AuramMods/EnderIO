@@ -32,9 +32,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSide;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,7 +50,7 @@ public class WirelessChargerBlockEntity extends PoweredMachineBlockEntity implem
     public static final QuadraticScalable USAGE = new QuadraticScalable(CapacitorModifier.ENERGY_USE,
             MachinesConfig.COMMON.ENERGY.WIRELESS_CHARGER_USAGE);
 
-    private final ModConfigSpec.IntValue energyUpkeep;
+    private final ForgeConfigSpec.IntValue energyUpkeep;
 
     private ActionRange actionRange;
     private int maxRange;

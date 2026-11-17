@@ -39,7 +39,7 @@ import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSide;
 import org.jetbrains.annotations.Nullable;
 
 public class SlicerBlockEntity extends PoweredMachineBlockEntity {

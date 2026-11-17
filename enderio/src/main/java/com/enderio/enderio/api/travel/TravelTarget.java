@@ -11,8 +11,8 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.ApiStatus;
 
 public interface TravelTarget {
-    Codec<TravelTarget> CODEC = EnderIORegistries.TRAVEL_TARGET_SERIALIZERS.byNameCodec()
-            .dispatch(TravelTarget::serializer, TravelTargetSerializer::codec);
+    Codec<TravelTarget> CODEC = EnderIORegistries.codec(EnderIORegistries.TRAVEL_TARGET_SERIALIZERS)
+            .dispatch(TravelTarget::serializer, type -> type.codec().codec());
     StreamCodec<RegistryFriendlyByteBuf, TravelTarget> STREAM_CODEC = ByteBufCodecs
             .registry(EnderIORegistries.Keys.TRAVEL_TARGET_SERIALIZERS)
             .dispatch(TravelTarget::serializer, TravelTargetSerializer::streamCodec);

@@ -4,7 +4,7 @@ import com.enderio.core.common.registries.FluidDeferredHolders;
 import com.enderio.core.common.registries.FluidDeferredRegister;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.misc_blocks.FireWaterFluid;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 
 // TODO: Fluid behaviours and some cleaning. https://github.com/SleepyTrousers/EnderIO-Rewrite/issues/34
 

@@ -7,17 +7,17 @@ import com.enderio.enderio.api.travel.TravelTargetSerializer;
 import com.enderio.enderio.api.travel.TravelTargetType;
 import com.enderio.enderio.content.enderface.EnderfaceTravelTarget;
 import com.enderio.enderio.content.travel.travel_anchor.AnchorTravelTarget;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
 
 public class EIOTravelTargets {
     public static final DeferredRegister<TravelTargetType<?>> TRAVEL_TARGET_TYPES = DeferredRegister
-            .create(EnderIORegistries.TRAVEL_TARGET_TYPES, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.TRAVEL_TARGET_TYPES, EnderIO.MOD_ID);
 
     public static final DeferredRegister<TravelTargetSerializer<?>> TRAVEL_TARGET_SERIALIZERS = DeferredRegister
-            .create(EnderIORegistries.TRAVEL_TARGET_SERIALIZERS, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.TRAVEL_TARGET_SERIALIZERS, EnderIO.MOD_ID);
 
     public static final Supplier<TravelTargetType<AnchorTravelTarget>> TRAVEL_ANCHOR_TYPE = registerType(
             "travel_anchor");
@@ -29,7 +29,7 @@ public class EIOTravelTargets {
             .register("enderface", EnderfaceTravelTarget.Serializer::new);
 
     private static <T extends TravelTarget> Supplier<TravelTargetType<T>> registerType(String name) {
-        return TRAVEL_TARGET_TYPES.register(name, TravelTargetType::simple);
+        return TRAVEL_TARGET_TYPES.register(name, () -> TravelTargetType.simple(EnderIO.rl(name)));
     }
 
     public static void register(IEventBus bus) {

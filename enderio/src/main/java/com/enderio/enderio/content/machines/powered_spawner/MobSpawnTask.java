@@ -12,8 +12,8 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -21,7 +21,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import java.util.List;
 import java.util.UUID;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class MobSpawnTask extends PoweredSpawnerTask {
 
     private float efficiency = 1;

@@ -6,15 +6,15 @@ import com.enderio.enderio.foundation.network.packets.ServerboundToggleMagnetPac
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.util.Lazy;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-@EventBusSubscriber(value = Dist.CLIENT)
+@EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
 public class KeymapHandler {
 
     public static final String ENDERIO_KEYBIND_CATEGORY = "keys.categories.enderio";
@@ -24,14 +24,20 @@ public class KeymapHandler {
     private static int travelKeyTicks = 0;
     private static boolean travelTargetsVisible = false;
 
-    @SubscribeEvent
-    public static void registerKeyMappings(RegisterKeyMappingsEvent event){
-        event.register(TRAVEL_STAFF_KEY.get());
-        event.register(TOGGLE_MAGNET_KEY.get());
+    @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    public static class Registration {
+        @SubscribeEvent
+        public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
+            event.register(TRAVEL_STAFF_KEY.get());
+            event.register(TOGGLE_MAGNET_KEY.get());
+        }
     }
 
     @SubscribeEvent
-    public static void keyHandler(ClientTickEvent.Post event){
+    public static void keyHandler(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
         var minecraft = Minecraft.getInstance();
 
 

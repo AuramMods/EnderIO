@@ -18,12 +18,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.event.level.BlockEvent;
-import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.event.TickEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class FireCraftingManager {
     public static final AttachmentType<FireCraftingManager> ATTACHMENT_TYPE = AttachmentType.builder(FireCraftingManager::new).build();
 
@@ -215,8 +215,11 @@ public class FireCraftingManager {
 
     // Support worlds where firetick is disabled
     @SubscribeEvent
-    public static void onWorldTick(LevelTickEvent.Pre event) {
-        if (event.getLevel() instanceof ServerLevel level) {
+    public static void onWorldTick(TickEvent.LevelTickEvent event) {
+        if (event.phase != TickEvent.Phase.START) {
+            return;
+        }
+        if (event.level instanceof ServerLevel level) {
             var fireCraftingManager = level.getData(FireCraftingManager.ATTACHMENT_TYPE);
             fireCraftingManager.onWorldTick(level);
         }

@@ -5,14 +5,14 @@ import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.SectionPos;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.event.TickEvent;
 
 // TODO: In future, support hiding specific conduit types too.
-@EventBusSubscriber(value = Dist.CLIENT)
+@EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
 public class ClientFacadeVisibility {
 
     private static boolean FACADES_VISIBLE = true;
@@ -23,18 +23,21 @@ public class ClientFacadeVisibility {
     }
 
     @SubscribeEvent
-    public static void onTick(PlayerTickEvent.Pre event) {
+    public static void onTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.START) {
+            return;
+        }
         // Update every tick on the client.
 
         if (Minecraft.getInstance() == null || Minecraft.getInstance().level == null) {
             return;
         }
 
-        if (event.getEntity() != Minecraft.getInstance().player) {
+        if (event.player != Minecraft.getInstance().player) {
             return;
         }
 
-        setFacadesVisible(FacadeUtil.areFacadesVisible(event.getEntity()));
+        setFacadesVisible(FacadeUtil.areFacadesVisible(event.player));
     }
 
     private static void setFacadesVisible(boolean visible) {

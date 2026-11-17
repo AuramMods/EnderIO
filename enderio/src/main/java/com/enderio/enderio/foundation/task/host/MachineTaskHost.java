@@ -7,7 +7,7 @@ import com.enderio.enderio.foundation.task.MachineTask;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
-import net.neoforged.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSide;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;

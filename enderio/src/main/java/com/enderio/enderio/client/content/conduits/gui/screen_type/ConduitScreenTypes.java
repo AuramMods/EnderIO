@@ -6,8 +6,8 @@ import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.connection.config.ConnectionConfig;
 import com.enderio.enderio.api.conduits.screen.ConduitScreenType;
 import com.enderio.enderio.api.conduits.screen.RegisterConduitScreenTypesEvent;
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.fml.ModLoader;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.ModLoader;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -18,7 +18,7 @@ public class ConduitScreenTypes {
     @UseOnly(LogicalSide.CLIENT)
     public static void init() {
         var event = new RegisterConduitScreenTypesEvent();
-        ModLoader.postEvent(event);
+        ModLoader.get().postEvent(event);
         SCREEN_TYPES = Map.copyOf(event.getScreenTypes());
     }
 

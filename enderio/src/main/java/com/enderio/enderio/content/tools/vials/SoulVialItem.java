@@ -39,10 +39,10 @@ import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class SoulVialItem extends Item implements AdvancedTooltipProvider {
 
     public static final ResourceLocation FILLED_MODEL_PROPERTY = EnderIO.rl("soul_vial_filled");
@@ -299,11 +299,14 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
         }
     }
 
-    @SubscribeEvent
-    public static void onCommonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> {
-            DispenserBlock.registerBehavior(EIOItems.SOUL_VIAL.get(), new SoulVialDispenseBehavior());
-        });
+    @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.MOD)
+    public static class Registration {
+        @SubscribeEvent
+        public static void onCommonSetup(FMLCommonSetupEvent event) {
+            event.enqueueWork(() -> {
+                DispenserBlock.registerBehavior(EIOItems.SOUL_VIAL.get(), new SoulVialDispenseBehavior());
+            });
+        }
     }
 
     // endregion

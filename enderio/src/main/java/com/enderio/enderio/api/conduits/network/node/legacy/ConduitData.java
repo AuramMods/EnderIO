@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 @Deprecated(since = "8.0.0")
 public interface ConduitData<T extends ConduitData<T>> {
-    Codec<ConduitData<?>> CODEC = EnderIORegistries.CONDUIT_DATA_TYPE.byNameCodec()
-            .dispatch(ConduitData::type, ConduitDataType::codec);
+    Codec<ConduitData<?>> CODEC = EnderIORegistries.codec(EnderIORegistries.CONDUIT_DATA_TYPE)
+            .dispatch(ConduitData::type, type -> type.codec().codec());
 
     /**
      * Allows copying of data from a client change.

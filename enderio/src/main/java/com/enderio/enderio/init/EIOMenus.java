@@ -44,7 +44,7 @@ import com.enderio.enderio.content.storage.fluid_tank.FluidTankMenu;
 import com.enderio.enderio.content.tools.coordinate_selector.CoordinateMenu;
 import com.enderio.enderio.content.travel.travel_anchor.TravelAnchorMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 public class EIOMenus {

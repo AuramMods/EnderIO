@@ -6,6 +6,6 @@
   },
   "pack": {
     "description": "Enable the Farming Station. This is an unfinished feature and is likely to have issues.",
-    "pack_format": 48
+    "pack_format": 15
   }
 }

@@ -28,14 +28,14 @@ import com.enderio.enderio.content.tools.LevitationStaffItem;
 import com.enderio.enderio.content.tools.PoweredToggledItem;
 import com.enderio.enderio.content.travel.TravelStaffItem;
 import com.enderio.enderio.foundation.soul.SoulCapabilityProviders;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.MOD)
 public class EIOCapabilityProviders {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void markProxyableCapabilities(RegisterCapabilitiesEvent event) {
@@ -133,7 +133,7 @@ public class EIOCapabilityProviders {
     // region Conduits
 
     private static void registerConduitCapabilities(RegisterCapabilitiesEvent event) {
-        EnderIORegistries.CONDUIT_TYPE.entrySet()
+        EnderIORegistries.CONDUIT_TYPE.get().getEntries()
             .stream()
             .flatMap(e -> e.getValue().exposedCapabilities().stream())
             .forEach(e -> registerConduitCapability(event, e));

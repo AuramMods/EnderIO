@@ -719,7 +719,7 @@ public class ConduitNetworkImpl extends Network<ConduitNetworkImpl, ConduitNodeI
         for (var newNetwork : newNetworks) {
             newNetwork.context = context.split(newNetwork, allNetworks);
             if (newNetwork.context == context) {
-                throw new IllegalStateException("Splitting context for a network of '" + EnderIORegistries.CONDUIT_TYPE.getKey(conduitType)
+                throw new IllegalStateException("Splitting context for a network of '" + EnderIORegistries.CONDUIT_TYPE.get().getKey(conduitType)
                         + "' resulted in the same context for multiple networks.");
             }
 
@@ -728,7 +728,7 @@ public class ConduitNetworkImpl extends Network<ConduitNetworkImpl, ConduitNodeI
 
         var newContext = context.split(this, allNetworks);
         if (newContext == context) {
-            throw new IllegalStateException("Splitting context for a network of '" + EnderIORegistries.CONDUIT_TYPE.getKey(conduitType)
+            throw new IllegalStateException("Splitting context for a network of '" + EnderIORegistries.CONDUIT_TYPE.get().getKey(conduitType)
                     + "' resulted in the same context for multiple networks.");
         }
 

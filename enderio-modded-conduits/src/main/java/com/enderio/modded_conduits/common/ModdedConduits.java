@@ -3,6 +3,7 @@ package com.enderio.modded_conduits.common;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.EnderIORegistries;
 import com.enderio.modded_conduits.common.modules.ConduitCommonModule;
+import com.enderio.modded_conduits.client.ModdedConduitsClient;
 import com.enderio.modded_conduits.common.modules.appeng.AE2ConduitsModule;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
 import com.enderio.modded_conduits.common.modules.refinedstorage.RefinedStorageCommonModule;
@@ -11,13 +12,15 @@ import com.enderio.modded_conduits.data.ModConduitRecipeProvider;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModList;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.neoforged.neoforge.common.conditions.ICondition;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
@@ -30,7 +33,7 @@ import java.util.function.Supplier;
 import static java.util.Map.entry;
 
 @Mod(value = ModdedConduits.MOD_ID)
-@EventBusSubscriber(modid = ModdedConduits.MOD_ID)
+@EventBusSubscriber(modid = ModdedConduits.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class ModdedConduits {
     public static final String MOD_ID = EnderIO.MOD_ID + "_modded_conduits";
 
@@ -43,13 +46,15 @@ public class ModdedConduits {
 
     public static IEventBus modEventBus;
 
-    public ModdedConduits(IEventBus modEventBus, ModContainer modContainer) {
-        ModdedConduits.modEventBus = modEventBus;
+    public ModdedConduits() {
+        var context = FMLJavaModLoadingContext.get();
+        modEventBus = context.getModEventBus();
         
         // Register config files
-        modContainer.registerConfig(ModConfig.Type.COMMON, ModdedConduitsConfig.COMMON_SPEC, "enderio/modded-conduits-common.toml");
+        context.registerConfig(ModConfig.Type.COMMON, ModdedConduitsConfig.COMMON_SPEC, "enderio/modded-conduits-common.toml");
         
         executeOnLoadedModules(module -> module.initialize(modEventBus));
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ModdedConduitsClient.initialize(modEventBus));
     }
 
     public static void buildConduitConditions(BiConsumer<ResourceKey<?>, ICondition> conditions) {

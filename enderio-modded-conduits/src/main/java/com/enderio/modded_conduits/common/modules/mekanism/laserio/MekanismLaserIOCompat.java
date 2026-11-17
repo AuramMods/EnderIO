@@ -5,8 +5,8 @@ import com.direwolf20.laserio.setup.Registration;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.ChemicalFilter;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 

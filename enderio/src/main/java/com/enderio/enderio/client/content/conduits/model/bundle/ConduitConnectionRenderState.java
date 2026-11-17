@@ -5,7 +5,7 @@ import com.enderio.enderio.api.conduits.connection.config.ConnectionConfig;
 import com.enderio.enderio.api.conduits.connection.config.IOConnectionConfig;
 import com.enderio.enderio.api.conduits.connection.config.RedstoneSensitiveConnectionConfig;
 import net.minecraft.world.item.DyeColor;
-import net.neoforged.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSide;
 
 public record ConduitConnectionRenderState(boolean canInput, DyeColor inputChannel, boolean canOutput,
         DyeColor outputChannel, boolean isRedstoneSensitive, DyeColor redstoneChannel) {

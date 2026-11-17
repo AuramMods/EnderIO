@@ -54,17 +54,17 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModList;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModList;
 import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.ItemCapability;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.conditions.ICondition;
 import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -81,16 +81,16 @@ public class MekanismModule implements ConduitCommonModule {
     private static final MenuDeferredRegister MENUS = MenuDeferredRegister.create(EnderIO.MOD_ID);
 
     private static final DeferredRegister<ConduitType<?, ?>> CONDUIT_TYPES = DeferredRegister
-            .create(EnderIORegistries.CONDUIT_TYPE, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.CONDUIT_TYPE, EnderIO.MOD_ID);
 
     public static final DeferredRegister<ConduitDataType<?>> CONDUIT_DATA_TYPES = DeferredRegister
-            .create(EnderIORegistries.CONDUIT_DATA_TYPE, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.CONDUIT_DATA_TYPE, EnderIO.MOD_ID);
 
     public static final DeferredRegister<ConnectionConfigType<?>> CONDUIT_CONNECTION_CONFIG_TYPES = DeferredRegister
-            .create(EnderIORegistries.CONDUIT_CONNECTION_CONFIG_TYPE, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.CONDUIT_CONNECTION_CONFIG_TYPE, EnderIO.MOD_ID);
 
     public static final DeferredRegister<ConduitNetworkContextType<?>> CONDUIT_NETWORK_CONTEXT_TYPES = DeferredRegister
-            .create(EnderIORegistries.CONDUIT_NETWORK_CONTEXT_TYPE, EnderIO.MOD_ID);
+            .create(EnderIORegistries.Keys.CONDUIT_NETWORK_CONTEXT_TYPE, EnderIO.MOD_ID);
 
     static {
         CONDUIT_CONNECTION_CONFIG_TYPES.register("chemical", () -> ChemicalConduitConnectionConfig.TYPE);

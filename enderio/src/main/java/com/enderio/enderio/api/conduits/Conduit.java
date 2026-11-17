@@ -41,8 +41,8 @@ import java.util.function.Consumer;
 public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, TConnectionConfig extends ConnectionConfig>
         extends Comparable<TConduit>, TooltipProvider {
 
-    Codec<Conduit<?, ?>> DIRECT_CODEC = EnderIORegistries.CONDUIT_TYPE.byNameCodec()
-            .dispatch(Conduit::type, ConduitType::codec);
+    Codec<Conduit<?, ?>> DIRECT_CODEC = EnderIORegistries.codec(EnderIORegistries.CONDUIT_TYPE)
+            .dispatch(Conduit::type, type -> type.codec().codec());
 
     Codec<Holder<Conduit<?, ?>>> CODEC = RegistryFixedCodec.create(EnderIORegistries.Keys.CONDUIT);
 

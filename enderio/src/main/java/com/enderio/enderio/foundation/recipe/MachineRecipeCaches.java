@@ -6,12 +6,13 @@ import com.enderio.enderio.content.machines.sag_mill.SagMillingRecipe;
 import com.enderio.enderio.content.machines.soul_binder.SoulBindingRecipe;
 import com.enderio.enderio.content.machines.vat.FermentingRecipe;
 import com.enderio.enderio.init.EIORecipes;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RecipesUpdatedEvent;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.client.event.RecipesUpdatedEvent;
+import net.minecraftforge.event.AddReloadListenerEvent;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class MachineRecipeCaches {
     public static final RecipeInputCache<AlloySmeltingRecipe.Input, AlloySmeltingRecipe> ALLOY_SMELTING_ONLY_ALLOY = new RecipeInputCache<>(
             EIORecipes.ALLOY_SMELTING.type(), recipe -> !recipe.isSmelting());
@@ -41,13 +42,16 @@ public class MachineRecipeCaches {
         FERMENTING.markCacheDirty();
     }
 
-    @SubscribeEvent
-    public static void onRecipesUpdated(RecipesUpdatedEvent event) {
-        ALLOY_SMELTING_ONLY_ALLOY.rebuildCache(event.getRecipeManager());
-        ALLOY_SMELTING_ONLY_SMELTING.rebuildCache(event.getRecipeManager());
-        PAINTING.rebuildCache(event.getRecipeManager());
-        SAG_MILLING.rebuildCache(event.getRecipeManager());
-        SOUL_BINDING.rebuildCache(event.getRecipeManager());
-        FERMENTING.rebuildCache(event.getRecipeManager());
+    @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
+    public static class ClientEvents {
+        @SubscribeEvent
+        public static void onRecipesUpdated(RecipesUpdatedEvent event) {
+            ALLOY_SMELTING_ONLY_ALLOY.rebuildCache(event.getRecipeManager());
+            ALLOY_SMELTING_ONLY_SMELTING.rebuildCache(event.getRecipeManager());
+            PAINTING.rebuildCache(event.getRecipeManager());
+            SAG_MILLING.rebuildCache(event.getRecipeManager());
+            SOUL_BINDING.rebuildCache(event.getRecipeManager());
+            FERMENTING.rebuildCache(event.getRecipeManager());
+        }
     }
 }

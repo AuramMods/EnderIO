@@ -3,11 +3,11 @@ package com.enderio.enderio.foundation.block;
 import com.enderio.enderio.foundation.block.entity.Wrenchable;
 import com.enderio.enderio.foundation.tag.EIOTags;
 import net.minecraft.world.ItemInteractionResult;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.UseItemOnBlockEvent;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class WrenchableBlockHandler {
     @SubscribeEvent
     public static void onItemUse(UseItemOnBlockEvent event) {

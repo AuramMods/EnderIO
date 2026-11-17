@@ -12,8 +12,8 @@ import com.mojang.serialization.Codec;
  * For connection-related settings, use {@link ConnectionConfig}.
  */
 public interface NodeData {
-    Codec<NodeData> GENERIC_CODEC = EnderIORegistries.CONDUIT_NODE_DATA_TYPE.byNameCodec()
-            .dispatch(NodeData::type, NodeDataType::codec);
+    Codec<NodeData> GENERIC_CODEC = EnderIORegistries.codec(EnderIORegistries.CONDUIT_NODE_DATA_TYPE)
+            .dispatch(NodeData::type, type -> type.codec().codec());
 
     NodeDataType<?> type();
 }

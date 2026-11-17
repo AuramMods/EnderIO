@@ -3,11 +3,11 @@ package com.enderio.enderio.init;
 import com.enderio.enderio.api.components.GrindingBallData;
 import com.enderio.enderio.foundation.datamap.RangeExtender;
 import com.enderio.enderio.foundation.datamap.VatReagent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
 
-@EventBusSubscriber
+@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.MOD)
 public class EIODataMaps {
     @SubscribeEvent
     public static void registerDataMap(RegisterDataMapTypesEvent event) {

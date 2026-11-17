@@ -5,8 +5,8 @@ import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.model.ConduitModelModifier;
 import com.enderio.enderio.api.conduits.model.RegisterConduitModelModifiersEvent;
 import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.fml.ModLoader;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.ModLoader;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -20,7 +20,7 @@ public class ConduitModelModifiers {
     @UseOnly(LogicalSide.CLIENT)
     public static void init() {
         var event = new RegisterConduitModelModifiersEvent();
-        ModLoader.postEvent(event);
+        ModLoader.get().postEvent(event);
         var factories = event.getModifiers();
 
         MODIFIERS = new HashMap<>();

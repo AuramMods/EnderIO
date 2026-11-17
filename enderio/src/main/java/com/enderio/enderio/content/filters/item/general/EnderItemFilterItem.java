@@ -18,7 +18,7 @@ import net.minecraft.world.inventory.tooltip.BundleTooltip;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.neoforged.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSide;
 import net.minecraft.world.item.component.BundleContents;
 import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import oshi.util.tuples.Pair;

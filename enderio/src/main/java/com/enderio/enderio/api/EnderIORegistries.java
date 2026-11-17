@@ -8,37 +8,51 @@ import com.enderio.enderio.api.conduits.network.node.NodeDataType;
 import com.enderio.enderio.api.conduits.network.node.legacy.ConduitDataType;
 import com.enderio.enderio.api.travel.TravelTargetSerializer;
 import com.enderio.enderio.api.travel.TravelTargetType;
+import com.mojang.serialization.Codec;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.registries.RegistryBuilder;
+import net.minecraft.util.ExtraCodecs;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.IForgeRegistry;
+import net.minecraftforge.registries.RegistryBuilder;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
 
 public class EnderIORegistries {
 
-    public static final Registry<TravelTargetType<?>> TRAVEL_TARGET_TYPES = new RegistryBuilder<>(Keys.TRAVEL_TARGET_TYPES)
-        .sync(true)
-        .create();
+    private static final List<DeferredRegister<?>> REGISTRIES = new ArrayList<>();
 
-    public static final Registry<TravelTargetSerializer<?>> TRAVEL_TARGET_SERIALIZERS = new RegistryBuilder<>(Keys.TRAVEL_TARGET_SERIALIZERS)
-        .sync(true)
-        .create();
-
-    public static final Registry<ConduitType<?, ?>> CONDUIT_TYPE = new RegistryBuilder<>(Keys.CONDUIT_TYPE).sync(true)
-            .create();
+    // Forge creates custom registries during NewRegistryEvent, after mod construction.
+    // Codecs and addon deferred registers must not resolve these suppliers beforehand.
+    public static final Supplier<IForgeRegistry<TravelTargetType<?>>> TRAVEL_TARGET_TYPES = create(Keys.TRAVEL_TARGET_TYPES);
+    public static final Supplier<IForgeRegistry<TravelTargetSerializer<?>>> TRAVEL_TARGET_SERIALIZERS = create(Keys.TRAVEL_TARGET_SERIALIZERS);
+    public static final Supplier<IForgeRegistry<ConduitType<?, ?>>> CONDUIT_TYPE = create(Keys.CONDUIT_TYPE);
 
     @Deprecated(since = "8.0.0")
-    public static final Registry<ConduitDataType<?>> CONDUIT_DATA_TYPE = new RegistryBuilder<>(Keys.CONDUIT_DATA_TYPE)
-            .sync(true)
-            .create();
+    public static final Supplier<IForgeRegistry<ConduitDataType<?>>> CONDUIT_DATA_TYPE = create(Keys.CONDUIT_DATA_TYPE);
 
-    public static final Registry<NodeDataType<?>> CONDUIT_NODE_DATA_TYPE = new RegistryBuilder<>(
-            Keys.CONDUIT_NODE_DATA_TYPE).sync(true).create();
+    public static final Supplier<IForgeRegistry<NodeDataType<?>>> CONDUIT_NODE_DATA_TYPE = create(Keys.CONDUIT_NODE_DATA_TYPE);
+    public static final Supplier<IForgeRegistry<ConnectionConfigType<?>>> CONDUIT_CONNECTION_CONFIG_TYPE = create(Keys.CONDUIT_CONNECTION_CONFIG_TYPE);
+    public static final Supplier<IForgeRegistry<ConduitNetworkContextType<?>>> CONDUIT_NETWORK_CONTEXT_TYPE = create(Keys.CONDUIT_NETWORK_CONTEXT_TYPE);
 
-    public static final Registry<ConnectionConfigType<?>> CONDUIT_CONNECTION_CONFIG_TYPE = new RegistryBuilder<>(
-            Keys.CONDUIT_CONNECTION_CONFIG_TYPE).sync(true).create();
+    private static <T> Supplier<IForgeRegistry<T>> create(ResourceKey<Registry<T>> key) {
+        DeferredRegister<T> register = DeferredRegister.create(key, EnderIOAPI.MOD_ID);
+        REGISTRIES.add(register);
+        // Forge registries save and synchronize numeric IDs by default.
+        return register.makeRegistry(RegistryBuilder::new);
+    }
 
-    public static final Registry<ConduitNetworkContextType<?>> CONDUIT_NETWORK_CONTEXT_TYPE = new RegistryBuilder<>(
-            Keys.CONDUIT_NETWORK_CONTEXT_TYPE).sync(true).create();
+    public static void register(IEventBus bus) {
+        REGISTRIES.forEach(register -> register.register(bus));
+    }
+
+    public static <T> Codec<T> codec(Supplier<IForgeRegistry<T>> registry) {
+        return ExtraCodecs.lazyInitializedCodec(() -> registry.get().getCodec());
+    }
 
     public static class Keys {
         public static final ResourceKey<Registry<TravelTargetType<?>>> TRAVEL_TARGET_TYPES = createKey("travel_target_types");

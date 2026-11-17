@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 006 fixes main-module access transformation and runs the formerly blocked tests through Forge's real GameTest launcher. EnderCore now passes 36 unit tests and seven GameTests. Main Ender IO source compilation reaches the 400-error reporting cap. Headless core test servers have run and shut down cleanly; no client has been launched.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 007 adapts main/addon startup, configuration, event subscriptions, custom registries and built-in feature packs to Forge. Main compilation still reaches the normal 400-error cap; an expanded diagnostic run reported 4,526 errors before Gradle's report transport ran out of memory. EnderCore's last verified check (cycle 006) passed 36 unit tests and seven headless GameTests. No client has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -72,7 +72,7 @@ Prefer Forge-native adapters and shared utilities in this project's namespaces. 
 | --- | --- | --- |
 | Preparation | Record source references, create local branch, write tracker and goal | Complete |
 | Inventory and build | Expand parity/dependency matrix; establish Forge 1.20.1 toolchain, metadata, artifacts and silent test profiles | In progress: EnderCore compiles/reobfuscates and main-module Minecraft artifacts rebuild; full packaging and non-activating client launch pending |
-| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | In progress: EnderCore passes 36 unit tests and seven headless Forge GameTests; main/addon consumers and broader runtime validation pending |
+| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | In progress: core tests pass; main/addon lifecycle, event routing and custom registry source adapted. Main NBT/network/capability conversion and runtime validation pending |
 | Core content | Port every implemented block/item/entity, machine, conduit, filter, tool, soul and travel feature | Pending |
 | Assets and client | Data generation, recipes/tags, models, textures, rendering, screens, particles, input, mixins | In progress: core sprite atlas, slot-rendering hook and native vertex/UI APIs compile; all visual/runtime checks pending |
 | Integrations | Adapt each supported integration and modded conduit; test with dependencies present and absent | Pending |
@@ -138,7 +138,8 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 | 003: core registration and serialization | Native Forge registration/capability factories, NBT fluid/item helpers, recipe/datagen API adaptations and bounded ordered-list codec | Eight isolated codec tests passed; full EnderCore compile fails with 319 errors; runtime remains unverified. [Evidence](porting/1.20.1/cycle-003.md) | `7d4dbcaa2` |
 | 004: core networking and synchronization | Native Forge SimpleChannel transport, bounded packet codecs, menu/legacy slot handling, block-entity save and capability APIs | 18 isolated tests pass; one test-class bootstrap failure prevents seven further methods from executing. Full EnderCore compile fails with 25 errors. [Evidence](porting/1.20.1/cycle-004.md) | `a41928e47` |
 | 005: compile and package EnderCore | Java 17 graph API, native GUI/vertex calls, reloadable sprite atlas and slot-rendering mixin; retired scoped test compilation | EnderCore compile/jar/reobfuscation pass; 36 normal tests pass, one bootstrap failure remains. Main-module Minecraft recompile fails. [Evidence](porting/1.20.1/cycle-005.md) | `87292135b` |
-| 006: access transformation and native tests | Forge SRG access transformers, protected falling-block constructor, Java 17 record patterns, native core GameTest module | Core check passes: 36 unit tests plus seven GameTests. Main-module artifacts rebuild and source compilation reaches 400-error cap. [Evidence](porting/1.20.1/cycle-006.md) | Commit containing cycle 006 |
+| 006: access transformation and native tests | Forge SRG access transformers, protected falling-block constructor, Java 17 record patterns, native core GameTest module | Core check passes: 36 unit tests plus seven GameTests. Main-module artifacts rebuild and source compilation reaches 400-error cap. [Evidence](porting/1.20.1/cycle-006.md) | `df4edbc39` |
+| 007: main lifecycle and registries | Forge startup/configuration, explicit mod/game event buses and tick phases, deferred custom registries/codecs, client isolation, native built-in packs and feature flags | Main compile exits 1 at 400-error cap. Expanded diagnostics report 4,526 errors before tooling OOM; no new runtime tests. Configuration/flag/pack source audits pass. [Evidence](porting/1.20.1/cycle-007.md) | Commit containing cycle 007 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

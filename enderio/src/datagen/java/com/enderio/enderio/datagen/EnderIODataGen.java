@@ -45,7 +45,6 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -104,7 +103,7 @@ public class EnderIODataGen {
         athenaPack.addProvider(AthenaProvider::new);
         athenaPack.addProvider(output -> new PackMetadataGenerator(output).add(PackMetadataSection.TYPE,
             new PackMetadataSection(EIOCommonLang.RESOURCE_PACK_ATHENA,
-                DetectedVersion.BUILT_IN.getPackVersion(PackType.CLIENT_RESOURCES), Optional.empty())));
+                DetectedVersion.BUILT_IN.getPackVersion(PackType.CLIENT_RESOURCES))));
     }
 
     private static RegistrySetBuilder createDatapackEntriesBuilder() {

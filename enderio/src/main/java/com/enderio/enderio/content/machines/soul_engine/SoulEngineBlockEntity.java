@@ -43,9 +43,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RecipesUpdatedEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.client.event.RecipesUpdatedEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
@@ -55,7 +56,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-@EventBusSubscriber
 public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements FluidTankUser, SoulBindable {
 
     private static final QuadraticScalable CAPACITY = new QuadraticScalable(CapacitorModifier.ENERGY_CAPACITY,
@@ -311,8 +311,11 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
                         && isCapacitorInstalled());
     }
 
-    @SubscribeEvent
-    static void onReload(RecipesUpdatedEvent event) {
-        reload = !reload;
+    @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
+    public static class ClientEvents {
+        @SubscribeEvent
+        public static void onReload(RecipesUpdatedEvent event) {
+            reload = !reload;
+        }
     }
 }
