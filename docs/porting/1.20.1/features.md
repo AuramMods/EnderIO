@@ -219,7 +219,7 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | `COLD_FIRE_IGNITER` | [EIOItems:221](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `CONDUIT_PROBE` | [EIOItems:222](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `DARK_STEEL_SWORD` | [EIOItems:224](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `CONDUIT` | [EIOItems:234](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. Six core and seven integration types from 6.2.18-beta retain their exact type, quantity and custom NBT in a vanilla inventory across upgrade and restart. The item type also migrates in an alloy smelter inventory. Native placement passes for all six core types. [Cycle 052](cycle-052.md) |
+| `CONDUIT` | [EIOItems:233](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. Six core and seven integration types from 6.2.18-beta retain their exact type, quantity and custom NBT in a vanilla inventory across upgrade and restart. The item type also migrates in an alloy smelter inventory. Native placement passes for all six core types. [Cycle 052](cycle-052.md) |
 | `CONDUIT_FACADE` | [EIOItems:236](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `TRANSPARENT_CONDUIT_FACADE` | [EIOItems:239](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `HARDENED_CONDUIT_FACADE` | [EIOItems:242](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
@@ -311,10 +311,10 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 
 | Feature | Required behavior | Evidence |
 | --- | --- | --- |
-| AE2 ME conduits | Channels, colored connections, network host lifecycle, split/merge, facades, save/restart and missing-AE2 loading | Pending |
+| AE2 ME conduits | Channels, colored connections, network host lifecycle, split/merge, facades, save/restart and missing-AE2 loading | Partial. Native split/merge, bundle reload and an AE2 energy cell powering a drive pass. Packaged migration keeps powered normal, dense and mixed routes and their owners across chunk reload and server restart. The core packaged profile passes without AE2. [Cycle 053](cycle-053.md) |
 | Mekanism chemical conduits and filters | Adapt the newer unified chemical API to all applicable 1.20.1 chemical types; transfer/filter/persist without mixing or losing contents | Pending |
 | Mekanism heat conduits | Heat transfer, equilibrium, disconnect/reconnect, unload/reload | Pending |
-| Refined Storage conduits | 1.x network integration, connectivity, split/merge, saved nodes and missing-RS loading | Pending |
+| Refined Storage conduits | 1.x network integration, connectivity, split/merge, saved nodes and missing-RS loading | Partial. Native controller routing, split/reconnect and bundle reload pass. Packaged migration keeps the controller-to-drive route and both owners across chunk reload and server restart. The core packaged profile passes without Refined Storage. [Cycle 053](cycle-053.md) |
 
 ## Shared state and presentation
 

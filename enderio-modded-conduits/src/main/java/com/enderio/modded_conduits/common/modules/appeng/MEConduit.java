@@ -4,6 +4,7 @@ import appeng.capabilities.Capabilities;
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.IInWorldGridNodeHost;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.util.AEColor;
 import com.enderio.enderio.api.EnderIORegistries;
@@ -13,6 +14,7 @@ import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.connection.ConnectionReader;
 import com.enderio.enderio.api.conduits.connection.config.ConnectionConfigType;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
+import com.enderio.enderio.api.conduits.network.node.NodeData;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.content.conduits.ConduitBlockItem;
 import com.enderio.modded_conduits.config.ModdedConduitsConfig;
@@ -22,6 +24,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
@@ -33,6 +36,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 public record MEConduit(ResourceLocation texture, Component description, AEColor color, boolean isDense)
@@ -80,13 +84,14 @@ public record MEConduit(ResourceLocation texture, Component description, AEColor
 
     @Override
     public boolean canConnectToBlock(Level level, ConduitCapabilityAccessor capabilityAccessor, BlockPos conduitPos, Direction direction) {
-        // Check for a host cap ourselves. This makes sure we start listening for capability invalidation.
+        var neighbor = conduitPos.relative(direction);
+        // Cache the Forge capability for invalidation. AE2 blocks can also implement the host interface directly.
         var host = capabilityAccessor.getCapability(Capabilities.IN_WORLD_GRID_NODE_HOST, direction, null);
-        if (host == null) {
+        if (host == null && !(level.getBlockEntity(neighbor) instanceof IInWorldGridNodeHost)) {
             return false;
         }
 
-        return GridHelper.getExposedNode(level, conduitPos.relative(direction), direction.getOpposite()) != null;
+        return GridHelper.getExposedNode(level, neighbor, direction.getOpposite()) != null;
     }
 
     @Override
@@ -105,6 +110,11 @@ public record MEConduit(ResourceLocation texture, Component description, AEColor
         if (player != null) {
             mainNode.setOwningPlayer(player);
         }
+        var exposedSides = EnumSet.noneOf(Direction.class);
+        for (var side : Direction.values()) {
+            if (node.isConnectedTo(side)) exposedSides.add(side);
+        }
+        mainNode.setExposedOnSides(exposedSides);
 
         GridHelper.onFirstTick(level.getBlockEntity(pos), blockEntity -> {
             if (!mainNode.isReady()) {
@@ -176,7 +186,12 @@ public record MEConduit(ResourceLocation texture, Component description, AEColor
     @Override
     public MEConduitConnectionConfig convertConnection(boolean isInsert, boolean isExtract, DyeColor inputChannel,
             DyeColor outputChannel, RedstoneControl redstoneControl, DyeColor redstoneChannel) {
-        return new MEConduitConnectionConfig(isInsert);
+        return new MEConduitConnectionConfig(isInsert || isExtract);
+    }
+
+    @Override
+    public NodeData readForge6NodeData(CompoundTag tag) {
+        return new MEConduitNodeData(tag);
     }
 
     @Override

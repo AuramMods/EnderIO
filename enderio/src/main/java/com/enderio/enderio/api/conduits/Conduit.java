@@ -7,6 +7,7 @@ import com.enderio.enderio.api.conduits.connection.ConnectionReader;
 import com.enderio.enderio.api.conduits.connection.config.ConnectionConfig;
 import com.enderio.enderio.api.conduits.connection.path.ConnectionPathPropertyConsumer;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
+import com.enderio.enderio.api.conduits.network.node.NodeData;
 import com.enderio.enderio.api.conduits.network.node.legacy.ConduitDataAccessor;
 import com.enderio.enderio.api.conduits.screen.ConduitScreenType;
 import com.enderio.enderio.api.io.RedstoneControl;
@@ -207,6 +208,11 @@ public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, 
     default void onRemoved(ConduitNode node, Level level, BlockPos pos) {
     }
 
+    /** Release live state when the chunk unloads and the saved conduit remains in place. */
+    default void onChunkUnloaded(ConduitNode node, Level level, BlockPos pos) {
+        onRemoved(node, level, pos);
+    }
+
     /** Copy owned resources into a dropped conduit item, without mutating the live node. */
     default void saveItemData(ConduitNode node, ItemStack stack) {
     }
@@ -305,6 +311,12 @@ public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, 
     // endregion
 
     // region Legacy Conduit Connections
+
+    /** Decode native node data saved by Ender IO 6.x on Forge 1.20.1. */
+    @Nullable
+    default NodeData readForge6NodeData(CompoundTag tag) {
+        return null;
+    }
 
     /**
      * Convert old conduit connection data into the new connection config.

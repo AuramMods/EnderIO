@@ -12,9 +12,12 @@ import com.refinedmods.refinedstorage.apiimpl.API;
 import com.refinedmods.refinedstorage.capability.NetworkNodeProxyCapability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -31,10 +34,11 @@ public class RSConduitNodeData implements NodeData {
 
     private CompoundTag savedNode;
     @Nullable private ConduitRSNode mainNode;
+    @Nullable private ConduitRSNode pendingUnload;
     @Nullable private INetworkNodeProxy<ConduitRSNode> proxy;
 
     public RSConduitNodeData() { this(new CompoundTag()); }
-    private RSConduitNodeData(CompoundTag savedNode) { this.savedNode = savedNode.copy(); }
+    RSConduitNodeData(CompoundTag savedNode) { this.savedNode = savedNode.copy(); }
 
     private CompoundTag saveNode() {
         return mainNode == null ? savedNode.copy() : mainNode.write(new CompoundTag());
@@ -46,6 +50,8 @@ public class RSConduitNodeData implements NodeData {
     public void initialize(ConduitNode conduitNode, Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel serverLevel)) return;
         if (mainNode != null) remove(level);
+        // RS identifies graph entries by position. Retire any old entry before exposing the replacement.
+        finishUnload(serverLevel);
         var manager = API.instance().getNetworkNodeManager(serverLevel);
         var stored = manager.getNode(pos);
         var node = stored instanceof ConduitRSNode existing ? existing : new ConduitRSNode(level, pos);
@@ -68,6 +74,14 @@ public class RSConduitNodeData implements NodeData {
     }
 
     public void remove(Level level) {
+        remove(level, false);
+    }
+
+    public void unload(Level level) {
+        remove(level, true);
+    }
+
+    private void remove(Level level, boolean unloading) {
         var node = mainNode;
         if (node == null) return;
         savedNode = saveNode();
@@ -80,26 +94,51 @@ public class RSConduitNodeData implements NodeData {
                 manager.removeNode(node.getPos());
                 manager.markForSaving();
             }
-            invalidateNetworks(level, node);
+            if (unloading) {
+                // RS walks block entities synchronously, which can resurrect a chunk while it unloads.
+                pendingUnload = node;
+                var server = serverLevel.getServer();
+                server.tell(new TickTask(server.getTickCount(), () -> {
+                    if (pendingUnload == node) finishUnload(serverLevel);
+                }));
+            } else {
+                invalidateNetworks(serverLevel, node);
+            }
         }
     }
 
+    private void finishUnload(ServerLevel level) {
+        var node = pendingUnload;
+        pendingUnload = null;
+        if (node != null) invalidateNetworks(level, node);
+    }
+
     private static void invalidateNetworks(Level level, ConduitRSNode node) {
-        if (level.isClientSide) return;
+        if (!(level instanceof ServerLevel serverLevel)) return;
         var networks = new HashSet<INetwork>();
         if (node.getNetwork() != null) networks.add(node.getNetwork());
         for (var side : Direction.values()) {
             var pos = node.getPos().relative(side);
-            if (!level.isLoaded(pos)) continue;
-            var blockEntity = level.getBlockEntity(pos);
+            var blockEntity = getLoadedBlockEntity(serverLevel, pos);
             if (blockEntity == null) continue;
             var neighbor = blockEntity.getCapability(NetworkNodeProxyCapability.NETWORK_NODE_PROXY_CAPABILITY).orElse(null);
             if (neighbor != null && neighbor.getNode().getNetwork() != null) networks.add(neighbor.getNode().getNetwork());
         }
         for (var network : networks) {
-            network.getNodeGraph().runActionWhenPossible(current -> current.getNodeGraph()
-                .invalidate(Action.PERFORM, current.getLevel(), current.getPosition()));
+            network.getNodeGraph().runActionWhenPossible(current -> {
+                if (current.getLevel() instanceof ServerLevel currentLevel &&
+                    getLoadedBlockEntity(currentLevel, current.getPosition()) != null) {
+                    current.getNodeGraph().invalidate(Action.PERFORM, currentLevel, current.getPosition());
+                }
+            });
         }
+    }
+
+    private static @Nullable BlockEntity getLoadedBlockEntity(ServerLevel level, BlockPos pos) {
+        var chunk = level.getChunkSource().getChunkNow(
+            SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
+        var blockEntity = chunk == null ? null : chunk.getBlockEntities().get(pos);
+        return blockEntity == null || blockEntity.isRemoved() ? null : blockEntity;
     }
 
     @Override public NodeDataType<?> type() { return TYPE; }

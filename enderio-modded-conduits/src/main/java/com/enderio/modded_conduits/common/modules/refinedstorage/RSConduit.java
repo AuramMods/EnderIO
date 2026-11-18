@@ -6,11 +6,13 @@ import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.connection.ConnectionReader;
 import com.enderio.enderio.api.conduits.connection.config.ConnectionConfigType;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
+import com.enderio.enderio.api.conduits.network.node.NodeData;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.refinedmods.refinedstorage.capability.NetworkNodeProxyCapability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
@@ -66,9 +68,19 @@ public record RSConduit(ResourceLocation texture, Component description)
     }
 
     @Override
+    public void onChunkUnloaded(ConduitNode node, Level level, BlockPos pos) {
+        node.getOrCreateNodeData(RSConduitNodeData.TYPE).unload(level);
+    }
+
+    @Override
     public void onConnectionsUpdated(ConduitNode node, Level level, BlockPos pos, Set<Direction> connectedSides) {
         var data = node.getOrCreateNodeData(RSConduitNodeData.TYPE);
         data.update(level, connectedSides);
+    }
+
+    @Override
+    public NodeData readForge6NodeData(CompoundTag tag) {
+        return new RSConduitNodeData(tag);
     }
 
     @Override

@@ -50,6 +50,20 @@ public class Fixture {
                 context.getSource().sendSuccess(() -> Component.literal("Legacy conduit fixture created"), false);
                 return 1;
             }));
+        event.getDispatcher().register(Commands.literal("port_legacy_storage_conduits").requires(source -> source.hasPermission(4))
+            .executes(context -> {
+                var level = context.getSource().getLevel();
+                place(level, new BlockPos(1087, 79, 4), "me_conduit");
+                place(level, new BlockPos(1088, 79, 4), "me_conduit");
+                place(level, new BlockPos(1087, 79, 7), "dense_me_conduit");
+                place(level, new BlockPos(1088, 79, 7), "dense_me_conduit");
+                place(level, new BlockPos(1087, 79, 10), "me_conduit");
+                place(level, new BlockPos(1088, 79, 10), "dense_me_conduit");
+                place(level, new BlockPos(1087, 79, 13), "refined_storage_conduit");
+                place(level, new BlockPos(1088, 79, 13), "refined_storage_conduit");
+                context.getSource().sendSuccess(() -> Component.literal("Legacy storage conduits created"), false);
+                return 1;
+            }));
         event.getDispatcher().register(Commands.literal("port_legacy_travel").requires(source -> source.hasPermission(4))
             .executes(context -> {
                 var level = context.getSource().getLevel();
@@ -151,14 +165,17 @@ public class Fixture {
     }
 
     private static ConduitBlockEntity place(ServerLevel level, int x) {
-        var support = new BlockPos(1008 + x, 79, 8);
+        return place(level, new BlockPos(1008 + x, 79, 8), "item_conduit");
+    }
+
+    private static ConduitBlockEntity place(ServerLevel level, BlockPos support, String item) {
         var player = FakePlayerFactory.getMinecraft(level);
-        var stack = stack("item_conduit");
+        var stack = stack(item);
         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
         var hit = new BlockHitResult(Vec3.atCenterOf(support).add(0, 0.5, 0), Direction.UP, support, false);
         var context = new BlockPlaceContext(player, InteractionHand.MAIN_HAND, stack, hit);
         if (!((BlockItem) stack.getItem()).place(context).consumesAction()) {
-            throw new IllegalStateException("Could not place old item conduit at " + x);
+            throw new IllegalStateException("Could not place old " + item + " at " + support);
         }
         return (ConduitBlockEntity) level.getBlockEntity(support.above());
     }

@@ -296,7 +296,8 @@ public class ConduitNetworkSavedData extends SavedData {
 
             if (conduit.isPresent()) {
                 ListTag graphsForTypeTag = typedGraphTag.getList(KEY_GRAPHS, Tag.TAG_COMPOUND);
-                deserializeGraphs(lookupProvider, conduit.get(), graphsForTypeTag, savedData);
+                deserializeGraphs(lookupProvider, conduit.get(), graphsForTypeTag, savedData,
+                    Forge6ConduitData.rebuildGraphFromBundles(savedType));
             } else {
                 LOGGER.warn("Skipping graph for missing conduit: {}", conduitKey);
             }
@@ -306,7 +307,7 @@ public class ConduitNetworkSavedData extends SavedData {
     }
 
     private static void deserializeGraphs(HolderLookup.Provider lookupProvider, Holder<Conduit<?, ?>> conduit,
-            ListTag graphs, ConduitNetworkSavedData savedData) {
+            ListTag graphs, ConduitNetworkSavedData savedData, boolean rebuildForge6Graphs) {
         for (Tag tag1 : graphs) {
             CompoundTag graphTag = (CompoundTag) tag1;
 
@@ -317,6 +318,9 @@ public class ConduitNetworkSavedData extends SavedData {
             // saved.
             if (graphObjectsTag.isEmpty()) {
                 // TODO: Warning or something?
+                continue;
+            }
+            if (rebuildForge6Graphs && graphObjectsTag.getCompound(0).contains("BlockPos", Tag.TAG_LONG)) {
                 continue;
             }
 

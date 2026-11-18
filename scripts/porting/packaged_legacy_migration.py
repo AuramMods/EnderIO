@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import shutil
 import sys
+import time
 
 sys.dont_write_bytecode = True
 from packaged_server_smoke import FORGE, ROOT, Server, digest
@@ -23,6 +24,7 @@ CORE_CONDUITS = [(kind + "_conduit", kind) for kind in
 INTEGRATION_CONDUITS = [(kind + "_conduit", variant) for kind, variant in
                         (("me", "me"), ("dense_me", "dense_me"), ("refined_storage", "rs"), ("chemical", "chemical"),
                          ("pressurized_chemical", "pressurized_chemical"), ("ender_chemical", "ender_chemical"), ("heat", "heat"))]
+STORAGE_ROUTES = {4: ("me", "me"), 7: ("dense_me", "dense_me"), 10: ("me", "dense_me"), 13: ("rs", "rs")}
 
 
 def tank_state(x, legacy):
@@ -35,7 +37,7 @@ def tank_state(x, legacy):
     return (f'{{{key}:{{Tanks:[{{{entry}}}]}},Items:{{Items:[{{Slot:1,id:"minecraft:diamond",Count:{count}}}]}}}}')
 
 
-def exercise(server, stage, results, conduit_fixture, loose_conduits):
+def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits):
     server.wait('For help, type "help"')
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
@@ -66,6 +68,8 @@ def exercise(server, stage, results, conduit_fixture, loose_conduits):
         exercise_conduits(server, stage, results)
     if loose_conduits:
         exercise_loose_conduits(server, stage, results, loose_conduits)
+    if placed_storage_conduits:
+        exercise_storage_conduits(server, stage, results)
     server.command("save-all flush")
 
 
@@ -155,10 +159,62 @@ def exercise_conduits(server, stage, results):
                         f'unless data block {downstream} Items[{{id:"minecraft:emerald"}}]', results)
 
 
-def run_server(directory, java, stage, report, conduit_fixture, loose_conduits):
+def exercise_storage_conduits(server, stage, results):
+    legacy = stage == "legacy"
+    chunks = "1072 0 1103 15"
+    server.command(f"forceload add {chunks}")
+    server.assert_state(f"storage_chunks_loaded_{stage}", "if loaded 1087 80 4 if loaded 1088 80 4", results)
+    if legacy:
+        server.command("fill 1086 79 3 1089 79 14 minecraft:stone")
+        for z in (4, 7, 10):
+            server.command(f"setblock 1086 80 {z} ae2:creative_energy_cell")
+            server.command(f"setblock 1089 80 {z} ae2:drive")
+        server.command("setblock 1086 80 13 refinedstorage:creative_controller")
+        server.command("setblock 1089 80 13 refinedstorage:disk_drive")
+        output = server.command("port_legacy_storage_conduits")
+        if "Legacy storage conduits created" not in output:
+            raise AssertionError(output)
+
+    if stage == "converted":
+        assert_storage_routes(server, stage, results)
+        server.command(f"forceload remove {chunks}")
+        server.assert_state("storage_chunks_unloaded", "unless loaded 1087 80 4 unless loaded 1088 80 4", results, timeout=40)
+        server.command(f"forceload add {chunks}")
+        server.assert_state("storage_chunks_reloaded", "if loaded 1087 80 4 if loaded 1088 80 4", results)
+        stage = "chunk_reload"
+    assert_storage_routes(server, stage, results)
+
+
+def assert_storage_routes(server, stage, results):
+    legacy = stage == "legacy"
+    for z in STORAGE_ROUTES:
+        for x in range(1086, 1090):
+            server.command(f"data get block {x} 80 {z}")
+    for z, variants in STORAGE_ROUTES.items():
+        for x, side, variant in zip((1087, 1088), ("east", "west"), variants):
+            pos = f"{x} 80 {z}"
+            old_id = "refined_storage" if variant == "rs" else variant
+            conditions = (f'if data block {pos} {{ConduitBundle:{{Types:["enderio:{old_id}"]}}}}' if legacy else
+                          f'if data block {pos} {{Conduits:["enderio:{variant}"]}} '
+                          f'if data block {pos} Connections[0][{{Side:"{side}",Status:"connected_conduit"}}]')
+            server.assert_state(f"storage_bundle_{x}_{z}_{stage}", conditions, results)
+    command = "port_storage_native seed_legacy_owners" if legacy else "port_storage_native"
+    deadline = time.monotonic() + 12
+    name = f"native_storage_routes_and_owners_{stage}"
+    while time.monotonic() < deadline:
+        output = server.command(command)
+        if "Native AE2 and RS storage routes and owners verified" in output:
+            results.append({"assertion": name, "passed": True, "command": command})
+            return
+        time.sleep(0.2)
+    results.append({"assertion": name, "passed": False, "command": command})
+    raise AssertionError(f"{name} failed; see {server.log_path}")
+
+
+def run_server(directory, java, stage, report, conduit_fixture, loose_conduits, placed_storage_conduits):
     server = Server(directory, java, stage)
     try:
-        exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits)
+        exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits, placed_storage_conduits)
     finally:
         exit_status = server.stop()
         errors = [line.strip() for line in server.lines if "/ERROR]" in line or "/FATAL]" in line]
@@ -181,6 +237,8 @@ def main():
     parser.add_argument("--conduit-fixture", type=Path, help="Fixture mod built with legacy_fixture/build.py")
     parser.add_argument("--loose-conduits", action="store_true", help="Migrate the six core conduit item stacks")
     parser.add_argument("--loose-integration-conduits", action="store_true", help="Include AE2, Mekanism and Refined Storage conduit items")
+    parser.add_argument("--placed-storage-conduits", action="store_true",
+                        help="Migrate placed AE2 and RS routes with the legacy fixture and storage probe")
     parser.add_argument("--mod", action="append", type=Path, default=[], help="Install a Forge dependency in both profiles")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
@@ -216,10 +274,10 @@ def main():
         if args.conduit_fixture:
             shutil.copyfile(args.conduit_fixture, legacy / "mods" / "port-legacy-fixture.jar")
             report["fixtureSha256"] = digest(args.conduit_fixture)
-        run_server(legacy, args.java, "legacy", report, args.conduit_fixture, loose_conduits)
+        run_server(legacy, args.java, "legacy", report, args.conduit_fixture, loose_conduits, args.placed_storage_conduits)
         shutil.copytree(legacy / WORLD, converted / WORLD)
-        run_server(converted, args.java, "converted", report, args.conduit_fixture, loose_conduits)
-        run_server(converted, args.java, "restart", report, args.conduit_fixture, loose_conduits)
+        run_server(converted, args.java, "converted", report, args.conduit_fixture, loose_conduits, args.placed_storage_conduits)
+        run_server(converted, args.java, "restart", report, args.conduit_fixture, loose_conduits, args.placed_storage_conduits)
         report["passed"] = True
     finally:
         output = directory / "legacy-migration-results.json"

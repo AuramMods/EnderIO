@@ -1,0 +1,19 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+[[mods]]
+modId="port_storage_probe"
+version="1"
+displayName="Ender IO storage migration probe"
+[[dependencies.port_storage_probe]]
+modId="ae2"
+mandatory=true
+versionRange="[15.4.12]"
+ordering="AFTER"
+side="SERVER"
+[[dependencies.port_storage_probe]]
+modId="refinedstorage"
+mandatory=true
+versionRange="[1.12.4]"
+ordering="AFTER"
+side="SERVER"

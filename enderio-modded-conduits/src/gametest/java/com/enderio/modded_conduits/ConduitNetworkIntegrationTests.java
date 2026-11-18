@@ -1,5 +1,7 @@
 package com.enderio.modded_conduits;
 
+import appeng.api.networking.GridHelper;
+import appeng.core.definitions.AEBlocks;
 import com.enderio.enderio.api.EnderIORegistries;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.content.conduits.ConduitBlockItem;
@@ -135,6 +137,31 @@ public class ConduitNetworkIntegrationTests {
                 helper.assertTrue(meNode(helper, conduit, 2).getGrid() == meNode(helper, conduit, 4).getGrid(),
                     "Replacing the ME conduit did not merge native grids");
                 helper.assertTrue(meNode(helper, conduit, 3) != removed.get(), "ME replacement reused a destroyed node");
+            })
+            .thenSucceed();
+    }
+
+    @GameTest(template = "network", timeoutTicks = 160)
+    public static void meConduitsPowerNativeEndpoints(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var conduit = level.registryAccess().registryOrThrow(EnderIORegistries.Keys.CONDUIT)
+            .getHolderOrThrow(com.enderio.modded_conduits.common.modules.appeng.AE2ConduitsModule.NORMAL);
+        helper.startSequence()
+            .thenExecute(() -> {
+                helper.setBlock(1, 1, 2, AEBlocks.CREATIVE_ENERGY_CELL.block());
+                helper.setBlock(5, 1, 2, AEBlocks.DRIVE.block());
+            })
+            .thenIdle(5)
+            .thenExecute(() -> {
+                for (int x = 2; x <= 4; x++) place(helper, conduit, x);
+            })
+            .thenIdle(12)
+            .thenExecute(() -> {
+                var source = GridHelper.getExposedNode(level, helper.absolutePos(new BlockPos(1, 1, 2)), Direction.EAST);
+                var drive = GridHelper.getExposedNode(level, helper.absolutePos(new BlockPos(5, 1, 2)), Direction.WEST);
+                helper.assertTrue(source != null && drive != null, "The native AE2 endpoints lack exposed grid nodes");
+                helper.assertTrue(source.getGrid() == drive.getGrid() && drive.isActive(),
+                    "Native creative energy cell did not power the drive through the conduit route");
             })
             .thenSucceed();
     }

@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status remains in progress. Cycle 045 reproduced all six distributable jars, and cycle 046 verified live data-map updates and reconnects. Cycles 048 through 051 verified migrated machine state, item routing, travel anchors, powered item charge and carried fluid tanks. Cycle 052 passed 78 ordinary JUnit tests, 417 native GameTests and 135 packaged server assertions across two migration profiles. Loose core and integration conduit stacks from 6.2.18-beta retain their type, count and custom NBT through conversion and restart. Placed integration conduit migration, other historical conversion gaps, an intermittent login timeout and full gameplay and integration parity remain open.
+Prepared on 2026-11-17. Status remains in progress. Cycle 045 reproduced all six distributable jars, and cycle 046 verified live data-map updates and reconnects. Cycles 048 through 052 verified migrated machine and item state, item routing, travel anchors, powered item charge, carried fluid tanks and loose conduit stacks. Cycle 053 passed 78 ordinary JUnit tests, 418 native GameTests and 161 packaged server assertions across two migration profiles. Placed AE2 and Refined Storage routes and their owners survive conversion, chunk reload and restart. Placed Mekanism conduit migration, other historical conversion gaps, an intermittent login timeout and full gameplay and integration parity remain open.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -213,7 +213,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 051: historical carried fluid tanks | Read and transfer tagged liquid from the original tank item format. Normalize legacy placement data and preserve machine settings | Full build passes 78 ordinary unit and 415 native tests. The packaged client and server pass 19 and 18 checks respectively across direct placement, partial transfer, full drainage and restart. [Evidence and commands](porting/1.20.1/cycle-051.md) | `8724381e5` |
 
-| 052: historical conduit item stacks | Remap old conduit item IDs and recover their variants in vanilla and machine inventories | Full build passes 78 ordinary unit and 417 native tests. Packaged core and integration profiles pass 72 and 63 assertions respectively. All six migrated core variants pass native placement. [Evidence and commands](porting/1.20.1/cycle-052.md) | Commit containing cycle 052 |
+| 052: historical conduit item stacks | Remap old conduit item IDs and recover their variants in vanilla and machine inventories | Full build passes 78 ordinary unit and 417 native tests. Packaged core and integration profiles pass 72 and 63 assertions respectively. All six migrated core variants pass native placement. [Evidence and commands](porting/1.20.1/cycle-052.md) | `7867ed3c9` |
+
+| 053: historical placed storage conduits | Restore ME and Dense ME routes, RS graph and native owners. Correct AE2 endpoint checks and RS unload invalidation | Full build passes 78 ordinary unit and 418 native tests. Packaged storage and core profiles pass 89 and 72 assertions. The saved graph has exactly two correctly typed nodes and one edge for each storage route. [Evidence and commands](porting/1.20.1/cycle-053.md) | Commit containing cycle 053 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

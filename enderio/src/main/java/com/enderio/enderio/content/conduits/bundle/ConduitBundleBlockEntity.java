@@ -1310,7 +1310,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
 
             for (var conduit : conduits) {
                 var node = conduitNodes.get(conduit);
-                conduit.value().onRemoved(node, level, getBlockPos());
+                conduit.value().onChunkUnloaded(node, level, getBlockPos());
                 node.detach();
                 savedData.returnNode(conduit, this.worldPosition, node);
             }
@@ -1961,6 +1961,9 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
                 var savedItemData = Forge6ConduitData.itemData(node);
                 itemData.put(found, savedItemData);
                 lazyNodeData.put(found, savedItemData.toNodeData());
+            } else {
+                var currentNode = found.value().readForge6NodeData(node);
+                if (currentNode != null) lazyNodeData.put(found, currentNode);
             }
 
             for (var side : Direction.values()) {

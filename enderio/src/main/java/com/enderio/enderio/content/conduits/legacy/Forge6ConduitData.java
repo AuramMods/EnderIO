@@ -2,6 +2,7 @@ package com.enderio.enderio.content.conduits.legacy;
 
 import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.common.registries.ItemDeferredRegister;
+import com.enderio.enderio.api.EnderIORegistries;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.api.conduits.network.node.NodeData;
@@ -59,7 +60,16 @@ public final class Forge6ConduitData {
     private Forge6ConduitData() {}
 
     public static @Nullable ResourceKey<Conduit<?, ?>> conduitKey(String id) {
-        return CONDUITS.get(id);
+        return switch (id) {
+            case "enderio:me", "enderio:dense_me", "enderio:refined_storage" ->
+                ResourceKey.create(EnderIORegistries.Keys.CONDUIT, INTEGRATION_ITEMS.get(id + "_conduit"));
+            default -> CONDUITS.get(id);
+        };
+    }
+
+    public static boolean rebuildGraphFromBundles(String id) {
+        // 6.x saved the same mixed AE2 graph under both tiers without storing each node's tier.
+        return id.equals("enderio:me") || id.equals("enderio:dense_me");
     }
 
     public static void registerItemAliases(ItemDeferredRegister items, ResourceLocation canonicalItem) {
@@ -68,7 +78,7 @@ public final class Forge6ConduitData {
     }
 
     public static @Nullable ResourceLocation itemConduitId(String id) {
-        var core = conduitKey(id);
+        var core = CONDUITS.get(id);
         return core == null ? INTEGRATION_ITEMS.get(id) : core.location();
     }
 
@@ -150,6 +160,7 @@ public final class Forge6ConduitData {
     }
 
     public static @Nullable NodeData node(Holder<Conduit<?, ?>> conduit, CompoundTag tag) {
-        return conduit.value().type() == EIOConduitTypes.ITEM.get() ? itemData(tag).toNodeData() : null;
+        return conduit.value().type() == EIOConduitTypes.ITEM.get() ? itemData(tag).toNodeData()
+            : conduit.value().readForge6NodeData(tag);
     }
 }

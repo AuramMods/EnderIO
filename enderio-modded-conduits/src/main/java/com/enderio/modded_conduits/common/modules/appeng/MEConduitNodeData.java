@@ -31,7 +31,7 @@ public final class MEConduitNodeData implements NodeData, IInWorldGridNodeHost {
     public MEConduitNodeData() {
     }
 
-    private MEConduitNodeData(CompoundTag savedMainNode) {
+    MEConduitNodeData(CompoundTag savedMainNode) {
         this.savedMainNode = savedMainNode == null ? null : savedMainNode.copy();
     }
 
