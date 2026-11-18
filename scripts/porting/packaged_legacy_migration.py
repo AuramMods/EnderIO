@@ -49,7 +49,7 @@ def tank_state(x, legacy):
 
 
 def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits,
-             placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon):
+             placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon, stirling_generator):
     server.wait('For help, type "help"')
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
@@ -90,6 +90,8 @@ def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_sto
         exercise_lights(server, stage, results)
     if primitive_silicon:
         exercise_primitive_smelter(server, stage, results, primitive_silicon)
+    if stirling_generator:
+        exercise_stirling_generator(server, stage, results)
     server.command("save-all flush")
 
 
@@ -505,12 +507,39 @@ def assert_primitive_work(server, machine, silicon, progress, stage, results):
     results.append({"assertion": f"primitive_retains_burn_{stage}", "passed": True, "burnTime": burn_time})
 
 
+def exercise_stirling_generator(server, stage, results):
+    machine = "1160 80 8"
+    server.command("forceload add 1160 8")
+    legacy = stage == "legacy"
+    if legacy:
+        server.command(f"setblock {machine} enderio:stirling_generator[facing=east]")
+        server.command(f'data merge block {machine} {{Energy:{{EnergyStored:63999}},IoConfig:{{"5":1b}},'
+                       'Items:{Size:2,Items:[{Slot:0,id:"minecraft:coal",Count:2b,tag:{PortStirling:58}},'
+                       '{Slot:1,id:"enderio:basic_capacitor",Count:1b}]}}')
+    energy_config = ('Energy:{EnergyStored:64000},IoConfig:{"5":1b},RedstoneControl:0' if legacy else
+                     'EnergyStored:64000,IOConfig:{Modes:{east:"push"}},RedstoneControl:"always_active"')
+    count = "1b" if legacy else "1"
+    server.assert_state(f"stirling_burning_and_configured_{stage}",
+                        f'if block {machine} enderio:stirling_generator[facing=east,powered=true] '
+                        f'if data block {machine} {{{energy_config},BurnDuration:600,Items:{{Size:2,Items:'
+                        f'[{{Slot:0,id:"minecraft:coal",Count:{count},tag:{{PortStirling:58}}}},'
+                        f'{{Slot:1,id:"enderio:basic_capacitor",Count:{count}}}]}}}}', results)
+    remaining = observe_int(server, machine, "BurnTime")
+    prior = [result["burnTime"] for result in results if result["assertion"].startswith("stirling_keeps_running_burn_")]
+    maximum = prior[-1] if prior else 600
+    passed = 0 < remaining <= maximum
+    results.append({"assertion": f"stirling_keeps_running_burn_{stage}", "passed": passed, "burnTime": remaining, "maximum": maximum})
+    if not passed:
+        raise AssertionError(f"Expected ongoing burn with at most {maximum} ticks left, got {remaining}")
+    server.command(f"data get block {machine}")
+
+
 def run_server(directory, java, stage, report, conduit_fixture, loose_conduits, placed_storage_conduits,
-               placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon):
+               placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon, stirling_generator):
     server = Server(directory, java, stage)
     try:
         exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits,
-                 placed_storage_conduits, placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon)
+                 placed_storage_conduits, placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon, stirling_generator)
     finally:
         exit_status = server.stop()
         errors = [line.strip() for line in server.lines if "/ERROR]" in line or "/FATAL]" in line]
@@ -542,6 +571,7 @@ def main():
     parser.add_argument("--legacy-lights", action="store_true", help="Migrate placed lights, nodes and tagged light stacks")
     parser.add_argument("--primitive-smelter", nargs="?", const="enderio:silicon", choices=("enderio:silicon", "ae2:silicon"),
                         help="Migrate a saved primitive alloy smelter job using the selected silicon item")
+    parser.add_argument("--stirling-generator", action="store_true", help="Migrate a burning Stirling generator")
     parser.add_argument("--mod", action="append", type=Path, default=[], help="Install a Forge dependency in both profiles")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
@@ -578,7 +608,8 @@ def main():
             shutil.copyfile(args.conduit_fixture, legacy / "mods" / "port-legacy-fixture.jar")
             report["fixtureSha256"] = digest(args.conduit_fixture)
         fixtures = (args.conduit_fixture, loose_conduits, args.placed_storage_conduits,
-                    args.placed_mekanism_conduits, args.extraction_upgrades, args.legacy_lights, args.primitive_smelter)
+                    args.placed_mekanism_conduits, args.extraction_upgrades, args.legacy_lights, args.primitive_smelter,
+                    args.stirling_generator)
         run_server(legacy, args.java, "legacy", report, *fixtures)
         shutil.copytree(legacy / WORLD, converted / WORLD)
         run_server(converted, args.java, "converted", report, *fixtures)

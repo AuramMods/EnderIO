@@ -13,7 +13,7 @@ parser.add_argument("--timeout", default=180, type=int)
 parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-harness/client-smoke-launch.json")
 parser.add_argument("--scenario",
                     choices=("title", "singleplayer", "multiplayer", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
-                             "primitive-smelter"),
+                             "primitive-smelter", "stirling"),
                     default="title")
 parser.add_argument("--tank", choices=("standard", "pressurized"), default="standard")
 parser.add_argument("--server", default="127.0.0.1:25641")
