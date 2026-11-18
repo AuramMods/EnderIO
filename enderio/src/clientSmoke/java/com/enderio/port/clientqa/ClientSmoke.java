@@ -11,6 +11,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.ModList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
@@ -57,6 +58,13 @@ public final class ClientSmoke {
             for (var sound : SoundSource.values()) volumes.put(sound.getName(), minecraft.options.getSoundSourceVolume(sound));
             result.put("volumes", volumes);
             result.put("renderer", GL11.glGetString(GL11.GL_RENDERER));
+            var loadedMods = new LinkedHashMap<String, Object>();
+            for (var mod : ModList.get().getMods()) {
+                loadedMods.put(mod.getModId(), Map.of("version", mod.getVersion().toString(),
+                    "file", mod.getOwningFile().getFile().getFilePath().toString()));
+            }
+            result.put("loadedMods", loadedMods);
+            var requiredMods = System.getProperty("enderio.clientqa.requiredMods", "endercore,enderio").split(",");
             var models = new LinkedHashMap<String, Boolean>();
             var modelManager = minecraft.getModelManager();
             // Only top-level baked block-state/item models are stored in ModelManager;
@@ -78,6 +86,7 @@ public final class ClientSmoke {
                 && minecraft.options.narrator().get() == NarratorStatus.OFF
                 && volumes.values().stream().allMatch(volume -> volume == 0.0F)
                 && models.values().stream().allMatch(Boolean::booleanValue)
+                && java.util.Arrays.stream(requiredMods).allMatch(loadedMods::containsKey)
                 && Boolean.FALSE.equals(result.get("visible")) && Boolean.FALSE.equals(result.get("focused"))
                 && Boolean.FALSE.equals(result.get("fullscreen")) && Boolean.FALSE.equals(result.get("cursorCaptured"))
                 && ((Long) result.get("distinctPixels")) > 100;

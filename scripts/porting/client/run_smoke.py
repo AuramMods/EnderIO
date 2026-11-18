@@ -10,11 +10,12 @@ ROOT = Path(__file__).resolve().parents[3]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--output", required=True, type=Path)
 parser.add_argument("--timeout", default=180, type=int)
+parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-harness/client-smoke-launch.json")
 args = parser.parse_args()
 output = args.output.resolve()
 output.mkdir(parents=True, exist_ok=False)
 harness = json.loads((ROOT / "build/port-client-harness/harness.json").read_text())
-launch = json.loads((ROOT / "build/port-client-harness/client-smoke-launch.json").read_text())
+launch = json.loads(args.launch.read_text())
 arguments = launch["arguments"]
 arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.output=" + str(output))
 environment = os.environ.copy()

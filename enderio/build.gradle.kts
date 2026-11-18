@@ -483,6 +483,22 @@ val prepareClientSmokeProfile = tasks.register<PrepareTestProfile>("prepareClien
 }
 tasks.named("runClientSmoke") { dependsOn(prepareClientSmokeProfile) }
 
+// Standalone test instrumentation for an installed Forge client. Never bundled in Ender IO.
+val clientSmokeJar = tasks.register<Jar>("clientSmokeJar") {
+    archiveBaseName = "enderio-client-qa"
+    archiveVersion = ""
+    destinationDirectory = layout.buildDirectory.dir("test-libraries/dev")
+    from(sourceSets["clientSmoke"].output)
+}
+tasks.register<net.neoforged.moddevgradle.legacyforge.tasks.RemapJar>("reobfClientSmokeJar") {
+    input = clientSmokeJar.flatMap { it.archiveFile }
+    archiveBaseName = "enderio-client-qa"
+    archiveVersion = ""
+    destinationDirectory = layout.buildDirectory.dir("test-libraries")
+    libraries.from(sourceSets["clientSmoke"].compileClasspath)
+    obfuscation.configureNamedToSrgOperation(remapOperation)
+}
+
 // Export the configured launch so the native focus observer can own the Java process directly.
 // Only the run's explicit environment entries are exported, never inherited shell credentials.
 tasks.register("exportClientSmokeLaunch") {
