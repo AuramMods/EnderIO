@@ -3,6 +3,7 @@ package com.enderio.enderio.mixin;
 import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.content.broken_spawner.BrokenSpawnerItem;
 import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
+import com.enderio.enderio.content.filters.soul.EnderSoulFilterItem;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.foundation.io.Forge6MachineItemData;
 import com.enderio.enderio.foundation.soul.Forge6SoulData;
@@ -29,6 +30,14 @@ public abstract class ItemStackLoadMixin {
         }
         if (id.equals("enderio:xp_obelisk")) {
             Forge6MachineItemData.restoreFluidMachineItem(stack);
+            return;
+        }
+        if (id.equals("enderio:aversion_obelisk")) {
+            Forge6MachineItemData.restoreAversionItem(stack);
+            return;
+        }
+        if (stack.getItem() instanceof EnderSoulFilterItem) {
+            Forge6SoulData.restoreFilterItem(stack);
             return;
         }
         var type = Forge6ConduitData.itemConduitId(id);

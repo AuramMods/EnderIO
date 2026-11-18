@@ -1,11 +1,13 @@
 package com.enderio.enderio.foundation.soul;
 
 import com.enderio.core.common.network.menu.SyncSlot;
+import com.enderio.core.common.network.menu.payload.CompoundTagSlotPayload;
 import com.enderio.core.common.network.menu.payload.ListSlotPayload;
 import com.enderio.core.common.network.menu.payload.ResourceLocationSlotPayload;
 import com.enderio.core.common.network.menu.payload.SlotPayload;
 import com.enderio.enderio.api.soul.Soul;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -83,10 +85,9 @@ public abstract class StoredEntityDataSyncSlot implements SyncSlot {
             return new ListSlotPayload(List.of());
         }
 
-        // TODO: Need to be able to send the entity tag.
-        // Honestly feels like a minor rework is required to add custom payloads instead of combining them.
         return new ListSlotPayload(List.of(
-            new ResourceLocationSlotPayload(currentValue.entityTypeId())
+            new ResourceLocationSlotPayload(currentValue.entityTypeId()),
+            new CompoundTagSlotPayload(currentValue.entityTag().copy())
         ));
     }
 
@@ -96,10 +97,11 @@ public abstract class StoredEntityDataSyncSlot implements SyncSlot {
             List<SlotPayload> contents = listPayload.contents();
             if (contents.isEmpty()) {
                 set(Soul.EMPTY);
-            } else {
-                if (contents.get(0) instanceof ResourceLocationSlotPayload locationPayload) {
-                    set(Soul.of(locationPayload.value()));
-                }
+            } else if (contents.get(0) instanceof ResourceLocationSlotPayload locationPayload) {
+                var type = BuiltInRegistries.ENTITY_TYPE.getOptional(locationPayload.value());
+                var tag = contents.size() > 1 && contents.get(1) instanceof CompoundTagSlotPayload tagPayload
+                    ? tagPayload.value().copy() : new CompoundTag();
+                set(type.map(entityType -> new Soul(entityType, tag)).orElse(Soul.EMPTY));
             }
         }
     }

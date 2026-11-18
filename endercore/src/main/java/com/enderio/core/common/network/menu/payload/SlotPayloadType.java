@@ -13,7 +13,8 @@ public enum SlotPayloadType {
     STRING(() -> StringSlotPayload.STREAM_CODEC), BOOL(() -> BoolSlotPayload.STREAM_CODEC),
     BLOCK_POS(() -> BlockPosSlotPayload.STREAM_CODEC), ITEM_STACK(() -> ItemStackSlotPayload.STREAM_CODEC),
     FLUID_STACK(() -> FluidStackSlotPayload.STREAM_CODEC), RESOURCE_LOCATION(() -> ResourceLocationSlotPayload.STREAM_CODEC),
-    LIST(() -> ListSlotPayload.STREAM_CODEC), PAIR(() -> PairSlotPayload.STREAM_CODEC);
+    LIST(() -> ListSlotPayload.STREAM_CODEC), PAIR(() -> PairSlotPayload.STREAM_CODEC),
+    COMPOUND_TAG(() -> CompoundTagSlotPayload.STREAM_CODEC);
 
     private static final SlotPayloadType[] VALUES = values();
     private final Supplier<PacketCodec<? extends SlotPayload>> streamCodecSupplier;

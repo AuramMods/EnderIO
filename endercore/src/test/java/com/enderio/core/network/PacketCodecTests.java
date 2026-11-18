@@ -9,6 +9,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.EncoderException;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
@@ -110,6 +111,19 @@ class PacketCodecTests {
         assertEquals(client, roundTrip(ClientboundSyncSlotDataPacket.STREAM_CODEC, client));
         var server = new ServerboundSetSyncSlotDataPacket(109, (short) 7, new BoolSlotPayload(true));
         assertEquals(server, roundTrip(ServerboundSetSyncSlotDataPacket.STREAM_CODEC, server));
+    }
+
+    @Test
+    void clientMenuPacketPreservesNestedEntityTags() {
+        var attributes = new CompoundTag();
+        attributes.putFloat("Health", 8.5F);
+        var tag = new CompoundTag();
+        tag.put("Attributes", attributes);
+        tag.putString("CustomName", "{\"text\":\"Legacy Marker\"}");
+        var entity = new ListSlotPayload(List.of(new ResourceLocationSlotPayload(new ResourceLocation("minecraft", "pig")),
+            new CompoundTagSlotPayload(tag)));
+        var packet = new ClientboundSyncSlotDataPacket(13, List.of(new ClientboundSyncSlotDataPacket.PayloadPair((short) 4, entity)));
+        assertEquals(packet, roundTrip(ClientboundSyncSlotDataPacket.STREAM_CODEC, packet));
     }
 
     @Test

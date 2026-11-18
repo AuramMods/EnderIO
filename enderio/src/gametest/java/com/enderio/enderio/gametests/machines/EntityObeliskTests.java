@@ -17,6 +17,9 @@ import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
@@ -25,11 +28,77 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.event.ForgeEventFactory;
 
 import java.util.List;
 
 public class EntityObeliskTests {
+    @GameTest
+    public static void aversionPreservesAnExplicitZeroRangeOnWorldLoad(GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(4, 3, 3)
+            .set(1, 0, 1, EIOBlocks.AVERSION_OBELISK.get().defaultBlockState()));
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var machine = helper.getBlockEntity(1, 1, 1, AversionObeliskBlockEntity.class);
+            power(machine, 4);
+            machine.setActionRange(new ActionRange(0, false));
+            var saved = machine.saveWithFullMetadata();
+            helper.assertTrue(saved.contains(MachineNBTKeys.ACTION_RANGE), "explicit zero is different from an unconfigured range");
+
+            var legacy = saved.copy();
+            legacy.remove(MachineNBTKeys.ACTION_RANGE);
+            legacy.putInt("Range", 0);
+            legacy.putBoolean("RangeVisible", true);
+            var port = reloadAversion(saved, machine);
+            var migrated = reloadAversion(legacy, machine);
+            helper.assertTrue(port.isCapacitorInstalled() && migrated.isCapacitorInstalled(), "loaded machines have their capacitor");
+            helper.assertValueEqual(port.getActionRange(), new ActionRange(0, false), "native zero remains zero after capacitor load");
+            helper.assertValueEqual(migrated.getActionRange(), new ActionRange(0, true), "legacy zero and range visibility are restored");
+            helper.startSequence().thenSucceed();
+        });
+    }
+
+    private static AversionObeliskBlockEntity reloadAversion(CompoundTag saved, AversionObeliskBlockEntity original) {
+        var loaded = (AversionObeliskBlockEntity) BlockEntity.loadStatic(original.getBlockPos(), original.getBlockState(), saved);
+        loaded.setLevel(original.getLevel());
+        return loaded;
+    }
+
+    @GameTest
+    public static void aversionUsesTheMigratedEntityTagsForNaturalSpawns(GameplayTest test) {
+        test.registerGameTestTemplate(() -> floor(12, 3, 5)
+            .set(2, 1, 2, EIOBlocks.AVERSION_OBELISK.get().defaultBlockState()));
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var machine = helper.getBlockEntity(2, 2, 2, AversionObeliskBlockEntity.class);
+            power(machine, 6);
+            var named = mob(helper, EntityType.PIG, 6, 2, 2);
+            named.setCustomName(Component.literal("Legacy Marker"));
+
+            var legacyEntry = new CompoundTag();
+            legacyEntry.put("Entity", named.serializeNBT());
+            var entries = new ListTag();
+            entries.add(legacyEntry);
+            var tag = new CompoundTag();
+            tag.put("EntityEntries", entries);
+            tag.putBoolean("IsNbt", true);
+            tag.putBoolean("IsInverted", true);
+            var saved = new CompoundTag();
+            saved.putString("id", "enderio:entity_filter");
+            saved.putByte("Count", (byte) 1);
+            saved.put("tag", tag);
+            ObeliskBlockEntity.FILTER.setStackInSlot(machine, ItemStack.of(saved));
+
+            spawn(helper, named, MobSpawnType.NATURAL);
+            helper.assertTrue(helper.getLevel().addFreshEntity(named), "the migrated deny list admits the exact tagged pig");
+            named.discard();
+            helper.assertTrue(!accepts(helper, EntityType.PIG, 6, 2, MobSpawnType.NATURAL),
+                "the same type without the saved name is still blocked");
+            helper.assertTrue(!accepts(helper, EntityType.COW, 6, 2, MobSpawnType.NATURAL),
+                "another unlisted entity is still blocked");
+            helper.startSequence().thenSucceed();
+        });
+    }
+
     @GameTest
     public static void nearbyInhibitorDoesNotMaskTheProtectedOrigin(GameplayTest test) {
         test.registerGameTestTemplate(() -> FixtureBuilder.withSize(39, 3, 4)

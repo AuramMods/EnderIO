@@ -1,12 +1,15 @@
 package com.enderio.enderio.foundation.soul;
 
 import com.enderio.enderio.api.soul.Soul;
+import com.enderio.enderio.content.filters.soul.EnderSoulFilter;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.foundation.MachineNBTKeys;
-import com.enderio.enderio.foundation.energy.PoweredMachineEnergyStorage;
 import com.enderio.enderio.foundation.io.Forge6MachineItemData;
+import com.enderio.enderio.init.EIODataComponents;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -28,6 +31,27 @@ public final class Forge6SoulData {
         return type == null ? Soul.EMPTY : new Soul(type, entity.copy());
     }
 
+    public static void restoreFilterItem(ItemStack stack) {
+        var tag = stack.getTag();
+        if (tag == null || !(tag.get("EntityEntries") instanceof ListTag entries)
+                || entries.size() > 5 || EIODataComponents.SOUL_FILTER.has(stack)) return;
+        var matches = NonNullList.withSize(entries.size(), Soul.EMPTY);
+        for (int index = 0; index < entries.size(); index++) {
+            var entry = entries.getCompound(index);
+            if (!isLegacyStorage(entry)) return;
+            if (entry.getCompound("Entity").isEmpty()) continue;
+            var soul = read(entry);
+            // Retain the source list if the registry is missing an entity needed to decode it.
+            if (soul.isEmpty()) return;
+            matches.set(index, soul);
+        }
+        EIODataComponents.SOUL_FILTER.set(stack,
+            new EnderSoulFilter(matches, tag.getBoolean("IsInverted"), tag.getBoolean("IsNbt")));
+        stack.removeTagKey("EntityEntries");
+        stack.removeTagKey("IsInverted");
+        stack.removeTagKey("IsNbt");
+    }
+
     public static void restoreItem(ItemStack stack, boolean soulMachine) {
         var oldData = BlockItem.getBlockEntityData(stack);
         if (oldData == null) return;
@@ -45,7 +69,10 @@ public final class Forge6SoulData {
                 remaining.remove(MachineNBTKeys.ENTITY_STORAGE);
             }
         }
-        if (soulMachine) restoreMachineProperties(stack, remaining);
+        if (soulMachine) {
+            Forge6MachineItemData.restoreCarriedProperties(stack, remaining);
+            Forge6MachineItemData.restoreCarriedEnergy(stack, remaining);
+        }
 
         if (!oldData.equals(remaining)) {
             if (remaining.isEmpty()) stack.removeTagKey(BlockItem.BLOCK_ENTITY_TAG);
@@ -60,15 +87,4 @@ public final class Forge6SoulData {
         }
     }
 
-    private static void restoreMachineProperties(ItemStack stack, CompoundTag remaining) {
-        Forge6MachineItemData.restoreCarriedProperties(stack, remaining);
-        var legacyEnergy = remaining.getCompound(MachineNBTKeys.ENERGY);
-        if (legacyEnergy.contains(MachineNBTKeys.ENERGY_STORED, Tag.TAG_INT)) {
-            if (!PoweredMachineEnergyStorage.ITEM_DATA.has(stack)) {
-                PoweredMachineEnergyStorage.ITEM_DATA.set(stack, Math.max(0, legacyEnergy.getInt(MachineNBTKeys.ENERGY_STORED)));
-            }
-            legacyEnergy.remove(MachineNBTKeys.ENERGY_STORED);
-            if (legacyEnergy.isEmpty()) remaining.remove(MachineNBTKeys.ENERGY);
-        }
-    }
 }

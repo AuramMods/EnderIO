@@ -46,6 +46,7 @@ public final class ClientSmoke {
             case "spawner-rules" -> new ClientSpawnerRulesSmoke();
             case "obelisks" -> new ClientObeliskSmoke();
             case "entity-obelisks" -> new ClientEntityObeliskSmoke();
+            case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();
             case "curios" -> new ClientCuriosSmoke();
             case "solar-wired" -> new ClientSolarWiredSmoke();

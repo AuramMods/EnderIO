@@ -40,7 +40,7 @@ public class EnderSoulFilterMenu extends AbstractFilterMenu<EnderSoulFilter> {
             addSyncSlot(StoredEntityDataSyncSlot.readOnly(() -> getEntityInFilter(slotIndex)));
 
             addSlot(new SoulFilterSlot(() -> getEntityInFilter(slotIndex), stack -> setEntityInFilter(slotIndex, stack),
-                    i, 14 + (i % 5) * 18, 27 + 20 * (i / 5)));
+                    i, 14 + (i % 9) * 18, 27 + 18 * (i / 9)));
         }
 
         addPlayerInventorySlots(14, 45 + type.rowCount() * 18);

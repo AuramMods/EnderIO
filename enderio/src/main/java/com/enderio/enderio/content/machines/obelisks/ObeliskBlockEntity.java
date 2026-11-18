@@ -14,6 +14,7 @@ import com.enderio.enderio.foundation.attachment.RangedActor;
 import com.enderio.enderio.foundation.block.entity.PoweredMachineBlockEntity;
 import com.enderio.enderio.foundation.block.entity.flags.CapacitorSupport;
 import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
+import com.enderio.enderio.foundation.io.Forge6MachineItemData;
 import com.enderio.enderio.foundation.io.IOConfig;
 import com.enderio.enderio.foundation.state.MachineState;
 import com.enderio.enderio.foundation.state.MachineStateType;
@@ -42,7 +43,7 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
 
     private static final ActionRange DEFAULT_RANGE = new ActionRange(0, false);
 
-    private ActionRange actionRange = DEFAULT_RANGE;
+    private @Nullable ActionRange actionRange;
 
     public ObeliskBlockEntity(BlockEntityType<?> type, BlockPos worldPosition, BlockState blockState,
                               boolean isIoConfigMutable, CapacitorSupport capacitorSupport, EnergyIOMode energyIOMode,
@@ -56,10 +57,15 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
 
     @Override
     public void setLevel(Level level) {
+        var savedRange = this.level == null ? actionRange : null;
         if (this.level != level) {
             unregisterFromManager();
         }
         super.setLevel(level);
+        if (savedRange != null && !level.isClientSide() && isCapacitorInstalled()) {
+            // The first capacitor update initializes new obelisks at maximum range.
+            setActionRangeInternal(savedRange);
+        }
         updateFilterState();
     }
 
@@ -106,7 +112,7 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
 
     @Override
     public ActionRange getActionRange() {
-        return actionRange;
+        return actionRange == null ? DEFAULT_RANGE : actionRange;
     }
 
     /**
@@ -228,7 +234,7 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
         var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         super.saveAdditionalSynced(tag);
 
-        if (!actionRange.equals(DEFAULT_RANGE)) {
+        if (actionRange != null) {
             tag.put(MachineNBTKeys.ACTION_RANGE, actionRange.save(registries));
         }
     }
@@ -243,7 +249,10 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
         if (tag.contains(MachineNBTKeys.ACTION_RANGE)) {
             actionRange = ActionRange.parse(registries, Objects.requireNonNull(tag.get(MachineNBTKeys.ACTION_RANGE)));
         } else {
-            actionRange = DEFAULT_RANGE;
+            actionRange = Forge6MachineItemData.readActionRange(tag);
+            if (actionRange != null && level instanceof ServerLevel && isCapacitorInstalled()) {
+                actionRange = actionRange.clamp(0, getMaxRange());
+            }
         }
         updateLocations();
     }
@@ -254,15 +263,14 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
 
         var actionRange = EIODataComponents.ACTION_RANGE.get(components);
         if (actionRange != null) {
-            this.actionRange = actionRange;
-            updateLocations();
+            setActionRangeInternal(actionRange);
         }
     }
 
     @Override
     protected void writeItemData(ItemStack components) {
         super.writeItemData(components);
-        EIODataComponents.ACTION_RANGE.set(components, actionRange);
+        if (actionRange != null) EIODataComponents.ACTION_RANGE.set(components, actionRange);
     }
 
     @Override

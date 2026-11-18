@@ -18,7 +18,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.function.BiConsumer;
 
 public final class CoreNetwork {
-    private static final String PROTOCOL_VERSION = "forge-1";
+    private static final String PROTOCOL_VERSION = "forge-2";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(EnderCore.loc("main"),
         () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals, PROTOCOL_VERSION::equals);
 
