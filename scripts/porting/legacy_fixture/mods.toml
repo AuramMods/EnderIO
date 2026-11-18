@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+[[mods]]
+modId="port_legacy_fixture"
+version="1"
+displayName="Ender IO historical save fixture"
+[[dependencies.port_legacy_fixture]]
+modId="enderio"
+mandatory=true
+versionRange="[6.2.18-beta,6.3)"
+ordering="AFTER"
+side="SERVER"

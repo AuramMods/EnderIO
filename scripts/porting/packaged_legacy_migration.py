@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy and migrate an actual Ender IO 6.2.18-beta Forge 1.20.1 tank fixture."""
+"""Copy and migrate an actual Ender IO 6.2.18-beta Forge 1.20.1 fixture."""
 
 import argparse
 import json
@@ -30,7 +30,7 @@ def tank_state(x, legacy):
     return (f'{{{key}:{{Tanks:[{{{entry}}}]}},Items:{{Items:[{{Slot:1,id:"minecraft:diamond",Count:{count}}}]}}}}')
 
 
-def exercise(server, stage, results):
+def exercise(server, stage, results, conduit_fixture):
     server.wait('For help, type "help"')
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
@@ -57,13 +57,72 @@ def exercise(server, stage, results):
                '{EnergyStored:1250,IOConfig:{Modes:{east:"pull"}},RedstoneControl:"active_with_signal",Mode:1}')
     server.command("data get block 14 80 0")
     server.assert_state(f"alloy_smelter_{stage}", f"if data block 14 80 0 {machine}", results)
+    if conduit_fixture:
+        exercise_conduits(server, stage, results)
     server.command("save-all flush")
 
 
-def run_server(directory, java, stage, report):
+def exercise_conduits(server, stage, results):
+    legacy = stage == "legacy"
+    source = "1023 80 8"
+    destination = "1024 80 8"
+    upstream = "1022 80 8"
+    downstream = "1025 80 8"
+    chunks = "1008 0 1039 15"
+    server.command(f"forceload add {chunks}")
+    server.assert_state(f"both_conduit_chunks_loaded_{stage}", f"if loaded {source} if loaded {destination}", results)
+    if legacy:
+        server.command("fill 1017 79 7 1026 79 9 minecraft:stone")
+        server.command(f'setblock {upstream} minecraft:barrel'
+                       '{Items:[{Slot:0b,id:"minecraft:diamond",Count:7b},{Slot:1b,id:"minecraft:emerald",Count:5b}]}')
+        server.command(f"setblock {downstream} minecraft:barrel")
+        output = server.command("port_legacy_fixture")
+        if "Legacy conduit fixture created" not in output:
+            raise AssertionError(output)
+
+    for x in (1018, 1023, 1024):
+        server.command(f"data get block {x} 80 8")
+        server.assert_state(f"conduit_{x}_{stage}", f"if block {x} 80 8 enderio:conduit", results)
+
+    if not legacy:
+        server.assert_state(f"separate_graph_{stage}",
+                            'if data block 1018 80 8 {Conduits:["enderio:item"]} unless data block 1018 80 8 Conduits[1]', results)
+        server.assert_state(f"cross_chunk_link_{stage}",
+                            f'if data block {source} Connections[1][{{Side:"east",Status:"connected_conduit"}}] '
+                            f'if data block {destination} Connections[1][{{Side:"west",Status:"connected_conduit"}}] '
+                            f'if data block {source} Connections[1][{{Side:"north",Status:"disabled"}}]', results)
+        server.assert_state(f"extract_settings_{stage}",
+                            f'if data block {source} Connections[1][{{Side:"west",Config:{{is_extract:1b,is_round_robin:1b,'
+                            'is_self_feed:1b,priority:42,extract_channel:"blue",extract_redstone_channel:"orange",'
+                            'extract_redstone_control:"always_active"}}] '
+                            f'if data block {source} NodeData[{{Conduit:"enderio:item"}}].Data.round_robin_indexes.west', results)
+        server.assert_state(f"insert_settings_{stage}",
+                            f'if data block {destination} Connections[1][{{Side:"east",Config:{{is_insert:1b,priority:71,'
+                            'insert_channel:"blue",extract_redstone_channel:"light_blue"}}]', results)
+        server.assert_state(f"facade_{stage}",
+                            f'if data block {destination} {{FacadeProvider:{{id:"enderio:conduit_facade",'
+                            'tag:{"enderio:data":{"enderio:block_paint":{paint:"minecraft:polished_andesite"}}}}}', results)
+
+        if stage == "converted":
+            server.command(f"forceload remove {chunks}")
+            server.assert_state("converted_chunks_unloaded", f"unless loaded {source} unless loaded {destination}", results, timeout=40)
+            server.command(f"forceload add {chunks}")
+            server.assert_state("converted_chunks_reloaded", f"if loaded {source} if loaded {destination}", results)
+        server.command(f"item replace block {upstream} container.0 with minecraft:diamond 3")
+
+    count = {"legacy": 7, "converted": 10, "restart": 13}[stage]
+    server.assert_state(f"diamond_delivery_{stage}",
+                        f'if data block {downstream} {{Items:[{{id:"minecraft:diamond",Count:{count}b}}]}} '
+                        f'unless data block {upstream} Items[{{id:"minecraft:diamond"}}]', results)
+    server.assert_state(f"filter_rejects_emeralds_{stage}",
+                        f'if data block {upstream} {{Items:[{{id:"minecraft:emerald",Count:5b}}]}} '
+                        f'unless data block {downstream} Items[{{id:"minecraft:emerald"}}]', results)
+
+
+def run_server(directory, java, stage, report, conduit_fixture):
     server = Server(directory, java, stage)
     try:
-        exercise(server, stage, report["assertions"])
+        exercise(server, stage, report["assertions"], conduit_fixture)
     finally:
         exit_status = server.stop()
         errors = [line.strip() for line in server.lines if "/ERROR]" in line or "/FATAL]" in line]
@@ -83,6 +142,7 @@ def main():
     parser.add_argument("--forge-server", required=True, type=Path, help="Directory installed by the official Forge installer")
     parser.add_argument("--legacy-jar", required=True, type=Path)
     parser.add_argument("--jar", required=True, type=Path)
+    parser.add_argument("--conduit-fixture", type=Path, help="Fixture mod built with legacy_fixture/build.py")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
@@ -106,10 +166,13 @@ def main():
                 f"server-ip=127.0.0.1\nserver-port={args.port}\nlevel-name={WORLD}\n"
                 f"level-type=minecraft:flat\ngenerator-settings={flat}\n"
                 "generate-structures=false\nview-distance=3\nsimulation-distance=3\n")
-        run_server(legacy, args.java, "legacy", report)
+        if args.conduit_fixture:
+            shutil.copyfile(args.conduit_fixture, legacy / "mods" / "port-legacy-fixture.jar")
+            report["fixtureSha256"] = digest(args.conduit_fixture)
+        run_server(legacy, args.java, "legacy", report, args.conduit_fixture)
         shutil.copytree(legacy / WORLD, converted / WORLD)
-        run_server(converted, args.java, "converted", report)
-        run_server(converted, args.java, "restart", report)
+        run_server(converted, args.java, "converted", report, args.conduit_fixture)
+        run_server(converted, args.java, "restart", report, args.conduit_fixture)
         report["passed"] = True
     finally:
         output = directory / "legacy-migration-results.json"

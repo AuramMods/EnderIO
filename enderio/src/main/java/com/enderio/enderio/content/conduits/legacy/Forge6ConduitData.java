@@ -1,0 +1,134 @@
+package com.enderio.enderio.content.conduits.legacy;
+
+import com.enderio.core.common.serialization.StackDataCodecs;
+import com.enderio.enderio.api.conduits.Conduit;
+import com.enderio.enderio.api.io.RedstoneControl;
+import com.enderio.enderio.api.conduits.network.node.NodeData;
+import com.enderio.enderio.content.filters.fluid.EnderFluidFilter;
+import com.enderio.enderio.content.filters.item.general.DamageFilterMode;
+import com.enderio.enderio.content.filters.item.general.EnderItemFilter;
+import com.enderio.enderio.content.paint.BlockPaintData;
+import com.enderio.enderio.init.EIOConduitTypes;
+import com.enderio.enderio.init.EIOConduits;
+import com.enderio.enderio.init.EIODataComponents;
+import com.enderio.enderio.init.EIOItems;
+import com.mojang.logging.LogUtils;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.fluids.FluidStack;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.Map;
+
+/** Reads the NBT emitted before Ender IO moved conduit types into its datapack registry. */
+public final class Forge6ConduitData {
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final Map<String, ResourceKey<Conduit<?, ?>>> CONDUITS = Map.of(
+        "enderio:item_conduit", EIOConduits.ITEM, "enderio:energy_conduit", EIOConduits.ENERGY,
+        "enderio:redstone_conduit", EIOConduits.REDSTONE, "enderio:fluid_conduit", EIOConduits.FLUID,
+        "enderio:pressurized_fluid_conduit", EIOConduits.ENERGETIC_FLUID,
+        "enderio:ender_fluid_conduit", EIOConduits.VIBRANT_FLUID);
+
+    // 6.x used ColorControl ordinals, which are unrelated to the vanilla dye IDs.
+    private static final DyeColor[] COLORS = {DyeColor.GREEN, DyeColor.BROWN, DyeColor.BLUE, DyeColor.PURPLE,
+        DyeColor.CYAN, DyeColor.LIGHT_GRAY, DyeColor.GRAY, DyeColor.PINK, DyeColor.LIME, DyeColor.YELLOW,
+        DyeColor.LIGHT_BLUE, DyeColor.MAGENTA, DyeColor.ORANGE, DyeColor.WHITE, DyeColor.BLACK, DyeColor.RED};
+
+    private Forge6ConduitData() {}
+
+    public static @Nullable ResourceKey<Conduit<?, ?>> conduitKey(String id) {
+        return CONDUITS.get(id);
+    }
+
+    public static ConnectionState connection(CompoundTag tag) {
+        if (tag.isEmpty()) return StaticConnectionStates.DISCONNECTED;
+        if (tag.getBoolean("Static")) {
+            return switch (tag.getInt("Index")) {
+                case 0 -> StaticConnectionStates.CONNECTED;
+                case 1 -> StaticConnectionStates.CONNECTED_ACTIVE;
+                case 3 -> StaticConnectionStates.DISABLED;
+                default -> StaticConnectionStates.DISCONNECTED;
+            };
+        }
+        return new DynamicConnectionState(tag.getBoolean("IsInsert"), color(tag.getInt("Insert")),
+            tag.getBoolean("IsExtract"), color(tag.getInt("Extract")),
+            RedstoneControl.BY_ID.apply(tag.getInt("RedstoneControl")), color(tag.getInt("Channel")),
+            filter(tag.getCompound("InsertFilter")), filter(tag.getCompound("ExtractFilter")), ItemStack.EMPTY);
+    }
+
+    private static DyeColor color(int index) {
+        return index >= 0 && index < COLORS.length ? COLORS[index] : DyeColor.GREEN;
+    }
+
+    private static ItemStack filter(CompoundTag data) {
+        ItemStack stack = ItemStack.of(data);
+        if (stack.isEmpty() || stack.getTag() == null) return stack;
+        var tag = stack.getTag();
+        if (tag.contains("ItemEntries", Tag.TAG_LIST) && !EIODataComponents.ITEM_FILTER.has(stack)) {
+            var entries = new ArrayList<ItemStack>();
+            for (var entry : tag.getList("ItemEntries", Tag.TAG_COMPOUND)) {
+                entries.add(ItemStack.of((CompoundTag) entry));
+            }
+            var filter = new EnderItemFilter(entries, tag.getBoolean("IsInverted"), tag.getBoolean("IsNbt"), DamageFilterMode.IGNORE);
+            tag.remove("ItemEntries");
+            tag.remove("IsInverted");
+            tag.remove("IsNbt");
+            EIODataComponents.ITEM_FILTER.set(stack, filter);
+        } else if (tag.contains("FluidEntries", Tag.TAG_LIST) && !EIODataComponents.FLUID_FILTER.has(stack)) {
+            var entries = new ArrayList<FluidStack>();
+            for (var entry : tag.getList("FluidEntries", Tag.TAG_COMPOUND)) {
+                entries.add(StackDataCodecs.loadFluid((CompoundTag) entry));
+            }
+            var filter = new EnderFluidFilter(entries, tag.getBoolean("IsInverted"), tag.getBoolean("IsNbt"));
+            tag.remove("FluidEntries");
+            tag.remove("IsInverted");
+            tag.remove("IsNbt");
+            EIODataComponents.FLUID_FILTER.set(stack, filter);
+        }
+        return stack;
+    }
+
+    public static ItemStack facade(CompoundTag facades) {
+        if (facades.isEmpty()) return ItemStack.EMPTY;
+        var down = facades.getCompound("down");
+        var decoded = BlockState.CODEC.parse(NbtOps.INSTANCE, down).result();
+        if (decoded.isPresent()) {
+            var state = decoded.get();
+            var block = state.getBlock();
+            if (!state.isAir() && state == block.defaultBlockState() &&
+                Arrays.stream(Direction.values()).allMatch(side -> down.equals(facades.getCompound(side.getName())))) {
+                var stack = new ItemStack(EIOItems.CONDUIT_FACADE.get());
+                EIODataComponents.BLOCK_PAINT.set(stack, BlockPaintData.of(block));
+                return stack;
+            }
+        }
+        LOGGER.warn("Legacy conduit facade has partial, mixed or non-default faces and requires manual replacement");
+        return ItemStack.EMPTY;
+    }
+
+    public static LegacyItemConduitData itemData(CompoundTag tag) {
+        var sides = new EnumMap<Direction, LegacyItemConduitData.ItemSidedData>(Direction.class);
+        for (var side : Direction.values()) {
+            if (!tag.contains(side.name(), Tag.TAG_COMPOUND)) continue;
+            var data = tag.getCompound(side.name());
+            sides.put(side, new LegacyItemConduitData.ItemSidedData(data.getBoolean("RoundRobin"),
+                data.getInt("RotatingIndex"), data.getBoolean("SelfFeed"), data.getInt("Priority")));
+        }
+        return new LegacyItemConduitData(sides);
+    }
+
+    public static @Nullable NodeData node(Holder<Conduit<?, ?>> conduit, CompoundTag tag) {
+        return conduit.value().type() == EIOConduitTypes.ITEM.get() ? itemData(tag).toNodeData() : null;
+    }
+}

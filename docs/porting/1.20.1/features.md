@@ -70,7 +70,7 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `SILENT_POLISHED_BLACKSTONE_PRESSURE_PLATE` | [EIOBlocks:269](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `SILENT_HEAVY_WEIGHTED_PRESSURE_PLATE` | [EIOBlocks:272](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `SILENT_LIGHT_WEIGHTED_PRESSURE_PLATE` | [EIOBlocks:275](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `CONDUIT_BUNDLE` | [EIOBlocks:293](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: native routing/split/merge, priority/tier transfer and nine break/wrench/drop scenarios pass; full lifecycle/render coverage remains pending ([cycle 035](cycle-035.md)) |
+| `CONDUIT_BUNDLE` | [EIOBlocks:293](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial. Native routing/split/merge, priority/tier transfer and nine break/wrench/drop scenarios pass. A mixed 6.2 item and energy bundle keeps its item settings, filter, facade and cross-chunk route through conversion, chunk reload and restart. Full legacy transfer and render coverage remain pending ([cycle 035](cycle-035.md), [cycle 048](cycle-048.md)). |
 | `SOUL_CHAIN` | [EIOBlocks:301](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `COLD_FIRE` | [EIOBlocks:309](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: age/expiration scenario passes; the baseline cold-fire crafting scenario remains commented out and unverified ([cycle 035](cycle-035.md)) |
 | `ENDERMAN_HEAD` | [EIOBlocks:312](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
@@ -98,7 +98,7 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `MIND_KILLER` | [EIOBlocks:416](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `VACUUM_CHEST` | [EIOBlocks:423](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `XP_VACUUM` | [EIOBlocks:427](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `TRAVEL_ANCHOR` | [EIOBlocks:432](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `TRAVEL_ANCHOR` | [EIOBlocks:432](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending. An actual 6.2 save exposes a saved-target codec failure on the converted server ([cycle 048](cycle-048.md)). |
 | `PAINTED_TRAVEL_ANCHOR` | [EIOBlocks:436](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `SOLAR_PANELS` | [EIOBlocks:442](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `CAPACITOR_BANKS` | [EIOBlocks:452](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: basic-bank capacity/split/merge and conduit energy scenarios pass; all tier/render/restart coverage remains pending ([cycle 035](cycle-035.md)) |

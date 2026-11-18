@@ -6,6 +6,7 @@ import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.network.ConduitNetworkContext;
 import com.enderio.enderio.api.conduits.network.ConduitNetworkContextType;
+import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -284,8 +285,10 @@ public class ConduitNetworkSavedData extends SavedData {
         ListTag graphsTag = nbt.getList(KEY_GRAPHS, Tag.TAG_COMPOUND);
         for (Tag tag : graphsTag) {
             CompoundTag typedGraphTag = (CompoundTag) tag;
-            ResourceKey<Conduit<?, ?>> conduitKey = ResourceKey.create(EnderIORegistries.Keys.CONDUIT,
-                    ResourceLocation.parse(typedGraphTag.getString(KEY_TYPE)));
+            String savedType = typedGraphTag.getString(KEY_TYPE);
+            var forge6Key = Forge6ConduitData.conduitKey(savedType);
+            ResourceKey<Conduit<?, ?>> conduitKey = forge6Key != null ? forge6Key :
+                ResourceKey.create(EnderIORegistries.Keys.CONDUIT, ResourceLocation.parse(savedType));
 
             var registry = lookupProvider.lookupOrThrow(EnderIORegistries.Keys.CONDUIT);
 
@@ -321,9 +324,11 @@ public class ConduitNetworkSavedData extends SavedData {
             List<ConduitNodeImpl> nodes = new ArrayList<>();
             for (int i = 0; i < graphObjectsTag.size(); i++) {
                 CompoundTag nodeTag = graphObjectsTag.getCompound(i);
-                var node = ConduitNodeImpl.CODEC.decode(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), nodeTag)
-                        .getOrThrow(false, LOGGER::error)
-                        .getFirst();
+                var node = nodeTag.contains("BlockPos", Tag.TAG_LONG)
+                    ? ConduitNodeImpl.fromSavedGraph(conduit, BlockPos.of(nodeTag.getLong("BlockPos")),
+                        Forge6ConduitData.node(conduit, nodeTag.getCompound("Data")))
+                    : ConduitNodeImpl.CODEC.parse(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), nodeTag)
+                        .getOrThrow(false, LOGGER::error);
 
                 node.setConduitIfNull(conduit);
 
@@ -355,9 +360,7 @@ public class ConduitNetworkSavedData extends SavedData {
             }
 
             // Hook onto chunk coverage change event
-            network.setOnChunkCoverageChanged(savedData::onNetworkChunksChanged);
-
-            savedData.networks.put(network.conduitType(), network);
+            savedData.onNetworkCreated(network);
 
             for (var node : network.nodes()) {
                 savedData.unloadedNodes.computeIfAbsent(network.conduitType(), c -> Maps.newHashMap())

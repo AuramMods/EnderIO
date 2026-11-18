@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status remains in progress. Cycle 045 reproduced all six distributable jars. Cycle 046 verified live client data-map updates and reconnects across 31 client checks and five server assertions. Cycle 047 passed 78 ordinary JUnit tests, 411 native GameTests and 18 packaged assertions on a copied official Ender IO 6.2.18-beta world. The fixture verified machine tanks, smelter state and renamed content across conversion and restart. Historical conduit migration, an intermittent login timeout and full gameplay and integration parity remain open.
+Prepared on 2026-11-17. Status remains in progress. Cycle 045 reproduced all six distributable jars, and cycle 046 verified live data-map updates and reconnects. Cycle 048 passed 78 ordinary JUnit tests, 411 native GameTests and 48 packaged assertions. A copied Ender IO 6.2.18-beta world retains the tested machine state and routes filtered items across a migrated conduit network after chunk reload and restart. Historical travel saved data, other legacy conduit details, an intermittent login timeout and full gameplay and integration parity remain open.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -203,7 +203,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 046: client data-map reload and reconnect | Exercise all three maps and Forge tooltip output through live server-only datapack changes, logout, reconnect and restart | Final packaged run passes 31 client checks and five server assertions. One intervening handshake timeout remains open. Production is unchanged. [Evidence and commands](porting/1.20.1/cycle-046.md) | `44ee6c35b` |
 
-| 047: historical machine tanks and registry remapping | Audit an official 6.2.18-beta world, migrate Forge tank layouts and restore equivalent registry IDs | Full build passes 78 ordinary unit and 411 native tests. Packaged upgrade and restart pass 18 assertions. A separate actual 6.x conduit fixture reproduces a chunk-load crash and broader save migration remains open. [Evidence and commands](porting/1.20.1/cycle-047.md) | Commit containing cycle 047 |
+| 047: historical machine tanks and registry remapping | Audit an official 6.2.18-beta world, migrate Forge tank layouts and restore equivalent registry IDs | Full build passes 78 ordinary unit and 411 native tests. Packaged upgrade and restart pass 18 assertions. A separate actual 6.x conduit fixture reproduces a chunk-load crash. [Evidence and commands](porting/1.20.1/cycle-047.md) | `859e1b483` |
+
+| 048: historical conduit bundles and graphs | Read authentic Forge 6.2 bundle, endpoint and graph data. Verify the old filter, facade and cross-chunk item route after conversion | Full build passes 78 ordinary unit and 411 native tests. Packaged fixture passes 48 assertions across conversion, chunk eviction and restart. The old conduit crash is resolved. Historical travel saved data fails decoding in a separate fixture. [Evidence and commands](porting/1.20.1/cycle-048.md) | Commit containing cycle 048 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

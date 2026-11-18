@@ -5,6 +5,7 @@ import com.enderio.core.common.blockentity.RegistryBlockEntity;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryOps;
 import com.enderio.enderio.api.EnderIOCapabilities;
+import com.enderio.enderio.api.EnderIORegistries;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.ConduitCapabilityAccessor;
@@ -25,16 +26,20 @@ import com.enderio.enderio.content.conduits.ConduitSorter;
 import com.enderio.enderio.content.conduits.legacy.ConduitDataContainer;
 import com.enderio.enderio.content.conduits.legacy.ConnectionState;
 import com.enderio.enderio.content.conduits.legacy.DynamicConnectionState;
+import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
+import com.enderio.enderio.content.conduits.legacy.LegacyItemConduitData;
 import com.enderio.enderio.content.conduits.legacy.StaticConnectionStates;
 import com.enderio.enderio.content.conduits.menu.ConduitMenu;
 import com.enderio.enderio.content.conduits.network.ConduitNetworkSavedData;
 import com.enderio.enderio.content.conduits.network.ConduitNodeImpl;
 import com.enderio.enderio.content.conduits.network.IConduitNodeAttachment;
+import com.enderio.enderio.content.conduits.type.item.ItemConduitConnectionConfig;
 import com.enderio.enderio.foundation.EIONBTKeys;
 import com.enderio.enderio.foundation.block.entity.Wrenchable;
 import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIOConduitTypes;
 import com.mojang.datafixers.util.Pair;
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -1530,11 +1535,16 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
     private void readBundle(CompoundTag tag, RegistryAccess registries, boolean liveLoad) {
         lazyNodeData = null;
         lazyNodeNBT = null;
+        boolean forge6 = false;
 
         if (tag.contains(EIONBTKeys.CONDUIT_BUNDLE)) {
-            // Convert the legacy bundle to the new format
-            var bundle = LegacyConduitBundle.parse(registries, tag.getCompound(EIONBTKeys.CONDUIT_BUNDLE));
-            loadFromLegacyBundle(bundle);
+            var savedBundle = tag.getCompound(EIONBTKeys.CONDUIT_BUNDLE);
+            forge6 = savedBundle.contains("Types", Tag.TAG_LIST);
+            if (forge6) {
+                loadForge6Bundle(savedBundle, tag.getList(EIONBTKeys.CONDUIT_EXTRA_DATA, Tag.TAG_COMPOUND), registries);
+            } else {
+                loadFromLegacyBundle(LegacyConduitBundle.parse(registries, savedBundle), Map.of());
+            }
         } else {
             // Decode into replacement collections so a malformed update can restore the old state.
             conduits = new ArrayList<>();
@@ -1607,7 +1617,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
         }
 
         // Load node data used for recovery
-        if (tag.contains(EIONBTKeys.CONDUIT_EXTRA_DATA)) {
+        if (!forge6 && tag.contains(EIONBTKeys.CONDUIT_EXTRA_DATA)) {
             lazyNodeNBT = tag.getList(EIONBTKeys.CONDUIT_EXTRA_DATA, Tag.TAG_COMPOUND);
         } else if (tag.contains(NODE_DATA_KEY)) {
             var list = tag.getList(NODE_DATA_KEY, Tag.TAG_COMPOUND);
@@ -1922,7 +1932,51 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
         }
     }
 
-    private void loadFromLegacyBundle(LegacyConduitBundle bundle) {
+    private void loadForge6Bundle(CompoundTag tag, ListTag recovery, RegistryAccess registries) {
+        var registry = registries.lookupOrThrow(EnderIORegistries.Keys.CONDUIT);
+        var types = tag.getList("Types", Tag.TAG_STRING);
+        var savedConnections = tag.getCompound("Connections");
+        var savedNodes = new HashMap<String, CompoundTag>();
+        for (var entry : tag.getList("Nodes", Tag.TAG_COMPOUND)) {
+            var node = (CompoundTag) entry;
+            savedNodes.put(node.getString("NodeType"), node.getCompound("NodeData"));
+        }
+
+        var holders = new ArrayList<Holder<Conduit<?, ?>>>();
+        var states = new EnumMap<Direction, List<ConnectionState>>(Direction.class);
+        var itemData = new HashMap<Holder<Conduit<?, ?>>, LegacyItemConduitData>();
+        lazyNodeData = new HashMap<>();
+        for (int i = 0; i < types.size(); i++) {
+            String type = types.getString(i);
+            var key = Forge6ConduitData.conduitKey(type);
+            var found = key == null ? null : registry.get(key).orElse(null);
+            if (found == null) {
+                LogUtils.getLogger().warn("Skipping unmapped Forge 6 conduit {} at {}", type, getBlockPos());
+                continue;
+            }
+
+            holders.add(found);
+            var node = i < recovery.size() ? recovery.getCompound(i) : savedNodes.getOrDefault(type, new CompoundTag());
+            if (found.value().type() == EIOConduitTypes.ITEM.get()) {
+                var savedItemData = Forge6ConduitData.itemData(node);
+                itemData.put(found, savedItemData);
+                lazyNodeData.put(found, savedItemData.toNodeData());
+            }
+
+            for (var side : Direction.values()) {
+                var connection = savedConnections.getCompound(side.getName()).getCompound(Integer.toString(i));
+                states.computeIfAbsent(side, ignored -> new ArrayList<>()).add(Forge6ConduitData.connection(connection));
+            }
+        }
+
+        var connections = new EnumMap<Direction, LegacyConduitBundle.ConduitConnection>(Direction.class);
+        states.forEach((side, list) -> connections.put(side, new LegacyConduitBundle.ConduitConnection(list)));
+        var bundle = new LegacyConduitBundle(getBlockPos(), holders, connections,
+            Forge6ConduitData.facade(tag.getCompound("Facades")), Map.of());
+        loadFromLegacyBundle(bundle, itemData);
+    }
+
+    private void loadFromLegacyBundle(LegacyConduitBundle bundle, Map<Holder<Conduit<?, ?>>, LegacyItemConduitData> itemData) {
         // Copy the conduit list
         conduits = new ArrayList<>();
         conduits.addAll(bundle.conduits);
@@ -1950,11 +2004,15 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
                 } else if (state instanceof DynamicConnectionState dynamicState) {
                     connections.setConnectionStatus(side, ConnectionStatus.CONNECTED_BLOCK);
 
-                    connections.setConnectionConfig(side,
-                            conduit.value()
-                                    .convertConnection(dynamicState.isInsert(), dynamicState.isExtract(),
-                                            dynamicState.insertChannel(), dynamicState.extractChannel(),
-                                            dynamicState.control(), dynamicState.redstoneChannel()));
+                    ConnectionConfig config = conduit.value().convertConnection(dynamicState.isInsert(), dynamicState.isExtract(),
+                        dynamicState.insertChannel(), dynamicState.extractChannel(), dynamicState.control(), dynamicState.redstoneChannel());
+                    var legacyData = itemData.get(conduit);
+                    if (config instanceof ItemConduitConnectionConfig itemConfig && legacyData != null) {
+                        var settings = legacyData.get(side);
+                        config = itemConfig.withIsRoundRobin(settings.isRoundRobin).withIsSelfFeed(settings.isSelfFeed)
+                            .withPriority(settings.priority);
+                    }
+                    connections.setConnectionConfig(side, config);
 
                     // Import the inventory.
                     var inventory = getConnectionInventory(conduit, side);

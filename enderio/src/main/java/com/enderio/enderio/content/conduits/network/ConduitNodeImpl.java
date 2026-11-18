@@ -99,6 +99,10 @@ public final class ConduitNodeImpl implements INetworkNode<ConduitNetworkImpl, C
         this.nodeData = nodeData.orElse(null);
     }
 
+    static ConduitNodeImpl fromSavedGraph(Holder<Conduit<?, ?>> conduit, BlockPos pos, @Nullable NodeData data) {
+        return new ConduitNodeImpl(Optional.of(conduit), pos, Optional.ofNullable(data));
+    }
+
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private ConduitNodeImpl(BlockPos pos, Optional<NodeData> nodeData) {
         this.pos = pos;
