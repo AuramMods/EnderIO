@@ -12,6 +12,7 @@ public final class PortSmoke {
     public PortSmoke() {
         if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
             MinecraftForge.EVENT_BUS.register(new NaturalSpawnObserver());
+            MinecraftForge.EVENT_BUS.register(new AttractorObserver());
         } else {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> ClientSmoke::new);
         }

@@ -2,6 +2,7 @@ package com.enderio.enderio.content.machines.obelisks.attractor;
 
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.core.annotations.UseOnly;
+import com.enderio.core.common.capability.ServerLevelState;
 import com.enderio.enderio.api.capacitor.CapacitorModifier;
 import com.enderio.enderio.api.capacitor.LinearScalable;
 import com.enderio.enderio.api.capacitor.QuadraticScalable;
@@ -12,6 +13,7 @@ import com.enderio.enderio.content.machines.obelisks.ObeliskAreaManager;
 import com.enderio.enderio.content.machines.obelisks.ObeliskBlockEntity;
 import com.enderio.enderio.foundation.block.entity.flags.CapacitorSupport;
 import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
+import com.enderio.enderio.foundation.util.EntityCaptureUtils;
 import com.enderio.enderio.init.EIOBlockEntities;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.core.BlockPos;
@@ -27,6 +29,7 @@ import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
@@ -35,7 +38,10 @@ import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.common.util.FakePlayer;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.EnumSet;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class AttractorObeliskBlockEntity extends ObeliskBlockEntity<AttractorObeliskBlockEntity> {
 
@@ -45,8 +51,11 @@ public class AttractorObeliskBlockEntity extends ObeliskBlockEntity<AttractorObe
             MachinesConfig.COMMON.ENERGY.ATTRACTOR_USAGE);
     private static final LinearScalable RANGE = new LinearScalable(CapacitorModifier.ENERGY_USE,
             MachinesConfig.COMMON.ATTRACTOR_RANGE);
+    private static final ServerLevelState<Map<Mob, AttractorObeliskBlockEntity>> CONTROL_OWNERS =
+            new ServerLevelState<>(IdentityHashMap::new);
 
     private final Vec3 targetPos;
+    private final Map<Mob, MobControl> controlledMobs = new IdentityHashMap<>();
 
     @UseOnly(LogicalSide.SERVER)
     @Nullable
@@ -105,50 +114,70 @@ public class AttractorObeliskBlockEntity extends ObeliskBlockEntity<AttractorObe
     @Override
     public void serverTick() {
         super.serverTick();
-        if (isActive()) {
-            doAttract();
+        if (isActive() && level instanceof ServerLevel serverLevel) {
+            doAttract(serverLevel);
+        } else {
+            releaseAll();
         }
     }
 
-    private void doAttract() {
-        if (level == null) {
-            return;
-        }
+    private void doAttract(ServerLevel level) {
         AABB aabb = getAABB();
-        if (aabb == null) {
-            return;
-        }
         SoulFilter filter = getSoulFilter();
-        if (filter == null) {
+        if (aabb == null || filter == null) {
+            releaseAll();
             return;
         }
-        List<Mob> filteredEntities = level.getEntities(EntityTypeTest.forClass(Mob.class), aabb,
-                mob -> filter.test(mob));
-        for (Mob mob : filteredEntities) {
-            if (!MachinesConfig.COMMON.ATTRACTOR_PULL_BOSSES.get() && mob.getType().is(com.enderio.enderio.foundation.util.EntityCaptureUtils.BOSSES)) {
-                // ignore
-            } else if (mob instanceof WitherBoss) {
-                mob.goalSelector.disableControlFlag(Goal.Flag.TARGET);
-                mob.goalSelector.disableControlFlag(Goal.Flag.LOOK);
-                mob.setTarget(null);
-                directPull(mob, 2.25f);
+        boolean pullBosses = MachinesConfig.COMMON.ATTRACTOR_PULL_BOSSES.get();
+        var matching = level.getEntities(EntityTypeTest.forClass(Mob.class), aabb,
+                mob -> mob.isAlive() && (pullBosses || !mob.getType().is(EntityCaptureUtils.BOSSES)) && filter.test(mob));
+        if (!controlledMobs.isEmpty()) {
+            var inRange = Set.copyOf(matching);
+            controlledMobs.entrySet().removeIf(entry -> {
+                if (inRange.contains(entry.getKey())) return false;
+                release(entry.getKey(), entry.getValue());
+                return true;
+            });
+        }
+        for (Mob mob : matching) {
+            if (mob instanceof WitherBoss) {
+                var control = claim(level, mob);
+                if (control != null) {
+                    control.setTarget(mob, null);
+                    directPull(mob, 2.25f);
+                }
             } else if (mob instanceof PathfinderMob) {
                 attractMob(mob);
-            } else if (useTarget(mob)) {
-                setTarget(mob);
+            } else if (mob instanceof Slime || mob instanceof Phantom) {
+                var control = claim(level, mob);
+                if (control != null) control.setTarget(mob, getFakePlayer());
             } else if (mob instanceof Ghast) {
                 directPull(mob, 1);
             }
         }
     }
 
-    private boolean useTarget(Mob mob) {
-        return mob instanceof Slime || mob instanceof Phantom;
+    private @Nullable MobControl claim(ServerLevel level, Mob mob) {
+        var owner = CONTROL_OWNERS.get(level).putIfAbsent(mob, this);
+        if (owner != null && owner != this) return null;
+        return controlledMobs.computeIfAbsent(mob, MobControl::new);
     }
 
-    private void setTarget(Mob mob) {
-        assert level != null;
-        mob.setTarget(getFakePlayer());
+    private void release(Mob mob, MobControl control) {
+        if (level instanceof ServerLevel serverLevel) {
+            var owners = CONTROL_OWNERS.getIfPresent(serverLevel);
+            if (owners != null) owners.remove(mob, this);
+        }
+        control.release(mob);
+    }
+
+    private void releaseAll() {
+        controlledMobs.forEach(this::release);
+        controlledMobs.clear();
+        if (fakePlayer != null) {
+            fakePlayer.discard();
+            fakePlayer = null;
+        }
     }
 
     private void attractMob(Mob mob) {
@@ -170,13 +199,68 @@ public class AttractorObeliskBlockEntity extends ObeliskBlockEntity<AttractorObe
     }
 
     @Override
-    public void setRemoved() {
-        super.setRemoved();
+    public void setLevel(Level level) {
+        if (this.level != level) releaseAll();
+        super.setLevel(level);
+    }
 
-        if (level != null && !level.isClientSide) {
-            if (fakePlayer != null) {
-                fakePlayer.discard();
-                fakePlayer = null;
+    @Override
+    public void onChunkUnloaded() {
+        releaseAll();
+        super.onChunkUnloaded();
+    }
+
+    @Override
+    public void setRemoved() {
+        releaseAll();
+        super.setRemoved();
+    }
+
+    private static final class MobControl {
+        private final @Nullable Goal lookBlocker;
+        private final @Nullable Goal targetBlocker;
+        private @Nullable LivingEntity previousTarget;
+        private @Nullable LivingEntity assignedTarget;
+        private boolean targetChanged;
+
+        private MobControl(Mob mob) {
+            if (mob instanceof WitherBoss) {
+                lookBlocker = blockGoal(mob, Goal.Flag.LOOK);
+                targetBlocker = blockGoal(mob, Goal.Flag.TARGET);
+            } else {
+                lookBlocker = null;
+                targetBlocker = null;
+            }
+        }
+
+        private static Goal blockGoal(Mob mob, Goal.Flag flag) {
+            // A temporary goal reserves the flag while preserving other controllers' disabled flags.
+            var blocker = new Goal() {
+                @Override
+                public boolean canUse() { return true; }
+            };
+            blocker.setFlags(EnumSet.of(flag));
+            mob.goalSelector.addGoal(Integer.MIN_VALUE, blocker);
+            return blocker;
+        }
+
+        private void setTarget(Mob mob, @Nullable LivingEntity target) {
+            var current = mob.getTarget();
+            if (current == target) return;
+            mob.setTarget(target);
+            if (mob.getTarget() == target) {
+                previousTarget = current;
+                assignedTarget = target;
+                targetChanged = true;
+            }
+        }
+
+        private void release(Mob mob) {
+            if (lookBlocker != null) mob.goalSelector.removeGoal(lookBlocker);
+            if (targetBlocker != null) mob.goalSelector.removeGoal(targetBlocker);
+            if (targetChanged && mob.isAlive() && mob.getTarget() == assignedTarget) {
+                mob.setTarget(previousTarget != null && previousTarget.isAlive() && previousTarget.level() == mob.level()
+                        ? previousTarget : null);
             }
         }
     }
