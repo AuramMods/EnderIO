@@ -34,6 +34,34 @@ public final class RecipeOutput implements Consumer<FinishedRecipe> {
         output.accept(recipe);
     }
 
+    /** Conditions compose with any conditions already supplied by the recipe builder. */
+    public RecipeOutput withConditions(ICondition... conditions) {
+        var snapshot = conditions.clone();
+        return new RecipeOutput(recipe -> output.accept(new FinishedRecipe() {
+            @Override public void serializeRecipeData(JsonObject json) {
+                recipe.serializeRecipeData(json);
+                appendConditions(json, "conditions", snapshot);
+            }
+            @Override public ResourceLocation getId() { return recipe.getId(); }
+            @Override public RecipeSerializer<?> getType() { return recipe.getType(); }
+            @Override public @Nullable JsonObject serializeAdvancement() {
+                var advancement = recipe.serializeAdvancement();
+                if (advancement == null) return null;
+                var json = advancement.deepCopy();
+                appendConditions(json, "conditions", snapshot);
+                return json;
+            }
+            @Override public @Nullable ResourceLocation getAdvancementId() { return recipe.getAdvancementId(); }
+        }), registries);
+    }
+
+    public static void appendConditions(JsonObject json, String key, ICondition... conditions) {
+        if (conditions.length == 0) return;
+        var encoded = json.has(key) ? json.getAsJsonArray(key).deepCopy() : new JsonArray();
+        for (var condition : conditions) encoded.add(CraftingHelper.serialize(condition));
+        json.add(key, encoded);
+    }
+
     /** Forge's native shaped/cooking serializers accept an object result with count and SNBT. */
     public Consumer<FinishedRecipe> withResult(ItemStack result) {
         return withResult(this, result);
@@ -60,12 +88,7 @@ public final class RecipeOutput implements Consumer<FinishedRecipe> {
 
     public void accept(ResourceLocation id, Recipe<?> recipe, @Nullable Advancement advancement, ICondition... conditions) {
         JsonObject data = encode(recipe);
-        if (conditions.length != 0) {
-            var encodedConditions = new JsonArray();
-            for (var condition : conditions) encodedConditions.add(CraftingHelper.serialize(condition));
-            data.add("conditions", encodedConditions);
-        }
-        output.accept(new FinishedRecipe() {
+        withConditions(conditions).accept(new FinishedRecipe() {
             @Override public void serializeRecipeData(JsonObject json) {
                 data.entrySet().forEach(entry -> json.add(entry.getKey(), entry.getValue().deepCopy()));
             }

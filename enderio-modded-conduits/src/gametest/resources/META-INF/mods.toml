@@ -1,0 +1,7 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+[[mods]]
+modId="enderio_modded_conduits_tests"
+version="1.0"
+displayName="Ender IO Integration Tests"

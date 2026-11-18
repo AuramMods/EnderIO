@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "enderio:aversion_obelisk"
+    }
+  ],
+  "result": {
+    "item": "enderio:aversion_obelisk"
+  }
+}

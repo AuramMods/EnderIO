@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "enderio:soul_engine"
+    }
+  ],
+  "result": {
+    "item": "enderio:soul_engine"
+  }
+}

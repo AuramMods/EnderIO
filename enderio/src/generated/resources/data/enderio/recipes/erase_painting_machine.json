@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "enderio:painting_machine"
+    }
+  ],
+  "result": {
+    "item": "enderio:painting_machine"
+  }
+}

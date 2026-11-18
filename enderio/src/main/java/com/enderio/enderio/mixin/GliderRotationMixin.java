@@ -13,9 +13,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LivingEntityRenderer.class)
 public class GliderRotationMixin {
 
-    @Inject(method = "setupRotations", at = @At(value = "RETURN"), cancellable = true, remap = false)
-    public void test(LivingEntity entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick,
-            float scale, CallbackInfo ci) {
+    @Inject(method = "setupRotations", at = @At("RETURN"))
+    public void applyGliderRotation(LivingEntity entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick,
+            CallbackInfo ci) {
         if (entity instanceof Player player) {
             ActiveGliderRenderLayer.setupAnim(player, poseStack);
         }

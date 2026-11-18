@@ -1,14 +1,14 @@
 {
-  "neoforge:conditions": [
-    {
-      "type": "neoforge:mod_loaded",
-      "modid": "mekanism"
-    }
-  ],
   "type": "enderio:chemical",
   "description": {
     "translate": "conduit.enderio.ender_chemical"
   },
   "texture": "enderio:block/conduit/ender_chemical",
-  "transfer_rate": 64000
+  "transfer_rate": 64000,
+  "forge:conditions": [
+    {
+      "modid": "mekanism",
+      "type": "forge:mod_loaded"
+    }
+  ]
 }

@@ -21,8 +21,8 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import net.neoforged.neoforge.common.conditions.ICondition;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.data.event.GatherDataEvent;
 
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +51,7 @@ public class ModdedConduits {
         modEventBus = context.getModEventBus();
         
         // Register config files
-        context.registerConfig(ModConfig.Type.COMMON, ModdedConduitsConfig.COMMON_SPEC, "enderio/modded-conduits-common.toml");
+        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModdedConduitsConfig.COMMON_SPEC, "enderio/modded-conduits-common.toml");
         
         executeOnLoadedModules(module -> module.initialize(modEventBus));
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ModdedConduitsClient.initialize(modEventBus));
@@ -71,10 +71,13 @@ public class ModdedConduits {
 
     @SubscribeEvent
     public static void onData(GatherDataEvent event) {
-        event.createDatapackRegistryObjects(createDatapackEntriesBuilder(), ModdedConduits::buildConduitConditions, Set.of(EnderIO.MOD_ID));
-
         PackOutput packOutput = event.getGenerator().getPackOutput();
-        var registries = event.getLookupProvider();
+        var conditions = new java.util.HashMap<ResourceKey<?>, ICondition>();
+        buildConduitConditions(conditions::put);
+        var entries = new com.enderio.core.data.ConditionalRegistriesProvider(packOutput, event.getLookupProvider(),
+            createDatapackEntriesBuilder(), Set.of(EnderIO.MOD_ID), conditions, "Modded Conduit Registries");
+        event.getGenerator().addProvider(event.includeServer(), entries);
+        var registries = entries.getRegistryProvider();
 
         event.getGenerator()
             .addProvider(event.includeServer(), new ModConduitRecipeProvider(packOutput, registries));

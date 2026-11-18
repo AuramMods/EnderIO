@@ -8,11 +8,11 @@ import com.enderio.enderio.api.conduits.connection.config.ConnectionConfigType;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.refinedmods.refinedstorage.neoforge.RefinedStorageNeoForgeApiImpl;
+import com.refinedmods.refinedstorage.capability.NetworkNodeProxyCapability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
+import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
@@ -27,7 +27,7 @@ public record RSConduit(ResourceLocation texture, Component description)
         implements Conduit<RSConduit, RSConduitConnectionConfig> {
     public static final MapCodec<RSConduit> CODEC = RecordCodecBuilder.mapCodec(builder -> builder
             .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(RSConduit::texture),
-                    ComponentSerialization.CODEC.fieldOf("description").forGetter(RSConduit::description))
+                    ComponentCodecs.COMPONENT.fieldOf("description").forGetter(RSConduit::description))
             .apply(builder, RSConduit::new));
 
     @Override
@@ -48,16 +48,9 @@ public record RSConduit(ResourceLocation texture, Component description)
     @Override
     public boolean canConnectToBlock(Level level, ConduitCapabilityAccessor capabilityAccessor, BlockPos conduitPos, Direction direction) {
         var cap = capabilityAccessor.getSidedCapability(
-            RefinedStorageNeoForgeApiImpl.INSTANCE.getNetworkNodeContainerProviderCapability(), direction);
-        if (cap != null) {
-            for (var connection : cap.getContainers()) {
-                if (connection.canAcceptIncomingConnection(direction.getOpposite(), level.getBlockState(conduitPos))) {
-                    return true;
-                }
-            }
-        }
+            NetworkNodeProxyCapability.NETWORK_NODE_PROXY_CAPABILITY, direction);
+        return cap != null && cap.getNode().canReceive(direction.getOpposite());
 
-        return false;
     }
 
     @Override
@@ -82,11 +75,11 @@ public record RSConduit(ResourceLocation texture, Component description)
     public @Nullable <TCapability> TCapability proxyCapability(Level level, ConnectionReader connectionReader, @Nullable ConduitNode node,
         Capability<TCapability> capability, @Nullable Direction tContext) {
 
-        if (node != null && capability == RefinedStorageNeoForgeApiImpl.INSTANCE.getNetworkNodeContainerProviderCapability()) {
+        if (node != null && capability == NetworkNodeProxyCapability.NETWORK_NODE_PROXY_CAPABILITY) {
             var data = node.getOrCreateNodeData(RSConduitNodeData.TYPE);
             if (data.isAccessible()) {
                 // noinspection unchecked
-                return (TCapability) data.containerProvider;
+                return (TCapability) data.getProxy();
             }
         }
 

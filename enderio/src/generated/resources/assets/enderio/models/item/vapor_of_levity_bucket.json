@@ -1,5 +1,5 @@
 {
-  "parent": "neoforge:item/bucket",
+  "parent": "forge:item/bucket",
   "fluid": "enderio:fluid_vapor_of_levity_still",
-  "loader": "neoforge:fluid_container"
+  "loader": "forge:fluid_container"
 }

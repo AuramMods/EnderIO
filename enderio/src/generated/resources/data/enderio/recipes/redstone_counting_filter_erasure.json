@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "enderio:redstone_counting_filter"
+    }
+  ],
+  "result": {
+    "item": "enderio:redstone_counting_filter"
+  }
+}

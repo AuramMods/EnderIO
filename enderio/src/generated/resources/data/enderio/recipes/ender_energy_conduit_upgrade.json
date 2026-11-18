@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "B": {
+      "item": "enderio:conduit_binder"
+    },
+    "C": {
+      "type": "enderio:conduit",
+      "conduit_type": "enderio:enhanced_energy"
+    },
+    "I": {
+      "tag": "c:ingots/vibrant_alloy"
+    }
+  },
+  "pattern": [
+    "BBB",
+    "ICI",
+    "BBB"
+  ],
+  "result": {
+    "count": 8,
+    "item": "enderio:conduit",
+    "nbt": "{\"enderio:data\":{\"enderio:conduit\":\"enderio:ender_energy\"}}"
+  },
+  "show_notification": true
+}

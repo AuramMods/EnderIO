@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "enderio:farming_station"
+    }
+  ],
+  "result": {
+    "item": "enderio:farming_station"
+  }
+}

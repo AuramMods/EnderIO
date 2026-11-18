@@ -21,6 +21,7 @@ sourceSets {
 
     create("gametest") {
         compileClasspath += sourceSets.main.get().output
+        runtimeClasspath += sourceSets.main.get().output
     }
 }
 
@@ -107,7 +108,6 @@ dependencies {
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
 
-    // GameTest sources remain available for Forge-native tests.
 }
 
 legacyForge {
@@ -117,7 +117,8 @@ legacyForge {
     }
 
     addModdingDependenciesTo(sourceSets.getByName("datagen"))
-//    addModdingDependenciesTo(sourceSets.getByName("gametest"))
+    addModdingDependenciesTo(sourceSets.test.get())
+    addModdingDependenciesTo(sourceSets.getByName("gametest"))
 
     mods {
         create("enderio_modded_conduits") {
@@ -125,9 +126,9 @@ legacyForge {
             sourceSet(sourceSets.getByName("main"))
         }
 
-//        create("enderio_modded_conduits_tests") {
-//            sourceSet(sourceSets.getByName("gametest"))
-//        }
+        create("enderio_modded_conduits_tests") {
+            sourceSet(sourceSets.getByName("gametest"))
+        }
     }
 
     runs {
@@ -137,6 +138,7 @@ legacyForge {
 
         val data by creating {
             data()
+            systemProperty("java.awt.headless", "true")
 
             programArguments.addAll(
                     "--mod", "enderio_modded_conduits",
@@ -150,16 +152,17 @@ legacyForge {
             loadedMods.set(listOf(mods.getByName("enderio_modded_conduits")))
         }
 
-        // TODO: When we add gametests for modded conduits...
-//        create("gameTestServer") {
-//            type = "gameTestServer"
-//
-//            sourceSet = sourceSets.getByName("gametest")
-//            loadedMods.set(listOf(mods.getByName("enderio_modded_conduits"), mods.getByName("enderio_modded_conduits_tests")))
-//        }
+        create("gameTestServer") {
+            type = "gameTestServer"
+            programArguments.add("nogui")
+            systemProperty("java.awt.headless", "true")
+            sourceSet = sourceSets.getByName("gametest")
+            gameDirectory = project.file("run/gametest-server")
+            loadedMods = listOf(mods.getByName("enderio_modded_conduits"), mods.getByName("enderio_modded_conduits_tests"))
+            systemProperty("forge.enabledGameTestNamespaces", "enderio_modded_conduits_tests")
+            systemProperty("enderio.integration.report", layout.buildDirectory.file("test-results/gameTestServer/results.xml").get().asFile.absolutePath)
+        }
     }
-
-    addModdingDependenciesTo(sourceSets.test.get())
 }
 
 // Expand variables in mods.toml
@@ -261,3 +264,21 @@ publishing {
         }
     }
 }
+
+// Keep native library logs from unit tests in the module's ignored build output.
+tasks.test {
+    val testDirectory = layout.buildDirectory.dir("unit-test-run").get().asFile
+    workingDir(testDirectory)
+    doFirst { testDirectory.mkdirs() }
+}
+
+val prepareIntegrationTestProfile = tasks.register<PrepareTestProfile>("prepareIntegrationTestProfile") {
+    gameDirectory = layout.projectDirectory.dir("run/gametest-server")
+    client = false
+}
+tasks.matching { it.name == "runGameTestServer" }.configureEach {
+    dependsOn(prepareIntegrationTestProfile)
+}
+
+// These tests run the actual bundled mod and pinned integrations in a native server.
+tasks.named("check") { dependsOn("runGameTestServer") }

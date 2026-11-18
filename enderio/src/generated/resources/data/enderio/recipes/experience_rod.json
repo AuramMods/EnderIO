@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "E": {
+      "tag": "c:ingots/vibrant_alloy"
+    },
+    "S": {
+      "tag": "c:ingots/soularium"
+    },
+    "V": {
+      "item": "enderio:suspicious_seed"
+    }
+  },
+  "pattern": [
+    "  S",
+    "VE ",
+    "SV "
+  ],
+  "result": {
+    "item": "enderio:experience_rod"
+  },
+  "show_notification": true
+}

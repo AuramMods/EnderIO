@@ -1,0 +1,16 @@
+{
+  "type": "enderio:painting",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "enderio"
+    }
+  ],
+  "input": {
+    "item": "enderio:conduit_facade"
+  },
+  "output": {
+    "count": 1,
+    "id": "enderio:conduit_facade"
+  }
+}

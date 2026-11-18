@@ -1,0 +1,45 @@
+{
+  "type": "enderio:sag_milling",
+  "conditions": [
+    {
+      "type": "forge:not",
+      "value": {
+        "type": "forge:tag_empty",
+        "tag": "c:raw_materials/uranium"
+      }
+    },
+    {
+      "type": "forge:not",
+      "value": {
+        "type": "forge:tag_empty",
+        "tag": "c:dusts/uranium"
+      }
+    }
+  ],
+  "energy": 2400,
+  "input": {
+    "tag": "c:raw_materials/uranium"
+  },
+  "outputs": [
+    {
+      "item": {
+        "count": 1,
+        "tag": "c:dusts/uranium"
+      }
+    },
+    {
+      "chance": 0.8,
+      "item": {
+        "count": 1,
+        "tag": "c:dusts/uranium"
+      }
+    },
+    {
+      "chance": 0.2,
+      "item": {
+        "count": 1,
+        "tag": "c:dusts/lead"
+      }
+    }
+  ]
+}

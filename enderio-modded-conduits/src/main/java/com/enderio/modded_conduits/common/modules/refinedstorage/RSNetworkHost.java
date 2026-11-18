@@ -7,11 +7,10 @@ import com.enderio.enderio.api.network.DumbStreamCodec;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.refinedmods.refinedstorage.common.support.network.NetworkNodeContainerProviderImpl;
 import com.enderio.core.common.network.codec.PacketCodec;
 import org.jetbrains.annotations.Nullable;
 
-public class RSNetworkHost extends NetworkNodeContainerProviderImpl implements ConduitData<RSNetworkHost> {
+public class RSNetworkHost implements ConduitData<RSNetworkHost> {
     public static final MapCodec<RSNetworkHost> CODEC = RecordCodecBuilder
             .mapCodec(rsNetworkHostInstance -> rsNetworkHostInstance.group(Codec.INT.fieldOf("int").forGetter(i -> i.i))
                     .apply(rsNetworkHostInstance, RSNetworkHost::new));

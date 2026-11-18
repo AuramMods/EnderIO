@@ -214,6 +214,7 @@ legacyForge {
 
         val data by creating {
             data()
+            systemProperty("java.awt.headless", "true")
             loadedMods = listOf(modEnderio)
 
             programArguments.addAll(

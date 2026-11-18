@@ -12,7 +12,7 @@
     "machine",
     "overlay"
   ],
-  "loader": "neoforge:composite",
+  "loader": "forge:composite",
   "textures": {
     "particle": "enderio:block/slice_and_splice_front"
   }

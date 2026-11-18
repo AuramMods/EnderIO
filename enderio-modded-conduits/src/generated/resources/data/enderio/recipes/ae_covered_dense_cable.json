@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "ae2"
+    }
+  ],
+  "key": {
+    "B": {
+      "item": "enderio:conduit_binder"
+    },
+    "I": {
+      "tag": "ae2:covered_dense_cable"
+    }
+  },
+  "pattern": [
+    "BBB",
+    "III",
+    "BBB"
+  ],
+  "result": {
+    "count": 3,
+    "item": "enderio:conduit",
+    "nbt": "{\"enderio:data\":{\"enderio:conduit\":\"enderio:dense_me\"}}"
+  },
+  "show_notification": true
+}

@@ -12,7 +12,7 @@
     "machine",
     "overlay"
   ],
-  "loader": "neoforge:composite",
+  "loader": "forge:composite",
   "textures": {
     "particle": "enderio:block/painting_machine_front"
   }

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "enderio:wireless_charger"
+    }
+  ],
+  "result": {
+    "item": "enderio:wireless_charger"
+  }
+}

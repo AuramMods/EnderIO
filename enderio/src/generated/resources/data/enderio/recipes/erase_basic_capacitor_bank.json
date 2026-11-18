@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "enderio:basic_capacitor_bank"
+    }
+  ],
+  "result": {
+    "item": "enderio:basic_capacitor_bank"
+  }
+}

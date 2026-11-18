@@ -11,7 +11,7 @@
     "tank",
     "overlay"
   ],
-  "loader": "neoforge:composite",
+  "loader": "forge:composite",
   "textures": {
     "particle": "enderio:block/machine_side"
   }

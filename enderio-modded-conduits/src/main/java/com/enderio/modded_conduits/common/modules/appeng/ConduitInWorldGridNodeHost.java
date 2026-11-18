@@ -37,12 +37,14 @@ public class ConduitInWorldGridNodeHost implements IInWorldGridNodeHost, Conduit
     }
 
     public ConduitInWorldGridNodeHost(CompoundTag mainNodeTag) {
-        savedMainNode = mainNodeTag;
+        savedMainNode = mainNodeTag.copy();
     }
 
     @Override
     public ConduitInWorldGridNodeHost deepCopy() {
-        return this;
+        var copy = new ConduitInWorldGridNodeHost(saveMainNode());
+        copy.isDense = isDense;
+        return copy;
     }
 
     @Override
@@ -61,12 +63,13 @@ public class ConduitInWorldGridNodeHost implements IInWorldGridNodeHost, Conduit
     }
 
     public void clearMainNode() {
+        this.savedMainNode = saveMainNode();
         this.mainNode = null;
         this.isDense = false;
     }
 
     protected CompoundTag saveMainNode() {
-        var tag = new CompoundTag();
+        var tag = savedMainNode == null ? new CompoundTag() : savedMainNode.copy();
         if (mainNode != null) {
             mainNode.saveToNBT(tag);
         }

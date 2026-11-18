@@ -1,0 +1,45 @@
+{
+  "type": "enderio:sag_milling",
+  "conditions": [
+    {
+      "type": "forge:not",
+      "value": {
+        "type": "forge:tag_empty",
+        "tag": "c:ores/osmium"
+      }
+    },
+    {
+      "type": "forge:not",
+      "value": {
+        "type": "forge:tag_empty",
+        "tag": "c:raw_materials/osmium"
+      }
+    }
+  ],
+  "energy": 2400,
+  "input": {
+    "tag": "c:ores/osmium"
+  },
+  "outputs": [
+    {
+      "item": {
+        "count": 1,
+        "tag": "c:raw_materials/osmium"
+      }
+    },
+    {
+      "chance": 0.33,
+      "item": {
+        "count": 1,
+        "tag": "c:raw_materials/osmium"
+      }
+    },
+    {
+      "chance": 0.15,
+      "item": {
+        "count": 1,
+        "id": "minecraft:cobblestone"
+      }
+    }
+  ]
+}

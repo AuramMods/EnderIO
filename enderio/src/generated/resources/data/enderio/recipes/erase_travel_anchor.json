@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "enderio:travel_anchor"
+    }
+  ],
+  "result": {
+    "item": "enderio:travel_anchor"
+  }
+}

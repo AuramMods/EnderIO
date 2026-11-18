@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "B": {
+      "item": "enderio:conduit_binder"
+    },
+    "C": {
+      "tag": "c:ingots/conductive_alloy"
+    },
+    "G": {
+      "tag": "c:glass_blocks/clear"
+    }
+  },
+  "pattern": [
+    "BBB",
+    "CGC",
+    "BBB"
+  ],
+  "result": {
+    "count": 8,
+    "item": "enderio:conduit",
+    "nbt": "{\"enderio:data\":{\"enderio:conduit\":\"enderio:fluid\"}}"
+  },
+  "show_notification": true
+}

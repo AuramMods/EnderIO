@@ -24,7 +24,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 
 /** An owned native Mekanism stack retaining its 1.20.1 chemical family. */
 public final class ChemicalResource {
-    public static final ChemicalResource EMPTY = new ChemicalResource(BoxedChemicalStack.EMPTY);
+    public static final ChemicalResource EMPTY = new ChemicalResource(null);
 
     public static final Codec<ChemicalResource> OPTIONAL_CODEC = JsonCodec.of(element -> {
         var json = element.getAsJsonObject();
@@ -60,7 +60,11 @@ public final class ChemicalResource {
         }
     });
 
-    private final BoxedChemicalStack stack;
+    // Mod construction may register codecs before Mekanism creates its four chemical registries.
+    // An untyped empty value needs no native stack until a caller requests one.
+    private final @org.jetbrains.annotations.Nullable BoxedChemicalStack stack;
+
+    private BoxedChemicalStack boxed() { return stack == null ? BoxedChemicalStack.EMPTY : stack; }
 
     private ChemicalResource(BoxedChemicalStack stack) {
         this.stack = stack;
@@ -96,13 +100,13 @@ public final class ChemicalResource {
         return result;
     }
 
-    public ChemicalType family() { return stack.getChemicalType(); }
-    public Chemical<?> getChemical() { return stack.getChemicalStack().getType(); }
-    public long getAmount() { return stack.getChemicalStack().getAmount(); }
-    public boolean isEmpty() { return stack.isEmpty(); }
-    public Component getTextComponent() { return stack.getTextComponent(); }
-    public int getChemicalTint() { return stack.getChemicalStack().getChemicalTint(); }
-    public ChemicalStack<?> nativeCopy() { return stack.getChemicalStack().copy(); }
+    public ChemicalType family() { return boxed().getChemicalType(); }
+    public Chemical<?> getChemical() { return boxed().getChemicalStack().getType(); }
+    public long getAmount() { return stack == null ? 0 : stack.getChemicalStack().getAmount(); }
+    public boolean isEmpty() { return stack == null || stack.isEmpty(); }
+    public Component getTextComponent() { return boxed().getTextComponent(); }
+    public int getChemicalTint() { return boxed().getChemicalStack().getChemicalTint(); }
+    public ChemicalStack<?> nativeCopy() { return boxed().getChemicalStack().copy(); }
     public ChemicalResource copy() { return isEmpty() ? EMPTY : new ChemicalResource(stack.copy()); }
 
     public ChemicalResource copyWithAmount(long amount) {

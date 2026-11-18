@@ -28,6 +28,11 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
+        // Preserve the source branch's common-tag IDs while consuming Forge's native shared tags.
+        for (var path : new String[] { "dusts", "gems", "ingots", "nuggets", "storage_blocks" }) {
+            tag(net.minecraft.tags.ItemTags.create(new net.minecraft.resources.ResourceLocation("c", path)))
+                .addTag(net.minecraft.tags.ItemTags.create(new net.minecraft.resources.ResourceLocation("forge", path)));
+        }
         tag(EIOTags.Items.FERTILIZERS).add(net.minecraft.world.item.Items.BONE_MEAL)
             .addOptionalTag(new net.minecraft.resources.ResourceLocation("forge", "fertilizers"));
         tag(EIOTags.Items.SKULLS).add(Items.PLAYER_HEAD, Items.CREEPER_HEAD, Items.ZOMBIE_HEAD,

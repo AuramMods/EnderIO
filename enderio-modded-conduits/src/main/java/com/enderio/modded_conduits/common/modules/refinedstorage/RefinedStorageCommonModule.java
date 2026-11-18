@@ -11,19 +11,19 @@ import com.enderio.enderio.api.conduits.network.node.legacy.ConduitDataType;
 import com.enderio.enderio.init.EIOItems;
 import com.enderio.modded_conduits.common.ModuleModIds;
 import com.enderio.modded_conduits.common.modules.ConduitCommonModule;
-import com.refinedmods.refinedstorage.common.content.Tags;
-import com.refinedmods.refinedstorage.neoforge.RefinedStorageNeoForgeApiImpl;
+import com.refinedmods.refinedstorage.RSBlocks;
+import com.refinedmods.refinedstorage.capability.NetworkNodeProxyCapability;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
-import net.minecraft.data.recipes.ShapedRecipeBuilder;
-import net.minecraft.data.worldgen.BootstrapContext;
+import com.enderio.core.data.recipe.RecipeOutput;
+import com.enderio.core.data.recipe.StackShapedRecipeBuilder;
+import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.neoforge.common.conditions.ICondition;
-import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.common.crafting.conditions.ModLoadedCondition;
 import net.minecraftforge.registries.DeferredRegister;
 
 import java.util.function.BiConsumer;
@@ -52,7 +52,7 @@ public class RefinedStorageCommonModule implements ConduitCommonModule {
     public static final Supplier<ConduitType<RSConduit, RSConduitConnectionConfig>> RS_CONDUIT = CONDUIT_TYPES.register("rs",
             () -> ConduitType.builder(RSConduit.CODEC, RSConduitConnectionConfig.TYPE)
                     .exposeCapability(
-                            RefinedStorageNeoForgeApiImpl.INSTANCE.getNetworkNodeContainerProviderCapability())
+                            NetworkNodeProxyCapability.NETWORK_NODE_PROXY_CAPABILITY)
                     .build());
 
     static {
@@ -73,10 +73,17 @@ public class RefinedStorageCommonModule implements ConduitCommonModule {
         CONDUIT_CONNECTION_CONFIG_TYPES.register(modEventBus);
         CONDUIT_DATA_TYPES.register(modEventBus);
         CONDUIT_NODE_DATA_TYPES.register(modEventBus);
+        modEventBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent event) ->
+            event.enqueueWork(() -> com.refinedmods.refinedstorage.apiimpl.API.instance().getNetworkNodeRegistry()
+                .add(ConduitRSNode.ID, (tag, level, pos) -> {
+                    var node = new ConduitRSNode(level, pos);
+                    node.read(tag);
+                    return node;
+                })));
     }
 
     @Override
-    public void bootstrapConduits(BootstrapContext<Conduit<?, ?>> context) {
+    public void bootstrapConduits(BootstapContext<Conduit<?, ?>> context) {
         context.register(ConduitKeys.RS, new RSConduit(EnderIO.rl("block/conduit/rs"), Component.translatable(ConduitApi.INSTANCE.makeDescriptionId(ConduitKeys.RS))));
     }
 
@@ -89,14 +96,14 @@ public class RefinedStorageCommonModule implements ConduitCommonModule {
     public void buildRecipes(HolderLookup.Provider lookupProvider, RecipeOutput recipeOutput) {
         var rsRecipeOutput = recipeOutput.withConditions(CONDITION);
 
-        var conduit = lookupProvider.holderOrThrow(ConduitKeys.RS);
+        var conduit = lookupProvider.lookupOrThrow(EnderIORegistries.Keys.CONDUIT).getOrThrow(ConduitKeys.RS);
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ConduitApi.INSTANCE.getConduitItem(conduit, 3))
+        StackShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ConduitApi.INSTANCE.getConduitItem(conduit, 3))
                 .pattern("BBB")
                 .pattern("III")
                 .pattern("BBB")
                 .define('B', EIOItems.CONDUIT_BINDER)
-                .define('I', Tags.CABLES)
+                .define('I', RSBlocks.CABLE.get())
                 .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.CONDUIT_BINDER))
                 .save(rsRecipeOutput, EnderIO.rl("rs_conduit"));
     }

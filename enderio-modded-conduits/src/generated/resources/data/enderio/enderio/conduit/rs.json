@@ -1,13 +1,13 @@
 {
-  "neoforge:conditions": [
-    {
-      "type": "neoforge:mod_loaded",
-      "modid": "refinedstorage"
-    }
-  ],
   "type": "enderio:rs",
   "description": {
     "translate": "conduit.enderio.rs"
   },
-  "texture": "enderio:block/conduit/rs"
+  "texture": "enderio:block/conduit/rs",
+  "forge:conditions": [
+    {
+      "modid": "refinedstorage",
+      "type": "forge:mod_loaded"
+    }
+  ]
 }

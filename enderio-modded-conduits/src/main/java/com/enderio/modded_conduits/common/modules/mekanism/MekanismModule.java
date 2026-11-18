@@ -40,9 +40,9 @@ import net.minecraft.core.HolderLookup;
 import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
-import net.minecraft.data.recipes.ShapedRecipeBuilder;
-import net.minecraft.data.worldgen.BootstrapContext;
+import com.enderio.core.data.recipe.RecipeOutput;
+import com.enderio.core.data.recipe.StackShapedRecipeBuilder;
+import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
@@ -59,8 +59,8 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 import com.enderio.core.common.capability.ItemCapabilityRegistry;
-import net.neoforged.neoforge.common.conditions.ICondition;
-import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.common.crafting.conditions.ModLoadedCondition;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.registries.RegistryObject;
 import com.enderio.core.common.registries.ItemDeferredHolder;
@@ -188,13 +188,13 @@ public class MekanismModule implements ConduitCommonModule {
 
     private void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == EnderIOAPI.MAIN_CREATIVE_TAB) {
-            event.insertAfter(EIOItems.BASIC_SOUL_FILTER.get().getDefaultInstance(),
+            event.getEntries().putAfter(EIOItems.BASIC_SOUL_FILTER.get().getDefaultInstance(),
                 BASIC_CHEMICAL_FILTER.get().getDefaultInstance(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
     }
 
     @Override
-    public void bootstrapConduits(BootstrapContext<Conduit<?, ?>> context) {
+    public void bootstrapConduits(BootstapContext<Conduit<?, ?>> context) {
         context.register(HEAT, new HeatConduit(EnderIO.rl("block/conduit/heat"), Component.translatable(ConduitApi.INSTANCE.makeDescriptionId(HEAT))));
         context.register(CHEMICAL,
             new ChemicalConduit(EnderIO.rl("block/conduit/chemical"), Component.translatable(ConduitApi.INSTANCE.makeDescriptionId(CHEMICAL)),
@@ -217,12 +217,12 @@ public class MekanismModule implements ConduitCommonModule {
     public void buildRecipes(HolderLookup.Provider lookupProvider, RecipeOutput recipeOutput) {
         var mekRecipeOutput = recipeOutput.withConditions(CONDITION);
 
-        var chemicalConduit = lookupProvider.holderOrThrow(CHEMICAL);
-        var pressurizedChemicalConduit = lookupProvider.holderOrThrow(PRESSURIZED_CHEMICAL);
-        var enderChemicalConduit = lookupProvider.holderOrThrow(ENDER_CHEMICAL);
-        var heatConduit = lookupProvider.holderOrThrow(HEAT);
+        var chemicalConduit = lookupProvider.lookupOrThrow(EnderIORegistries.Keys.CONDUIT).getOrThrow(CHEMICAL);
+        var pressurizedChemicalConduit = lookupProvider.lookupOrThrow(EnderIORegistries.Keys.CONDUIT).getOrThrow(PRESSURIZED_CHEMICAL);
+        var enderChemicalConduit = lookupProvider.lookupOrThrow(EnderIORegistries.Keys.CONDUIT).getOrThrow(ENDER_CHEMICAL);
+        var heatConduit = lookupProvider.lookupOrThrow(EnderIORegistries.Keys.CONDUIT).getOrThrow(HEAT);
 
-        ShapedRecipeBuilder
+        StackShapedRecipeBuilder
                 .shaped(RecipeCategory.BUILDING_BLOCKS, ConduitApiImpl.INSTANCE.getConduitItem(chemicalConduit, 3))
                 .pattern("BBB")
                 .pattern("III")
@@ -234,7 +234,7 @@ public class MekanismModule implements ConduitCommonModule {
                 .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.CONDUIT_BINDER))
                 .save(mekRecipeOutput, EnderIO.rl("mek_basic_pressurized_tube"));
 
-        ShapedRecipeBuilder
+        StackShapedRecipeBuilder
                 .shaped(RecipeCategory.BUILDING_BLOCKS,
                         ConduitApiImpl.INSTANCE.getConduitItem(pressurizedChemicalConduit, 3))
                 .pattern("BBB")
@@ -247,7 +247,7 @@ public class MekanismModule implements ConduitCommonModule {
                 .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.CONDUIT_BINDER))
                 .save(mekRecipeOutput, EnderIO.rl("mek_advanced_pressurized_tube"));
 
-        ShapedRecipeBuilder
+        StackShapedRecipeBuilder
                 .shaped(RecipeCategory.BUILDING_BLOCKS, ConduitApiImpl.INSTANCE.getConduitItem(enderChemicalConduit, 3))
                 .pattern("BBB")
                 .pattern("III")
@@ -259,7 +259,7 @@ public class MekanismModule implements ConduitCommonModule {
                 .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.CONDUIT_BINDER))
                 .save(mekRecipeOutput, EnderIO.rl("mek_elite_pressurized_tube"));
 
-        ShapedRecipeBuilder
+        StackShapedRecipeBuilder
                 .shaped(RecipeCategory.BUILDING_BLOCKS,
                         ConduitApiImpl.INSTANCE.getConduitItem(pressurizedChemicalConduit, 8))
                 .pattern("CCC")
@@ -272,7 +272,7 @@ public class MekanismModule implements ConduitCommonModule {
                 .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.CONDUIT_BINDER))
                 .save(mekRecipeOutput, EnderIO.rl("mek_basic_pressurized_tube_upgrade"));
 
-        ShapedRecipeBuilder
+        StackShapedRecipeBuilder
                 .shaped(RecipeCategory.BUILDING_BLOCKS, ConduitApiImpl.INSTANCE.getConduitItem(enderChemicalConduit, 8))
                 .pattern("CCC")
                 .pattern("CUC")
@@ -284,7 +284,7 @@ public class MekanismModule implements ConduitCommonModule {
                 .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.CONDUIT_BINDER))
                 .save(mekRecipeOutput, EnderIO.rl("mek_advanced_pressurized_tube_upgrade"));
 
-        ShapedRecipeBuilder
+        StackShapedRecipeBuilder
                 .shaped(RecipeCategory.BUILDING_BLOCKS, ConduitApiImpl.INSTANCE.getConduitItem(heatConduit, 3))
                 .pattern("BBB")
                 .pattern("III")
@@ -296,14 +296,14 @@ public class MekanismModule implements ConduitCommonModule {
                 .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.CONDUIT_BINDER))
                 .save(mekRecipeOutput, EnderIO.rl("mek_advanced_thermodynamic_conductor"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, BASIC_CHEMICAL_FILTER.get())
+        StackShapedRecipeBuilder.shaped(RecipeCategory.MISC, BASIC_CHEMICAL_FILTER.get())
                 .pattern(" P ")
                 .pattern("POP")
                 .pattern(" P ")
                 .define('P', Items.PAPER)
                 .define('O', OSMIUM)
                 .unlockedBy("has_ingredient",
-                        InventoryChangeTrigger.TriggerInstance.hasItems(ItemPredicate.Builder.item().of(OSMIUM)))
+                        InventoryChangeTrigger.TriggerInstance.hasItems(ItemPredicate.Builder.item().of(OSMIUM).build()))
                 .save(mekRecipeOutput, EnderIO.rl("mek_chemical_filter"));
     }
 }

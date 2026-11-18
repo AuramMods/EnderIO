@@ -31,6 +31,77 @@ import java.util.List;
 public class RecipeDatagenTests {
     private static ResourceLocation id(String path) { return ItemDataTestContent.id(path); }
 
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void nestedConditionsApplyToRecipeAndAdvancementWithoutAliasing(GameTestHelper helper) {
+        var records = new ArrayList<FinishedRecipe>();
+        var writer = new RecipeOutput(records::add, helper.getLevel().registryAccess());
+        var conditions = new ICondition[] { new ModLoadedCondition("forge") };
+        var installed = writer.withConditions(conditions);
+        conditions[0] = new ModLoadedCondition("endercore_tests_missing_mod");
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, Items.DIAMOND).pattern("II")
+            .define('I', Items.IRON_INGOT)
+            .unlockedBy("has_iron", InventoryChangeTrigger.TriggerInstance.hasItems(Items.IRON_INGOT))
+            .save(installed, id("conditional_present"));
+        var missing = installed.withConditions(new ModLoadedCondition("endercore_tests_missing_mod"));
+        var advancement = Advancement.Builder.advancement()
+            .addCriterion("has_iron", InventoryChangeTrigger.TriggerInstance.hasItems(Items.IRON_INGOT))
+            .build(id("recipes/conditional_absent"));
+        missing.accept(id("conditional_absent"),
+            new AlloySmeltingRecipe(List.of(SizedIngredient.of(Items.IRON_INGOT, 1)), taggedOutput(3), 20, 0),
+            advancement, new ModLoadedCondition("minecraft"));
+        var present = records.get(0);
+        helper.assertTrue(CraftingHelper.processConditions(present.serializeRecipe(), "conditions", ICondition.IContext.EMPTY),
+            "Mutating caller's condition array changed the writer");
+        helper.assertTrue(net.minecraftforge.common.crafting.ConditionalAdvancement.processConditional(
+            present.serializeAdvancement(), ICondition.IContext.EMPTY) != null, "Present mod advancement was skipped");
+        var absent = records.get(1);
+        helper.assertTrue(absent.serializeRecipe().getAsJsonArray("conditions").size() == 3
+            && !CraftingHelper.processConditions(absent.serializeRecipe(), "conditions", ICondition.IContext.EMPTY),
+            "Nested conditions did not compose with codec recipe conditions");
+        helper.assertTrue(net.minecraftforge.common.crafting.ConditionalAdvancement.processConditional(
+            absent.serializeAdvancement(), ICondition.IContext.EMPTY) == null, "Missing mod advancement was not skipped");
+        absent.serializeAdvancement().getAsJsonArray("conditions").remove(0);
+        helper.assertTrue(absent.serializeAdvancement().getAsJsonArray("conditions").size() == 3,
+            "Advancement serialization shares mutable condition JSON");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void nativeRegistryProviderWritesConditionalBytesAndMatchingCacheHashes(GameTestHelper helper) {
+        var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE,
+            id("conditional_registry_entry"));
+        var plainKey = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE,
+            id("plain_registry_entry"));
+        var builder = new net.minecraft.core.RegistrySetBuilder()
+            .add(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE, context -> {
+                context.register(key, new net.minecraft.world.level.levelgen.feature.ConfiguredFeature<>(
+                    net.minecraft.world.level.levelgen.feature.Feature.NO_OP,
+                    net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration.NONE));
+                context.register(plainKey, new net.minecraft.world.level.levelgen.feature.ConfiguredFeature<>(
+                    net.minecraft.world.level.levelgen.feature.Feature.NO_OP,
+                    net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration.NONE));
+            });
+        var output = new net.minecraft.data.PackOutput(java.nio.file.Path.of("conditional-registry-test"));
+        var provider = new com.enderio.core.data.ConditionalRegistriesProvider(output,
+            java.util.concurrent.CompletableFuture.completedFuture(helper.getLevel().registryAccess()), builder,
+            java.util.Set.of("endercore_tests"), java.util.Map.of(key, new ModLoadedCondition("endercore_tests_missing_mod")),
+            "Conditional registry test");
+        var generated = new java.util.concurrent.ConcurrentHashMap<java.nio.file.Path, com.google.gson.JsonObject>();
+        provider.run((path, bytes, hash) -> {
+            helper.assertTrue(hash.equals(com.google.common.hash.Hashing.sha1().hashBytes(bytes)), "Cached hash differs from written bytes");
+            generated.put(path, com.google.gson.JsonParser.parseString(new String(bytes, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject());
+        }).join();
+        var paths = output.createPathProvider(net.minecraft.data.PackOutput.Target.DATA_PACK, "worldgen/configured_feature");
+        var conditional = generated.get(paths.json(key.location()));
+        var plain = generated.get(paths.json(plainKey.location()));
+        helper.assertTrue(conditional != null && conditional.has("forge:conditions")
+            && !ICondition.shouldRegisterEntry(conditional), "Native registry loader accepted an unavailable optional entry");
+        helper.assertTrue(plain != null && !plain.has("forge:conditions") && ICondition.shouldRegisterEntry(plain),
+            "Unconditional registry entry was changed or skipped");
+        helper.assertTrue(conditional.get("type").getAsString().equals("minecraft:no_op"), "Registry payload was lost");
+        helper.succeed();
+    }
+
     private static ItemStack taggedOutput(int count) {
         var stack = new ItemStack(Items.DIAMOND, count);
         stack.getOrCreateTag().putString("enderio:conduit", "enderio:energy");

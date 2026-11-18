@@ -92,7 +92,9 @@ public class EnchanterRecipeProvider extends SubRecipeProvider {
 
     protected void build(Holder<Enchantment> enchantment, SizedIngredient input, int levelModifier,
             RecipeOutput recipeOutput) {
-        recipeOutput.accept(EnderIO.rl("enchanting/" + enchantment.unwrapKey().orElseThrow().location().getPath()),
+        var recipeName = enchantment.value() == Enchantments.SWEEPING_EDGE ? "sweeping_edge"
+            : enchantment.unwrapKey().orElseThrow().location().getPath();
+        recipeOutput.accept(EnderIO.rl("enchanting/" + recipeName),
                 new EnchanterRecipe(enchantment, levelModifier, input), null);
     }
 

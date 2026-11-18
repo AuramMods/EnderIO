@@ -1,6 +1,6 @@
 package com.enderio.modded_conduits.common.modules.appeng;
 
-import appeng.api.AECapabilities;
+import appeng.capabilities.Capabilities;
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGridNode;
@@ -23,7 +23,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
+import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
@@ -38,11 +38,18 @@ import java.util.Set;
 public record MEConduit(ResourceLocation texture, Component description, AEColor color, boolean isDense)
         implements Conduit<MEConduit, MEConduitConnectionConfig> {
 
+    public static final Codec<AEColor> COLOR_CODEC = Codec.STRING.comapFlatMap(name ->
+        java.util.Arrays.stream(AEColor.values()).filter(value -> value.registryPrefix.equals(name)).findFirst()
+            .map(com.mojang.serialization.DataResult::success)
+            .orElseGet(() -> com.mojang.serialization.DataResult.error(() -> "Unknown AE2 color: " + name)),
+        value -> value.registryPrefix);
+
     public static final MapCodec<MEConduit> CODEC = RecordCodecBuilder
             .mapCodec(builder -> builder
                     .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(MEConduit::texture),
-                            ComponentSerialization.CODEC.fieldOf("description").forGetter(MEConduit::description),
-                            AEColor.CODEC.optionalFieldOf("color", AEColor.TRANSPARENT).forGetter(MEConduit::color),
+                            ComponentCodecs.COMPONENT.fieldOf("description").forGetter(MEConduit::description),
+                            new com.enderio.core.common.serialization.StrictOptionalFieldCodec<>(COLOR_CODEC, "color")
+                                .xmap(value -> value.orElse(AEColor.TRANSPARENT), java.util.Optional::of).forGetter(MEConduit::color),
                             Codec.BOOL.fieldOf("is_dense").forGetter(MEConduit::isDense))
                     .apply(builder, MEConduit::new));
 
@@ -74,7 +81,7 @@ public record MEConduit(ResourceLocation texture, Component description, AEColor
     @Override
     public boolean canConnectToBlock(Level level, ConduitCapabilityAccessor capabilityAccessor, BlockPos conduitPos, Direction direction) {
         // Check for a host cap ourselves. This makes sure we start listening for capability invalidation.
-        var host = capabilityAccessor.getCapability(AECapabilities.IN_WORLD_GRID_NODE_HOST, direction, null);
+        var host = capabilityAccessor.getCapability(Capabilities.IN_WORLD_GRID_NODE_HOST, direction, null);
         if (host == null) {
             return false;
         }
@@ -111,8 +118,8 @@ public record MEConduit(ResourceLocation texture, Component description, AEColor
         var data = node.getOrCreateNodeData(MEConduitNodeData.TYPE);
         IManagedGridNode mainNode = data.getMainNode();
         if (mainNode != null) {
-            mainNode.destroy();
             data.clearMainNode();
+            mainNode.destroy();
         }
     }
 
@@ -159,7 +166,7 @@ public record MEConduit(ResourceLocation texture, Component description, AEColor
     @Override
     public @Nullable <TCapability> TCapability proxyCapability(Level level, ConnectionReader connectionReader, @Nullable ConduitNode node,
         Capability<TCapability> capability, @Nullable Direction tContext) {
-        if (node != null && capability == AECapabilities.IN_WORLD_GRID_NODE_HOST) {
+        if (node != null && capability == Capabilities.IN_WORLD_GRID_NODE_HOST) {
             return (TCapability) node.getOrCreateNodeData(MEConduitNodeData.TYPE);
         }
 

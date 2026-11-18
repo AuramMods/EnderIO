@@ -1,0 +1,32 @@
+{
+  "type": "enderio:sag_milling",
+  "bonus": "none",
+  "conditions": [
+    {
+      "type": "forge:not",
+      "value": {
+        "type": "forge:tag_empty",
+        "tag": "c:ingots/uranium"
+      }
+    },
+    {
+      "type": "forge:not",
+      "value": {
+        "type": "forge:tag_empty",
+        "tag": "c:dusts/uranium"
+      }
+    }
+  ],
+  "energy": 2400,
+  "input": {
+    "tag": "c:ingots/uranium"
+  },
+  "outputs": [
+    {
+      "item": {
+        "count": 1,
+        "tag": "c:dusts/uranium"
+      }
+    }
+  ]
+}

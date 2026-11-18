@@ -32,13 +32,13 @@ public final class MEConduitNodeData implements NodeData, IInWorldGridNodeHost {
     }
 
     private MEConduitNodeData(CompoundTag savedMainNode) {
-        this.savedMainNode = savedMainNode;
+        this.savedMainNode = savedMainNode == null ? null : savedMainNode.copy();
     }
 
     // TODO: 1.22 Remove.
     MEConduitNodeData(@Nullable IManagedGridNode mainNode, @Nullable CompoundTag savedMainNode, boolean isDense) {
         this.mainNode = mainNode;
-        this.savedMainNode = savedMainNode;
+        this.savedMainNode = savedMainNode == null ? null : savedMainNode.copy();
         this.cableType = isDense ? AECableType.DENSE_SMART : AECableType.SMART;
     }
 
@@ -53,6 +53,7 @@ public final class MEConduitNodeData implements NodeData, IInWorldGridNodeHost {
     }
 
     public void clearMainNode() {
+        this.savedMainNode = saveMainNode();
         this.mainNode = null;
         this.cableType = AECableType.SMART;
     }
@@ -71,7 +72,7 @@ public final class MEConduitNodeData implements NodeData, IInWorldGridNodeHost {
     }
 
     private CompoundTag saveMainNode() {
-        var tag = new CompoundTag();
+        var tag = savedMainNode == null ? new CompoundTag() : savedMainNode.copy();
         if (mainNode != null) {
             mainNode.saveToNBT(tag);
         }

@@ -36,3 +36,5 @@ Sources:
 - [Almost Unified Maven metadata](https://maven.blamejared.com/com/almostreliable/mods/almostunified-forge/maven-metadata.xml).
 - [FTB Ultimine Maven metadata](https://maven.ftb.dev/releases/dev/ftb/mods/ftb-ultimine-forge/maven-metadata.xml).
 - [FTB Library Maven metadata](https://maven.ftb.dev/releases/dev/ftb/mods/ftb-library-forge/maven-metadata.xml).
+
+Cycle 032 loads pinned AE2, Mekanism and Refined Storage with the actual mod in a native headless development server and passes six addon state tests; seven isolated Mekanism tests also pass. These are partial integration checks, not complete gameplay certification. Datagen and Java compilation succeed. LaserIO's book recipe currently reports a missing Patchouli serializer, and Embeddium reports a datagen-only fingerprint error; resolve these while retaining the supported integrations. See [cycle 032](cycle-032.md).

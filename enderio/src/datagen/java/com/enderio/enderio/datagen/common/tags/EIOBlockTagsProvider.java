@@ -173,6 +173,8 @@ public class EIOBlockTagsProvider extends BlockTagsProvider {
         tag(BlockTags.NEEDS_DIAMOND_TOOL)
             .add(EIOBlocks.REINFORCED_OBSIDIAN.get());
 
+        tag(net.minecraft.tags.BlockTags.create(new net.minecraft.resources.ResourceLocation("c", "storage_blocks")))
+            .addTag(Tags.Blocks.STORAGE_BLOCKS);
         tag(Tags.Blocks.STORAGE_BLOCKS)
             .addTag(EIOTags.Blocks.BLOCKS_CONDUCTIVE_ALLOY)
             .addTag(EIOTags.Blocks.BLOCKS_DARK_STEEL)

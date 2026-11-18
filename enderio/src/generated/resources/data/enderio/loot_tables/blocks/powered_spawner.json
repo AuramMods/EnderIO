@@ -10,11 +10,11 @@
             {
               "function": "endercore:copy_block_entity_data",
               "include": [
-                "enderio:soul",
+                "enderio:container",
                 "enderio:energy",
                 "enderio:io_config",
                 "enderio:redstone_control",
-                "enderio:container"
+                "enderio:soul"
               ]
             }
           ],

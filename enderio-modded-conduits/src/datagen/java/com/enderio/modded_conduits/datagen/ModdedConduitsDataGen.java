@@ -4,9 +4,9 @@ import com.enderio.modded_conduits.common.ModdedConduits;
 import com.enderio.modded_conduits.datagen.client.ModdedConduitsItemModelProvider;
 import com.enderio.modded_conduits.datagen.client.ModdedConduitsLanguageProvider;
 import net.minecraft.data.PackOutput;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.data.event.GatherDataEvent;
 
 @EventBusSubscriber(modid = ModdedConduits.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class ModdedConduitsDataGen {

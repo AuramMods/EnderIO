@@ -1,147 +1,106 @@
 package com.enderio.modded_conduits.common.modules.refinedstorage;
 
+import com.enderio.core.common.serialization.StrictOptionalFieldCodec;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
 import com.enderio.enderio.api.conduits.network.node.NodeData;
 import com.enderio.enderio.api.conduits.network.node.NodeDataType;
-import com.refinedmods.refinedstorage.api.network.impl.node.grid.GridNetworkNode;
-import com.refinedmods.refinedstorage.api.network.node.NetworkNode;
-import com.refinedmods.refinedstorage.common.api.RefinedStorageApi;
-import com.refinedmods.refinedstorage.common.api.support.network.ConnectionSink;
-import com.refinedmods.refinedstorage.common.api.support.network.InWorldNetworkNodeContainer;
-import com.refinedmods.refinedstorage.common.api.support.network.NetworkNodeContainerProvider;
+import com.mojang.serialization.MapCodec;
+import com.refinedmods.refinedstorage.api.network.INetwork;
+import com.refinedmods.refinedstorage.api.network.node.INetworkNodeProxy;
+import com.refinedmods.refinedstorage.api.util.Action;
+import com.refinedmods.refinedstorage.apiimpl.API;
+import com.refinedmods.refinedstorage.capability.NetworkNodeProxyCapability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.GlobalPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RSConduitNodeData implements NodeData {
-    public static final NodeDataType<RSConduitNodeData> TYPE = new NodeDataType<>(null, RSConduitNodeData::new);
+    public static final MapCodec<RSConduitNodeData> CODEC =
+        new StrictOptionalFieldCodec<>(CompoundTag.CODEC, "main_node")
+            .xmap(tag -> new RSConduitNodeData(tag.orElseGet(CompoundTag::new)), data -> Optional.of(data.saveNode()));
+    public static final NodeDataType<RSConduitNodeData> TYPE = new NodeDataType<>(CODEC, RSConduitNodeData::new);
 
-    @Nullable
-    public NetworkNodeContainerProvider containerProvider;
+    private CompoundTag savedNode;
+    @Nullable private ConduitRSNode mainNode;
+    @Nullable private INetworkNodeProxy<ConduitRSNode> proxy;
 
-    @Nullable
-    private ConduitRSNodeContainer mainNodeContainer;
+    public RSConduitNodeData() { this(new CompoundTag()); }
+    private RSConduitNodeData(CompoundTag savedNode) { this.savedNode = savedNode.copy(); }
 
-    public boolean isAccessible() {
-        return containerProvider != null && mainNodeContainer != null && !mainNodeContainer.isRemoved();
+    private CompoundTag saveNode() {
+        return mainNode == null ? savedNode.copy() : mainNode.write(new CompoundTag());
     }
 
+    public boolean isAccessible() { return mainNode != null && mainNode.isActive(); }
+    public @Nullable INetworkNodeProxy<ConduitRSNode> getProxy() { return proxy; }
+
     public void initialize(ConduitNode conduitNode, Level level, BlockPos pos) {
-        containerProvider = RefinedStorageApi.INSTANCE.createNetworkNodeContainerProvider();
-        mainNodeContainer = new ConduitRSNodeContainer(level, pos);
-
-        mainNodeContainer.setConnectedSides(Arrays.stream(Direction.values()).filter(conduitNode::isConnectedTo).collect(Collectors.toSet()));
-
-        containerProvider.addContainer(mainNodeContainer);
-
-        containerProvider.initialize(level, () -> {});
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        if (mainNode != null) remove(level);
+        var manager = API.instance().getNetworkNodeManager(serverLevel);
+        var stored = manager.getNode(pos);
+        var node = stored instanceof ConduitRSNode existing ? existing : new ConduitRSNode(level, pos);
+        if (!(stored instanceof ConduitRSNode)) node.read(savedNode.copy());
+        mainNode = node;
+        // A retained proxy keeps a detached, inactive node after removal, never a replacement at this position.
+        proxy = () -> node;
+        node.attach(Arrays.stream(Direction.values()).filter(conduitNode::isConnectedTo).collect(Collectors.toSet()));
+        manager.setNode(pos, node);
+        manager.markForSaving();
+        invalidateNetworks(level, node);
         level.blockUpdated(pos, level.getBlockState(pos).getBlock());
-
-        // TODO: is this necessary?
-        var state = level.getBlockState(pos);
-        state.updateNeighbourShapes(level, pos, Block.UPDATE_ALL);
-
-        containerProvider.update(level);
     }
 
     public void update(Level level, Set<Direction> connectedSides) {
-        if (containerProvider != null && mainNodeContainer != null) {
-            mainNodeContainer.setConnectedSides(connectedSides);
-            containerProvider.update(level);
+        if (mainNode != null) {
+            mainNode.attach(connectedSides);
+            invalidateNetworks(level, mainNode);
         }
     }
 
     public void remove(Level level) {
-        if (containerProvider != null && mainNodeContainer != null) {
-            // Remove from RS networks
-            mainNodeContainer.setRemoved(true);
-            containerProvider.remove(level);
-
-            // Clear out the containers
-            containerProvider = null;
-            mainNodeContainer = null;
-        }
-    }
-
-    @Override
-    public NodeDataType<?> type() {
-        return TYPE;
-    }
-
-    public static class ConduitRSNodeContainer implements InWorldNetworkNodeContainer {
-
-        private final BlockState blockState;
-        private final GlobalPos globalPos;
-        private final NetworkNode node;
-
-        private Set<Direction> connectedSides = Set.of();
-        private boolean removed;
-
-        public ConduitRSNodeContainer(Level level, BlockPos pos) {
-            this.blockState = level.getBlockState(pos);
-            this.globalPos = GlobalPos.of(level.dimension(), pos);
-            // TODO: Config for energy use of RS conduits? Either on the conduit or in mod
-            // config.
-            this.node = new GridNetworkNode(0);
-            this.removed = false;
-        }
-
-        public void setConnectedSides(Set<Direction> connectedSides) {
-            this.connectedSides = connectedSides;
-        }
-
-        @Override
-        public BlockState getBlockState() {
-            return this.blockState;
-        }
-
-        @Override
-        public boolean isRemoved() {
-            return removed;
-        }
-
-        public void setRemoved(boolean removed) {
-            this.removed = removed;
-        }
-
-        @Override
-        public GlobalPos getPosition() {
-            return this.globalPos;
-        }
-
-        @Override
-        public BlockPos getLocalPosition() {
-            return this.globalPos.pos();
-        }
-
-        @Override
-        public String getName() {
-            return "RS Conduit";
-        }
-
-        @Override
-        public NetworkNode getNode() {
-            return this.node;
-        }
-
-        @Override
-        public void addOutgoingConnections(ConnectionSink connectionSink) {
-            for (Direction direction : connectedSides) {
-                connectionSink.tryConnectInSameDimension(this.globalPos.pos().relative(direction), direction.getOpposite());
+        var node = mainNode;
+        if (node == null) return;
+        savedNode = saveNode();
+        node.detach();
+        mainNode = null;
+        proxy = null;
+        if (level instanceof ServerLevel serverLevel) {
+            var manager = API.instance().getNetworkNodeManager(serverLevel);
+            if (manager.getNode(node.getPos()) == node) {
+                manager.removeNode(node.getPos());
+                manager.markForSaving();
             }
-        }
-
-        @Override
-        public boolean canAcceptIncomingConnection(Direction direction, BlockState blockState) {
-            return connectedSides.contains(direction);
+            invalidateNetworks(level, node);
         }
     }
+
+    private static void invalidateNetworks(Level level, ConduitRSNode node) {
+        if (level.isClientSide) return;
+        var networks = new HashSet<INetwork>();
+        if (node.getNetwork() != null) networks.add(node.getNetwork());
+        for (var side : Direction.values()) {
+            var pos = node.getPos().relative(side);
+            if (!level.isLoaded(pos)) continue;
+            var blockEntity = level.getBlockEntity(pos);
+            if (blockEntity == null) continue;
+            var neighbor = blockEntity.getCapability(NetworkNodeProxyCapability.NETWORK_NODE_PROXY_CAPABILITY).orElse(null);
+            if (neighbor != null && neighbor.getNode().getNetwork() != null) networks.add(neighbor.getNode().getNetwork());
+        }
+        for (var network : networks) {
+            network.getNodeGraph().runActionWhenPossible(current -> current.getNodeGraph()
+                .invalidate(Action.PERFORM, current.getLevel(), current.getPosition()));
+        }
+    }
+
+    @Override public NodeDataType<?> type() { return TYPE; }
 }

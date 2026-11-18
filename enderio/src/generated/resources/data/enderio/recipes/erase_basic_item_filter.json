@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "enderio:basic_item_filter"
+    }
+  ],
+  "result": {
+    "item": "enderio:basic_item_filter"
+  }
+}

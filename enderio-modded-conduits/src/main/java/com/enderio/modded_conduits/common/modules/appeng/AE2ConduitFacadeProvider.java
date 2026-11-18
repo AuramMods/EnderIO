@@ -1,12 +1,10 @@
 package com.enderio.modded_conduits.common.modules.appeng;
 
 import net.minecraft.core.Direction;
-import appeng.api.ids.AEComponents;
+import appeng.api.implementations.items.IFacadeItem;
 import com.enderio.enderio.api.conduits.facade.ConduitFacadeProvider;
 import com.enderio.enderio.api.conduits.facade.FacadeType;
-import net.minecraft.core.Holder;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -28,14 +26,14 @@ public class AE2ConduitFacadeProvider implements ConduitFacadeProvider {
 
     @Override
     public boolean isValid() {
-        Holder<Item> item = itemStack.get(AEComponents.FACADE_ITEM);
-        return item != null && item.value() instanceof BlockItem;
+        return itemStack.getItem() instanceof IFacadeItem facade
+            && facade.getTextureItem(itemStack).getItem() instanceof BlockItem;
     }
 
     @Override
     public Block block() {
-        Holder<Item> item = itemStack.get(AEComponents.FACADE_ITEM);
-        if (item != null && item.value() instanceof BlockItem blockItem) {
+        if (itemStack.getItem() instanceof IFacadeItem facade
+                && facade.getTextureItem(itemStack).getItem() instanceof BlockItem blockItem) {
             return blockItem.getBlock();
         }
 
