@@ -58,7 +58,9 @@ public class CapacitorBankBlock extends EIOEntityBlock<CapacitorBankBlockEntity>
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer,
         ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (placer != null && level.getBlockEntity(pos) instanceof CapacitorBankBlockEntity capacitorBankBlock) {
+        if (level.getBlockEntity(pos) instanceof CapacitorBankBlockEntity capacitorBankBlock) {
+            capacitorBankBlock.restoreLegacyItemData(stack);
+            if (placer == null) return;
             for (Direction direction : Direction.values()) {
                 if (level.getBlockEntity(pos.relative(direction)) instanceof CapacitorBankBlockEntity other
                     && other.tier() == tier) {

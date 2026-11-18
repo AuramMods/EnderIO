@@ -2,19 +2,30 @@ package com.enderio.enderio.gametests.machines;
 
 import com.enderio.enderio.gametests.EnderIOTests;
 import com.enderio.core.common.energy.ItemStackEnergy;
+import com.enderio.enderio.api.io.IOMode;
+import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorTier;
+import com.enderio.enderio.content.machines.capacitor_bank.DisplayMode;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.gametests.util.FixtureTemplate;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
@@ -96,13 +107,16 @@ public class CapacitorBankTests {
             .thenSucceed();
     }
 
-    private static void assertBankDrop(EnderGameTestHelper helper, BlockPos pos, int charge) {
+    private static ItemStack assertBankDrop(EnderGameTestHelper helper, BlockPos pos, int charge) {
         var drops = helper.getLevel().getEntitiesOfClass(ItemEntity.class,
             new AABB(helper.absolutePos(pos)).inflate(1.0),
             entity -> entity.getItem().is(EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().asItem()));
         helper.assertValueEqual(drops.size(), 1, "one removed bank item");
-        helper.assertValueEqual(ItemStackEnergy.getEnergyStored(drops.get(0).getItem()), charge, "bank drop charge");
-        drops.get(0).discard();
+        var drop = drops.get(0);
+        var stack = drop.getItem();
+        helper.assertValueEqual(ItemStackEnergy.getEnergyStored(stack), charge, "bank drop charge");
+        drop.discard();
+        return stack;
     }
 
     @GameTest(template = SPLIT_CAPACITOR_BANKS)
@@ -146,5 +160,70 @@ public class CapacitorBankTests {
                 helper.assertValueEqual(storage.extractEnergy(capacity, false), 0, "removed view cannot spend the carried charge");
             })
             .thenSucceed());
+    }
+
+    @GameTest
+    public static void legacyCarryChargeSurvivesCapabilityAndPlacement(GameplayTest test) {
+        var bank = EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get();
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(7, 2, 1)
+            .set(0, 0, 0, Blocks.STONE.defaultBlockState())
+            .set(3, 0, 0, Blocks.STONE.defaultBlockState())
+            .set(6, 0, 0, Blocks.STONE.defaultBlockState()));
+        test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence().thenExecute(() -> {
+            var stack = new ItemStack(bank, 2);
+            var legacy = new CompoundTag();
+            var energy = new CompoundTag();
+            energy.putInt("EnergyStored", 78912);
+            legacy.put("Energy", energy);
+            var sides = new CompoundTag();
+            sides.putByte("2", (byte) 4);
+            sides.putByte("3", (byte) 1);
+            legacy.put("IoConfig", sides);
+            var displays = new CompoundTag();
+            displays.putInt("east", DisplayMode.IO.ordinal());
+            legacy.put("displaymodes", displays);
+            legacy.putInt("RedstoneControl", 2);
+            stack.addTagElement("BlockEntityTag", legacy);
+
+            var original = stack.getTag().copy();
+            helper.assertValueEqual(ItemStackEnergy.getEnergyStored(stack), 78912, "legacy per-item charge");
+            helper.assertValueEqual(ItemStackEnergy.receiveEnergy(stack, 20001, true), 20000, "whole stack simulation");
+            helper.assertValueEqual(stack.getTag(), original, "simulation leaves historical NBT intact");
+
+            var fromLegacy = placeBank(helper, 0, stack);
+            helper.assertValueEqual(stack.getCount(), 1, "placement consumes one bank");
+            helper.assertValueEqual(fromLegacy.getNetwork().getTotalEnergyStored(), 78912L, "legacy charge restored once");
+            helper.assertValueEqual(fromLegacy.getIOMode(Direction.NORTH), IOMode.DISABLED, "legacy disabled face");
+            helper.assertValueEqual(fromLegacy.getIOMode(Direction.SOUTH), IOMode.PUSH, "legacy push face");
+            helper.assertValueEqual(fromLegacy.getDisplayMode(Direction.EAST), DisplayMode.IO, "legacy display face");
+            helper.assertValueEqual(fromLegacy.getNetwork().getRedstoneControl(), RedstoneControl.ACTIVE_WITHOUT_SIGNAL,
+                "legacy redstone control");
+
+            helper.assertValueEqual(ItemStackEnergy.receiveEnergy(stack, 10001, false), 10001, "recharge existing balance");
+            helper.assertValueEqual(ItemStackEnergy.getEnergyStored(stack), 88913, "new balance includes legacy charge");
+            helper.assertTrue(!BlockItem.getBlockEntityData(stack).contains("Energy"), "successful transfer retires old charge");
+            var fromRecharged = placeBank(helper, 3, stack);
+            helper.assertValueEqual(fromRecharged.getNetwork().getTotalEnergyStored(), 88913L, "converted balance restores once");
+            helper.assertValueEqual(fromRecharged.getIOMode(Direction.SOUTH), IOMode.PUSH, "recharge preserves legacy side data");
+
+            var dropPos = new BlockPos(3, 2, 0);
+            helper.getLevel().destroyBlock(helper.absolutePos(dropPos), true);
+            var drop = assertBankDrop(helper, dropPos, 88913);
+            var relocated = placeBank(helper, 6, drop);
+            helper.assertValueEqual(relocated.getNetwork().getTotalEnergyStored(), 88913L, "native drop restores its full charge");
+            helper.assertValueEqual(relocated.getIOMode(Direction.SOUTH), IOMode.PUSH, "native drop restores its side setting");
+        }).thenSucceed());
+    }
+
+    private static CapacitorBankBlockEntity placeBank(EnderGameTestHelper helper, int x, ItemStack stack) {
+        var level = helper.getLevel();
+        var player = FakePlayerFactory.getMinecraft(level);
+        var floor = helper.absolutePos(new BlockPos(x, 1, 0));
+        player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+        var hit = new BlockHitResult(Vec3.atBottomCenterOf(floor.above()), Direction.UP, floor, false);
+        var result = ((BlockItem) stack.getItem()).place(new BlockPlaceContext(player, InteractionHand.MAIN_HAND, stack, hit));
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        helper.assertTrue(result.consumesAction(), "native bank placement succeeds");
+        return helper.getBlockEntity(x, 2, 0, CapacitorBankBlockEntity.class);
     }
 }

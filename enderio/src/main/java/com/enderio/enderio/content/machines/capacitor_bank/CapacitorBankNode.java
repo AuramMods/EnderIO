@@ -29,7 +29,7 @@ public class CapacitorBankNode implements INetworkNode<CapacitorBankNetwork, Cap
         this.blockEntity = blockEntity;
         this.savedCapacity = blockEntity.tier().getStorageCapacity();
         this.pos = blockEntity.getBlockPos();
-        this.network = new CapacitorBankNetwork(this);
+        this.network = new CapacitorBankNetwork(this, blockEntity.getRedstoneControl());
     }
 
     public CapacitorBankNode(BlockPos pos, long savedCapacity) {

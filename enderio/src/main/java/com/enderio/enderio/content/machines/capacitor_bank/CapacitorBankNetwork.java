@@ -44,8 +44,9 @@ public class CapacitorBankNetwork extends Network<CapacitorBankNetwork, Capacito
     //Map to keep track if IO for each position and side
     private final Map<SidedPos, Long> energyIO = new HashMap<>();
 
-    public CapacitorBankNetwork(CapacitorBankNode initialNode) {
+    public CapacitorBankNetwork(CapacitorBankNode initialNode, RedstoneControl redstoneControl) {
         super(initialNode);
+        this.redstoneControl = redstoneControl;
         this.positions.add(initialNode.getPos());
     }
 

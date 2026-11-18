@@ -13,7 +13,7 @@ import net.minecraftforge.energy.IEnergyStorage;
 public class CapacitorBankItem extends BlockItem {
 
     public static final BiFunction<ItemStack, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER =
-        (stack, v) -> new StackedNbtEnergyStorage(stack, EIODataComponents.ENERGY,
+        (stack, v) -> StackedNbtEnergyStorage.withForge6BlockEntityCharge(stack, EIODataComponents.ENERGY,
             ((CapacitorBankItem) stack.getItem()).tier.getStorageCapacity());
 
     private final CapacityTier tier;

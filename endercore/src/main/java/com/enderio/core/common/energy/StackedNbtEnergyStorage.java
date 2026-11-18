@@ -9,6 +9,15 @@ public final class StackedNbtEnergyStorage extends NbtEnergyStorage {
         super(stack, key, capacity);
     }
 
+    private StackedNbtEnergyStorage(ItemStack stack, ItemDataKey<Integer> key, int capacity, LegacyCharge legacyCharge) {
+        super(stack, key, capacity, capacity, capacity, legacyCharge);
+    }
+
+    /** For block items whose previous Forge release stored energy inside their BlockEntityTag. */
+    public static StackedNbtEnergyStorage withForge6BlockEntityCharge(ItemStack stack, ItemDataKey<Integer> key, int capacity) {
+        return new StackedNbtEnergyStorage(stack, key, capacity, LegacyCharge.BLOCK_ENTITY);
+    }
+
     @Override
     public int receiveEnergy(int requested, boolean simulate) {
         int count = stack.getCount();

@@ -2,6 +2,7 @@ package com.enderio.enderio.content.machines.capacitor_bank;
 
 import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.core.annotations.UseOnly;
+import com.enderio.core.common.energy.ItemStackEnergy;
 import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.api.io.IOMode;
 import com.enderio.enderio.api.io.RedstoneControl;
@@ -11,6 +12,7 @@ import com.enderio.enderio.foundation.block.entity.Wrenchable;
 import com.enderio.enderio.foundation.block.entity.legacy.LegacyMachineBlockEntity;
 import com.enderio.enderio.foundation.block.legacy.LegacyMachineBlock;
 import com.enderio.enderio.foundation.io.IOConfig;
+import com.enderio.enderio.foundation.io.LegacyMachineData;
 import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.Util;
@@ -66,6 +68,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
     private CapacitorBankNode node;
     private int removedEnergy;
     private int legacyEnergy = 0;
+    private boolean legacyBlockData;
     private UUID uuid = UUID.randomUUID();
 
     private final Map<Direction, NeighborCapability<IEnergyStorage>> energyStorageCaches = new EnumMap<>(Direction.class);
@@ -124,15 +127,15 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
             } else {
                 if (this.node == null) { //Create a new node if not created by placing a block
                     this.node = new CapacitorBankNode(this);
-                    this.node.getNetwork().setRedstoneControl(redstoneControl);
                 }
                 CapacitorBankSavedData.onNetworkCreated(serverLevel, this.node.getNetwork()); //Broadcast the network creation
+                // A saved node already contains the migrated charge, even if the tile is still from 6.x.
+                if (legacyEnergy > 0) {
+                    getNetwork().receiveEnergy(getBlockPos(), null, legacyEnergy, false);
+                }
             }
-
-            if (this.legacyEnergy > 0) { //Restore legacy energy
-                this.node.getNetwork().receiveEnergy(this.getBlockPos(), null, this.legacyEnergy, false);
-                this.legacyEnergy = 0;
-            }
+            legacyEnergy = 0;
+            checkIsRedstoneBlocked();
         }
     }
 
@@ -155,6 +158,11 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
 
         // Create all energy caches
         if (level instanceof ServerLevel serverLevel) {
+            // setLevel runs before the restored chunk can be marked dirty.
+            if (legacyBlockData) {
+                setChanged();
+                legacyBlockData = false;
+            }
             if (node != null && node.isValid() && !node.hasBlockEntity()) {
                 CapacitorBankSavedData.get(serverLevel).claimNode(getBlockPos());
                 node.attach(this);
@@ -409,7 +417,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
 
     @Override
     public void load(CompoundTag tag) {
-        tag = com.enderio.enderio.foundation.io.LegacyMachineData.withNativeFields(tag);
+        tag = LegacyMachineData.withNativeFields(tag);
         var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         super.load(tag);
 
@@ -423,14 +431,12 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
             }
         }
 
-        // Old serialization format
-        if (tag.contains(MachineNBTKeys.ENERGY)) {
-            var energyStorage = tag.getCompound(MachineNBTKeys.ENERGY);
-            if (energyStorage.contains(MachineNBTKeys.ENERGY_STORED)) {
-                this.legacyEnergy = energyStorage.getInt(MachineNBTKeys.ENERGY_STORED);
-            }
-        } else if (tag.contains(MachineNBTKeys.ENERGY_STORED)) {
-            this.legacyEnergy = tag.getInt(MachineNBTKeys.ENERGY_STORED);
+        // A chunk restores its legacy balance at setLevel. Item placement already has a live node.
+        if (level == null) {
+            var energy = tag.contains(MachineNBTKeys.ENERGY, Tag.TAG_COMPOUND)
+                ? tag.getCompound(MachineNBTKeys.ENERGY) : tag;
+            legacyBlockData = energy.contains(MachineNBTKeys.ENERGY_STORED, Tag.TAG_ANY_NUMERIC);
+            legacyEnergy = energy.getInt(MachineNBTKeys.ENERGY_STORED);
         }
 
         if (tag.contains(NODE_ID)) {
@@ -499,6 +505,28 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
         }
 
         getNetwork().receiveEnergy(this.getBlockPos(), null, EIODataComponents.ENERGY.getOrDefault(components, 0), false);
+    }
+
+    void restoreLegacyItemData(ItemStack stack) {
+        if (!(level instanceof ServerLevel serverLevel) || !hasActiveNode()) return;
+        var legacy = BlockItem.getBlockEntityData(stack);
+        if (legacy == null) return;
+
+        var registries = serverLevel.registryAccess();
+        if (legacy.contains("IoConfig", Tag.TAG_COMPOUND) && !EIODataComponents.IO_CONFIG.has(stack)) {
+            setIOConfig(IOConfig.parseOptional(registries, legacy.getCompound("IoConfig")));
+        }
+        if (legacy.contains(MachineNBTKeys.REDSTONE_CONTROL, Tag.TAG_ANY_NUMERIC)) {
+            if (getNetwork().positions().size() == 1) {
+                setNetworkRedstoneControl(RedstoneControl.parse(registries, legacy.get(MachineNBTKeys.REDSTONE_CONTROL)));
+            } else {
+                setRedstoneControl(getNetwork().getRedstoneControl());
+            }
+        }
+        if (!EIODataComponents.ENERGY.has(stack)) {
+            int energy = Math.min(tier.getStorageCapacity(), ItemStackEnergy.getEnergyStored(stack));
+            getNetwork().receiveEnergy(getBlockPos(), null, energy, false);
+        }
     }
 
     @Override

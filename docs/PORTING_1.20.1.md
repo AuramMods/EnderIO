@@ -235,7 +235,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 062: solar weather, dimensions and carried state | Restore configured Phantom production without skylight, measure weather and liquid output, and verify survival pickup and placement | The full build passes 78 unit and 428 native tests. The packaged run passes 54 server assertions and five guarded TCP client checks. [Evidence and commands](porting/1.20.1/cycle-062.md) | `0c1a8a8bd` |
 
-| 063: capacitor-bank conservation | Preserve charge in drops and surviving fragments, retain node ownership through chunk reload, and synchronize totals and redstone over TCP | The full build passes 78 unit and 429 native tests. The packaged runs pass 13 headless assertions and 17 server assertions with six guarded client checks in multiplayer. [Evidence and commands](porting/1.20.1/cycle-063.md) | Commit containing cycle 063 |
+| 063: capacitor-bank conservation | Preserve charge in drops and surviving fragments, retain node ownership through chunk reload, and synchronize totals and redstone over TCP | The full build passes 78 unit and 429 native tests. The packaged runs pass 13 headless assertions and 17 server assertions with six guarded client checks in multiplayer. [Evidence and commands](porting/1.20.1/cycle-063.md) | `54614232b` |
+
+| 064: historical capacitor banks | Remove the chunk-load stall, preserve charge and settings for placed and carried banks, and guard conversion retries against duplicate charge | The full build passes 78 unit and 430 native tests. Packaged runs pass 54 migration and 13 fresh-world assertions. The isolated bank retains 2,345,678 FE when its original 6.2 chunk is reopened with the converted graph. [Evidence and commands](porting/1.20.1/cycle-064.md) | Commit containing cycle 064 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

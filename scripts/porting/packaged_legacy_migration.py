@@ -11,6 +11,7 @@ import sys
 import time
 
 sys.dont_write_bytecode = True
+from packaged_capacitor_banks import read_saved_networks
 from packaged_server_smoke import FORGE, ROOT, Server, digest
 
 
@@ -42,6 +43,14 @@ SOLAR_PANELS = ((1183, "energetic", 3000), (1184, "energetic", 3500),
 WIRED_BLOCKED = "1190 80 8"
 WIRED_COMPLETION = "1194 80 8"
 SOLAR_CHUNKS = "1168 0 1199 15"
+BANK_RETRY_X = 1543
+BANKS = {1230: ("basic", 500000, 123456, 1), 1231: ("basic", 500000, 123456, 1),
+         1232: ("advanced", 2000000, 456789, 1), BANK_RETRY_X: ("vibrant", 4000000, 2345678, 2)}
+BANK_BARREL = "1227 80 6"
+BANK_DROP_ORIGIN = "1227 80 8"
+BANK_CHARGER = "1228 80 6"
+BANK_ITEM_ENERGY = 78912
+BANK_CHARGE_INPUT = 10001
 
 
 def tank_state(x, legacy):
@@ -55,8 +64,9 @@ def tank_state(x, legacy):
 
 
 def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits,
-             placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon, stirling_generator, solar_charging):
-    server.wait('For help, type "help"')
+             placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon, stirling_generator,
+             solar_charging, capacitor_banks):
+    server.wait('For help, type "help"', timeout=150)
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
     if legacy:
@@ -100,6 +110,8 @@ def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_sto
         exercise_stirling_generator(server, stage, results)
     if solar_charging:
         exercise_solar_charging(server, stage, results)
+    if capacitor_banks:
+        exercise_capacitor_banks(server, stage, results)
     server.command("save-all flush")
 
 
@@ -665,11 +677,77 @@ def solar_client(args, server, report):
     server.command("save-all flush")
 
 
+def exercise_capacitor_banks(server, stage, results):
+    old_settings = 'IoConfig:{"2":4b,"3":1b,"4":4b,"5":4b},displaymodes:{north:2,south:1,west:0,east:0}'
+    new_settings = ('IOConfig:{Modes:{north:"disable",south:"push",west:"disable",east:"disable"}},'
+                    'displaymodes:{north:2,south:1,west:0,east:0}')
+    redstone_names = {1: "active_with_signal", 2: "active_without_signal"}
+    server.command("forceload add 1216 0 1247 15")
+    server.command(f"forceload add {BANK_RETRY_X} 8")
+    server.assert_state(f"bank_chunks_loaded_{stage}",
+                        f"if loaded 1230 80 8 if loaded 1232 80 8 if loaded {BANK_RETRY_X} 80 8", results)
+    for x, (tier, _, energy, mode) in BANKS.items():
+        pos = f"{x} 80 8"
+        block = f"enderio:{tier}_capacitor_bank"
+        if stage == "legacy":
+            state = f"{{Energy:{{EnergyStored:{energy}}},RedstoneControl:{mode},{old_settings}}}"
+            server.command(f"setblock {pos} {block}")
+            server.command(f"data merge block {pos} {state}")
+        else:
+            state = f'{{RedstoneControl:"{redstone_names[mode]}",{new_settings}}}'
+        server.command(f"data get block {pos}")
+        server.assert_state(f"{tier}_bank_{x}_{stage}", f"if block {pos} {block} if data block {pos} {state}", results)
+
+    if stage == "legacy":
+        server.command(f"setblock {BANK_BARREL} minecraft:barrel")
+        server.command(f"setblock {BANK_DROP_ORIGIN} enderio:basic_capacitor_bank")
+        server.command(f"data merge block {BANK_DROP_ORIGIN} {{Energy:{{EnergyStored:{BANK_ITEM_ENERGY}}},{old_settings}}}")
+        server.command(f"loot replace block {BANK_BARREL} container.1 mine {BANK_DROP_ORIGIN} minecraft:diamond_pickaxe")
+        server.command(f"setblock {BANK_DROP_ORIGIN} minecraft:air")
+    server.assert_state(f"historical_bank_item_{stage}",
+                        f'if data block {BANK_BARREL} Items[{{Slot:1b,id:"enderio:basic_capacitor_bank",Count:1b,'
+                        f'tag:{{BlockEntityTag:{{Energy:{{EnergyStored:{BANK_ITEM_ENERGY}}},{old_settings}}}}}}}]', results)
+
+    if stage != "legacy":
+        if stage == "converted":
+            server.command(f"setblock {BANK_CHARGER} enderio:wired_charger")
+            server.command(f"data modify block {BANK_CHARGER} Items.Items set from block {BANK_BARREL} Items")
+            server.command(f'data modify block {BANK_CHARGER} Items.Items append value '
+                           '{Slot:0,id:"enderio:basic_capacitor",Count:1}')
+            server.command(f"data merge block {BANK_CHARGER} {{EnergyStored:{BANK_CHARGE_INPUT}}}")
+        server.command(f"data get block {BANK_CHARGER}")
+        charged = (f'{{Slot:1,id:"enderio:basic_capacitor_bank",Count:1,tag:{{"enderio:data":'
+                   f'{{"enderio:energy":{BANK_ITEM_ENERGY + BANK_CHARGE_INPUT}}},BlockEntityTag:{{{old_settings}}}}}}}')
+        server.assert_state(f"historical_bank_item_recharge_{stage}",
+                            f"if data block {BANK_CHARGER} {{EnergyStored:0}} "
+                            f"if data block {BANK_CHARGER} Items.Items[{charged}] "
+                            f"unless data block {BANK_CHARGER} Items.Items[{{Slot:1}}].tag.BlockEntityTag.Energy.EnergyStored",
+                            results, timeout=25)
+        server.command("save-all flush")
+        path = server.directory / WORLD / "data/enderio_capacitor_bank_network.dat"
+        network_state = []
+        for network in read_saved_networks(path):
+            nodes = network["nodes"]
+            xs = [node["pos"][0] for node in nodes]
+            edges = [tuple(sorted((xs[edge["first"]], xs[edge["second"]]))) for edge in network["edges"]]
+            network_state.append((sorted((node["pos"][0], node["capacity"]) for node in nodes), sorted(edges),
+                                  network["energy"], network["redstone"]))
+        mixed = [(x, BANKS[x][1]) for x in (1230, 1231, 1232)]
+        expected = [(mixed, [(1230, 1231), (1231, 1232)], 703701, "active_with_signal"),
+                    ([(BANK_RETRY_X, BANKS[BANK_RETRY_X][1])], [], 2345678, "active_without_signal")]
+        observed = sorted(network_state)
+        results.append({"assertion": f"exact_bank_graphs_{stage}", "passed": expected == observed,
+                        "expected": expected, "observed": observed})
+        if expected != observed:
+            raise AssertionError(f"{stage} capacitor-bank graphs differ: {observed}")
+
+
 def run_server(directory, args, stage, report, *fixtures):
     server = Server(directory, args.java, stage)
     try:
         exercise(server, stage, report["assertions"], *fixtures)
-        if stage == "restart" and args.solar_client:
+        final_stage = "bank-conversion-retry" if args.capacitor_banks else "restart"
+        if stage == final_stage and args.solar_client:
             solar_client(args, server, report)
     finally:
         exit_status = server.stop()
@@ -705,6 +783,7 @@ def main():
     parser.add_argument("--stirling-generator", action="store_true", help="Migrate a burning Stirling generator")
     parser.add_argument("--solar-charging", action="store_true", help="Migrate photovoltaic arrays and wired charger state")
     parser.add_argument("--solar-client", type=Path, help="Run the migration and check its solar models and charger GUI over TCP")
+    parser.add_argument("--capacitor-banks", action="store_true", help="Migrate placed and carried capacitor banks")
     parser.add_argument("--mod", action="append", type=Path, default=[], help="Install a Forge dependency in both profiles")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
@@ -743,11 +822,16 @@ def main():
             report["fixtureSha256"] = digest(args.conduit_fixture)
         fixtures = (args.conduit_fixture, loose_conduits, args.placed_storage_conduits,
                     args.placed_mekanism_conduits, args.extraction_upgrades, args.legacy_lights, args.primitive_smelter,
-                    args.stirling_generator, bool(args.solar_charging or args.solar_client))
+                    args.stirling_generator, bool(args.solar_charging or args.solar_client), args.capacitor_banks)
         run_server(legacy, args, "legacy", report, *fixtures)
         shutil.copytree(legacy / WORLD, converted / WORLD)
         run_server(converted, args, "converted", report, *fixtures)
         run_server(converted, args, "restart", report, *fixtures)
+        if args.capacitor_banks:
+            # Keep the committed graph and restore only the isolated bank's pristine legacy region.
+            region = Path("region") / f"r.{BANK_RETRY_X // 512}.0.mca"
+            shutil.copyfile(legacy / WORLD / region, converted / WORLD / region)
+            run_server(converted, args, "bank-conversion-retry", report, *fixtures)
         report["passed"] = True
     finally:
         output = directory / "legacy-migration-results.json"
