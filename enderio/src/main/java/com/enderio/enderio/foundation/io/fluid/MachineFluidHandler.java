@@ -214,15 +214,7 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
         var loaded = NonNullList.withSize(getTanks(), FluidStack.EMPTY);
         var overflow = new ListTag();
         var seen = new java.util.HashSet<Integer>();
-        var tanks = tag.getList(CoreNBTKeys.TANKS, Tag.TAG_COMPOUND);
-        if (!tag.contains(CoreNBTKeys.TANKS) && tag.contains("FluidName", Tag.TAG_STRING)) {
-            // The older single-tank layout saved the Forge stack directly at the root.
-            tanks = new ListTag();
-            var entry = new CompoundTag();
-            entry.putInt(TANK_INDEX, 0);
-            entry.put(TANK_CONTENTS, tag.copy());
-            tanks.add(entry);
-        }
+        var tanks = savedEntries(tag);
         for (int i = 0; i < tanks.size(); i++) {
             var entry = tanks.getCompound(i);
             int tank = entry.getInt(TANK_INDEX);
@@ -232,10 +224,7 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
             if (tank < 0 || tank >= getTanks()) {
                 overflow.add(entry.copy());
             } else {
-                // 6.x saved the stack next to Index and Capacity in every list entry.
-                boolean flatStack = !entry.contains(TANK_CONTENTS) && entry.contains("FluidName", Tag.TAG_STRING);
-                var contents = flatStack ? entry : entry.getCompound(TANK_CONTENTS);
-                loaded.set(tank, StackDataCodecs.loadFluid(contents));
+                loaded.set(tank, readEntry(entry));
             }
         }
         boolean[] changed = new boolean[getTanks()];
@@ -258,6 +247,45 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
 
     public void deserializeNBT(HolderLookup.Provider registries, CompoundTag tag) {
         deserializeNBT(tag);
+    }
+
+    /** Forge 6.x used the singular key, including under an item's BlockEntityTag. */
+    public static CompoundTag savedStorage(CompoundTag blockData) {
+        String key = blockData.contains(CoreNBTKeys.FLUIDS) ? CoreNBTKeys.FLUIDS : CoreNBTKeys.FLUID;
+        return blockData.getCompound(key);
+    }
+
+    public static CompoundTag savedStorageWithTankList(CompoundTag storage) {
+        var result = storage.copy();
+        result.put(CoreNBTKeys.TANKS, savedEntries(storage).copy());
+        return result;
+    }
+
+    public static FluidStack readSavedTank(CompoundTag storage, int index) {
+        for (var saved : savedEntries(storage)) {
+            var entry = (CompoundTag) saved;
+            if (entry.getInt(TANK_INDEX) == index) return readEntry(entry);
+        }
+        return FluidStack.EMPTY;
+    }
+
+    private static ListTag savedEntries(CompoundTag tag) {
+        if (!tag.contains(CoreNBTKeys.TANKS) && tag.contains("FluidName", Tag.TAG_STRING)) {
+            // The older single-tank layout saved the Forge stack directly at the root.
+            var entries = new ListTag();
+            var entry = new CompoundTag();
+            entry.putInt(TANK_INDEX, 0);
+            entry.put(TANK_CONTENTS, tag.copy());
+            entries.add(entry);
+            return entries;
+        }
+        return tag.getList(CoreNBTKeys.TANKS, Tag.TAG_COMPOUND);
+    }
+
+    private static FluidStack readEntry(CompoundTag entry) {
+        // Forge 6.x saved the stack next to Index and Capacity in the tank list.
+        boolean flatStack = !entry.contains(TANK_CONTENTS) && entry.contains("FluidName", Tag.TAG_STRING);
+        return StackDataCodecs.loadFluid(flatStack ? entry : entry.getCompound(TANK_CONTENTS));
     }
 
     // Sided capability access

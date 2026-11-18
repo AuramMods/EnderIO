@@ -33,6 +33,7 @@ public final class ClientSmoke {
             case "singleplayer" -> new ClientWorldSmoke();
             case "multiplayer" -> new ClientMultiplayerSmoke();
             case "travel" -> new ClientTravelSmoke();
+            case "carried-tanks" -> new ClientCarriedTankSmoke();
             default -> MinecraftForge.EVENT_BUS.addListener(this::render);
         }
         System.out.println("QA_EVT {\"event\":\"client_qa_loaded\",\"status\":\"info\"}");

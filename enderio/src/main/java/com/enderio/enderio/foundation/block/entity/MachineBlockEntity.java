@@ -563,13 +563,15 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     protected void readItemData(ItemStack componentInput) {
         super.readItemData(componentInput);
 
+        // A partially migrated item may carry the remaining state in its BlockEntityTag.
         if (hasInventory()) {
-            this.inventory
-                    .copyFromItem(ITEM_INVENTORY.getOrDefault(componentInput, new CompoundTag()));
+            var contents = ITEM_INVENTORY.get(componentInput);
+            if (contents != null) inventory.copyFromItem(contents);
         }
 
         if (isIOConfigMutable()) {
-            ioConfig = IOConfig.ITEM_DATA.getOrDefault(componentInput, IOConfig.empty());
+            var config = IOConfig.ITEM_DATA.get(componentInput);
+            if (config != null) ioConfig = config;
         }
 
         if (supportsRedstoneControl()) {

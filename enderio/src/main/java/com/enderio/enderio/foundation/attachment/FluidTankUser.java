@@ -23,9 +23,7 @@ public interface FluidTankUser {
     }
 
     default void loadTank(HolderLookup.Provider lookupProvider, CompoundTag tag) {
-        // Forge 1.20.1 Ender IO 6.x used a singular key for the machine tank handler.
-        String key = tag.contains(MachineNBTKeys.FLUIDS) ? MachineNBTKeys.FLUIDS : "Fluid";
-        getFluidHandler().deserializeNBT(lookupProvider, tag.getCompound(key));
+        getFluidHandler().deserializeNBT(lookupProvider, MachineFluidHandler.savedStorage(tag));
     }
 
     BiFunction<BlockEntity, Direction, IFluidHandler> FLUID_HANDLER_PROVIDER = (be, side) -> {

@@ -2,12 +2,14 @@ package porting.fixture;
 
 import com.enderio.api.misc.ColorControl;
 import com.enderio.api.misc.RedstoneControl;
+import com.enderio.api.io.IOMode;
 import com.enderio.conduits.common.conduit.block.ConduitBlockEntity;
 import com.enderio.conduits.common.conduit.connection.DynamicConnectionState;
 import com.enderio.conduits.common.conduit.connection.StaticConnectionStates;
 import com.enderio.conduits.common.init.EIOConduitTypes;
 import com.enderio.core.common.capability.ItemFilterCapability;
 import com.enderio.machines.common.blockentity.TravelAnchorBlockEntity;
+import com.enderio.machines.common.blockentity.FluidTankBlockEntity;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -23,12 +25,15 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -63,6 +68,39 @@ public class Fixture {
                 context.getSource().sendSuccess(() -> Component.literal("Legacy travel fixture created"), false);
                 return 1;
             }));
+        event.getDispatcher().register(Commands.literal("port_legacy_carried_tanks").requires(source -> source.hasPermission(4))
+            .executes(context -> {
+                var level = context.getSource().getLevel();
+                var barrelPos = new BlockPos(6, 80, 3);
+                level.setBlockAndUpdate(barrelPos, Blocks.BARREL.defaultBlockState());
+                var barrel = (BarrelBlockEntity) level.getBlockEntity(barrelPos);
+                var water = new FluidStack(Fluids.WATER, 11500);
+                var xp = new FluidStack(ForgeRegistries.FLUIDS.getValue(ResourceLocation.fromNamespaceAndPath("enderio", "xp_juice")), 21750);
+                water.getOrCreateTag().putInt("PortLegacyCarried", 31);
+                xp.getOrCreateTag().putInt("PortLegacyCarried", 51);
+                barrel.setItem(0, carriedTank(level, "fluid_tank", water));
+                barrel.setItem(1, carriedTank(level, "pressurized_fluid_tank", xp));
+                barrel.setItem(2, carriedTank(level, "fluid_tank", water));
+                context.getSource().sendSuccess(() -> Component.literal("Legacy carried tanks created"), false);
+                return 1;
+            }));
+    }
+
+    private static ItemStack carriedTank(ServerLevel level, String id, FluidStack contents) {
+        var tank = stack(id);
+        var source = new BlockPos(6, 80, 5);
+        level.setBlockAndUpdate(source, ((BlockItem) tank.getItem()).getBlock().defaultBlockState());
+        var entity = (FluidTankBlockEntity) level.getBlockEntity(source);
+        entity.getInventory().setStackInSlot(1, new ItemStack(Items.DIAMOND, 7));
+        entity.getIOConfig().setMode(Direction.EAST, IOMode.PULL);
+        entity.setRedstoneControl(RedstoneControl.ACTIVE_WITH_SIGNAL);
+        entity.saveToItem(tank);
+        var handler = tank.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElseThrow(IllegalStateException::new);
+        if (handler.fill(contents.copy(), FluidAction.EXECUTE) != contents.getAmount()) {
+            throw new IllegalStateException("Could not fill the historical tank " + id);
+        }
+        level.removeBlock(source, false);
+        return handler.getContainer();
     }
 
     private static void anchor(ServerLevel level, BlockPos pos, String blockId, String name, Item icon, boolean visible) {

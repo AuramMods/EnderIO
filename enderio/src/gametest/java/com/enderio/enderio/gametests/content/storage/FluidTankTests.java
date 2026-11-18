@@ -3,6 +3,7 @@ package com.enderio.enderio.gametests.content.storage;
 import com.enderio.enderio.gametests.EnderIOTests;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
+import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.content.storage.fluid_tank.FluidTankBlockEntity;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
@@ -11,6 +12,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluids;
@@ -210,6 +212,66 @@ public class FluidTankTests {
                 var nativeLoad = BlockEntity.loadStatic(original.getBlockPos(), original.getBlockState(), saved);
                 if (!(nativeLoad instanceof FluidTankBlockEntity nativeTank) || !nativeTank.getFluidTank().getFluid().isEmpty()) {
                     throw new GameTestAssertException("An explicitly empty native tank revived old fluid");
+                }
+            }
+        }).thenSucceed());
+    }
+
+    @GameTest
+    public static void legacyCarriedTankDrainsWithoutRevivingItsBackup(final GameplayTest test) {
+        testBothTanks(test, helper -> helper.startSequence().thenExecute(() -> {
+            var fluid = new FluidStack(Fluids.WATER, 11500);
+            fluid.getOrCreateTag().putInt(EnderIOTests.TEST_NUMBER, 51);
+            for (int x : new int[] {0, 2}) {
+                var placed = helper.getBlockEntity(x, 1, 0, FluidTankBlockEntity.class);
+                var stack = new ItemStack(placed.getBlockState().getBlock().asItem());
+                var original = new CompoundTag();
+                original.putString("FixtureMetadata", "keep");
+                var rawFluid = fluid.writeToNBT(new CompoundTag());
+                if (x == 0) {
+                    original.put("Fluid", rawFluid);
+                } else {
+                    var stored = new CompoundTag();
+                    var entries = new ListTag();
+                    var overflow = rawFluid.copy();
+                    overflow.putInt("Index", 3);
+                    entries.add(overflow);
+                    entries.add(rawFluid); // 6.x carried item may omit the index for tank zero.
+                    stored.put("Tanks", entries);
+                    stored.putInt("Size", 4);
+                    original.put("Fluid", stored);
+                }
+                BlockItem.setBlockEntityData(stack, placed.getType(), original);
+                var handler = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
+                    .orElseThrow(() -> new GameTestAssertException("Missing carried tank capability"));
+                var before = stack.save(new CompoundTag());
+                var sample = fluid.copy();
+                sample.setAmount(1000);
+                if (!handler.getFluidInTank(0).isFluidStackIdentical(fluid)
+                    || !handler.drain(1000, IFluidHandler.FluidAction.SIMULATE).isFluidStackIdentical(sample)
+                    || !before.equals(stack.save(new CompoundTag()))) {
+                    throw new GameTestAssertException("Legacy contents or simulation changed data");
+                }
+                var current = stack.copy();
+                EIODataComponents.ITEM_FLUID_CONTENT.set(current, sample);
+                var currentHandler = current.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
+                    .orElseThrow(() -> new GameTestAssertException("Missing capability on copied tank"));
+                if (!currentHandler.getFluidInTank(0).isFluidStackIdentical(sample)) {
+                    throw new GameTestAssertException("Current item fluid lost precedence");
+                }
+
+                if (!handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE).isFluidStackIdentical(fluid)) {
+                    throw new GameTestAssertException("Drain did not preserve legacy amount and NBT");
+                }
+                var reopened = ItemStack.of(stack.save(new CompoundTag()));
+                var data = BlockItem.getBlockEntityData(reopened);
+                if (data == null || !data.getString("FixtureMetadata").equals("keep")
+                    || !reopened.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElseThrow(IllegalStateException::new)
+                        .getFluidInTank(0).isEmpty()) {
+                    throw new GameTestAssertException("The drained item revived old fluid or erased unrelated metadata");
+                }
+                if (x == 2 && data.getCompound("Fluid").getList("Tanks", Tag.TAG_COMPOUND).getCompound(0).getInt("Index") != 3) {
+                    throw new GameTestAssertException("Migration dropped a separate out-of-layout tank record");
                 }
             }
         }).thenSucceed());

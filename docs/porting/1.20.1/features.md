@@ -113,8 +113,8 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `RELOCATOR_OBELISK` | [EIOBlocks:499](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `ATTRACTOR_OBELISK` | [EIOBlocks:502](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `WEATHER_OBELISK` | [EIOBlocks:505](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `FLUID_TANK_ITEM` | [EIOBlocks:509](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: actual native item capability transfers 500 mB from a 3,000 mB tagged container into either nearly full tank, retaining 2,500 mB and NBT. Placement/render/other interactions remain pending ([cycle 036](cycle-036.md)) |
-| `PRESSURIZED_FLUID_TANK_ITEM` | [EIOBlocks:511](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `FLUID_TANK_ITEM` | [EIOBlocks:509](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial. Native tagged partial transfer passes. A carried 6.2 tank places with its tagged water, and a second transfers all 11,500 mB before placement and stays empty across restart. Both keep their machine settings ([cycle 036](cycle-036.md), [cycle 051](cycle-051.md)). |
+| `PRESSURIZED_FLUID_TANK_ITEM` | [EIOBlocks:511](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial. A carried 6.2 tank transfers 1,000 mB of tagged XP Juice and places with exactly 20,750 mB and its original machine settings, confirmed again after restart ([cycle 051](cycle-051.md)). |
 | `POWERED_SPAWNER_ITEM` | [EIOBlocks:514](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `SOUL_ENGINE_ITEM` | [EIOBlocks:517](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `SOLAR_PANEL_ITEMS` | [EIOBlocks:520](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
