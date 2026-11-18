@@ -1,7 +1,8 @@
 package com.enderio.modded_conduits.common.modules.mekanism.chemical;
 
-import org.jetbrains.annotations.Nullable;
+import com.enderio.core.common.item.ItemDataKey;
 import com.enderio.core.common.util.TooltipUtil;
+import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.ConduitCapabilityAccessor;
 import com.enderio.enderio.api.conduits.ConduitType;
@@ -28,6 +29,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
 
 import java.util.function.Consumer;
@@ -37,6 +39,8 @@ public record ChemicalConduit(ResourceLocation texture, Component description, l
 
     public static final int EXTRACT_FILTER_SLOT = 0;
     public static final int INSERT_FILTER_SLOT = 1;
+    private static final ItemDataKey<ChemicalConduitNodeData> RETAINED_CHEMICAL =
+        new ItemDataKey<>(EnderIO.rl("retained_chemical"), ChemicalConduitNodeData.CODEC.codec(), false);
 
     public static final MapCodec<ChemicalConduit> CODEC = RecordCodecBuilder
         .mapCodec(
@@ -57,6 +61,20 @@ public record ChemicalConduit(ResourceLocation texture, Component description, l
     @Override
     public boolean hasMenu() {
         return true;
+    }
+
+    @Override
+    public void saveItemData(ConduitNode node, ItemStack stack) {
+        var retained = node.getNodeData(MekanismModule.CHEMICAL_NODE_DATA.get());
+        if (retained != null && !retained.isEmpty()) RETAINED_CHEMICAL.set(stack, retained);
+    }
+
+    @Override
+    public void loadItemData(ConduitNode node, ItemStack stack) {
+        var carried = RETAINED_CHEMICAL.get(stack);
+        if (carried != null && !carried.isEmpty()) {
+            node.getOrCreateNodeData(MekanismModule.CHEMICAL_NODE_DATA.get()).addAll(carried);
+        }
     }
 
     @Override

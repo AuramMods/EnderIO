@@ -12,6 +12,7 @@ import com.enderio.enderio.api.conduits.ConduitIngredient;
 import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.connection.config.ConnectionConfigType;
 import com.enderio.enderio.api.conduits.network.ConduitNetworkContextType;
+import com.enderio.enderio.api.conduits.network.node.NodeDataType;
 import com.enderio.enderio.api.conduits.network.node.legacy.ConduitDataType;
 import com.enderio.enderio.content.conduits.ConduitApiImpl;
 import com.enderio.enderio.content.filters.AbstractFilterItem;
@@ -21,6 +22,7 @@ import com.enderio.modded_conduits.common.modules.ConduitCommonModule;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalConduit;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalConduitConnectionConfig;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalConduitData;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalConduitNodeData;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalTicker;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.ChemicalFilter;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.EnderChemicalFilter;
@@ -91,6 +93,11 @@ public class MekanismModule implements ConduitCommonModule {
 
     public static final DeferredRegister<ConduitNetworkContextType<?>> CONDUIT_NETWORK_CONTEXT_TYPES = DeferredRegister
             .create(EnderIORegistries.Keys.CONDUIT_NETWORK_CONTEXT_TYPE, EnderIO.MOD_ID);
+
+    private static final DeferredRegister<NodeDataType<?>> CONDUIT_NODE_DATA_TYPES = DeferredRegister
+        .create(EnderIORegistries.Keys.CONDUIT_NODE_DATA_TYPE, EnderIO.MOD_ID);
+    public static final Supplier<NodeDataType<ChemicalConduitNodeData>> CHEMICAL_NODE_DATA =
+        CONDUIT_NODE_DATA_TYPES.register("chemical", () -> ChemicalConduitNodeData.TYPE);
 
     static {
         CONDUIT_CONNECTION_CONFIG_TYPES.register("chemical", () -> ChemicalConduitConnectionConfig.TYPE);
@@ -165,6 +172,7 @@ public class MekanismModule implements ConduitCommonModule {
         MENUS.register(modEventBus);
         CONDUIT_TYPES.register(modEventBus);
         CONDUIT_DATA_TYPES.register(modEventBus);
+        CONDUIT_NODE_DATA_TYPES.register(modEventBus);
         CONDUIT_CONNECTION_CONFIG_TYPES.register(modEventBus);
         CONDUIT_NETWORK_CONTEXT_TYPES.register(modEventBus);
         registerCapabilities();
