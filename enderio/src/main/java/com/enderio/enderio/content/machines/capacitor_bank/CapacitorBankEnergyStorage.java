@@ -27,35 +27,30 @@ public record CapacitorBankEnergyStorage(CapacitorBankBlockEntity capacitorBank,
 
     @Override
     public int getEnergyStored() {
-        return LongMathUtil.nonNegativeInt(capacitorBank.getNetwork().getTotalEnergyStored());
+        return capacitorBank.hasActiveNode() ? LongMathUtil.nonNegativeInt(capacitorBank.getNetwork().getTotalEnergyStored()) : 0;
     }
 
     @Override
     public int getMaxEnergyStored() {
-        return LongMathUtil.nonNegativeInt(capacitorBank.getNetwork().getTotalMaxEnergyStored());
+        return capacitorBank.hasActiveNode() ? LongMathUtil.nonNegativeInt(capacitorBank.getNetwork().getTotalMaxEnergyStored()) : 0;
     }
 
     @Override
     public boolean canExtract() {
-        if (side == null) {
-            return true;
-        }
-
-        return capacitorBank.getIOMode(side).canOutput();
+        return capacitorBank.hasActiveNode() && (side == null || capacitorBank.getIOMode(side).canOutput());
     }
 
     @Override
     public boolean canReceive() {
-        if (side == null) {
-            return true;
-        }
-
-        return capacitorBank.getIOMode(side).canInput();
+        return capacitorBank.hasActiveNode() && (side == null || capacitorBank.getIOMode(side).canInput());
     }
 
     @Nullable
     public static IEnergyStorage getSided(CapacitorBankBlockEntity capacitorBank, @Nullable Direction side) {
-        if (!capacitorBank.getLevel().isClientSide() && side != null) {
+        if (!capacitorBank.hasActiveNode()) {
+            return null;
+        }
+        if (side != null) {
             if (!capacitorBank.getIOMode(side).canInput() && !capacitorBank.getIOMode(side).canOutput()) {
                 return null;
             }

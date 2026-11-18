@@ -64,7 +64,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
 
     private final CapacitorTier tier;
     private CapacitorBankNode node;
-    private CapacitorBankNetwork oldNetwork;
+    private int removedEnergy;
     private int legacyEnergy = 0;
     private UUID uuid = UUID.randomUUID();
 
@@ -116,14 +116,15 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
         super.setLevel(level);
 
         if (level instanceof ServerLevel serverLevel) {
-            CapacitorBankNode savedNote = CapacitorBankSavedData.get(serverLevel).claimNode(this.getBlockPos());
-            if (savedNote != null) { //Load saved node
-                this.node = savedNote;
+            CapacitorBankNode savedNode = CapacitorBankSavedData.get(serverLevel).claimNode(this.getBlockPos());
+            if (savedNode != null) {
+                this.node = savedNode;
                 this.node.attach(this);
                 this.redstoneControl = this.getNetwork().getRedstoneControl();
             } else {
                 if (this.node == null) { //Create a new node if not created by placing a block
                     this.node = new CapacitorBankNode(this);
+                    this.node.getNetwork().setRedstoneControl(redstoneControl);
                 }
                 CapacitorBankSavedData.onNetworkCreated(serverLevel, this.node.getNetwork()); //Broadcast the network creation
             }
@@ -136,10 +137,16 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
     }
 
     public void removeNode() {
-        if (this.node.isValid()) {
-            this.oldNetwork = node.getNetwork(); //Network is still needed for the picked up block
-            this.node.getNetwork().remove(this.node);
+        if (level instanceof ServerLevel serverLevel && hasActiveNode()) {
+            var network = node.getNetwork();
+            removedEnergy = network.getEnergyForNode(node);
+            network.extractEnergy(getBlockPos(), null, removedEnergy, false);
+            network.remove(node, created -> CapacitorBankSavedData.onNetworkCreated(serverLevel, created));
         }
+    }
+
+    boolean hasActiveNode() {
+        return !isRemoved() && node != null && node.isValid() && node.getBlockEntity() == this;
     }
 
     @Override
@@ -147,10 +154,17 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
         super.onLoad();
 
         // Create all energy caches
-        if (!level.isClientSide()) {
+        if (level instanceof ServerLevel serverLevel) {
+            if (node != null && node.isValid() && !node.hasBlockEntity()) {
+                CapacitorBankSavedData.get(serverLevel).claimNode(getBlockPos());
+                node.attach(this);
+                setRedstoneControl(node.getNetwork().getRedstoneControl());
+            }
             for (Direction side : Direction.values()) {
-                if (level.getBlockEntity(getBlockPos().relative(side)) instanceof CapacitorBankBlockEntity bank) {
-                    bank.node.getNetwork().connect(bank.node, node);
+                if (level.getBlockEntity(getBlockPos().relative(side)) instanceof CapacitorBankBlockEntity bank
+                    && bank.hasActiveNode()) {
+                    bank.node.getNetwork().connect(bank.node, node,
+                        discarded -> CapacitorBankSavedData.onNetworkDiscarded(serverLevel, discarded));
                 }
             }
         }
@@ -167,14 +181,22 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
 
     @Override
     public void setRemoved() {
+        detachNode();
         closeEnergyCapabilityCaches();
         super.setRemoved();
     }
 
     @Override
     public void onChunkUnloaded() {
+        detachNode();
         closeEnergyCapabilityCaches();
         super.onChunkUnloaded();
+    }
+
+    private void detachNode() {
+        if (level instanceof ServerLevel serverLevel && node != null && node.isValid() && node.detach(this)) {
+            CapacitorBankSavedData.get(serverLevel).releaseNode(node);
+        }
     }
 
     private void closeEnergyCapabilityCaches() {
@@ -394,6 +416,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
         // TODO: Ender IO 8 - remove.
         if (tag.contains(MachineNBTKeys.IO_CONFIG)) {
             ioConfig = IOConfig.parseOptional(registries, tag.getCompound(MachineNBTKeys.IO_CONFIG));
+            isValidPushTargetCacheDirty = true;
 
             if (level != null && level.isClientSide) {
                 clientIOConfigChanged();
@@ -486,11 +509,10 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
             EIODataComponents.IO_CONFIG.set(components, ioConfig);
         }
 
-        if (oldNetwork != null) { //Network already kicked out the node, so we keep an old ref
-            int energy = oldNetwork.getEnergyForNode(this.tier());
-            if (energy != 0) {
-                EIODataComponents.ENERGY.set(components, energy);
-            }
+        // Normal mining exports after removal. Commands can evaluate loot before removal.
+        int energy = hasActiveNode() ? getNetwork().getEnergyForNode(node) : removedEnergy;
+        if (energy != 0) {
+            EIODataComponents.ENERGY.set(components, energy);
         }
     }
 

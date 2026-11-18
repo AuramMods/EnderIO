@@ -57,11 +57,11 @@ public class CapacitorBankSavedData extends SavedData {
 
     @Nullable
     public CapacitorBankNode claimNode(BlockPos pos) {
-        if (unclaimedNodes.containsKey(pos)) {
-            return unclaimedNodes.remove(pos);
-        }
+        return unclaimedNodes.remove(pos);
+    }
 
-        return null;
+    void releaseNode(CapacitorBankNode node) {
+        unclaimedNodes.put(node.getPos(), node);
     }
 
     public static void onNetworkCreated(ServerLevel level, CapacitorBankNetwork network) {

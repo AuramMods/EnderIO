@@ -39,13 +39,15 @@ public class CapacitorBankNode implements INetworkNode<CapacitorBankNetwork, Cap
 
     public void attach(CapacitorBankBlockEntity blockEntity) {
         this.blockEntity = blockEntity;
-        this.pos = blockEntity.getBlockPos();
-        this.getNetwork().init(this);
-        this.savedCapacity = blockEntity.tier().getStorageCapacity();
+        long capacity = blockEntity.tier().getStorageCapacity();
+        getNetwork().updateCapacity(capacity - savedCapacity);
+        savedCapacity = capacity;
     }
 
-    public int getMaxEnergyStored() {
-        return blockEntity.tier().getStorageCapacity();
+    public boolean detach(CapacitorBankBlockEntity blockEntity) {
+        if (this.blockEntity != blockEntity) return false;
+        this.blockEntity = null;
+        return true;
     }
 
     @Nullable
