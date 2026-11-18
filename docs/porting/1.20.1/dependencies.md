@@ -1,6 +1,6 @@
 # Target dependency selection
 
-Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions.toml`. Version availability was checked against publisher Maven metadata or the project's Modrinth/CurseForge release record. Selection is not evidence of working integration; all runtime results remain pending.
+Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions.toml`. Version availability was checked against publisher Maven metadata or the project's Modrinth/CurseForge release record. Selection alone is not evidence of working integration; the runtime column records verified subsets and remaining work.
 
 | Dependency | Target release | Artifact selection | Runtime evidence |
 | --- | --- | --- | --- |
@@ -9,11 +9,12 @@ Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions
 | CC:Tweaked | 1.121.0 | Modrinth `cc-tweaked:Qm9iIIEY` | Pending |
 | Jade | 11.13.3+forge | Modrinth `jade:xJQHCmWJ` | Pending |
 | Athena | 3.1.2 | Modrinth `athena-ctm:DULOQFj7` | Pending |
-| AE2 | 15.4.12 | Modrinth `ae2:QRpVsqDI` | Pending |
+| AE2 | 15.4.12 | Modrinth `ae2:QRpVsqDI` | Native grid split/merge and bundle reload pass; power/channels/storage/client pending |
 | GuideME (AE2 dependency) | 20.1.15 | Modrinth `guideme:i7Tp1AHw` | Pending |
-| Mekanism | 10.4.16.80 | Modrinth `mekanism:uxe1WQp4` | Pending |
-| Refined Storage | 1.12.4 | Modrinth `refined-storage:ZITLFjjf` | Pending |
-| LaserIO | 1.6.8 | Curse Maven `laserio-626839:5074767` | Pending |
+| Mekanism | 10.4.16.80 | Modrinth `mekanism:uxe1WQp4` | Four-family native tank transfer/rate/budget and adapter/filter tests pass; broader gameplay pending |
+| Refined Storage | 1.12.4 | Modrinth `refined-storage:ZITLFjjf` | Native controller routing, split/reconnect, sides and bundle reload pass; storage/restart/client pending |
+| LaserIO | 1.6.8 | Curse Maven `laserio-626839:5074767` | Native book recipe passes with Patchouli; card/filter gameplay pending |
+| Patchouli (LaserIO book) | 1.20.1-84.1-forge | Modrinth `patchouli:8Qyw08ld` | Native LaserIO book matching/assembly passes; book UI pending |
 | Almost Unified | 1.20.1-0.10.1 | `com.almostreliable.mods:almostunified-forge` | Pending |
 | FTB Ultimine | 2001.1.8 | `dev.ftb.mods:ftb-ultimine-forge` | Pending |
 | FTB Library | 2001.2.13 | `dev.ftb.mods:ftb-library-forge` | Pending |
@@ -38,3 +39,5 @@ Sources:
 - [FTB Library Maven metadata](https://maven.ftb.dev/releases/dev/ftb/mods/ftb-library-forge/maven-metadata.xml).
 
 Cycle 032 loads pinned AE2, Mekanism and Refined Storage with the actual mod in a native headless development server and passes six addon state tests; seven isolated Mekanism tests also pass. These are partial integration checks, not complete gameplay certification. Datagen and Java compilation succeed. LaserIO's book recipe currently reports a missing Patchouli serializer, and Embeddium reports a datagen-only fingerprint error; resolve these while retaining the supported integrations. See [cycle 032](cycle-032.md).
+
+Cycle 033 resolves LaserIO's missing book serializer with pinned [Patchouli 1.20.1-84.1-forge](https://modrinth.com/mod/patchouli/version/8Qyw08ld), and verifies real AE2/RS networks and native Mekanism tank transfers. Datagen uses isolated serial-loading profiles after an observed AE2/Forge key-mapping race; normal gameplay profiles retain their loading settings. See [cycle 033](cycle-033.md) for precise coverage and outstanding work.

@@ -164,4 +164,28 @@ public class IntegrationStateTests {
         }
         helper.succeed();
     }
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void laserIoBookRecipeMatchesAndProducesItsNamedGuide(GameTestHelper helper) {
+        var recipe = helper.getLevel().getRecipeManager()
+            .byKey(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("laserio", "my_book_recipe_shapeless"))
+            .orElseThrow(() -> new net.minecraft.gametest.framework.GameTestAssertException("LaserIO book recipe was not loaded"));
+        var crafting = (net.minecraft.world.item.crafting.CraftingRecipe) recipe;
+        var menu = new net.minecraft.world.inventory.AbstractContainerMenu(null, 0) {
+            @Override public net.minecraft.world.item.ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int slot) {
+                return net.minecraft.world.item.ItemStack.EMPTY;
+            }
+            @Override public boolean stillValid(net.minecraft.world.entity.player.Player player) { return true; }
+        };
+        var grid = new net.minecraft.world.inventory.TransientCraftingContainer(menu, 2, 1);
+        grid.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BOOK));
+        grid.setItem(1, new net.minecraft.world.item.ItemStack(net.minecraftforge.registries.ForgeRegistries.ITEMS
+            .getValue(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("laserio", "logic_chip"))));
+        assertTrue(crafting.matches(grid, helper.getLevel()));
+        var result = crafting.assemble(grid, helper.getLevel().registryAccess());
+        assertEquals(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("patchouli", "guide_book"),
+            net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(result.getItem()));
+        assertEquals("laserio:laseriobook", result.getOrCreateTag().getString("patchouli:book"));
+        helper.succeed();
+    }
+
 }

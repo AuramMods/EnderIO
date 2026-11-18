@@ -38,7 +38,8 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
                 }
 
                 var extractConduit = extractConnection.node().conduit(conduitType());
-                final long transferRate = extractConduit.value().transferRatePerTick() * conduitType().getTickRate(extractConduit);
+                final long transferRate = com.google.common.math.LongMath.saturatedMultiply(
+                    Math.max(0, extractConduit.value().transferRatePerTick()), conduitType().getTickRate(extractConduit));
 
                 ChemicalHandlerAdapter extractHandler = ChemicalHandlerAdapter.find(extractConnection::getSidedCapability);
                 if (extractHandler == null) {
@@ -85,10 +86,12 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
         // Insert into any available blocks
         for (var insertPath : insertPaths) {
             var insertConnection = insertPath.end();
-            final long maxInsertSpeed = insertPath.property(ChemicalConduit.PATH_MAX_TRANSFER_RATE);
+            final long maxInsertSpeed = com.google.common.math.LongMath.saturatedMultiply(
+                Math.max(0, insertPath.property(ChemicalConduit.PATH_MAX_TRANSFER_RATE)),
+                conduitType().getTickRate(extractConnection.node().conduit(conduitType())));
 
             // Calculate remaining 'speed' for this path
-            long remaining = maxInsertSpeed - insertedPerPath.getOrDefault(insertPath, 0L);
+            long remaining = Math.min(maxTransfer, maxInsertSpeed - insertedPerPath.getOrDefault(insertPath, 0L));
             if (remaining <= 0) {
                 continue;
             }
@@ -122,11 +125,12 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
 
             // Deduct the transferred chemical from our maximum transfer.
             maxTransfer -= transferredChemical.getAmount();
+            extractedChemical.setAmount(extractedChemical.getAmount() - transferredChemical.getAmount());
 
             // Store the amount transferred in this path
             insertedPerPath.compute(insertPath, (k, v) -> v == null ? transferredChemical.getAmount() : v + transferredChemical.getAmount());
 
-            if (maxTransfer <= 0) {
+            if (maxTransfer <= 0 || extractedChemical.isEmpty()) {
                 break;
             }
         }

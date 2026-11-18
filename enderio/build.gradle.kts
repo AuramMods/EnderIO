@@ -132,6 +132,7 @@ dependencies {
     //Laserio
     modCompileOnly(libs.laserio)
     "modLocalRuntime"(libs.laserio)
+    "modLocalRuntime"(libs.patchouli)
 
     // Dependencies of optional mods (legacy remapping configurations are non-transitive).
     "modLocalRuntime"(libs.guideMe)
@@ -214,6 +215,7 @@ legacyForge {
 
         val data by creating {
             data()
+            gameDirectory = project.file("run/datagen")
             systemProperty("java.awt.headless", "true")
             loadedMods = listOf(modEnderio)
 
@@ -378,3 +380,12 @@ for ((runName, directory) in mapOf(
 obfuscation {
     reobfuscate(tasks.named<Jar>("apiJar"), sourceSets.main.get())
 }
+
+// Some pinned integrations construct client key mappings during parallel mod construction.
+// Datagen has no client; serial Forge loading avoids the observed shared-key-table race.
+val prepareDataProfile = tasks.register<PrepareTestProfile>("prepareDataProfile") {
+    gameDirectory = layout.projectDirectory.dir("run/datagen")
+    client = true
+    forgeLoadingThreads = 1
+}
+tasks.matching { it.name == "runData" }.configureEach { dependsOn(prepareDataProfile) }

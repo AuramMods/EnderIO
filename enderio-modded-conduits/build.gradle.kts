@@ -101,6 +101,7 @@ dependencies {
     //Laserio
     modCompileOnly(libs.laserio)
     modRuntimeOnly(libs.laserio)
+    modRuntimeOnly(libs.patchouli)
 
     modRuntimeOnly(libs.guideMe)
 
@@ -138,6 +139,7 @@ legacyForge {
 
         val data by creating {
             data()
+            gameDirectory = project.file("run/datagen")
             systemProperty("java.awt.headless", "true")
 
             programArguments.addAll(
@@ -282,3 +284,12 @@ tasks.matching { it.name == "runGameTestServer" }.configureEach {
 
 // These tests run the actual bundled mod and pinned integrations in a native server.
 tasks.named("check") { dependsOn("runGameTestServer") }
+
+// Some pinned integrations construct client key mappings during parallel mod construction.
+// Datagen has no client; serial Forge loading avoids the observed shared-key-table race.
+val prepareDataProfile = tasks.register<PrepareTestProfile>("prepareDataProfile") {
+    gameDirectory = layout.projectDirectory.dir("run/datagen")
+    client = true
+    forgeLoadingThreads = 1
+}
+tasks.matching { it.name == "runData" }.configureEach { dependsOn(prepareDataProfile) }

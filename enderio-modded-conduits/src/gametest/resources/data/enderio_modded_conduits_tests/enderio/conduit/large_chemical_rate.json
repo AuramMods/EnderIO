@@ -1,0 +1,6 @@
+{
+  "type": "enderio:chemical",
+  "texture": "enderio:block/conduit/chemical",
+  "description": "Large transfer rate test conduit",
+  "transfer_rate": 3074457345618258602
+}

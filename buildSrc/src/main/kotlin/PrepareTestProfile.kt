@@ -15,12 +15,29 @@ abstract class PrepareTestProfile : DefaultTask() {
     @get:Input
     abstract val client: Property<Boolean>
 
+    /** Zero preserves the profile's existing Forge loading-thread setting. */
+    @get:Input
+    abstract val forgeLoadingThreads: Property<Int>
+
+    init {
+        forgeLoadingThreads.convention(0)
+    }
+
     @TaskAction
     fun prepare() {
         val directory = gameDirectory.get().asFile
         directory.mkdirs()
         // The user has explicitly accepted the Minecraft server EULA.
         directory.resolve("eula.txt").writeText("eula=true\n")
+        if (forgeLoadingThreads.get() > 0) {
+            val config = directory.resolve("config/fml.toml")
+            config.parentFile.mkdirs()
+            val existing = if (config.exists()) config.readText() else ""
+            val key = Regex("""(?m)^\s*maxThreads\s*=.*$""")
+            val setting = "maxThreads = ${forgeLoadingThreads.get()}"
+            config.writeText(if (key.containsMatchIn(existing)) key.replace(existing, setting)
+                else existing.trimEnd() + "\n" + setting + "\n")
+        }
         if (!client.get()) return
 
         val optionsFile = directory.resolve("options.txt")

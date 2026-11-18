@@ -11,6 +11,7 @@ mekanism = "1.20.1-10.4.16.80"
 mekanismMod = "10.4.16.80"
 refinedStorage = "1.12.4"
 laserio = "5074767"
+patchouli = "1.20.1-84.1-forge"
 graphlib = { strictly = "[3.0.4, 3.1)", prefer = "3.0.5" }
 ftbUltimine = "2001.1.8"
 ftbLibrary = "2001.2.13"
@@ -31,6 +32,7 @@ jade = { group = "maven.modrinth", name = "jade", version = "xJQHCmWJ" }
 athena = { group = "maven.modrinth", name = "athena-ctm", version = "DULOQFj7" }
 ae2 = { group = "maven.modrinth", name = "ae2", version = "QRpVsqDI" }
 guideMe = { group = "maven.modrinth", name = "guideme", version = "i7Tp1AHw" }
+patchouli = { group = "maven.modrinth", name = "patchouli", version = "8Qyw08ld" }
 mekanism = { group = "maven.modrinth", name = "mekanism", version = "uxe1WQp4" }
 refinedStorage = { group = "maven.modrinth", name = "refined-storage", version = "ZITLFjjf" }
 laserio = { group = "curse.maven", name = "laserio-626839", version.ref = "laserio" }
