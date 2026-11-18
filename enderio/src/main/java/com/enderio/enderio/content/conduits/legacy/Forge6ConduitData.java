@@ -96,7 +96,8 @@ public final class Forge6ConduitData {
         return new DynamicConnectionState(tag.getBoolean("IsInsert"), color(tag.getInt("Insert")),
             tag.getBoolean("IsExtract"), color(tag.getInt("Extract")),
             RedstoneControl.BY_ID.apply(tag.getInt("RedstoneControl")), color(tag.getInt("Channel")),
-            filter(tag.getCompound("InsertFilter")), filter(tag.getCompound("ExtractFilter")), ItemStack.EMPTY);
+            filter(tag.getCompound("InsertFilter")), filter(tag.getCompound("ExtractFilter")),
+            ItemStack.of(tag.getCompound("ExtractUpgrade")));
     }
 
     private static DyeColor color(int index) {

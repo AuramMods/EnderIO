@@ -3,14 +3,19 @@ package com.enderio.enderio.gametests.conduits.item;
 import com.enderio.enderio.gametests.EnderIOTests;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.gametests.conduits.ConduitGameTestHelper;
+import com.enderio.enderio.content.conduits.menu.ConduitMenu;
 import com.enderio.enderio.content.conduits.type.item.ItemConduit;
 import com.enderio.enderio.content.conduits.type.item.ItemConduitConnectionConfig;
 import com.enderio.enderio.init.EIOConduits;
+import com.enderio.enderio.init.EIOItems;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.gametests.util.FixtureTemplate;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
@@ -73,6 +78,42 @@ public class ItemConduitTests {
                 // Ensure no duplication
                 .thenExecuteAfter(tickRate, () -> helper.assertContainerHasExactly(0, 1, 0, Items.DIRT, 0))
                 .thenSucceed();
+        });
+    }
+
+    @GameTest
+    public static void legacyUpgradeCanBeInsertedAndRemovedInConduitMenu(GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 3)
+            .set(0, 0, 0, Blocks.BARREL.defaultBlockState()));
+        test.onGameTest(ConduitGameTestHelper.class, helper -> {
+            var conduit = helper.getConduit(EIOConduits.ITEM);
+            helper.startSequence().thenExecute(() -> {
+                helper.placeConduit(conduit, 0, 1, 1);
+                var bundle = helper.getConduitBundle(0, 1, 1, false);
+                var player = FakePlayerFactory.getMinecraft(helper.getLevel());
+                var menu = new ConduitMenu(1, player.getInventory(), bundle, conduit, Direction.NORTH);
+                var upgrade = EIOItems.LEGACY_EXTRACTION_UPGRADES.get(3).get();
+                var stack = new ItemStack(upgrade, 3);
+                stack.getOrCreateTag().putInt("PortMenuUpgrade", 4);
+
+                int slot = ItemConduit.EXTRACTION_UPGRADE_SLOT;
+                helper.assertValueEqual(menu.getSlot(slot).mayPlace(new ItemStack(Items.DIAMOND)), false,
+                    "Upgrade slot rejects unrelated items");
+                helper.assertValueEqual(menu.getSlot(ItemConduit.EXTRACT_FILTER_SLOT).mayPlace(stack), false,
+                    "Upgrade is distinct from the extraction filter");
+                menu.setCarried(stack);
+                menu.clicked(slot, 0, ClickType.PICKUP, player);
+                var installed = bundle.getConnectionInventory(conduit, Direction.NORTH).getStackInSlot(slot);
+                helper.assertValueEqual(installed.is(upgrade) && installed.getCount() == 1, true,
+                    "Menu places exactly one upgrade");
+                helper.assertValueEqual(menu.getCarried().getCount(), 2, "Remaining upgrades stay on the cursor");
+                menu.setCarried(ItemStack.EMPTY);
+                menu.clicked(slot, 0, ClickType.PICKUP, player);
+                helper.assertValueEqual(menu.getCarried().is(upgrade) && menu.getCarried().getCount() == 1
+                    && menu.getCarried().getTag().getInt("PortMenuUpgrade") == 4, true,
+                    "Picking up the installed upgrade preserves its tag");
+                helper.assertValueEqual(menu.getSlot(slot).hasItem(), false, "Menu removal clears the upgrade slot");
+            }).thenSucceed();
         });
     }
 

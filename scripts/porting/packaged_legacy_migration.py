@@ -39,7 +39,8 @@ def tank_state(x, legacy):
     return (f'{{{key}:{{Tanks:[{{{entry}}}]}},Items:{{Items:[{{Slot:1,id:"minecraft:diamond",Count:{count}}}]}}}}')
 
 
-def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits, placed_mekanism_conduits):
+def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits,
+             placed_mekanism_conduits, extraction_upgrades):
     server.wait('For help, type "help"')
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
@@ -74,6 +75,8 @@ def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_sto
         exercise_storage_conduits(server, stage, results)
     if placed_mekanism_conduits:
         exercise_mekanism_conduits(server, stage, results)
+    if extraction_upgrades:
+        exercise_extraction_upgrades(server, stage, results)
     server.command("save-all flush")
 
 
@@ -283,12 +286,76 @@ def assert_mekanism_routes(server, stage, results):
                  "Native Mekanism chemical totals, lock and heat transfer verified", results)
 
 
+def upgrade_stack(tier, marker, count, byte_count):
+    return (f'{{id:"enderio:extraction_speed_upgrade_{tier}",Count:{count}{"b" if byte_count else ""},'
+            f'tag:{{{marker}:{tier}}}}}')
+
+
+def exercise_extraction_upgrades(server, stage, results):
+    chunks = "1200 0 1231 15"
+    left, right = "1215 80 1", "1216 80 1"
+    loose_barrel = "12 80 4"
+    server.command(f"forceload add {chunks}")
+    server.assert_state(f"upgrade_chunks_loaded_{stage}", f"if loaded {left} if loaded {right}", results)
+    if stage == "legacy":
+        server.command("fill 1214 79 0 1217 79 11 minecraft:stone")
+        for tier in range(1, 5):
+            for x in (1214, 1217):
+                server.command(f"setblock {x} 80 {tier * 3 - 2} minecraft:barrel")
+        stacks = [f'{{Slot:{tier - 1}b,' + upgrade_stack(tier, "PortLooseTier", tier + 1, True)[1:]
+                  for tier in range(1, 5)]
+        server.command(f'setblock {loose_barrel} minecraft:barrel{{Items:[{",".join(stacks)}]}}')
+        output = server.command("port_legacy_extraction_upgrades")
+        if "Legacy extraction upgrade routes created" not in output:
+            raise AssertionError(output)
+    assert_extraction_upgrades(server, stage, results, loose_barrel)
+    if stage == "converted":
+        server.command(f"forceload remove {chunks}")
+        server.assert_state("upgrade_chunks_unloaded", f"unless loaded {left} unless loaded {right}", results, timeout=40)
+        server.command(f"forceload add {chunks}")
+        server.assert_state("upgrade_chunks_reloaded", f"if loaded {left} if loaded {right}", results)
+        assert_extraction_upgrades(server, "chunk_reload", results, loose_barrel)
+    if stage == "restart":
+        destroyed = "1215 80 10"
+        server.command("scoreboard objectives add port_upgrade dummy")
+        server.command(f"setblock {destroyed} minecraft:air destroy")
+        stack = upgrade_stack(4, "PortInstalledTier", 1, True)
+        server.command(f"execute positioned {destroyed} store result score #upgrade port_upgrade "
+                       f"if entity @e[type=minecraft:item,distance=..4,nbt={{Item:{stack}}}]")
+        server.assert_state("installed_upgrade_drops_once",
+                            "if score #upgrade port_upgrade matches 1", results)
+
+
+def assert_extraction_upgrades(server, stage, results, loose_barrel):
+    legacy = stage == "legacy"
+    for tier in range(1, 5):
+        pos = f"1215 80 {tier * 3 - 2}"
+        server.command(f"data get block {pos}")
+        installed = upgrade_stack(tier, "PortInstalledTier", 1, legacy)
+        if legacy:
+            conditions = f'if data block {pos} ConduitBundle.Connections.west."0".ExtractUpgrade{installed}'
+        else:
+            face = 'Connections[0][{Side:"west",Status:"connected_block"}].Inventory'
+            conditions = (f'if data block {pos} {face}[{installed}] '
+                          f'if data block {pos} {face}[2].tag{{PortInstalledTier:{tier}}}')
+        server.assert_state(f"installed_upgrade_{tier}_{stage}", conditions, results)
+        loose = upgrade_stack(tier, "PortLooseTier", tier + 1, True)
+        server.assert_state(f"loose_upgrade_{tier}_{stage}",
+                            f"if data block {loose_barrel} Items[{loose}]", results)
+    batches = {"legacy": 0, "converted": 1, "chunk_reload": 2, "restart": 3}[stage]
+    output = server.command(f"port_extract_upgrades seed {batches}")
+    if "Extraction upgrade batches seeded" not in output:
+        raise AssertionError(output)
+    assert_probe(server, f"first_extraction_upgrade_transfer_{stage}", "port_extract_upgrades check",
+                 "Native extraction upgrade rates verified: [8, 16, 32, 64]", results)
+
+
 def run_server(directory, java, stage, report, conduit_fixture, loose_conduits, placed_storage_conduits,
-               placed_mekanism_conduits):
+               placed_mekanism_conduits, extraction_upgrades):
     server = Server(directory, java, stage)
     try:
         exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits,
-                 placed_storage_conduits, placed_mekanism_conduits)
+                 placed_storage_conduits, placed_mekanism_conduits, extraction_upgrades)
     finally:
         exit_status = server.stop()
         errors = [line.strip() for line in server.lines if "/ERROR]" in line or "/FATAL]" in line]
@@ -315,6 +382,8 @@ def main():
                         help="Migrate placed AE2 and RS routes with the legacy fixture and storage probe")
     parser.add_argument("--placed-mekanism-conduits", action="store_true",
                         help="Migrate placed heat and chemical routes with the legacy fixture and Mekanism probe")
+    parser.add_argument("--extraction-upgrades", action="store_true",
+                        help="Migrate loose and installed extraction upgrades with the legacy fixture and upgrade probe")
     parser.add_argument("--mod", action="append", type=Path, default=[], help="Install a Forge dependency in both profiles")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
@@ -350,7 +419,8 @@ def main():
         if args.conduit_fixture:
             shutil.copyfile(args.conduit_fixture, legacy / "mods" / "port-legacy-fixture.jar")
             report["fixtureSha256"] = digest(args.conduit_fixture)
-        fixtures = (args.conduit_fixture, loose_conduits, args.placed_storage_conduits, args.placed_mekanism_conduits)
+        fixtures = (args.conduit_fixture, loose_conduits, args.placed_storage_conduits,
+                    args.placed_mekanism_conduits, args.extraction_upgrades)
         run_server(legacy, args.java, "legacy", report, *fixtures)
         shutil.copytree(legacy / WORLD, converted / WORLD)
         run_server(converted, args.java, "converted", report, *fixtures)

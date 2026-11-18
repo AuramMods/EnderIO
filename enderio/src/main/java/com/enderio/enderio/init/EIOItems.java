@@ -13,6 +13,7 @@ import com.enderio.enderio.content.conduits.ConduitBlockItem;
 import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
 import com.enderio.enderio.content.conduits.facades.ConduitFacadeItem;
 import com.enderio.enderio.content.conduits.probe.ConduitProbeItem;
+import com.enderio.enderio.content.conduits.type.item.LegacyExtractionUpgradeItem;
 import com.enderio.enderio.content.filters.fluid.EnderFluidFilterItem;
 import com.enderio.enderio.content.filters.item.general.EnderItemFilterItem;
 import com.enderio.enderio.content.filters.item.limited.LimitedItemFilterItem;
@@ -241,6 +242,14 @@ public class EIOItems {
 
     public static final ItemDeferredHolder<ConduitFacadeItem> TRANSPARENT_HARDENED_CONDUIT_FACADE = ITEMS.registerItem("transparent_hardened_conduit_facade",
         properties -> EIODataComponents.FACADE_TYPE.withDefault(new ConduitFacadeItem(properties), () -> FacadeType.TRANSPARENT_HARDENED));
+
+    public static final List<ItemDeferredHolder<LegacyExtractionUpgradeItem>> LEGACY_EXTRACTION_UPGRADES =
+        List.of(extractionUpgrade(1, 8), extractionUpgrade(2, 16), extractionUpgrade(3, 32), extractionUpgrade(4, 64));
+
+    private static ItemDeferredHolder<LegacyExtractionUpgradeItem> extractionUpgrade(int tier, int itemsPerSecond) {
+        return ITEMS.registerItem("extraction_speed_upgrade_" + tier,
+            properties -> new LegacyExtractionUpgradeItem(properties, itemsPerSecond));
+    }
 
     // endregion
 

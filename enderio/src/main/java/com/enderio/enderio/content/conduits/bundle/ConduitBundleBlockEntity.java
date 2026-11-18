@@ -1808,6 +1808,11 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
             }
 
             @Override
+            public int getSlotLimit(int slot) {
+                return conduit.value().getInventorySlotLimit(slot);
+            }
+
+            @Override
             protected void onContentsChanged(int slot) {
                 if (level != null) {
                     bundleChanged();
@@ -2025,6 +2030,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
 
                     int insertFilterSlot = conduit.value().getIndexForLegacySlot(SlotType.FILTER_INSERT);
                     int extractFilterSlot = conduit.value().getIndexForLegacySlot(SlotType.FILTER_EXTRACT);
+                    int upgradeSlot = conduit.value().getIndexForLegacySlot(SlotType.UPGRADE_EXTRACT);
 
                     if (insertFilterSlot >= 0) {
                         inventory.setStackInSlot(insertFilterSlot, dynamicState.filterInsert());
@@ -2032,6 +2038,10 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
 
                     if (extractFilterSlot >= 0) {
                         inventory.setStackInSlot(extractFilterSlot, dynamicState.filterExtract());
+                    }
+
+                    if (upgradeSlot >= 0 && inventory.isItemValid(upgradeSlot, dynamicState.upgradeExtract())) {
+                        inventory.setStackInSlot(upgradeSlot, dynamicState.upgradeExtract());
                     }
                 }
             }

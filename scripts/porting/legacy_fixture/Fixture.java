@@ -77,6 +77,12 @@ public class Fixture {
                 context.getSource().sendSuccess(() -> Component.literal("Legacy Mekanism conduits created"), false);
                 return 1;
             }));
+        event.getDispatcher().register(Commands.literal("port_legacy_extraction_upgrades").requires(source -> source.hasPermission(4))
+            .executes(context -> {
+                buildExtractionRoutes(context.getSource().getLevel());
+                context.getSource().sendSuccess(() -> Component.literal("Legacy extraction upgrade routes created"), false);
+                return 1;
+            }));
         event.getDispatcher().register(Commands.literal("port_legacy_travel").requires(source -> source.hasPermission(4))
             .executes(context -> {
                 var level = context.getSource().getLevel();
@@ -204,6 +210,25 @@ public class Fixture {
         }
         source.setChanged();
         destination.setChanged();
+    }
+
+    private static void buildExtractionRoutes(ServerLevel level) {
+        var type = EIOConduitTypes.ITEM.get();
+        for (int tier = 1; tier <= 4; tier++) {
+            int z = tier * 3 - 2;
+            var source = place(level, new BlockPos(1215, 79, z), "item_conduit");
+            var destination = place(level, new BlockPos(1216, 79, z), "item_conduit");
+            var upgrade = stack("extraction_speed_upgrade_" + tier);
+            upgrade.getOrCreateTag().putInt("PortInstalledTier", tier);
+            source.handleConnectionStateUpdate(Direction.WEST, type,
+                new DynamicConnectionState(false, ColorControl.GREEN, true, ColorControl.GREEN,
+                    RedstoneControl.ALWAYS_ACTIVE, ColorControl.RED, ItemStack.EMPTY, ItemStack.EMPTY, upgrade));
+            destination.handleConnectionStateUpdate(Direction.EAST, type,
+                new DynamicConnectionState(true, ColorControl.GREEN, false, ColorControl.GREEN,
+                    RedstoneControl.NEVER_ACTIVE, ColorControl.RED, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY));
+            source.setChanged();
+            destination.setChanged();
+        }
     }
 
     private static ConduitBlockEntity place(ServerLevel level, BlockPos support, String item) {

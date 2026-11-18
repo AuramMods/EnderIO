@@ -51,6 +51,7 @@ public class ConduitLang {
     public static final MutableComponent ITEM_RAW_RATE_TOOLTIP = tooltip("item/raw_rate");
     public static final MutableComponent ITEM_EFFECTIVE_RATE_TOOLTIP = tooltip("item/effective_rate");
     public static final MutableComponent ITEM_FILTER_SLOT_TOOLTIP = tooltip("slot/item_filter");
+    public static final MutableComponent EXTRACTION_UPGRADE_SLOT_TOOLTIP = tooltip("slot/extraction_upgrade");
     public static final MutableComponent REDSTONE_FILTER_SLOT_TOOLTIP = tooltip("slot/redstone_filter");
     public static final MutableComponent FLUID_FILTER_SLOT_TOOLTIP = tooltip("slot/fluid_filter");
 

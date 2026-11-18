@@ -192,6 +192,8 @@ public class EIOItemModelProvider extends ItemModelProvider {
         basicItem(EIOItems.SENSOR_FILTER.get());
         basicItem(EIOItems.TIMER_FILTER.get());
 
+        EIOItems.LEGACY_EXTRACTION_UPGRADES.forEach(upgrade -> basicItem(upgrade.get()));
+
         // Conduit facades
         getBuilder(EIOItems.CONDUIT_FACADE.getId().toString())
             .customLoader(FacadeItemModelBuilder::begin)

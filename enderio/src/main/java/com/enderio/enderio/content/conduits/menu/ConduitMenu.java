@@ -354,6 +354,11 @@ public class ConduitMenu extends BaseEnderMenu {
         public boolean isItemValid(int slot, ItemStack stack) {
             return conduit.value().isItemValid(slot, stack);
         }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return conduit.value().getInventorySlotLimit(slot);
+        }
     }
 
     private record MenuProvider(ConduitBundleBlockEntity conduitBundle, Direction side, Holder<Conduit<?, ?>> conduit)

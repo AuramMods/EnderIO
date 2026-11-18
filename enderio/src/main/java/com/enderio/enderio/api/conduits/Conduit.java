@@ -246,6 +246,10 @@ public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, 
         return true;
     }
 
+    default int getInventorySlotLimit(int slot) {
+        return 64;
+    }
+
     default Vector2i getInventorySlotPosition(int slot) {
         if (getInventorySize() > 0) {
             throw new NotImplementedException(

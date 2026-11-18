@@ -17,6 +17,7 @@ import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.config.conduits.ConduitsConfig;
 import com.enderio.enderio.content.conduits.ConduitLang;
 import com.enderio.enderio.init.EIOConduitTypes;
+import com.enderio.enderio.init.EIOConduits;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -45,6 +46,7 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
 
     public static final int EXTRACT_FILTER_SLOT = 0;
     public static final int INSERT_FILTER_SLOT = 1;
+    public static final int EXTRACTION_UPGRADE_SLOT = 2;
 
     public static final MapCodec<ItemConduit> CODEC = RecordCodecBuilder.mapCodec(builder -> builder
         .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(ItemConduit::texture),
@@ -55,6 +57,8 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
         .apply(builder, ItemConduit::new));
 
     public static final ConnectionPathProperty<SpeedAndTickRatePair> PATH_SPEED_AND_TICK_RATE = SpeedAndTickRatePair.minProperty(SpeedAndTickRatePair.ZERO);
+    static final ConnectionPathProperty<SpeedAndTickRatePair> UPGRADED_PATH_SPEED =
+        SpeedAndTickRatePair.minProperty(SpeedAndTickRatePair.ZERO);
 
     @Override
     public ConduitType<ItemConduit, ItemConduitConnectionConfig> type() {
@@ -83,7 +87,12 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
 
     @Override
     public void collectNodePathProperties(ConduitNode node, ConnectionPathPropertyConsumer consumer) {
-        consumer.accept(PATH_SPEED_AND_TICK_RATE, new SpeedAndTickRatePair(transferRatePerCycle(), networkTickRate()));
+        var speed = new SpeedAndTickRatePair(transferRatePerCycle(), networkTickRate());
+        consumer.accept(PATH_SPEED_AND_TICK_RATE, speed);
+        // A standard basic conduit used to carry a full tier-four batch. Retain other tier and datapack limits.
+        var upgradedSpeed = node.conduit().is(EIOConduits.ITEM) && transferRatePerCycle() == 32 && networkTickRate() == 20
+            ? new SpeedAndTickRatePair(LegacyExtractionUpgradeItem.MAX_ITEMS_PER_SECOND, 20) : speed;
+        consumer.accept(UPGRADED_PATH_SPEED, upgradedSpeed);
     }
 
     @Override
@@ -147,12 +156,18 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
 
     @Override
     public int getInventorySize() {
-        return 2;
+        return 3;
     }
 
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
+        if (slot == EXTRACTION_UPGRADE_SLOT) return stack.getItem() instanceof LegacyExtractionUpgradeItem;
         return stack.getCapability(EnderIOCapabilities.ITEM_FILTER).orElse(null) != null;
+    }
+
+    @Override
+    public int getInventorySlotLimit(int slot) {
+        return slot == EXTRACTION_UPGRADE_SLOT ? 1 : Conduit.super.getInventorySlotLimit(slot);
     }
 
     @Override
@@ -160,6 +175,7 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
         return switch (slot) {
         case EXTRACT_FILTER_SLOT -> new Vector2i(113, 71);
         case INSERT_FILTER_SLOT -> new Vector2i(23, 71);
+            case EXTRACTION_UPGRADE_SLOT -> new Vector2i(149, 71);
         default -> throw new IndexOutOfBoundsException();
         };
     }
@@ -169,6 +185,7 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
         return switch (slotType) {
         case FILTER_EXTRACT -> EXTRACT_FILTER_SLOT;
         case FILTER_INSERT -> INSERT_FILTER_SLOT;
+            case UPGRADE_EXTRACT -> EXTRACTION_UPGRADE_SLOT;
         default -> -1;
         };
     }
@@ -178,6 +195,7 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
         return switch (slot) {
             case EXTRACT_FILTER_SLOT -> ConduitLang.ITEM_FILTER_SLOT_TOOLTIP;
             case INSERT_FILTER_SLOT -> ConduitLang.ITEM_FILTER_SLOT_TOOLTIP;
+            case EXTRACTION_UPGRADE_SLOT -> ConduitLang.EXTRACTION_UPGRADE_SLOT_TOOLTIP;
             default -> Component.empty();
         };
     }

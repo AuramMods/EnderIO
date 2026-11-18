@@ -241,6 +241,7 @@ public class EIOLanguageProvider extends LanguageProvider {
         add(ConduitLang.CONDUIT_PROBE_MESSAGE_PASTED, "Pasted data: %s");
 
         add(ConduitLang.ITEM_FILTER_SLOT_TOOLTIP, "Item Filter Slot");
+        add(ConduitLang.EXTRACTION_UPGRADE_SLOT_TOOLTIP, "Legacy Extraction Speed Upgrade Slot");
         add(ConduitLang.REDSTONE_FILTER_SLOT_TOOLTIP, "Redstone Filter Slot");
         add(ConduitLang.FLUID_FILTER_SLOT_TOOLTIP, "Fluid Filter Slot");
     }
@@ -526,6 +527,9 @@ public class EIOLanguageProvider extends LanguageProvider {
         add(EIOItems.ELECTROMAGNET.get(), "Electromagnet");
         add(EIOItems.COLD_FIRE_IGNITER.get(), "Cold Fire Igniter");
         add(EIOItems.CONDUIT_PROBE.get(), "Conduit Probe");
+        for (int i = 0; i < EIOItems.LEGACY_EXTRACTION_UPGRADES.size(); i++) {
+            add(EIOItems.LEGACY_EXTRACTION_UPGRADES.get(i).get(), "Tier " + (i + 1) + " Extraction Speed Upgrade");
+        }
 
         add(EIOItems.DARK_STEEL_SWORD.get(), "The Ender");
 

@@ -4,6 +4,7 @@ import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.connection.path.ConduitConnectionPath;
+import com.enderio.enderio.api.conduits.connection.path.SpeedAndTickRatePair;
 import com.enderio.enderio.api.conduits.network.ConduitNetwork;
 import com.enderio.enderio.api.conduits.ticker.ConduitTickerBase;
 import com.enderio.enderio.api.filter.ItemFilterContext;
@@ -70,7 +71,15 @@ public class ItemConduitTicker extends ConduitTickerBase<ItemConduit> {
                 .getCapability(EnderIOCapabilities.ITEM_FILTER).orElse(null);
 
             int extracted = 0;
+            var upgradeItem = extractConnection.inventory().getStackInSlot(ItemConduit.EXTRACTION_UPGRADE_SLOT).getItem();
+            var pathSpeed = ItemConduit.PATH_SPEED_AND_TICK_RATE;
+            int tickRate = extractConduit.value().networkTickRate();
             int speed = extractConduit.value().transferRatePerCycle();
+            if (upgradeItem instanceof LegacyExtractionUpgradeItem upgrade) {
+                pathSpeed = ItemConduit.UPGRADED_PATH_SPEED;
+                speed = new SpeedAndTickRatePair(upgrade.itemsPerSecond(), 20).getAdjustedSpeed(tickRate);
+            }
+            if (speed == 0) continue;
 
             nextItem: for (int i = 0; i < extractHandler.getSlots(); i++) {
                 ItemStack extractedItem = extractHandler.extractItem(i, speed - extracted, true);
@@ -105,8 +114,7 @@ public class ItemConduitTicker extends ConduitTickerBase<ItemConduit> {
                     var insertConnection = insertPath.end();
 
                     // Get the adjusted speed (as some conduits tick at differing speeds)
-                    var pathSpeedAndTickRate = insertPath.property(ItemConduit.PATH_SPEED_AND_TICK_RATE);
-                    final int maxSpeed = pathSpeedAndTickRate.getAdjustedSpeed(extractConduit.value().networkTickRate());
+                    final int maxSpeed = insertPath.property(pathSpeed).getAdjustedSpeed(tickRate);
 
                     // Calculate remaining 'speed' for this path
                     int remaining = maxSpeed - insertedPerPath.getOrDefault(insertPath, 0);
