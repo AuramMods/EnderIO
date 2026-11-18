@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 033 verifies live AE2/RS conduit networks and native block-entity reload, fixes chemical update rates and branch budgets, and resolves the two recipe-loading errors. The verified profiles pass 62 unit tests and 195 native GameTests. Both datagens and main jar/reobfuscation pass; the full repository build still fails with 42 early errors in the main module's unported tests. Complete gameplay, clean packaged installations, client visuals and dedicated multiplayer remain unverified. No client has been launched.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 034 restores all 128 existing main-module JUnit cases: 16 CPU-only cases and 112 registry cases running inside native Forge. The full repository build now passes, with 78 ordinary JUnit and 307 native GameTest executions across verified profiles. The separate 34-file gameplay GameTest suite and its CI invocation still need migration. Complete gameplay, clean packaged installations, client visuals and dedicated multiplayer remain unverified. No client has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -37,7 +37,7 @@ EnderCore is already part of this repository and bundled by the Ender IO build. 
 
 Current build ownership is in `settings.gradle.kts`, `gradle/libs.versions.toml`, `buildSrc/src/main/kotlin/mod-common-conventions.gradle.kts`, and the three module build files. It uses ModDevGradle 2.0.148 and Gradle 9.8.2. The historical build uses ForgeGradle 6 with additional mapping/mixin plugins; its old repositories and versions are reference material, not assumed to remain resolvable.
 
-The baseline tests include 33 Java files under `src/test` and 34 under `src/gametest`, including helpers and package descriptors. These are file counts, not executed test counts. The build now targets Java 17; remaining NeoForge test-framework sources and game bootstrap must still be ported.
+The baseline tests include 33 Java files under `src/test` and 34 under `src/gametest`, including helpers and package descriptors. These are file counts, not executed test counts. The build now targets Java 17. Cycle 034 ports the main JUnit suite to CPU/native-server profiles; the separate main gameplay GameTest framework and CI invocation still require migration.
 
 ## Main conversion areas
 
@@ -56,7 +56,7 @@ These are source-grounded work estimates. Exact target APIs and dependency versi
 | Recipes and resources | Current generated resources and GameTest data use `recipe` and `tags/item` paths | Generate 1.20.1 layouts and JSON schemas, including plural directories where required; translate tags, ingredients, loot, advancements and pack metadata |
 | Rendering and UI | Client code, dynamic conduit/facade rendering, painted blocks, screens, particles, six main-module mixin Java files | Port render and model APIs, GUI hooks, key mappings, access transformers and mixin targets; test visual results and interactions |
 | Optional integrations | Version catalog and `compat`/modded-conduit modules | Pin Forge 1.20.1 variants and adapt older APIs, especially Refined Storage and Mekanism; test both presence and absence |
-| Test infrastructure | `gametests/EnderIOTests.java` uses NeoForge test framework configuration/dumpers | Move tests and fixtures to runnable Forge-compatible infrastructure; preserve coverage and report actual executed counts |
+| Test infrastructure | `gametests/EnderIOTests.java` uses NeoForge test framework configuration/dumpers | Cycle 034 preserves all 128 main JUnit cases using 16 CPU tests and 112 real-Jupiter cases inside native Forge. The separate gameplay GameTest framework remains unported; preserve its coverage and report actual executed counts |
 
 Counts above are lexical file matches across module Java sources, including tests and datagen; they overlap and are not estimates of required edits.
 
@@ -175,7 +175,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 032: native addon lifecycle and generated resources | Conditional recipes/registries, native AE2/RS APIs and saved nodes, first complete datagen/resources, early Mekanism initialization and glider target fix | All module Java/datagen compile; 62 unit and 183 native GameTests pass across separate profiles. Both datagens and main jar/reobf pass. Actual-mod development server starts; two recipe errors and full gameplay/client/packaged validation remain unresolved. [Evidence](porting/1.20.1/cycle-032.md) | `7f794de6f` |
 
-| 033: live integration networks and chemical budgets | Native ME/RS split/merge/face/reload tests, four-family chemical transfer rates and branch/overflow limits, LaserIO book dependency and orphan recipe cleanup, isolated serial datagen | 62 unit/195 native GameTests pass across verified profiles; both datagens and main jar/reobf pass. Full build fails on 42 early main-test compile errors. Complete gameplay, packaged and client verification remain pending. [Evidence](porting/1.20.1/cycle-033.md) | Commit containing cycle 033 |
+| 033: live integration networks and chemical budgets | Native ME/RS split/merge/face/reload tests, four-family chemical transfer rates and branch/overflow limits, LaserIO book dependency and orphan recipe cleanup, isolated serial datagen | 62 unit/195 native GameTests pass across verified profiles; both datagens and main jar/reobf pass. Full build fails on 42 early main-test compile errors. Complete gameplay, packaged and client verification remain pending. [Evidence](porting/1.20.1/cycle-033.md) | `8dca0c746` |
+
+| 034: main registry tests in native Forge | Preserve all main JUnit methods/assertions, run actual Jupiter in a headless Forge profile, native test APIs/fixtures and failure propagation | Full `build` passes; 78 ordinary JUnit/307 native GameTests pass with no skips. Separate main gameplay GameTests/CI, packaged installs and client/multiplayer validation remain incomplete. [Evidence](porting/1.20.1/cycle-034.md) | Commit containing cycle 034 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="Unlicense"
+[[mods]]
+modId="enderio_registry_tests"
+version="1.0"
+displayName="Ender IO registry tests"
+[[dependencies.enderio_registry_tests]]
+modId="enderio"
+mandatory=true
+versionRange="[8,)"
+ordering="AFTER"
+side="SERVER"

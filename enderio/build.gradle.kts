@@ -23,6 +23,34 @@ sourceSets {
         compileClasspath += sourceSets.main.get().output
         //runtimeClasspath += configurations.getByName("gametestLocalRuntime")
     }
+
+    create("registryTest") {
+        compileClasspath += sourceSets.main.get().output
+        runtimeClasspath += sourceSets.main.get().output
+    }
+}
+
+// JUnit runs inside Forge's transformed server for registry-dependent tests.
+// Its libraries are a test-only game library, never part of a shipped mod jar.
+val registryTestLibraries = configurations.create("registryTestLibraries")
+configurations["registryTestImplementation"].extendsFrom(configurations.implementation.get(), registryTestLibraries)
+configurations["registryTestCompileOnly"].extendsFrom(configurations.compileOnly.get())
+configurations["registryTestRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+
+dependencies {
+    registryTestLibraries(libs.junitJupiter)
+    registryTestLibraries("org.junit.jupiter:junit-jupiter-engine:5.7.1")
+    registryTestLibraries(libs.junitPlatformLauncher)
+}
+
+val registryTestLibraryJar = tasks.register<Jar>("registryTestLibraryJar") {
+    archiveBaseName = "enderio-registry-test-libraries"
+    archiveVersion = ""
+    destinationDirectory = layout.buildDirectory.dir("test-libraries")
+    from({ registryTestLibraries.map { zipTree(it) } })
+    exclude("module-info.class", "META-INF/versions/**", "META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest.attributes("FMLModType" to "GAMELIBRARY", "Automatic-Module-Name" to "enderio.registry.test.libraries")
 }
 
 configurations {
@@ -79,9 +107,6 @@ configurations {
 obfuscation {
     createRemappingConfiguration(configurations["localRuntime"])
 }
-
-// https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
-val mockitoAgent = configurations.create("mockitoAgent")
 
 dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
@@ -162,11 +187,6 @@ dependencies {
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
 
-    // Mocks
-    testImplementation(libs.mockito)
-    testImplementation(libs.mockitoJunit)
-    mockitoAgent(libs.mockito) { isTransitive = false }
-
     // GameTest sources will be migrated from NeoForge to the Forge GameTest API.
 }
 
@@ -182,6 +202,7 @@ legacyForge {
 
     addModdingDependenciesTo(sourceSets.getByName("datagen"))
     addModdingDependenciesTo(sourceSets.getByName("gametest"))
+    addModdingDependenciesTo(sourceSets.getByName("registryTest"))
 
     val modEnderio by mods.creating {
         sourceSet(sourceSets.getByName("datagen"))
@@ -190,6 +211,10 @@ legacyForge {
 
     val modEnderioGametests by mods.creating {
         sourceSet(sourceSets.getByName("gametest"))
+    }
+
+    val modEnderioRegistryTests by mods.creating {
+        sourceSet(sourceSets["registryTest"])
     }
 
     runs {
@@ -239,6 +264,19 @@ legacyForge {
             systemProperty("enderio.gametest.junit_dir", layout.buildDirectory.dir("test-results/gameTestServer").get().asFile.absolutePath)
         }
 
+        val registryTestServer by creating {
+            type = "gameTestServer"
+            sourceSet = sourceSets["registryTest"]
+            gameDirectory = project.file("run/registry-test-server")
+            loadedMods = listOf(modEnderio, modEnderioRegistryTests)
+            programArguments.add("nogui")
+            systemProperty("java.awt.headless", "true")
+            systemProperty("forge.enabledGameTestNamespaces", "enderio_registry_tests")
+            systemProperty("enderio.registry.report", layout.buildDirectory.file("test-results/registryTestServer/results.xml").get().asFile.absolutePath)
+            dependencies.add(additionalRuntimeClasspathConfiguration.name, files(registryTestLibraryJar))
+            taskBefore(registryTestLibraryJar)
+        }
+
         // Useful for debugging tests, but will include the gametest datapack so I separated the run config.
         val gameTestClient by creating {
             client()
@@ -284,7 +322,9 @@ legacyForge.ideSyncTask(generateModMetadata)
 
 tasks {
     test {
-        jvmArgs("-javaagent:${mockitoAgent.asPath}")
+        val testDirectory = layout.buildDirectory.dir("unit-test-run").get().asFile
+        workingDir(testDirectory)
+        doFirst { testDirectory.mkdirs() }
     }
 }
 
@@ -294,6 +334,7 @@ tasks.named<Jar>("jar") {
 }
 
 tasks.withType<Jar> {
+    if (name == "registryTestLibraryJar") return@withType
     manifest {
         attributes(mapOf(
                 "MixinConfigs" to "enderio.mixins.json",
@@ -366,7 +407,8 @@ mixin {
 // separate runtime-port task and must be implemented before launching clients.
 for ((runName, directory) in mapOf(
     "Client" to "client", "Server" to "server",
-    "GameTestClient" to "gametest-client", "GameTestServer" to "gametest-server"
+    "GameTestClient" to "gametest-client", "GameTestServer" to "gametest-server",
+    "RegistryTestServer" to "registry-test-server"
 )) {
     val prepareProfile = tasks.register<PrepareTestProfile>("prepare${runName}Profile") {
         gameDirectory.set(layout.projectDirectory.dir("run/$directory"))
@@ -376,6 +418,8 @@ for ((runName, directory) in mapOf(
         dependsOn(prepareProfile)
     }
 }
+
+tasks.check { dependsOn("runRegistryTestServer") }
 
 obfuscation {
     reobfuscate(tasks.named<Jar>("apiJar"), sourceSets.main.get())
