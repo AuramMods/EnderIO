@@ -61,7 +61,8 @@ public final class Forge6ConduitData {
 
     public static @Nullable ResourceKey<Conduit<?, ?>> conduitKey(String id) {
         return switch (id) {
-            case "enderio:me", "enderio:dense_me", "enderio:refined_storage" ->
+            case "enderio:me", "enderio:dense_me", "enderio:refined_storage", "enderio:chemical",
+                 "enderio:pressurized_chemical", "enderio:ender_chemical", "enderio:heat" ->
                 ResourceKey.create(EnderIORegistries.Keys.CONDUIT, INTEGRATION_ITEMS.get(id + "_conduit"));
             default -> CONDUITS.get(id);
         };

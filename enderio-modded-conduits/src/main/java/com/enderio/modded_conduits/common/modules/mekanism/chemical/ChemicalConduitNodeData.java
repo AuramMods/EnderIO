@@ -1,17 +1,23 @@
 package com.enderio.modded_conduits.common.modules.mekanism.chemical;
 
+import com.enderio.core.common.serialization.StrictOptionalFieldCodec;
 import com.enderio.enderio.api.conduits.network.node.NodeData;
 import com.enderio.enderio.api.conduits.network.node.NodeDataType;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import mekanism.api.chemical.merged.BoxedChemical;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-/** Owns chemicals already extracted from a source until a destination accepts them. */
+/** Owns chemicals until a destination accepts them, and carries over any historical extraction lock. */
 public final class ChemicalConduitNodeData implements NodeData {
     private record Pending(Direction side, ChemicalResource resource) {
         private static final Codec<Pending> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -25,17 +31,35 @@ public final class ChemicalConduitNodeData implements NodeData {
     }
 
     public static final MapCodec<ChemicalConduitNodeData> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-        Pending.CODEC.listOf().fieldOf("pending").forGetter(data -> List.copyOf(data.pending)))
+        Pending.CODEC.listOf().fieldOf("pending").forGetter(data -> List.copyOf(data.pending)),
+        new StrictOptionalFieldCodec<>(ChemicalResource.OPTIONAL_CODEC, "legacy_extraction_lock")
+            .forGetter(data -> data.legacyExtractionLock.isEmpty() ? Optional.empty() : Optional.of(data.legacyExtractionLock)))
         .apply(instance, ChemicalConduitNodeData::new));
     public static final NodeDataType<ChemicalConduitNodeData> TYPE =
         new NodeDataType<>(CODEC, ChemicalConduitNodeData::new);
 
     private final List<Pending> pending = new ArrayList<>();
+    private final ChemicalResource legacyExtractionLock;
 
-    private ChemicalConduitNodeData() {}
+    private ChemicalConduitNodeData() {
+        this(List.of(), Optional.empty());
+    }
 
-    private ChemicalConduitNodeData(List<Pending> saved) {
+    private ChemicalConduitNodeData(List<Pending> saved, Optional<ChemicalResource> legacyExtractionLock) {
         saved.forEach(entry -> retain(entry.side(), entry.resource()));
+        this.legacyExtractionLock = legacyExtractionLock.map(ChemicalResource::copy).orElse(ChemicalResource.EMPTY);
+    }
+
+    static @Nullable ChemicalConduitNodeData readForge6(CompoundTag data) {
+        if (!data.contains("LockedFluid", Tag.TAG_COMPOUND)) return null;
+        var boxed = BoxedChemical.read(data.getCompound("LockedFluid"));
+        // The old lock names a chemical and does not own any quantity.
+        return boxed.isEmpty() ? null : new ChemicalConduitNodeData(List.of(),
+            Optional.of(new ChemicalResource(boxed.getChemical(), 1)));
+    }
+
+    boolean acceptsExtraction(ChemicalResource stack) {
+        return legacyExtractionLock.isEmpty() || ChemicalResource.isSameChemical(legacyExtractionLock, stack);
     }
 
     @Override

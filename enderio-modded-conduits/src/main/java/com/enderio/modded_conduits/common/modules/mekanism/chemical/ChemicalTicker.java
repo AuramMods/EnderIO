@@ -47,7 +47,7 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
                 if (source == null) continue;
                 for (int i = 0; i < source.getChemicalTanks() && budget > 0; i++) {
                     var stack = source.getChemicalInTank(i);
-                    if (stack.isEmpty()) continue;
+                    if (stack.isEmpty() || (retained != null && !retained.acceptsExtraction(stack))) continue;
                     budget = transfer(level, connection, source, stack, paths, insertedPerPath, budget, tickRate);
                     retained = connection.node().getNodeData(MekanismModule.CHEMICAL_NODE_DATA.get());
                     if (retained != null && !retained.first(side).isEmpty()) break;

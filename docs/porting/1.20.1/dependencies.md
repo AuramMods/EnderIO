@@ -11,7 +11,7 @@ Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions
 | Athena | 3.1.2 | Modrinth `athena-ctm:DULOQFj7` | Pending |
 | AE2 | 15.4.12 | Modrinth `ae2:QRpVsqDI` | Native grid split/merge, bundle reload and powering an AE2 drive pass. Packaged migration verifies powered normal, dense and mixed routes and their owners. Detailed channel limits, storage operations and the client remain pending ([cycle 053](cycle-053.md)) |
 | GuideME (AE2 dependency) | 20.1.15 | Modrinth `guideme:i7Tp1AHw` | Loads alongside the pinned AE2 jar in both packaged migration releases. Guide UI remains pending ([cycle 053](cycle-053.md)) |
-| Mekanism | 10.4.16.80 | Modrinth `mekanism:uxe1WQp4` | Four-family native tank transfer/rate/budget and adapter/filter tests pass; broader gameplay pending |
+| Mekanism | 10.4.16.80 | Modrinth `mekanism:uxe1WQp4` | Native four-family transfer, budgets and filters pass. Packaged legacy upgrades preserve placed chemical tiers, a gas lock and a working directional heat route across chunk reload and restart. Broader gameplay and the client remain pending ([cycle 054](cycle-054.md)) |
 | Refined Storage | 1.12.4 | Modrinth `refined-storage:ZITLFjjf` | Native controller routing, split/reconnect, sides and bundle reload pass. Packaged migration keeps a controller-to-drive route and owners across chunk reload and restart. Storage operations and the client remain pending ([cycle 053](cycle-053.md)) |
 | LaserIO | 1.6.8 | Curse Maven `laserio-626839:5074767` | Native book recipe passes with Patchouli; card/filter gameplay pending |
 | Patchouli (LaserIO book) | 1.20.1-84.1-forge | Modrinth `patchouli:8Qyw08ld` | Native LaserIO book matching/assembly passes; book UI pending |

@@ -25,6 +25,8 @@ INTEGRATION_CONDUITS = [(kind + "_conduit", variant) for kind, variant in
                         (("me", "me"), ("dense_me", "dense_me"), ("refined_storage", "rs"), ("chemical", "chemical"),
                          ("pressurized_chemical", "pressurized_chemical"), ("ender_chemical", "ender_chemical"), ("heat", "heat"))]
 STORAGE_ROUTES = {4: ("me", "me"), 7: ("dense_me", "dense_me"), 10: ("me", "dense_me"), 13: ("rs", "rs")}
+MEKANISM_ROUTES = {0: "chemical", 3: "pressurized_chemical", 6: "ender_chemical",
+                   9: "ender_chemical", 12: "heat", 15: "chemical"}
 
 
 def tank_state(x, legacy):
@@ -37,7 +39,7 @@ def tank_state(x, legacy):
     return (f'{{{key}:{{Tanks:[{{{entry}}}]}},Items:{{Items:[{{Slot:1,id:"minecraft:diamond",Count:{count}}}]}}}}')
 
 
-def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits):
+def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits, placed_mekanism_conduits):
     server.wait('For help, type "help"')
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
@@ -70,6 +72,8 @@ def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_sto
         exercise_loose_conduits(server, stage, results, loose_conduits)
     if placed_storage_conduits:
         exercise_storage_conduits(server, stage, results)
+    if placed_mekanism_conduits:
+        exercise_mekanism_conduits(server, stage, results)
     server.command("save-all flush")
 
 
@@ -199,11 +203,15 @@ def assert_storage_routes(server, stage, results):
                           f'if data block {pos} Connections[0][{{Side:"{side}",Status:"connected_conduit"}}]')
             server.assert_state(f"storage_bundle_{x}_{z}_{stage}", conditions, results)
     command = "port_storage_native seed_legacy_owners" if legacy else "port_storage_native"
+    assert_probe(server, f"native_storage_routes_and_owners_{stage}", command,
+                 "Native AE2 and RS storage routes and owners verified", results)
+
+
+def assert_probe(server, name, command, message, results):
     deadline = time.monotonic() + 12
-    name = f"native_storage_routes_and_owners_{stage}"
     while time.monotonic() < deadline:
         output = server.command(command)
-        if "Native AE2 and RS storage routes and owners verified" in output:
+        if message in output:
             results.append({"assertion": name, "passed": True, "command": command})
             return
         time.sleep(0.2)
@@ -211,10 +219,76 @@ def assert_storage_routes(server, stage, results):
     raise AssertionError(f"{name} failed; see {server.log_path}")
 
 
-def run_server(directory, java, stage, report, conduit_fixture, loose_conduits, placed_storage_conduits):
+def exercise_mekanism_conduits(server, stage, results):
+    chunks = "1136 0 1167 15"
+    left, right = "1151 80 12", "1152 80 12"
+    server.command(f"forceload add {chunks}")
+    server.assert_state(f"mekanism_chunks_loaded_{stage}", f"if loaded {left} if loaded {right}", results)
+    if stage == "legacy":
+        server.command("fill 1150 79 0 1153 79 15 minecraft:stone")
+        for z, route in MEKANISM_ROUTES.items():
+            block = "basic_thermodynamic_conductor" if route == "heat" else "ultimate_chemical_tank"
+            for x in (1150, 1153):
+                server.command(f"setblock {x} 80 {z} mekanism:{block}")
+        for command, message in (
+            ("port_mekanism_native configure", "Native Mekanism endpoints configured"),
+            ("port_legacy_mekanism_conduits", "Legacy Mekanism conduits created"),
+        ):
+            output = server.command(command)
+            if message not in output:
+                raise AssertionError(output)
+    assert_mekanism_routes(server, stage, results)
+    if stage == "converted":
+        server.command(f"forceload remove {chunks}")
+        server.assert_state("mekanism_chunks_unloaded", f"unless loaded {left} unless loaded {right}", results, timeout=40)
+        server.command(f"forceload add {chunks}")
+        server.assert_state("mekanism_chunks_reloaded", f"if loaded {left} if loaded {right}", results)
+        assert_mekanism_routes(server, "chunk_reload", results)
+    if stage == "restart":
+        output = server.command("port_mekanism_native seed_hydrogen")
+        if "Hydrogen batch seeded" not in output:
+            raise AssertionError(output)
+        assert_probe(server, "mekanism_matching_lock", "port_mekanism_native check_hydrogen",
+                     "Native Mekanism hydrogen lock passed its matching batch", results)
+
+
+def assert_mekanism_routes(server, stage, results):
+    legacy = stage == "legacy"
+    for z, kind in MEKANISM_ROUTES.items():
+        for x, inside, outside in ((1151, "east", "west"), (1152, "west", "east")):
+            pos = f"{x} 80 {z}"
+            server.command(f"data get block {pos}")
+            if legacy:
+                conditions = f'if data block {pos} {{ConduitBundle:{{Types:["enderio:{kind}"]}}}}'
+            else:
+                conditions = (f'if data block {pos} {{Conduits:["enderio:{kind}"]}} '
+                              f'if data block {pos} Connections[0][{{Side:"{inside}",Status:"connected_conduit"}}] '
+                              f'if data block {pos} Connections[0][{{Side:"{outside}",Status:"connected_block"}}]')
+            server.assert_state(f"mekanism_bundle_{x}_{z}_{stage}", conditions, results)
+    if legacy:
+        server.assert_state("mekanism_legacy_lock",
+                            'if data block 1151 80 15 ConduitExtraData[0].LockedFluid{gasName:"mekanism:hydrogen"}', results)
+    else:
+        server.assert_state(f"mekanism_heat_settings_{stage}",
+                            'if data block 1151 80 12 Connections[0][{Side:"west",Config:{is_insert:0b,is_extract:1b,'
+                            'extract_redstone_control:"always_active",extract_redstone_channel:"orange"}}] '
+                            'if data block 1152 80 12 Connections[0][{Side:"east",Config:{is_insert:1b,is_extract:0b,'
+                            'extract_redstone_control:"never_active",extract_redstone_channel:"light_blue"}}] '
+                            'if data block 1151 80 12 Connections[0][{Side:"north",Status:"disabled"}]', results)
+    output = server.command("port_mekanism_native batch")
+    if "Mekanism batch and heat pulse seeded" not in output:
+        raise AssertionError(output)
+    total = {"legacy": 1450, "converted": 2900, "chunk_reload": 4350, "restart": 5800}[stage]
+    assert_probe(server, f"native_mekanism_delivery_{stage}", f"port_mekanism_native check {total}",
+                 "Native Mekanism chemical totals, lock and heat transfer verified", results)
+
+
+def run_server(directory, java, stage, report, conduit_fixture, loose_conduits, placed_storage_conduits,
+               placed_mekanism_conduits):
     server = Server(directory, java, stage)
     try:
-        exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits, placed_storage_conduits)
+        exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits,
+                 placed_storage_conduits, placed_mekanism_conduits)
     finally:
         exit_status = server.stop()
         errors = [line.strip() for line in server.lines if "/ERROR]" in line or "/FATAL]" in line]
@@ -239,6 +313,8 @@ def main():
     parser.add_argument("--loose-integration-conduits", action="store_true", help="Include AE2, Mekanism and Refined Storage conduit items")
     parser.add_argument("--placed-storage-conduits", action="store_true",
                         help="Migrate placed AE2 and RS routes with the legacy fixture and storage probe")
+    parser.add_argument("--placed-mekanism-conduits", action="store_true",
+                        help="Migrate placed heat and chemical routes with the legacy fixture and Mekanism probe")
     parser.add_argument("--mod", action="append", type=Path, default=[], help="Install a Forge dependency in both profiles")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
@@ -274,10 +350,11 @@ def main():
         if args.conduit_fixture:
             shutil.copyfile(args.conduit_fixture, legacy / "mods" / "port-legacy-fixture.jar")
             report["fixtureSha256"] = digest(args.conduit_fixture)
-        run_server(legacy, args.java, "legacy", report, args.conduit_fixture, loose_conduits, args.placed_storage_conduits)
+        fixtures = (args.conduit_fixture, loose_conduits, args.placed_storage_conduits, args.placed_mekanism_conduits)
+        run_server(legacy, args.java, "legacy", report, *fixtures)
         shutil.copytree(legacy / WORLD, converted / WORLD)
-        run_server(converted, args.java, "converted", report, args.conduit_fixture, loose_conduits, args.placed_storage_conduits)
-        run_server(converted, args.java, "restart", report, args.conduit_fixture, loose_conduits, args.placed_storage_conduits)
+        run_server(converted, args.java, "converted", report, *fixtures)
+        run_server(converted, args.java, "restart", report, *fixtures)
         report["passed"] = True
     finally:
         output = directory / "legacy-migration-results.json"

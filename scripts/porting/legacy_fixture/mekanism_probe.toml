@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+[[mods]]
+modId="port_mekanism_probe"
+version="1"
+displayName="Ender IO Mekanism migration probe"
+[[dependencies.port_mekanism_probe]]
+modId="mekanism"
+mandatory=true
+versionRange="[10.4.16,10.5)"
+ordering="AFTER"
+side="SERVER"

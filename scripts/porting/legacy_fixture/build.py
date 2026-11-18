@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the historical fixture or the storage probe for both packaged releases."""
+"""Build the historical fixture or a native probe for both packaged releases."""
 
 import argparse
 import os
@@ -19,7 +19,9 @@ def main():
     parser.add_argument("--forge-server", type=Path, required=True)
     parser.add_argument("--legacy-jar", type=Path, required=True)
     parser.add_argument("--art", type=Path, required=True, help="AutoRenamingTool 2.0.17 all jar")
-    parser.add_argument("--storage-probe", action="store_true", help="Build the release-independent storage probe")
+    probes = parser.add_mutually_exclusive_group()
+    probes.add_argument("--storage-probe", action="store_true", help="Build the release-independent storage probe")
+    probes.add_argument("--mekanism-probe", action="store_true", help="Build the release-independent Mekanism probe")
     parser.add_argument("--mod", type=Path, action="append", default=[], help="Add a Forge mod dependency for compilation")
     parser.add_argument("--output", type=Path, required=True, help="New directory for the fixture jar and build files")
     args = parser.parse_args()
@@ -27,8 +29,11 @@ def main():
     build = args.output.resolve()
     classes = build / "classes"
     (classes / "META-INF").mkdir(parents=True)
-    metadata = "storage_probe.toml" if args.storage_probe else "mods.toml"
-    source = "StorageProbe.java" if args.storage_probe else "Fixture.java"
+    metadata, source, filename = "mods.toml", "Fixture.java", "fixture.jar"
+    if args.storage_probe:
+        metadata, source, filename = "storage_probe.toml", "StorageProbe.java", "storage-probe.jar"
+    elif args.mekanism_probe:
+        metadata, source, filename = "mekanism_probe.toml", "MekanismProbe.java", "mekanism-probe.jar"
     shutil.copyfile(HERE / metadata, classes / "META-INF/mods.toml")
     artifacts = ROOT / "enderio/build/moddev/artifacts"
     forge = artifacts / "forge-1.20.1-47.4.28.jar"
@@ -46,7 +51,7 @@ def main():
                     "-d", classes, HERE / source], check=True)
     named = build / "named.jar"
     subprocess.run([args.java.with_name("jar"), "--create", "--file", named, "-C", classes, "."], check=True)
-    output = build / ("storage-probe.jar" if args.storage_probe else "fixture.jar")
+    output = build / filename
     with (build / "remap.log").open("w") as log:
         subprocess.run([args.java, "-jar", args.art, "--input", named, "--output", output,
                         "--map", artifacts / "namedToIntermediate.tsrg", "--lib", forge, "--lib", args.legacy_jar],

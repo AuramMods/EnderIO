@@ -14,6 +14,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -62,6 +63,18 @@ public class Fixture {
                 place(level, new BlockPos(1087, 79, 13), "refined_storage_conduit");
                 place(level, new BlockPos(1088, 79, 13), "refined_storage_conduit");
                 context.getSource().sendSuccess(() -> Component.literal("Legacy storage conduits created"), false);
+                return 1;
+            }));
+        event.getDispatcher().register(Commands.literal("port_legacy_mekanism_conduits").requires(source -> source.hasPermission(4))
+            .executes(context -> {
+                var level = context.getSource().getLevel();
+                mekanismRoute(level, 0, "chemical", false);
+                mekanismRoute(level, 3, "pressurized_chemical", false);
+                mekanismRoute(level, 6, "ender_chemical", false);
+                mekanismRoute(level, 9, "ender_chemical", false);
+                mekanismRoute(level, 12, "heat", false);
+                mekanismRoute(level, 15, "chemical", true);
+                context.getSource().sendSuccess(() -> Component.literal("Legacy Mekanism conduits created"), false);
                 return 1;
             }));
         event.getDispatcher().register(Commands.literal("port_legacy_travel").requires(source -> source.hasPermission(4))
@@ -166,6 +179,31 @@ public class Fixture {
 
     private static ConduitBlockEntity place(ServerLevel level, int x) {
         return place(level, new BlockPos(1008 + x, 79, 8), "item_conduit");
+    }
+
+    private static void mekanismRoute(ServerLevel level, int z, String conduit, boolean locked) {
+        var type = EIOConduitTypes.REGISTRY.get().getValue(ResourceLocation.fromNamespaceAndPath("enderio", conduit));
+        if (type == null) throw new IllegalStateException("Missing old conduit " + conduit);
+        var source = place(level, new BlockPos(1151, 79, z), conduit + "_conduit");
+        var destination = place(level, new BlockPos(1152, 79, z), conduit + "_conduit");
+        source.handleConnectionStateUpdate(Direction.WEST, type,
+            new DynamicConnectionState(false, ColorControl.CYAN, true, ColorControl.BLUE,
+                RedstoneControl.ALWAYS_ACTIVE, ColorControl.ORANGE, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY));
+        destination.handleConnectionStateUpdate(Direction.EAST, type,
+            new DynamicConnectionState(true, ColorControl.BLUE, false, ColorControl.PURPLE,
+                RedstoneControl.NEVER_ACTIVE, ColorControl.LIGHT_BLUE, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY));
+        source.getBundle().setConnectionState(Direction.NORTH, type, StaticConnectionStates.DISABLED);
+        if (locked) {
+            var lock = new CompoundTag();
+            lock.putString("chemicalType", "gas");
+            lock.putString("gasName", "mekanism:hydrogen");
+            var data = new CompoundTag();
+            data.put("LockedFluid", lock);
+            source.getBundle().getNodeFor(type).getConduitData().deserializeNBT(data);
+            destination.getBundle().getNodeFor(type).getConduitData().deserializeNBT(data);
+        }
+        source.setChanged();
+        destination.setChanged();
     }
 
     private static ConduitBlockEntity place(ServerLevel level, BlockPos support, String item) {

@@ -10,6 +10,7 @@ import com.enderio.enderio.api.conduits.bundle.SlotType;
 import com.enderio.enderio.api.conduits.connection.path.ConnectionPathProperty;
 import com.enderio.enderio.api.conduits.connection.path.ConnectionPathPropertyConsumer;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
+import com.enderio.enderio.api.conduits.network.node.NodeData;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.content.conduits.ConduitLang;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
@@ -19,6 +20,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
@@ -107,6 +109,11 @@ public record ChemicalConduit(ResourceLocation texture, Component description, l
             DyeColor outputChannel, RedstoneControl redstoneControl, DyeColor redstoneChannel) {
         return new ChemicalConduitConnectionConfig(isInsert, inputChannel, isExtract, outputChannel, redstoneControl,
                 redstoneChannel);
+    }
+
+    @Override
+    public @Nullable NodeData readForge6NodeData(CompoundTag tag) {
+        return ChemicalConduitNodeData.readForge6(tag);
     }
 
     @Override
