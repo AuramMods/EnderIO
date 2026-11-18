@@ -16,7 +16,7 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | --- | --- | --- |
 | `BLOCKS` | [EIOBlocks:104](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `ITEMS` | [EIOBlocks:105](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `CONDUCTIVE_ALLOY_BLOCK` | [EIOBlocks:111](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `CONDUCTIVE_ALLOY_BLOCK` | [EIOBlocks:111](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial. A placed copper alloy block migrates and persists across the packaged restart ([cycle 047](cycle-047.md)). |
 | `ENERGETIC_ALLOY_BLOCK` | [EIOBlocks:112](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `VIBRANT_ALLOY_BLOCK` | [EIOBlocks:113](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `REDSTONE_ALLOY_BLOCK` | [EIOBlocks:114](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
@@ -75,7 +75,7 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `COLD_FIRE` | [EIOBlocks:309](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: age/expiration scenario passes; the baseline cold-fire crafting scenario remains commented out and unverified ([cycle 035](cycle-035.md)) |
 | `ENDERMAN_HEAD` | [EIOBlocks:312](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `WALL_ENDERMAN_HEAD` | [EIOBlocks:315](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `INDUSTRIAL_INSULATION` | [EIOBlocks:318](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `INDUSTRIAL_INSULATION` | [EIOBlocks:318](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial. A placed 6.2 block migrates to the current ID and persists across the packaged restart ([cycle 047](cycle-047.md)). |
 | `FLUID_TANK` | [EIOBlocks:326](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: prior native transfer/recipe/NBT cases and packaged server restarts pass. Packaged single-player now verifies the real menu, bucket shift-click, exact counts, widget/server update, visible fluid and disk reopen. Packaged TCP also verifies these interactions, reconnect and dedicated-server restart. Full drain/recipe/automation/placement remain pending ([cycle 036](cycle-036.md), [cycle 040](cycle-040.md), [cycle 041](cycle-041.md)) |
 | `PRESSURIZED_FLUID_TANK` | [EIOBlocks:333](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: prior native transfer/recipe/NBT cases and packaged server restarts pass. Packaged single-player now verifies the real menu, bucket shift-click, exact counts, widget/server update, visible fluid and disk reopen. Full drain/recipe/automation/placement and multiplayer remain pending ([cycle 036](cycle-036.md), [cycle 040](cycle-040.md)) |
 | `ENCHANTER` | [EIOBlocks:341](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: Forge composite loader corrected; actual hidden client loads all four facing states. One packaged world scene renders the model/book; all-angle visuals, interactions and full feature behavior remain pending ([cycle 038](cycle-038.md), [cycle 040](cycle-040.md)) |
@@ -128,7 +128,7 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | Declaration | Source | Evidence |
 | --- | --- | --- |
 | `ITEMS` | [EIOItems:45](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `CONDUCTIVE_ALLOY_INGOT` | [EIOItems:49](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `CONDUCTIVE_ALLOY_INGOT` | [EIOItems:49](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. The exact copper alloy ingot count in a chest survives migration and restart ([cycle 047](cycle-047.md)). |
 | `ENERGETIC_ALLOY_INGOT` | [EIOItems:50](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `VIBRANT_ALLOY_INGOT` | [EIOItems:51](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `REDSTONE_ALLOY_INGOT` | [EIOItems:52](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
@@ -275,7 +275,7 @@ Register, render, fill/drain, world behavior where applicable, recipes and persi
 | `HOOTCH` | [EIOFluids:35](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `ROCKET_FUEL` | [EIOFluids:41](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `FIRE_WATER` | [EIOFluids:47](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Partial: fire-crafting drops and block conversion pass with test recipes; full fluid/visual/lifecycle behavior remains pending ([cycle 035](cycle-035.md)) |
-| `XP_JUICE` | [EIOFluids:55](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
+| `XP_JUICE` | [EIOFluids](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Partial. Tagged XP Juice survives the old fluid ID remap, tank conversion and restart ([cycle 047](cycle-047.md)). |
 | `LIQUID_SUNSHINE` | [EIOFluids:62](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `LIQUID_DARKNESS` | [EIOFluids:70](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `CLOUD_SEED` | [EIOFluids:76](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |

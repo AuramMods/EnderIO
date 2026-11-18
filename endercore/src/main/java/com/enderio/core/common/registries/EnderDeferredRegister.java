@@ -3,9 +3,11 @@ package com.enderio.core.common.registries;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.MissingMappingsEvent;
 import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.registries.RegistryManager;
 import net.minecraftforge.registries.RegistryObject;
@@ -38,6 +40,7 @@ public class EnderDeferredRegister<T> {
     public void register(IEventBus bus) {
         delegate.register(bus);
         bus.addListener(EventPriority.LOW, this::registerAliases);
+        MinecraftForge.EVENT_BUS.addListener(this::remapSavedAliases);
     }
 
     /** Forge persists these aliases in registry snapshots and uses them for old saved IDs. */
@@ -49,6 +52,18 @@ public class EnderDeferredRegister<T> {
         if (event.getRegistryKey().equals(getRegistryKey()) && !aliases.isEmpty()) {
             var registry = RegistryManager.ACTIVE.getRegistry(getRegistryKey());
             aliases.forEach(registry::addAlias);
+        }
+    }
+
+    private void remapSavedAliases(MissingMappingsEvent event) {
+        for (var mapping : event.getAllMappings(getRegistryKey())) {
+            var alias = aliases.get(mapping.getKey());
+            if (alias != null) {
+                var registry = RegistryManager.ACTIVE.getRegistry(getRegistryKey());
+                if (registry.containsKey(alias)) {
+                    mapping.remap(registry.getValue(alias));
+                }
+            }
         }
     }
 

@@ -215,6 +215,14 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
         var overflow = new ListTag();
         var seen = new java.util.HashSet<Integer>();
         var tanks = tag.getList(CoreNBTKeys.TANKS, Tag.TAG_COMPOUND);
+        if (!tag.contains(CoreNBTKeys.TANKS) && tag.contains("FluidName", Tag.TAG_STRING)) {
+            // The older single-tank layout saved the Forge stack directly at the root.
+            tanks = new ListTag();
+            var entry = new CompoundTag();
+            entry.putInt(TANK_INDEX, 0);
+            entry.put(TANK_CONTENTS, tag.copy());
+            tanks.add(entry);
+        }
         for (int i = 0; i < tanks.size(); i++) {
             var entry = tanks.getCompound(i);
             int tank = entry.getInt(TANK_INDEX);
@@ -224,7 +232,10 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
             if (tank < 0 || tank >= getTanks()) {
                 overflow.add(entry.copy());
             } else {
-                loaded.set(tank, StackDataCodecs.loadFluid(entry.getCompound(TANK_CONTENTS)));
+                // 6.x saved the stack next to Index and Capacity in every list entry.
+                boolean flatStack = !entry.contains(TANK_CONTENTS) && entry.contains("FluidName", Tag.TAG_STRING);
+                var contents = flatStack ? entry : entry.getCompound(TANK_CONTENTS);
+                loaded.set(tank, StackDataCodecs.loadFluid(contents));
             }
         }
         boolean[] changed = new boolean[getTanks()];

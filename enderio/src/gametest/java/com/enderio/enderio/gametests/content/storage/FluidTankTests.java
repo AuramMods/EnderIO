@@ -6,6 +6,9 @@ import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.content.storage.fluid_tank.FluidTankBlockEntity;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
@@ -163,6 +166,53 @@ public class FluidTankTests {
     @GameTest
     public static void pressurizedTankLoadsBeforeLevelAssignment(final GameplayTest test) {
         testSavedTankLoad(test, EIOBlocks.PRESSURIZED_FLUID_TANK.get());
+    }
+
+    @GameTest
+    public static void legacyTankLayoutsLoadBeforeLevelAssignment(final GameplayTest test) {
+        testBothTanks(test, helper -> helper.startSequence().thenExecute(() -> {
+            var expected = new FluidStack(Fluids.WATER, 11500);
+            expected.getOrCreateTag().putInt(EnderIOTests.TEST_NUMBER, 42);
+            for (int x : new int[] {0, 2}) {
+                var original = helper.getBlockEntity(x, 1, 0, FluidTankBlockEntity.class);
+                var saved = original.saveWithFullMetadata();
+                var currentEmpty = saved.getCompound("Fluids");
+                saved.remove("Fluids");
+
+                var legacy = expected.writeToNBT(new CompoundTag());
+                var entry = legacy.copy();
+                entry.putInt("Capacity", original.getFluidTank().getCapacity());
+                entry.putInt("Index", 0);
+                var overflow = entry.copy();
+                overflow.putInt("Index", 3);
+                var entries = new ListTag();
+                entries.add(entry);
+                entries.add(overflow);
+                var indexed = new CompoundTag();
+                indexed.put("Tanks", entries);
+                indexed.putInt("Size", 4);
+                saved.put("Fluid", x == 0 ? legacy : indexed);
+
+                var loaded = BlockEntity.loadStatic(original.getBlockPos(), original.getBlockState(), saved);
+                if (!(loaded instanceof FluidTankBlockEntity restored) || !expected.isFluidStackIdentical(restored.getFluidTank().getFluid())) {
+                    throw new GameTestAssertException("Legacy tank contents, amount or NBT failed native loading");
+                }
+                var converted = restored.saveWithFullMetadata();
+                var convertedEntries = converted.getCompound("Fluids").getList("Tanks", Tag.TAG_COMPOUND);
+                if (converted.contains("Fluid") || !convertedEntries.getCompound(0).getCompound("Contents").equals(legacy)) {
+                    throw new GameTestAssertException("Migrated fluid was not saved in the native layout");
+                }
+                if (x == 2 && !convertedEntries.getCompound(1).equals(overflow)) {
+                    throw new GameTestAssertException("Migration discarded a tank outside the current machine layout");
+                }
+
+                saved.put("Fluids", currentEmpty);
+                var nativeLoad = BlockEntity.loadStatic(original.getBlockPos(), original.getBlockState(), saved);
+                if (!(nativeLoad instanceof FluidTankBlockEntity nativeTank) || !nativeTank.getFluidTank().getFluid().isEmpty()) {
+                    throw new GameTestAssertException("An explicitly empty native tank revived old fluid");
+                }
+            }
+        }).thenSucceed());
     }
 
     @GameTest

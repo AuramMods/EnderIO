@@ -4,7 +4,14 @@ import com.enderio.core.common.registries.FluidDeferredHolders;
 import com.enderio.core.common.registries.FluidDeferredRegister;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.misc_blocks.FireWaterFluid;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.MissingMappingsEvent;
+
+import java.util.Map;
 
 // TODO: Fluid behaviours and some cleaning. https://github.com/SleepyTrousers/EnderIO-Rewrite/issues/34
 
@@ -85,7 +92,27 @@ public class EIOFluids {
         .defaultBucket()
         .register();
 
+    private static final Map<String, FluidDeferredHolders> LEGACY_FLUIDS = Map.of(
+        "nutrient_distillation", NUTRIENT_DISTILLATION, "dew_of_the_void", DEW_OF_THE_VOID,
+        "vapor_of_levity", VAPOR_OF_LEVITY, "hootch", HOOTCH, "rocket_fuel", ROCKET_FUEL,
+        "fire_water", FIRE_WATER, "xp_juice", XP_JUICE, "liquid_sunshine", LIQUID_SUNSHINE,
+        "cloud_seed", CLOUD_SEED, "cloud_seed_concentrated", CLOUD_SEED_CONCENTRATED);
+
     public static void register(IEventBus bus) {
         FLUIDS.register(bus);
+        MinecraftForge.EVENT_BUS.addListener(EIOFluids::remapLegacyFluids);
+    }
+
+    private static void remapLegacyFluids(MissingMappingsEvent event) {
+        for (var missing : event.getMappings(Registries.FLUID, EnderIO.MOD_ID)) {
+            ResourceLocation id = missing.getKey();
+            String path = id.getPath();
+            boolean flowing = path.startsWith("flowing_");
+            var fluid = LEGACY_FLUIDS.get(flowing ? path.substring("flowing_".length()) : path);
+            if (fluid != null) {
+                var target = flowing ? fluid.flowing() : fluid.source();
+                missing.remap(ForgeRegistries.FLUIDS.getValue(target.getId()));
+            }
+        }
     }
 }
