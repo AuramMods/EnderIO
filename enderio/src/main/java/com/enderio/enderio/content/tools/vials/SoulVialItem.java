@@ -178,6 +178,12 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
                 BlockState blockState = serverLevel.getBlockState(pos);
 
                 spawnerHolder.setEntityId(storedSoul.entityType(), serverLevel.getRandom());
+                // 1.20.1 only changes the current entry. Load it as the sole candidate so
+                // a vanilla delay reset cannot select the previous mob from the weighted pool.
+                var spawner = spawnerHolder.getSpawner();
+                var settings = spawner.save(new CompoundTag());
+                settings.remove("SpawnPotentials");
+                spawner.load(serverLevel, pos, settings);
                 spawnerHolder.setChanged();
                 serverLevel.sendBlockUpdated(pos, blockState, blockState, 3);
                 serverLevel.gameEvent(context.getPlayer(), GameEvent.BLOCK_CHANGE, pos);

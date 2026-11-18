@@ -15,6 +15,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.Connection;
 import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.chat.Component;
@@ -143,7 +145,7 @@ public class SoulVialInteractionTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 20)
-    public static void configuredSpawnerReplacementUsesNativeBlockEntityAndConsumesOneVial(GameTestHelper helper) {
+    public static void configuredSpawnerReplacementUsesNativeBlockEntityAndConsumesOneVial(GameTestHelper helper) throws Exception {
         var setting = BaseConfig.COMMON.ITEMS.ALLOW_SOUL_VIALS_TO_CHANGE_SPAWNERS;
         boolean original = setting.get();
         try (var peer = new Peer(helper)) {
@@ -151,14 +153,25 @@ public class SoulVialInteractionTests {
             var pos = helper.absolutePos(relative);
             helper.getLevel().setBlockAndUpdate(pos, Blocks.SPAWNER.defaultBlockState());
             var spawner = (SpawnerBlockEntity) helper.getLevel().getBlockEntity(pos);
-            spawner.setEntityId(EntityType.PIG, helper.getLevel().random);
+            var oldData = TagParser.parseTag("""
+                {Delay:43s,MinSpawnDelay:100s,MaxSpawnDelay:250s,SpawnCount:2s,SpawnRange:3s,
+                 SpawnData:{entity:{id:"minecraft:pig"}},SpawnPotentials:[{weight:1,data:{entity:{id:"minecraft:pig"}}}]}
+                """);
+            spawner.load(oldData);
             setting.set(true);
             var stack = SoulVialItem.forSoul(Soul.of(EntityType.COW));
             stack.setCount(2);
             peer.player.setItemInHand(InteractionHand.MAIN_HAND, stack);
             helper.assertTrue(release(helper, peer.player, relative) == InteractionResult.CONSUME, "Configured spawner replacement did not run");
-            helper.assertTrue(spawner.saveWithoutMetadata().getCompound("SpawnData").getCompound("entity").getString("id").equals("minecraft:cow"),
+            var changed = spawner.saveWithoutMetadata();
+            helper.assertTrue(changed.getCompound("SpawnData").getCompound("entity").getString("id").equals("minecraft:cow"),
                 "Changed spawner entity did not serialize");
+            var potentials = changed.getList("SpawnPotentials", Tag.TAG_COMPOUND);
+            helper.assertTrue(potentials.size() == 1 && potentials.getCompound(0).getCompound("data").getCompound("entity")
+                    .getString("id").equals("minecraft:cow"), "Original spawn pool can replace the new mob on a delay reset");
+            helper.assertTrue(changed.getShort("Delay") == 43 && changed.getShort("MinSpawnDelay") == 100
+                && changed.getShort("MaxSpawnDelay") == 250 && changed.getShort("SpawnCount") == 2
+                && changed.getShort("SpawnRange") == 3, "Changing mob type reset the spawner's timing, count or range");
             helper.assertTrue(vialCount(peer.player, true) == 1 && vialCount(peer.player, false) == 1, "Spawner replacement did not consume exactly one vial");
             setting.set(false);
             var result = release(helper, peer.player, relative);
