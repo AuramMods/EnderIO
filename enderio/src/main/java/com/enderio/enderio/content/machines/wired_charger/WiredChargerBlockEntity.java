@@ -56,7 +56,7 @@ public class WiredChargerBlockEntity extends PoweredMachineBlockEntity {
     @Override
     public void serverTick() {
         super.serverTick();
-        if (isActive()) {
+        if (isCapacitorInstalled() && canAct()) {
             chargeItem();
         } else {
             this.progress = 0;
@@ -83,24 +83,25 @@ public class WiredChargerBlockEntity extends PoweredMachineBlockEntity {
         ItemStack chargeable = ITEM_TO_CHARGE.getItemStack(this);
         IEnergyStorage itemEnergyHandler = chargeable.getCapability(ForgeCapabilities.ENERGY).orElse(null);
 
-        if (itemEnergyHandler != null) {
-            if (itemEnergyHandler.getEnergyStored() == itemEnergyHandler.getMaxEnergyStored()) {
-                ITEM_CHARGED.setStackInSlot(this, chargeable);
-                ITEM_TO_CHARGE.setStackInSlot(this, ItemStack.EMPTY);
-            } else {
-                int energyToInsert = Math.min(
-                        itemEnergyHandler.getMaxEnergyStored() - itemEnergyHandler.getEnergyStored(),
-                        Math.max(getEnergyStorage().getEnergyStored(), getEnergyStorage().getMaxEnergyUse()));
+        if (itemEnergyHandler == null || itemEnergyHandler.getMaxEnergyStored() <= 0) {
+            this.progress = 0;
+            return;
+        }
 
-                if (energyToInsert > 0) {
-                    int taken = getEnergyStorage().consumeEnergy(energyToInsert, true);
-                    int accepted = itemEnergyHandler.receiveEnergy(taken, true);
-                    itemEnergyHandler.receiveEnergy(accepted, false);
-                    getEnergyStorage().consumeEnergy(accepted, false);
-                    this.progress = (float) itemEnergyHandler.getEnergyStored()
-                            / itemEnergyHandler.getMaxEnergyStored();
-                }
-            }
+        int capacity = itemEnergyHandler.getMaxEnergyStored();
+        int offered = getEnergyStorage().consumeEnergy(capacity - itemEnergyHandler.getEnergyStored(), true);
+        if (offered > 0) {
+            int accepted = itemEnergyHandler.receiveEnergy(offered, false);
+            getEnergyStorage().consumeEnergy(accepted, false);
+        }
+
+        int stored = itemEnergyHandler.getEnergyStored();
+        if (stored >= capacity) {
+            ITEM_TO_CHARGE.setStackInSlot(this, ItemStack.EMPTY);
+            ITEM_CHARGED.setStackInSlot(this, chargeable);
+            this.progress = 1;
+        } else {
+            this.progress = (float) stored / capacity;
         }
     }
 

@@ -24,12 +24,9 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import java.util.function.BiFunction;
 import net.minecraftforge.energy.IEnergyStorage;
 
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindable {
@@ -46,9 +43,6 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
     private boolean isValidPushTargetCacheDirty = true;
 
     private Soul boundSoul = Soul.EMPTY;
-    private SolarSoul.SoulData soulData;
-    private static boolean reload = false;
-    private boolean reloadCache = !reload;
 
     public SolarPanelBlockEntity(BlockEntityType<?> type, BlockPos worldPosition, BlockState blockState, ISolarPanelTier tier) {
         super(type, worldPosition, blockState);
@@ -164,7 +158,6 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
     public void bindSoul(Soul newSoul) {
         Preconditions.checkArgument(isSoulValid(newSoul), "Soul is not valid for this block");
         this.boundSoul = newSoul;
-        soulData = SolarSoul.SOLAR.matches(newSoul.entityTypeId()).get();
         setChanged();
     }
 
@@ -174,14 +167,9 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
 
     @Override
     public void serverTick() {
-        if (getGenerationRate() > 0) {
-            node.addEnergyToNetwork(getGenerationRate());
-        }
-
-        if (reloadCache != reload && boundSoul.hasEntity()) {
-            Optional<SolarSoul.SoulData> op = SolarSoul.SOLAR.matches(boundSoul.entityType());
-            op.ifPresent(data -> soulData = data);
-            reloadCache = reload;
+        int generated = getGenerationRate();
+        if (generated > 0) {
+            node.addEnergyToNetwork(generated);
         }
 
         // Push energy to non-panel neighbors
@@ -209,6 +197,7 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
         }
 
         //When should the panel make power
+        var soulData = boundSoul.hasEntity() ? SolarSoul.SOLAR.matches(boundSoul.entityTypeId()).orElse(null) : null;
         boolean day = true;
         boolean night = false;
         if (soulData != null) {

@@ -22,7 +22,7 @@ public enum SolarPanelTier implements ISolarPanelTier {
 
     @Override
     public int getStorageCapacity() {
-        return getProductionRate() * 1000;
+        return (int) Math.min((long) getProductionRate() * 1000, Integer.MAX_VALUE);
     }
 }
 

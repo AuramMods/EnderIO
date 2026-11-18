@@ -16,7 +16,7 @@ public class SolarPanelEnergyStorage implements IEnergyStorage {
 
     @Override
     public int extractEnergy(int amount, boolean simulate) {
-        if (amount <= 0) {
+        if (amount <= 0 || !canExtract()) {
             return 0;
         }
 
@@ -42,17 +42,17 @@ public class SolarPanelEnergyStorage implements IEnergyStorage {
 
     @Override
     public int getEnergyStored() {
-        return node.getNetwork().getTotalEnergyStored();
+        return node.isValid() ? node.getNetwork().getTotalEnergyStored() : 0;
     }
 
     @Override
     public int getMaxEnergyStored() {
-        return node.getNetwork().getTotalMaxEnergyStored();
+        return node.isValid() ? node.getNetwork().getTotalMaxEnergyStored() : 0;
     }
 
     @Override
     public boolean canExtract() {
-        return true;
+        return node.isValid();
     }
 
     @Override

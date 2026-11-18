@@ -1,13 +1,9 @@
 package com.enderio.enderio.content.machines.solar_panel;
 
 import com.enderio.core.common.graph.Network;
-import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankNetwork;
-import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankNode;
-import com.mojang.datafixers.util.Pair;
+import com.google.common.primitives.Ints;
 
-import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 public final class SolarPanelNetwork extends Network<SolarPanelNetwork, SolarPanelNode> {
 
@@ -15,14 +11,6 @@ public final class SolarPanelNetwork extends Network<SolarPanelNetwork, SolarPan
         super(initialNode);
 
         initialNode.makePrimaryNode();
-    }
-
-    private SolarPanelNetwork(List<SolarPanelNode> solarPanelNodes, List<Pair<SolarPanelNode, SolarPanelNode>> edges) {
-        super(solarPanelNodes, edges);
-    }
-
-    private SolarPanelNetwork(List<SolarPanelNode> solarPanelNodes, IndexedEdgeList edges) {
-        super(solarPanelNodes, edges);
     }
 
     private SolarPanelNetwork() {
@@ -35,11 +23,11 @@ public final class SolarPanelNetwork extends Network<SolarPanelNetwork, SolarPan
     }
 
     public int getTotalEnergyStored() {
-        return nodes().stream().mapToInt(SolarPanelNode::getEnergyStored).sum();
+        return Ints.saturatedCast(nodes().stream().mapToLong(SolarPanelNode::getEnergyStored).sum());
     }
 
     public int getTotalMaxEnergyStored() {
-        return nodes().stream().mapToInt(SolarPanelNode::getMaxEnergyStored).sum();
+        return Ints.saturatedCast(nodes().stream().mapToLong(SolarPanelNode::getMaxEnergyStored).sum());
     }
 
     @Override
@@ -48,15 +36,21 @@ public final class SolarPanelNetwork extends Network<SolarPanelNetwork, SolarPan
 
         // If we removed the 'primary', find a new one.
         if (node.isPrimaryNode()) {
-            nodes().stream().findFirst().ifPresent(SolarPanelNode::makePrimaryNode);
+            ensurePrimaryNode();
         }
     }
 
     @Override
     protected void onGraphSplit(Set<SolarPanelNetwork> newGraphs) {
         super.onGraphSplit(newGraphs);
-        newGraphs.forEach(n -> {
-            n.nodes().stream().findFirst().ifPresent(SolarPanelNode::makePrimaryNode);
-        });
+        // The original leader may have moved into one of the new graphs.
+        ensurePrimaryNode();
+        newGraphs.forEach(SolarPanelNetwork::ensurePrimaryNode);
+    }
+
+    private void ensurePrimaryNode() {
+        if (nodes().stream().noneMatch(SolarPanelNode::isPrimaryNode)) {
+            nodes().stream().findFirst().ifPresent(SolarPanelNode::makePrimaryNode);
+        }
     }
 }

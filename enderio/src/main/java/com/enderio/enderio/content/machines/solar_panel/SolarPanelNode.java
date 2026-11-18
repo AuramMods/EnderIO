@@ -34,7 +34,7 @@ public final class SolarPanelNode implements INetworkNode<SolarPanelNetwork, Sol
     }
 
     public void setEnergyStored(int energyStored) {
-        this.energyStored = energyStored;
+        this.energyStored = Math.max(0, energyStored);
     }
 
     public int getMaxEnergyStored() {
@@ -45,32 +45,33 @@ public final class SolarPanelNode implements INetworkNode<SolarPanelNetwork, Sol
      * Lossy on purpose, adding energy by generation when we're solar just means we lose the leftovers.
      */
     private int addEnergy(int energy) {
-        int energyToInsert = Math.min(getMaxEnergyStored() - getEnergyStored(), energy);
-        energyStored += energyToInsert;
-        blockEntity.setChanged();
+        int energyToInsert = Math.min(Math.max(0, getMaxEnergyStored() - getEnergyStored()), energy);
+        if (energyToInsert > 0) {
+            energyStored += energyToInsert;
+            blockEntity.setChanged();
+        }
         return energyToInsert;
     }
 
     public void addEnergyToNetwork(int energy) {
-        int energyInserted = Math.min(getMaxEnergyStored() - getEnergyStored(), energy);
-        energyStored += energyInserted;
-        blockEntity.setChanged();
-
-        if (energyInserted < energy) {
-            for (var node : network.nodes()) {
-                if (node == this) {
-                    continue;
+        int remaining = energy - addEnergy(energy);
+        if (remaining <= 0) {
+            return;
+        }
+        for (var node : network.nodes()) {
+            if (node != this) {
+                remaining -= node.addEnergy(remaining);
+                if (remaining == 0) {
+                    break;
                 }
-
-                energyInserted -= node.addEnergy(energy - energyInserted);
             }
         }
     }
 
     public int extractEnergy(int maxExtract, boolean simulate) {
-        int energyExtracted = Math.min(getEnergyStored(), maxExtract);
-        if (!simulate) {
-            this.energyStored = Math.max(getEnergyStored() - energyExtracted, 0);
+        int energyExtracted = Math.min(getEnergyStored(), Math.max(0, maxExtract));
+        if (!simulate && energyExtracted > 0) {
+            energyStored -= energyExtracted;
             blockEntity.setChanged();
         }
 
