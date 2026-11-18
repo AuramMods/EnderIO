@@ -209,14 +209,12 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
             return tier.getProductionRate(); //Max power, ignore if it can see the sky
         }
 
-        if (!this.level.dimensionType().hasSkyLight()) {
-            if (soulData == null || soulData.level().isEmpty() || !soulData.level().get().equals(this.level.dimension())) {
-                return 0; //No light in dimension and no soul to override it
-            }
-        }
-
-        if (!this.level.canSeeSky(getBlockPos().above())) {
-            return 0; //No sky, no power
+        // In dimensions without a sky light engine, only an explicit soul rule supplies light.
+        boolean canGenerate = level.dimensionType().hasSkyLight()
+            ? level.canSeeSky(getBlockPos().above())
+            : soulData != null && soulData.level().filter(level.dimension()::equals).isPresent();
+        if (!canGenerate) {
+            return 0;
         }
 
         float outputScale = 0;
