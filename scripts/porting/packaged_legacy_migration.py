@@ -18,6 +18,11 @@ TANKS = {
 }
 RENAMES = {8: ("copper_alloy_block", "conductive_alloy_block"),
            12: ("industrial_insulation_block", "industrial_insulation")}
+CORE_CONDUITS = [(kind + "_conduit", kind) for kind in
+                 ("item", "energy", "redstone", "fluid", "pressurized_fluid", "ender_fluid")]
+INTEGRATION_CONDUITS = [(kind + "_conduit", variant) for kind, variant in
+                        (("me", "me"), ("dense_me", "dense_me"), ("refined_storage", "rs"), ("chemical", "chemical"),
+                         ("pressurized_chemical", "pressurized_chemical"), ("ender_chemical", "ender_chemical"), ("heat", "heat"))]
 
 
 def tank_state(x, legacy):
@@ -30,7 +35,7 @@ def tank_state(x, legacy):
     return (f'{{{key}:{{Tanks:[{{{entry}}}]}},Items:{{Items:[{{Slot:1,id:"minecraft:diamond",Count:{count}}}]}}}}')
 
 
-def exercise(server, stage, results, conduit_fixture):
+def exercise(server, stage, results, conduit_fixture, loose_conduits):
     server.wait('For help, type "help"')
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
@@ -59,7 +64,38 @@ def exercise(server, stage, results, conduit_fixture):
     server.assert_state(f"alloy_smelter_{stage}", f"if data block 14 80 0 {machine}", results)
     if conduit_fixture:
         exercise_conduits(server, stage, results)
+    if loose_conduits:
+        exercise_loose_conduits(server, stage, results, loose_conduits)
     server.command("save-all flush")
+
+
+def loose_stack(slot, original, variant, count, legacy, vanilla_inventory):
+    slot_nbt = str(slot) + ("b" if vanilla_inventory else "")
+    count_nbt = str(count) + ("b" if legacy or vanilla_inventory else "")
+    item = original if legacy else "conduit"
+    tag = f"PortSavedType:{count}"
+    if not legacy:
+        tag += ',"enderio:data":{"enderio:conduit":"enderio:' + variant + '"}'
+    return f'{{Slot:{slot_nbt},id:"enderio:{item}",Count:{count_nbt},tag:{{{tag}}}}}'
+
+
+def exercise_loose_conduits(server, stage, results, conduits):
+    legacy = stage == "legacy"
+    barrel = "9 80 5"
+    machine = "14 80 5"
+    stacks = [loose_stack(i, old, variant, i + 3, legacy, True) for i, (old, variant) in enumerate(conduits)]
+    machine_stack = loose_stack(3, "item_conduit", "item", 9, legacy, False)
+    if legacy:
+        server.command(f'setblock {barrel} minecraft:barrel{{Items:[{",".join(stacks)}]}}')
+        server.command("setblock 14 79 5 minecraft:stone")
+        server.command(f"setblock {machine} enderio:alloy_smelter")
+        server.command(f"data merge block {machine} {{RedstoneControl:3,Items:{{Size:5,Items:[{machine_stack}]}}}}")
+
+    server.command(f"data get block {barrel} Items")
+    for i, stack in enumerate(stacks):
+        server.assert_state(f"conduit_item_{conduits[i][1]}_{stage}", f"if data block {barrel} Items[{stack}]", results)
+    server.assert_state(f"no_extra_conduit_stacks_{stage}", f"unless data block {barrel} Items[{len(stacks)}]", results)
+    server.assert_state(f"machine_conduit_item_{stage}", f"if data block {machine} Items.Items[{machine_stack}]", results)
 
 
 def exercise_conduits(server, stage, results):
@@ -119,10 +155,10 @@ def exercise_conduits(server, stage, results):
                         f'unless data block {downstream} Items[{{id:"minecraft:emerald"}}]', results)
 
 
-def run_server(directory, java, stage, report, conduit_fixture):
+def run_server(directory, java, stage, report, conduit_fixture, loose_conduits):
     server = Server(directory, java, stage)
     try:
-        exercise(server, stage, report["assertions"], conduit_fixture)
+        exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits)
     finally:
         exit_status = server.stop()
         errors = [line.strip() for line in server.lines if "/ERROR]" in line or "/FATAL]" in line]
@@ -143,6 +179,9 @@ def main():
     parser.add_argument("--legacy-jar", required=True, type=Path)
     parser.add_argument("--jar", required=True, type=Path)
     parser.add_argument("--conduit-fixture", type=Path, help="Fixture mod built with legacy_fixture/build.py")
+    parser.add_argument("--loose-conduits", action="store_true", help="Migrate the six core conduit item stacks")
+    parser.add_argument("--loose-integration-conduits", action="store_true", help="Include AE2, Mekanism and Refined Storage conduit items")
+    parser.add_argument("--mod", action="append", type=Path, default=[], help="Install a Forge dependency in both profiles")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
@@ -151,7 +190,13 @@ def main():
     directory = ROOT / "build/port-runtime" / args.name
     directory.mkdir(parents=True)
     report = {"passed": False, "forge": FORGE, "legacySha256": digest(args.legacy_jar),
-              "portSha256": digest(args.jar), "assertions": [], "servers": []}
+              "portSha256": digest(args.jar), "mods": {mod.name: digest(mod) for mod in args.mod},
+              "assertions": [], "servers": []}
+    loose_conduits = []
+    if args.loose_conduits or args.loose_integration_conduits:
+        loose_conduits.extend(CORE_CONDUITS)
+    if args.loose_integration_conduits:
+        loose_conduits.extend(INTEGRATION_CONDUITS)
     try:
         legacy = directory / "legacy"
         converted = directory / "converted"
@@ -161,6 +206,8 @@ def main():
             shutil.copytree(args.forge_server / "libraries", profile / "libraries")
             (profile / "mods").mkdir()
             shutil.copyfile(jar, profile / "mods" / "enderio.jar")
+            for mod in args.mod:
+                shutil.copyfile(mod, profile / "mods" / mod.name)
             (profile / "eula.txt").write_text("eula=true\n")
             (profile / "server.properties").write_text(
                 f"server-ip=127.0.0.1\nserver-port={args.port}\nlevel-name={WORLD}\n"
@@ -169,10 +216,10 @@ def main():
         if args.conduit_fixture:
             shutil.copyfile(args.conduit_fixture, legacy / "mods" / "port-legacy-fixture.jar")
             report["fixtureSha256"] = digest(args.conduit_fixture)
-        run_server(legacy, args.java, "legacy", report, args.conduit_fixture)
+        run_server(legacy, args.java, "legacy", report, args.conduit_fixture, loose_conduits)
         shutil.copytree(legacy / WORLD, converted / WORLD)
-        run_server(converted, args.java, "converted", report, args.conduit_fixture)
-        run_server(converted, args.java, "restart", report, args.conduit_fixture)
+        run_server(converted, args.java, "converted", report, args.conduit_fixture, loose_conduits)
+        run_server(converted, args.java, "restart", report, args.conduit_fixture, loose_conduits)
         report["passed"] = True
     finally:
         output = directory / "legacy-migration-results.json"

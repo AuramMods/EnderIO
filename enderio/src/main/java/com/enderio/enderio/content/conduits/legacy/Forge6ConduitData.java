@@ -1,6 +1,7 @@
 package com.enderio.enderio.content.conduits.legacy;
 
 import com.enderio.core.common.serialization.StackDataCodecs;
+import com.enderio.core.common.registries.ItemDeferredRegister;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.api.conduits.network.node.NodeData;
@@ -19,6 +20,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
@@ -30,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /** Reads the NBT emitted before Ender IO moved conduit types into its datapack registry. */
 public final class Forge6ConduitData {
@@ -39,6 +42,14 @@ public final class Forge6ConduitData {
         "enderio:redstone_conduit", EIOConduits.REDSTONE, "enderio:fluid_conduit", EIOConduits.FLUID,
         "enderio:pressurized_fluid_conduit", EIOConduits.ENERGETIC_FLUID,
         "enderio:ender_fluid_conduit", EIOConduits.VIBRANT_FLUID);
+    private static final Map<String, ResourceLocation> INTEGRATION_ITEMS = Map.of(
+        "enderio:me_conduit", ResourceLocation.parse("enderio:me"),
+        "enderio:dense_me_conduit", ResourceLocation.parse("enderio:dense_me"),
+        "enderio:refined_storage_conduit", ResourceLocation.parse("enderio:rs"),
+        "enderio:chemical_conduit", ResourceLocation.parse("enderio:chemical"),
+        "enderio:pressurized_chemical_conduit", ResourceLocation.parse("enderio:pressurized_chemical"),
+        "enderio:ender_chemical_conduit", ResourceLocation.parse("enderio:ender_chemical"),
+        "enderio:heat_conduit", ResourceLocation.parse("enderio:heat"));
 
     // 6.x used ColorControl ordinals, which are unrelated to the vanilla dye IDs.
     private static final DyeColor[] COLORS = {DyeColor.GREEN, DyeColor.BROWN, DyeColor.BLUE, DyeColor.PURPLE,
@@ -49,6 +60,16 @@ public final class Forge6ConduitData {
 
     public static @Nullable ResourceKey<Conduit<?, ?>> conduitKey(String id) {
         return CONDUITS.get(id);
+    }
+
+    public static void registerItemAliases(ItemDeferredRegister items, ResourceLocation canonicalItem) {
+        Stream.concat(CONDUITS.keySet().stream(), INTEGRATION_ITEMS.keySet().stream())
+            .sorted().forEach(id -> items.addAlias(ResourceLocation.parse(id), canonicalItem));
+    }
+
+    public static @Nullable ResourceLocation itemConduitId(String id) {
+        var core = conduitKey(id);
+        return core == null ? INTEGRATION_ITEMS.get(id) : core.location();
     }
 
     public static ConnectionState connection(CompoundTag tag) {

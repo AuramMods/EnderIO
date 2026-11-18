@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status remains in progress. Cycle 045 reproduced all six distributable jars, and cycle 046 verified live data-map updates and reconnects. Cycles 048 through 050 verified migrated machine state, item routing, travel anchors and powered item charge. Cycle 051 passed 78 ordinary JUnit tests, 415 native GameTests, 19 TCP client checks and 18 server assertions. Genuine 6.2.18-beta carried tanks retain exact tagged fluid and machine settings through conversion, item transfers, placement and restart. Other historical conversion gaps, an intermittent login timeout and full gameplay and integration parity remain open.
+Prepared on 2026-11-17. Status remains in progress. Cycle 045 reproduced all six distributable jars, and cycle 046 verified live data-map updates and reconnects. Cycles 048 through 051 verified migrated machine state, item routing, travel anchors, powered item charge and carried fluid tanks. Cycle 052 passed 78 ordinary JUnit tests, 417 native GameTests and 135 packaged server assertions across two migration profiles. Loose core and integration conduit stacks from 6.2.18-beta retain their type, count and custom NBT through conversion and restart. Placed integration conduit migration, other historical conversion gaps, an intermittent login timeout and full gameplay and integration parity remain open.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -211,7 +211,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 050: historical staff charge, cooldown and blink | Recover the old powered item's saved balance and exercise an actual migrated staff over dedicated TCP | Full build passes 78 ordinary unit and 414 native tests. Packaged fixture passes 44 client checks and 29 server assertions, with exact staff charges across restart and no focus events. [Evidence and commands](porting/1.20.1/cycle-050.md) | `afd81ebed` |
 
-| 051: historical carried fluid tanks | Read and transfer tagged liquid from the original tank item format. Normalize legacy placement data and preserve machine settings | Full build passes 78 ordinary unit and 415 native tests. The packaged client and server pass 19 and 18 checks respectively across direct placement, partial transfer, full drainage and restart. [Evidence and commands](porting/1.20.1/cycle-051.md) | Commit containing cycle 051 |
+| 051: historical carried fluid tanks | Read and transfer tagged liquid from the original tank item format. Normalize legacy placement data and preserve machine settings | Full build passes 78 ordinary unit and 415 native tests. The packaged client and server pass 19 and 18 checks respectively across direct placement, partial transfer, full drainage and restart. [Evidence and commands](porting/1.20.1/cycle-051.md) | `8724381e5` |
+
+| 052: historical conduit item stacks | Remap old conduit item IDs and recover their variants in vanilla and machine inventories | Full build passes 78 ordinary unit and 417 native tests. Packaged core and integration profiles pass 72 and 63 assertions respectively. All six migrated core variants pass native placement. [Evidence and commands](porting/1.20.1/cycle-052.md) | Commit containing cycle 052 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

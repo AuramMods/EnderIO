@@ -219,7 +219,7 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | `COLD_FIRE_IGNITER` | [EIOItems:221](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `CONDUIT_PROBE` | [EIOItems:222](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `DARK_STEEL_SWORD` | [EIOItems:224](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `CONDUIT` | [EIOItems:233](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `CONDUIT` | [EIOItems:234](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. Six core and seven integration types from 6.2.18-beta retain their exact type, quantity and custom NBT in a vanilla inventory across upgrade and restart. The item type also migrates in an alloy smelter inventory. Native placement passes for all six core types. [Cycle 052](cycle-052.md) |
 | `CONDUIT_FACADE` | [EIOItems:236](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `TRANSPARENT_CONDUIT_FACADE` | [EIOItems:239](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `HARDENED_CONDUIT_FACADE` | [EIOItems:242](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |

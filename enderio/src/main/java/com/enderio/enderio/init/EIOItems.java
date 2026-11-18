@@ -10,6 +10,7 @@ import com.enderio.enderio.content.capacitors.CapacitorItem;
 import com.enderio.enderio.content.capacitors.LootCapacitorItem;
 import com.enderio.enderio.content.cold_fire.ColdFireIgniter;
 import com.enderio.enderio.content.conduits.ConduitBlockItem;
+import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
 import com.enderio.enderio.content.conduits.facades.ConduitFacadeItem;
 import com.enderio.enderio.content.conduits.probe.ConduitProbeItem;
 import com.enderio.enderio.content.filters.fluid.EnderFluidFilterItem;
@@ -293,6 +294,8 @@ public class EIOItems {
     }
 
     public static void register(IEventBus bus) {
+        Forge6ConduitData.registerItemAliases(ITEMS, CONDUIT.getId());
+
         // Unified soul vials
         ITEMS.addAlias(EnderIO.rl("empty_soul_vial"), SOUL_VIAL.getId());
         ITEMS.addAlias(EnderIO.rl("filled_soul_vial"), SOUL_VIAL.getId());
