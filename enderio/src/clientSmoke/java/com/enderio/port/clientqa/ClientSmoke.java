@@ -38,6 +38,7 @@ public final class ClientSmoke {
             case "legacy-lights" -> new ClientLegacyLightSmoke();
             case "primitive-smelter" -> new ClientPrimitiveSmelterSmoke();
             case "stirling" -> new ClientStirlingSmoke();
+            case "soul-binder" -> new ClientSoulBinderSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();
             case "curios" -> new ClientCuriosSmoke();
             case "solar-wired" -> new ClientSolarWiredSmoke();

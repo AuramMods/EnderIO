@@ -1,8 +1,10 @@
 package com.enderio.enderio.gametests.machines;
 
 import com.enderio.enderio.api.soul.Soul;
+import com.enderio.enderio.content.machines.soul_binder.SoulBinderBlockEntity;
 import com.enderio.enderio.content.machines.soul_binder.SoulBindingRecipe;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
+import com.enderio.enderio.foundation.util.ExperienceUtil;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOFluids;
@@ -26,6 +28,7 @@ public class SoulBinderTests {
             .set(0, 0, 0, EIOBlocks.SOUL_BINDER.get().defaultBlockState()));
 
         int energyToAdd = 10000;
+        int xpFluid = 9997;
         test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
             .thenExecute(() -> {
                 // Insert the capacitor and fill with energy.
@@ -37,7 +40,7 @@ public class SoulBinderTests {
                 var soulVial = SoulVialItem.forSoul(Soul.of(EntityType.VILLAGER));
                 helper.insertIntoContainer(0, 1, 0, soulVial);
                 helper.insertIntoContainer(0, 1, 0, Items.COBBLESTONE, 1);
-                helper.fillContainer(0, 1, 0, EIOFluids.XP_JUICE.source().get(), 10000);
+                helper.fillContainer(0, 1, 0, EIOFluids.XP_JUICE.source().get(), xpFluid);
             })
             // Wait for the recipe to process (test recipe has energy cost of 100)
             .thenExecuteAfter(20, () -> {
@@ -53,12 +56,17 @@ public class SoulBinderTests {
                 var input = new SoulBindingRecipe.Input(
                     SoulVialItem.forSoul(Soul.of(EntityType.VILLAGER)),
                     new ItemStack(Items.COBBLESTONE, 1),
-                    new FluidStack(EIOFluids.XP_JUICE.source().get(), 10000)
+                    new FluidStack(EIOFluids.XP_JUICE.source().get(), xpFluid)
                 );
 
                 var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.SOUL_BINDING.type().get(), input, helper.getLevel()).orElseThrow();
                 int expectedEnergy = energyToAdd - recipe.energy();
                 helper.assertEnergyStored(0, 1, 0, expectedEnergy);
+
+                var binder = helper.getBlockEntity(0, 1, 0, SoulBinderBlockEntity.class);
+                int fluidCost = Math.toIntExact(ExperienceUtil.getFluidFromLevel(recipe.experience()));
+                helper.assertValueEqual(binder.getFluidTank().getFluidAmount(), xpFluid - fluidCost,
+                    "binding preserves XP fluid smaller than one point");
             })
             .thenSucceed());
     }
