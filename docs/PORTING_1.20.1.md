@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 035 restores all 58 enabled baseline gameplay GameTests, adds four tank reload/resumption regressions and fixes native fluid-tank loading. Full build and the CI check command pass with 78 ordinary JUnit and 369 native GameTest executions. Post-run discovery/execution reconciliation detects filtered-out tests. Complete feature parity, clean packaged installations, client visuals and real dedicated multiplayer remain unverified. No client has been launched.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 036 exercises a clean packaged Forge dedicated server, fixes bucket/container fluid duplication and adds five transfer scenarios covering both tank variants. The full check passes 78 ordinary JUnit and 374 native GameTests. The packaged harness verifies 16 tank-processing and disk-backed persistence assertions across three server sessions. Complete feature parity, clean packaged client operation, visuals and real dedicated multiplayer remain unverified. No client has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -17,7 +17,7 @@ Port the complete implemented feature set of this checkout to Minecraft 1.20.1 o
 | Baseline platform | Minecraft 1.21.1, NeoForge 21.1.216, Java 21 |
 | Historical Forge reference | `origin/1.20.1` at `18ee1b17bf6879298e911fff751204b07f2e4228` |
 | Historical platform | Minecraft 1.20.1, Forge 47.1.1, Java 17, release series 6.2 |
-| Target platform | Minecraft 1.20.1, Forge 47.4.28 (pinned; runtime verification pending), Java 17 |
+| Target platform | Minecraft 1.20.1, Forge 47.4.28 (pinned; limited packaged dedicated-server verification in cycle 036), Java 17 |
 
 The two upstream branch tips were checked with `git ls-remote` against `https://github.com/Team-EnderIO/EnderIO.git` and match the fork's fetched remote references. The historical Forge branch already implements an older version of this mod; merely checking it out would not preserve the current feature set. The branches have diverged: at preparation, 154 commits are unique to the historical branch and 951 to the current source baseline.
 
@@ -71,12 +71,12 @@ Prefer Forge-native adapters and shared utilities in this project's namespaces. 
 | Cycle area | Work | Status |
 | --- | --- | --- |
 | Preparation | Record source references, create local branch, write tracker and goal | Complete |
-| Inventory and build | Expand parity/dependency matrix; establish Forge 1.20.1 toolchain, metadata, artifacts and silent test profiles | In progress: EnderCore compiles/reobfuscates and main-module Minecraft artifacts rebuild; full packaging and non-activating client launch pending |
-| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | In progress: core passes 55 unit/126 GameTests; Registry-aware block loading, native saved data, machine lifecycle/storage, capabilities, registration aliases, item NBT, codecs and main Forge transport are implemented in source with partial runtime coverage. Remaining serialization, complete machine runtime and full gameplay validation pending |
+| Inventory and build | Expand parity/dependency matrix; establish Forge 1.20.1 toolchain, metadata, artifacts and silent test profiles | All modules compile/package for Java 17; native tests and limited clean packaged server checks pass. Byte reproducibility and non-activating client launch remain pending |
+| Common foundation | Java 17 changes, lifecycle, registries, NBT state, codecs, networking, capabilities, attachments, reloadable data | Implemented with partial native runtime evidence; current core profile passes 61 unit/170 GameTests. Complete feature, client synchronization, lifecycle and conservation verification remain pending |
 | Core content | Port every implemented block/item/entity, machine, conduit, filter, tool, soul and travel feature | Pending |
 | Assets and client | Data generation, recipes/tags, models, textures, rendering, screens, particles, input, mixins | In progress: native models, quad/preview buffers, cropped GUI sprites, screen/HUD/extension registration and input/culling hooks. Thirteen CPU render-helper tests pass; native Forge/Embeddium facade section rendering is implemented, with all visual/client runtime checks pending |
 | Integrations | Adapt each supported integration and modded conduit; test with dependencies present and absent | Pending |
-| Verification | Port existing tests, add meaningful regressions, exercise gameplay, multiplayer, persistence and packaged artifacts | Pending |
+| Verification | Port existing tests, add meaningful regressions, exercise gameplay, multiplayer, persistence and packaged artifacts | 78 unit/374 native executions pass; 16 packaged tank assertions span three server sessions. Client/multiplayer and complete feature parity remain pending |
 | Delivery | Clean build, complete evidence matrix, usage/migration notes and final committed artifact record | Pending |
 
 These are work areas, not a requirement to put a huge phase into one commit. Each bounded implementation/verification cycle gets its own commit. Early commits may have documented build failures while dependent systems are being converted. Do not describe them as working until verified.
@@ -98,7 +98,7 @@ The [concrete feature matrix](porting/1.20.1/features.md) contains 257 declarati
 | Client presentation | Textures/models, facades/paint, particles, screens/tooltips/key mappings, recipe UI, resource reload and reconnect | Unverified |
 | Modded conduits | AE2 network connectivity, Mekanism chemicals and heat, Refined Storage networks, optional-module load isolation | Unverified |
 | Persistence and lifecycle | Save/reopen, dedicated-server restart, unload/reload, dimensions, player reconnect, block removal/replacement, no duplication/loss | Unverified |
-| Distribution | Final remapped/reobfuscated jars load in clean Forge installations without a development classpath | Unverified |
+| Distribution | Final remapped/reobfuscated jars load in clean Forge installations without a development classpath | Partial: bundled jar loads in clean Forge dedicated server without optional mods; tank processing/restarts pass ([harness](porting/1.20.1/packaged-server.md)). Client, multiplayer and final release verification remain pending |
 
 Compatibility inventory: JEI, Jade, CC:Tweaked, Almost Unified, Curios, FTB Ultimine, LaserIO, Inventory Sorter hooks, Athena/connected textures, AE2, Mekanism and Refined Storage. Also inspect the existing Sodium/Iris-specific compatibility code and determine appropriate Forge 1.20.1 equivalents. Each entry needs an exact dependency version, artifact coordinate/source, supported behavior, presence/absence result and any required adaptation. Cycle 002 selected pinned target artifacts from author Maven metadata and project release APIs; see the [dependency record](porting/1.20.1/dependencies.md). Actual integration behavior remains unverified. An unavailable dependency is a tracked unresolved problem, not permission to delete an integration or claim completion.
 
@@ -179,7 +179,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 034: main registry tests in native Forge | Preserve all main JUnit methods/assertions, run actual Jupiter in a headless Forge profile, native test APIs/fixtures and failure propagation | Full `build` passes; 78 ordinary JUnit/307 native GameTests pass with no skips. Separate main gameplay GameTests/CI, packaged installs and client/multiplayer validation remain incomplete. [Evidence](porting/1.20.1/cycle-034.md) | `b8e093ee9` |
 
-| 035: native gameplay tests and tank reloads | Restore 58 baseline gameplay cases, add four tank lifecycle regressions, fix pre-level load and recipe resumption, reconcile actual execution and wire CI | Full build and final CI check command pass: 78 ordinary JUnit/369 native GameTests. Filtering probe and tank failures reproduced before fixes. Full parity, packaged installs and client/multiplayer remain incomplete. [Evidence](porting/1.20.1/cycle-035.md) | Commit containing cycle 035 |
+| 035: native gameplay tests and tank reloads | Restore 58 baseline gameplay cases, add four tank lifecycle regressions, fix pre-level load and recipe resumption, reconcile actual execution and wire CI | Full build and final CI check command pass: 78 ordinary JUnit/369 native GameTests. Filtering probe and tank failures reproduced before fixes. Full parity, packaged installs and client/multiplayer remain incomplete. [Evidence](porting/1.20.1/cycle-035.md) | `5898f389b` |
+
+| 036: packaged server and tank conservation | Clean Forge installation/restarts, native bucket/partial-container transfer fix, five regression scenarios and deterministic fire fixtures | Full check passes 78 ordinary JUnit/374 native GameTests; packaged harness passes 16 assertions over three server sessions without optional mods. Full parity, client/multiplayer and broader persistence remain incomplete. [Evidence](porting/1.20.1/cycle-036.md) | Commit containing cycle 036 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

@@ -76,8 +76,8 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `ENDERMAN_HEAD` | [EIOBlocks:312](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `WALL_ENDERMAN_HEAD` | [EIOBlocks:315](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `INDUSTRIAL_INSULATION` | [EIOBlocks:318](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `FLUID_TANK` | [EIOBlocks:326](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: fluid NBT, sponge/mending regressions and native pre-level load/recipe resumption pass; GUI and full restart coverage remain pending ([cycle 035](cycle-035.md)) |
-| `PRESSURIZED_FLUID_TANK` | [EIOBlocks:333](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: native pre-level load retains fluid NBT/inventory and resumes saved recipes; full gameplay/render coverage remains pending ([cycle 035](cycle-035.md)) |
+| `FLUID_TANK` | [EIOBlocks:326](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: prior NBT/load/recipe regressions plus bucket fill/drain, partial capacity, blocked outputs and tagged containers pass. Clean packaged server preserves fluid/items and recipe outputs through two restarts; GUI/full automation remain pending ([cycle 036](cycle-036.md)) |
+| `PRESSURIZED_FLUID_TANK` | [EIOBlocks:333](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: native load/resumption and the same five transfer scenarios pass; packaged fluid NBT/inventory and processing persist through two restarts. GUI/full automation remain pending ([cycle 036](cycle-036.md)) |
 | `ENCHANTER` | [EIOBlocks:341](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `ENDERFACE` | [EIOBlocks:348](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `ALLOY_SMELTER` | [EIOBlocks:356](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: alloying and vanilla smelting inputs/outputs/energy pass; full automation/persistence/GUI coverage remains pending ([cycle 035](cycle-035.md)) |
@@ -113,7 +113,7 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `RELOCATOR_OBELISK` | [EIOBlocks:499](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `ATTRACTOR_OBELISK` | [EIOBlocks:502](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `WEATHER_OBELISK` | [EIOBlocks:505](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `FLUID_TANK_ITEM` | [EIOBlocks:509](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `FLUID_TANK_ITEM` | [EIOBlocks:509](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: actual native item capability transfers 500 mB from a 3,000 mB tagged container into either nearly full tank, retaining 2,500 mB and NBT. Placement/render/other interactions remain pending ([cycle 036](cycle-036.md)) |
 | `PRESSURIZED_FLUID_TANK_ITEM` | [EIOBlocks:511](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `POWERED_SPAWNER_ITEM` | [EIOBlocks:514](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `SOUL_ENGINE_ITEM` | [EIOBlocks:517](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |

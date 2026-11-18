@@ -18,6 +18,8 @@ public class FireCraftingTests {
     private static final BlockPos FIRE_POS = new BlockPos(0, 2, 0);
     private static final BlockPos BASE_POS = new BlockPos(0, 1, 0);
 
+    // Test-only infiniburn tags keep these recipe bases lit until the explicit
+    // extinguish step. Vanilla random burnout can otherwise precede FIRE_MIN_AGE.
     @GameTest(timeoutTicks = 300)
     // Tests that fire on a valid base block produces item drops.
     public static void testFireBlockCraftingDrops(final GameplayTest test) {

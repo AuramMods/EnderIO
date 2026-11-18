@@ -38,13 +38,22 @@ public class InternalTankTasks {
             return;
         }
 
-        // See what fluid is available to drain from the item.
-        // We act here because we're acting on a copy of the input.
+        // Discover the fluid without changing the copied container yet.
         FluidStack availableFluid = fluidHandlerItem.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
 
         // See if we can insert this fluid into the block's tank.
         int filled = tank.fill(blockEntity, availableFluid, IFluidHandler.FluidAction.SIMULATE);
         if (filled <= 0) {
+            return;
+        }
+
+        // Drain only what the tank can accept, on the disposable single-item copy.
+        // Buckets reject a partial drain; larger containers retain their remainder.
+        // The simulated fluid alone must never be deposited while retaining a full item.
+        availableFluid = fluidHandlerItem.drain(EnderFluidUtil.copyWithAmount(availableFluid, filled),
+            IFluidHandler.FluidAction.EXECUTE);
+        if (availableFluid.isEmpty()
+            || tank.fill(blockEntity, availableFluid, IFluidHandler.FluidAction.SIMULATE) != availableFluid.getAmount()) {
             return;
         }
 
@@ -54,12 +63,12 @@ public class InternalTankTasks {
         // If this is the only input, and it's not fully empty we will retain it in the input slot, so long as the
         //  destination tank is not full
         if (inputItem.getCount() == 1 && !EnderFluidUtil.isEmpty(fluidHandlerItem) && !tank.isFull(blockEntity)) {
-            tank.fill(blockEntity, EnderFluidUtil.copyWithAmount(availableFluid, filled), IFluidHandler.FluidAction.EXECUTE);
+            tank.fill(blockEntity, availableFluid, IFluidHandler.FluidAction.EXECUTE);
             fluidFillInput.setStackInSlot(blockEntity, resultStack);
         } else if (!fluidFillInput.extractItem(blockEntity, 1, true).isEmpty() &&
             fluidFillOutput.insertItem(blockEntity, resultStack, true).isEmpty()) {
 
-            tank.fill(blockEntity, EnderFluidUtil.copyWithAmount(availableFluid, filled), IFluidHandler.FluidAction.EXECUTE);
+            tank.fill(blockEntity, availableFluid, IFluidHandler.FluidAction.EXECUTE);
             fluidFillInput.extractItem(blockEntity, 1, false);
             fluidFillOutput.insertItem(blockEntity, resultStack, false);
         }

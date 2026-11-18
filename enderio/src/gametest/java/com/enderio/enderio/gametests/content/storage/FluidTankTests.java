@@ -11,12 +11,134 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
 
+import java.util.function.Consumer;
+
 // Scenario group: content.storage
 public class FluidTankTests {
+    @GameTest
+    public static void bucketTransferConservesFluidAndContainers(final GameplayTest test) {
+        testBothTanks(test, helper -> helper.startSequence().thenExecute(() -> {
+            for (int x : new int[] {0, 2}) {
+                helper.insertItemIntoSlot(x, 1, 0, FluidTankBlockEntity.FLUID_FILL_INPUT.getIndex(), new ItemStack(Items.WATER_BUCKET));
+            }
+        }).thenExecuteAfter(30, () -> {
+            for (int x : new int[] {0, 2}) {
+                helper.assertContainerHasExactly(x, 1, 0, Fluids.WATER, 1000);
+                helper.assertSlotHasNoItem(x, 1, 0, FluidTankBlockEntity.FLUID_FILL_INPUT.getIndex());
+                helper.assertContainerHasExactly(x, 1, 0, Items.BUCKET, 1);
+                var tank = helper.getBlockEntity(x, 1, 0, FluidTankBlockEntity.class);
+                FluidTankBlockEntity.FLUID_FILL_OUTPUT.setStackInSlot(tank, ItemStack.EMPTY);
+                FluidTankBlockEntity.FLUID_DRAIN_INPUT.setStackInSlot(tank, new ItemStack(Items.BUCKET));
+            }
+        }).thenExecuteAfter(20, () -> {
+            for (int x : new int[] {0, 2}) {
+                helper.assertContainerHasExactly(x, 1, 0, Fluids.WATER, 0);
+                helper.assertSlotHasNoItem(x, 1, 0, FluidTankBlockEntity.FLUID_DRAIN_INPUT.getIndex());
+                helper.assertContainerHasExactly(x, 1, 0, Items.WATER_BUCKET, 1);
+            }
+        }).thenSucceed());
+    }
+
+    @GameTest
+    public static void insufficientCapacityPreservesFullBucket(final GameplayTest test) {
+        testBothTanks(test, helper -> helper.startSequence().thenExecute(() -> {
+            for (int x : new int[] {0, 2}) {
+                var tank = helper.getBlockEntity(x, 1, 0, FluidTankBlockEntity.class);
+                helper.fillContainer(x, 1, 0, Fluids.WATER, tank.getFluidTank().getCapacity() - 500);
+                FluidTankBlockEntity.FLUID_FILL_INPUT.setStackInSlot(tank, new ItemStack(Items.WATER_BUCKET));
+            }
+        }).thenExecuteAfter(20, () -> {
+            for (int x : new int[] {0, 2}) {
+                var tank = helper.getBlockEntity(x, 1, 0, FluidTankBlockEntity.class);
+                helper.assertContainerHasExactly(x, 1, 0, Fluids.WATER, tank.getFluidTank().getCapacity() - 500);
+                helper.assertContainerHasExactly(x, 1, 0, Items.WATER_BUCKET, 1);
+                helper.assertSlotHasNoItem(x, 1, 0, FluidTankBlockEntity.FLUID_FILL_OUTPUT.getIndex());
+            }
+        }).thenSucceed());
+    }
+
+    @GameTest
+    public static void blockedOutputPreservesFullBucket(final GameplayTest test) {
+        testBothTanks(test, helper -> helper.startSequence().thenExecute(() -> {
+            for (int x : new int[] {0, 2}) {
+                var tank = helper.getBlockEntity(x, 1, 0, FluidTankBlockEntity.class);
+                FluidTankBlockEntity.FLUID_FILL_OUTPUT.setStackInSlot(tank, new ItemStack(Items.DIAMOND, 64));
+                FluidTankBlockEntity.FLUID_FILL_INPUT.setStackInSlot(tank, new ItemStack(Items.WATER_BUCKET));
+            }
+        }).thenExecuteAfter(20, () -> {
+            for (int x : new int[] {0, 2}) {
+                helper.assertContainerHasExactly(x, 1, 0, Fluids.WATER, 0);
+                helper.assertContainerHasExactly(x, 1, 0, Items.WATER_BUCKET, 1);
+                helper.assertContainerHasExactly(x, 1, 0, Items.DIAMOND, 64);
+            }
+        }).thenSucceed());
+    }
+
+    @GameTest
+    public static void partialContainerTransferConservesTaggedFluid(final GameplayTest test) {
+        testBothTanks(test, helper -> helper.startSequence().thenExecute(() -> {
+            for (int x : new int[] {0, 2}) {
+                var tank = helper.getBlockEntity(x, 1, 0, FluidTankBlockEntity.class);
+                var contents = new FluidStack(Fluids.WATER, tank.getFluidTank().getCapacity() - 500);
+                contents.getOrCreateTag().putInt(EnderIOTests.TEST_NUMBER, 23);
+                helper.fillContainer(x, 1, 0, contents);
+                var container = new ItemStack(EIOBlocks.FLUID_TANK_ITEM.get());
+                var handler = container.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
+                    .orElseThrow(() -> new GameTestAssertException("Tank item has no native fluid capability"));
+                contents.setAmount(3000);
+                if (handler.fill(contents, IFluidHandler.FluidAction.EXECUTE) != 3000) {
+                    throw new GameTestAssertException("Could not prepare the actual tank item");
+                }
+                FluidTankBlockEntity.FLUID_FILL_INPUT.setStackInSlot(tank, handler.getContainer());
+            }
+        }).thenExecuteAfter(20, () -> {
+            for (int x : new int[] {0, 2}) {
+                var tank = helper.getBlockEntity(x, 1, 0, FluidTankBlockEntity.class);
+                var expected = new FluidStack(Fluids.WATER, tank.getFluidTank().getCapacity());
+                expected.getOrCreateTag().putInt(EnderIOTests.TEST_NUMBER, 23);
+                helper.assertContainerHasExactly(x, 1, 0, expected);
+                var container = FluidTankBlockEntity.FLUID_FILL_INPUT.getItemStack(tank);
+                var handler = container.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
+                    .orElseThrow(() -> new GameTestAssertException("Tank item has no native fluid capability"));
+                var remaining = handler.getFluidInTank(0);
+                if (remaining.getAmount() != 2500 || !remaining.isFluidEqual(tank.getFluidTank().getFluid())
+                    || remaining.getOrCreateTag().getInt(EnderIOTests.TEST_NUMBER) != 23) {
+                    throw new GameTestAssertException("Partial transfer changed total fluid amount or native NBT");
+                }
+                helper.assertSlotHasNoItem(x, 1, 0, FluidTankBlockEntity.FLUID_FILL_OUTPUT.getIndex());
+            }
+        }).thenSucceed());
+    }
+
+    @GameTest
+    public static void stackedEmptyBucketsRespectOutputCapacity(final GameplayTest test) {
+        testBothTanks(test, helper -> helper.startSequence().thenExecute(() -> {
+            for (int x : new int[] {0, 2}) {
+                helper.fillContainer(x, 1, 0, Fluids.WATER, 3000);
+                helper.insertItemIntoSlot(x, 1, 0, FluidTankBlockEntity.FLUID_DRAIN_INPUT.getIndex(), new ItemStack(Items.BUCKET, 3));
+            }
+        }).thenExecuteAfter(20, () -> {
+            for (int x : new int[] {0, 2}) {
+                helper.assertContainerHasExactly(x, 1, 0, Fluids.WATER, 2000);
+                helper.assertContainerHasExactly(x, 1, 0, Items.BUCKET, 2);
+                helper.assertContainerHasExactly(x, 1, 0, Items.WATER_BUCKET, 1);
+            }
+        }).thenSucceed());
+    }
+
+    private static void testBothTanks(GameplayTest test, Consumer<EnderGameTestHelper> body) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(3, 1, 1)
+            .set(0, 0, 0, EIOBlocks.FLUID_TANK.get().defaultBlockState())
+            .set(2, 0, 0, EIOBlocks.PRESSURIZED_FLUID_TANK.get().defaultBlockState()));
+        test.onGameTest(EnderGameTestHelper.class, body);
+    }
+
     @GameTest
     // Ensures the fluid tank can store fluids with components
     public static void fluidTankStoresComponents(final GameplayTest test) {
@@ -101,7 +223,7 @@ public class FluidTankTests {
             }).thenExecuteAfter(2, () -> {
                 helper.assertContainerHasExactly(0, 1, 0, contents);
                 var tank = helper.getBlockEntity(0, 1, 0, FluidTankBlockEntity.class);
-                var drained = tank.getFluidHandler().drain(500, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                var drained = tank.getFluidHandler().drain(500, IFluidHandler.FluidAction.EXECUTE);
                 if (drained.getAmount() != 500 || !drained.isFluidEqual(contents)) {
                     throw new GameTestAssertException("Restored tank cannot transfer its saved fluid");
                 }
