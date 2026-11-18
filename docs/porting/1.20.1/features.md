@@ -207,7 +207,7 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | `BROKEN_SPAWNER` | [EIOItems:177](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `GLIDER` | [EIOItems:194](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `ENDERIOS` | [EIOItems:205](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `SOUL_VIAL` | [EIOItems:212](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `SOUL_VIAL` | [EIOItems:221](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. A native survival player captures a named cow and librarian from a stack of two, reconnects after restart, and releases them with names, health and trades intact. Client state, filled model and glint synchronize. Dispenser capture and release pass. A filled 6.2 vial and an old empty stack both convert, and the migrated vial releases correctly after another restart. Configurable spawner replacement and wider packaged capture restrictions remain open. [Cycle 067](cycle-067.md) |
 | `VOID_VIAL` | [EIOItems:213](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `EXPERIENCE_ROD` | [EIOItems:214](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `YETA_WRENCH` | [EIOItems:215](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
