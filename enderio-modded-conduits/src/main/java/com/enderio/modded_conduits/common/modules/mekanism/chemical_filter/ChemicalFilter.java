@@ -1,15 +1,15 @@
 package com.enderio.modded_conduits.common.modules.mekanism.chemical_filter;
 
-import mekanism.api.chemical.ChemicalStack;
-import mekanism.api.chemical.IChemicalHandler;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalHandlerAdapter;
 import org.jetbrains.annotations.Nullable;
 
 public interface ChemicalFilter {
     /**
-     * Test whether the fluid stack passes this filter.
+     * Test whether the chemical stack passes this filter.
      * @param target The target handler which can be used for comparisons using the destination before moving.
      * @param stack The stack being tested.
-     * @return The stack that is permitted (can differ in amount), use {@link ChemicalStack#EMPTY} to transfer nothing.
+     * @return The stack that is permitted (can differ in amount), use {@link ChemicalResource#EMPTY} to transfer nothing.
      */
-    ChemicalStack test(@Nullable IChemicalHandler target, ChemicalStack stack);
+    ChemicalResource test(@Nullable ChemicalHandlerAdapter target, ChemicalResource stack);
 }

@@ -31,7 +31,6 @@ import com.enderio.modded_conduits.common.modules.mekanism.heat.HeatConduitConne
 import com.enderio.modded_conduits.common.modules.mekanism.heat.HeatTicker;
 import com.enderio.modded_conduits.common.modules.mekanism.laserio.MekanismLaserIOCompat;
 import mekanism.api.MekanismAPI;
-import mekanism.api.chemical.IChemicalHandler;
 import mekanism.api.heat.IHeatHandler;
 import net.minecraft.Util;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
@@ -57,8 +56,9 @@ import net.minecraft.world.item.Items;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.common.capabilities.Capability;
-import net.neoforged.neoforge.capabilities.ItemCapability;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
+import com.enderio.core.common.capability.ItemCapabilityRegistry;
 import net.neoforged.neoforge.common.conditions.ICondition;
 import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -135,19 +135,8 @@ public class MekanismModule implements ConduitCommonModule {
         MENUS.register("chemical_filter", EnderChemicalFilterItem.Type.BASIC::openMenu);
 
     public static class Capabilities {
-        public static final ItemCapability<ChemicalFilter, Void> CHEMICAL_FILTER = ItemCapability.createVoid(EnderIO.rl("chemical_filter"), ChemicalFilter.class);
-
-        public static final Capability<IChemicalHandler> CHEMICAL = BlockCapability.createSided(
-                ResourceLocation.fromNamespaceAndPath(MekanismAPI.MEKANISM_MODID, "chemical_handler"),
-                IChemicalHandler.class);
-        public static final Capability<IHeatHandler> HEAT = BlockCapability.createSided(
-                ResourceLocation.fromNamespaceAndPath(MekanismAPI.MEKANISM_MODID, "heat_handler"), IHeatHandler.class);
-
-        public static class Item {
-            public static final ItemCapability<IChemicalHandler, Void> CHEMICAL = ItemCapability.createVoid(
-                    ResourceLocation.fromNamespaceAndPath(MekanismAPI.MEKANISM_MODID, "chemical_handler"),
-                    IChemicalHandler.class);
-        }
+        public static final Capability<ChemicalFilter> CHEMICAL_FILTER = CapabilityManager.get(new CapabilityToken<>() {});
+        public static final Capability<IHeatHandler> HEAT = mekanism.common.capabilities.Capabilities.HEAT_HANDLER;
     }
 
     public static final Component CHEMICAL_CONDUIT_CHANGE_FLUID1 = tooltip("chemical/change_fluid1");
@@ -178,7 +167,9 @@ public class MekanismModule implements ConduitCommonModule {
         CONDUIT_DATA_TYPES.register(modEventBus);
         CONDUIT_CONNECTION_CONFIG_TYPES.register(modEventBus);
         CONDUIT_NETWORK_CONTEXT_TYPES.register(modEventBus);
-        modEventBus.addListener(this::registerCapabilities);
+        registerCapabilities();
+        modEventBus.addListener((net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent event) ->
+            event.register(ChemicalFilter.class));
         modEventBus.addListener(this::addToCreativeTabs);
 
         if (ModList.get().isLoaded("laserio")) {
@@ -186,18 +177,13 @@ public class MekanismModule implements ConduitCommonModule {
         }
     }
 
-    private void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerItem(
-            Capabilities.CHEMICAL_FILTER,
-            EnderChemicalFilterItem.CHEMICAL_FILTER_PROVIDER,
-            BASIC_CHEMICAL_FILTER.get()
-        );
-
-        event.registerItem(
-            EnderIOCapabilities.FILTER_MENU_PROVIDER,
-            AbstractFilterItem.FILTER_MENU_PROVIDER,
-            BASIC_CHEMICAL_FILTER.get()
-        );
+    private void registerCapabilities() {
+        var registry = new ItemCapabilityRegistry(EnderIO.rl("mekanism_filters"));
+        registry.register(Capabilities.CHEMICAL_FILTER, EnderChemicalFilterItem.CHEMICAL_FILTER_PROVIDER,
+            BASIC_CHEMICAL_FILTER.getId());
+        registry.register(EnderIOCapabilities.FILTER_MENU_PROVIDER, AbstractFilterItem.FILTER_MENU_PROVIDER,
+            BASIC_CHEMICAL_FILTER.getId());
+        registry.register();
     }
 
     private void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {

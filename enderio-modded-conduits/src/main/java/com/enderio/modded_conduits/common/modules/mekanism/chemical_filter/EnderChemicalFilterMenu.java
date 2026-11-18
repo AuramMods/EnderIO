@@ -4,7 +4,7 @@ import com.enderio.core.annotations.UseOnly;
 import com.enderio.core.common.network.menu.BoolSyncSlot;
 import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
-import mekanism.api.chemical.ChemicalStack;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
 import net.minecraft.core.NonNullList;
 import com.enderio.core.common.item.ItemDataKey;
 import net.minecraft.world.entity.player.Inventory;
@@ -37,7 +37,7 @@ public class EnderChemicalFilterMenu extends AbstractFilterMenu<EnderChemicalFil
             addSyncSlot(ChemicalStackSyncSlot.readOnly(() -> getChemicalInFilter(slotIndex)));
 
             addSlot(new ChemicalFilterSlot(() -> getChemicalInFilter(slotIndex), stack -> setChemicalInFilter(slotIndex, stack),
-                i, 14 + (i % 5) * 18, 27 + 20 * (i / 5)));
+                i, 14 + (i % 9) * 18, 27 + 18 * (i / 9)));
         }
 
         addPlayerInventorySlots(14, 45 + type.rowCount() * 18);
@@ -73,22 +73,22 @@ public class EnderChemicalFilterMenu extends AbstractFilterMenu<EnderChemicalFil
     }
 
     @UseOnly(LogicalSide.SERVER)
-    private ChemicalStack getChemicalInFilter(int slotIndex) {
+    private ChemicalResource getChemicalInFilter(int slotIndex) {
         var filter = getFilter();
         if (slotIndex >= filter.matches().size()) {
-            return ChemicalStack.EMPTY;
+            return ChemicalResource.EMPTY;
         }
 
         return filter.matches().get(slotIndex);
     }
 
     @UseOnly(LogicalSide.SERVER)
-    private void setChemicalInFilter(int slotIndex, ChemicalStack stack) {
+    private void setChemicalInFilter(int slotIndex, ChemicalResource stack) {
         modifyFilter(filter -> {
             // Copy match list
-            var matches = NonNullList.withSize(type.slotCount(), ChemicalStack.EMPTY);
+            var matches = NonNullList.withSize(type.slotCount(), ChemicalResource.EMPTY);
             for (int i = 0; i < matches.size(); i++) {
-                matches.set(i, i < filter.matches().size() ? filter.matches().get(i) : ChemicalStack.EMPTY);
+                matches.set(i, i < filter.matches().size() ? filter.matches().get(i) : ChemicalResource.EMPTY);
             }
 
             // Change the entry

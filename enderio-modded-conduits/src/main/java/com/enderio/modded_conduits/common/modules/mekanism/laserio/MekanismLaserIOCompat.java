@@ -1,30 +1,21 @@
 package com.enderio.modded_conduits.common.modules.mekanism.laserio;
 
-import net.minecraft.core.Direction;
 import com.direwolf20.laserio.common.items.cards.BaseCard;
 import com.direwolf20.laserio.setup.Registration;
+import com.enderio.core.common.capability.ItemCapabilityRegistry;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
-import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.ChemicalFilter;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import java.util.function.BiFunction;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
-public class MekanismLaserIOCompat {
-    public static final BiFunction<ItemStack, Direction, ChemicalFilter> CARD_CHEMICAL_FILTER_PROVIDER = (stack,
-            v) -> new LaserChemicalFilter(BaseCard.getFilter(stack));
-
-    public static final BiFunction<ItemStack, Direction, ChemicalFilter> CHEMICAL_FILTER_PROVIDER = (stack,
-            v) -> new LaserChemicalFilter(stack);
-
+public final class MekanismLaserIOCompat {
     public static void init(IEventBus eventBus) {
-        eventBus.addListener(MekanismLaserIOCompat::registerCapEvent);
-    }
-
-    @SubscribeEvent
-    public static void registerCapEvent(RegisterCapabilitiesEvent event) {
-        event.registerItem(MekanismModule.Capabilities.CHEMICAL_FILTER, CARD_CHEMICAL_FILTER_PROVIDER, Registration.Card_Chemical.get());
-        event.registerItem(MekanismModule.Capabilities.CHEMICAL_FILTER, CHEMICAL_FILTER_PROVIDER, Registration.Filter_Basic.get());
+        var registry = new ItemCapabilityRegistry(ResourceLocation.parse("enderio:laserio_chemical_filters"));
+        registry.register(MekanismModule.Capabilities.CHEMICAL_FILTER,
+            (stack, side) -> new LaserChemicalFilter(stack), Registration.Filter_Basic.getId());
+        // LaserIO 1.20.1 has no built-in chemical card. Bind by ID if an extension supplies it.
+        registry.register(MekanismModule.Capabilities.CHEMICAL_FILTER,
+            (stack, side) -> new LaserChemicalFilter(() -> BaseCard.getFilter(stack)),
+            ResourceLocation.parse("laserio:card_chemical"));
+        registry.register();
     }
 }

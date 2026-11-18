@@ -2,32 +2,32 @@ package com.enderio.modded_conduits.common.modules.mekanism.chemical_filter;
 
 import com.enderio.enderio.content.filters.FilterSlot;
 import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
-import mekanism.api.chemical.ChemicalStack;
-import mekanism.api.chemical.IChemicalHandler;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalHandlerAdapter;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class ChemicalFilterSlot extends FilterSlot<ChemicalStack> {
+public class ChemicalFilterSlot extends FilterSlot<ChemicalResource> {
 
-    public ChemicalFilterSlot(Supplier<ChemicalStack> getter, Consumer<ChemicalStack> setter, int slot, int x, int y) {
+    public ChemicalFilterSlot(Supplier<ChemicalResource> getter, Consumer<ChemicalResource> setter, int slot, int x, int y) {
         super(getter, setter, slot, x, y);
     }
 
     @Override
-    protected ChemicalStack emptyResource() {
-        return ChemicalStack.EMPTY;
+    protected ChemicalResource emptyResource() {
+        return ChemicalResource.EMPTY;
     }
 
     @Override
-    public Optional<ChemicalStack> getResourceFrom(ItemStack itemStack) {
-        IChemicalHandler capability = itemStack.getCapability(MekanismModule.Capabilities.Item.CHEMICAL);
+    public Optional<ChemicalResource> getResourceFrom(ItemStack itemStack) {
+        ChemicalHandlerAdapter capability = ChemicalHandlerAdapter.find(capabilityType -> itemStack.getCapability(capabilityType).orElse(null));
         if (capability != null) {
-            var ghost = capability.getChemicalInTank(0).copy();
-            if (!ghost.isEmpty()) {
-                return Optional.of(ghost);
+            for (int tank = 0; tank < capability.getChemicalTanks(); tank++) {
+                var ghost = capability.getChemicalInTank(tank);
+                if (!ghost.isEmpty()) return Optional.of(ghost);
             }
         }
 

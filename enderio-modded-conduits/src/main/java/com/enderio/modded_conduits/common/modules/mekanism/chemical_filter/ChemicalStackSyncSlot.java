@@ -5,8 +5,10 @@ import com.enderio.core.common.network.menu.payload.LongSlotPayload;
 import com.enderio.core.common.network.menu.payload.PairSlotPayload;
 import com.enderio.core.common.network.menu.payload.ResourceLocationSlotPayload;
 import com.enderio.core.common.network.menu.payload.SlotPayload;
-import mekanism.api.MekanismAPI;
-import mekanism.api.chemical.ChemicalStack;
+import mekanism.api.chemical.ChemicalType;
+import com.enderio.core.common.network.menu.payload.StringSlotPayload;
+import com.enderio.core.common.network.menu.payload.NullSlotPayload;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
@@ -18,55 +20,55 @@ public abstract class ChemicalStackSyncSlot implements SyncSlot {
 
     public static ChemicalStackSyncSlot standalone() {
         return new ChemicalStackSyncSlot() {
-            private ChemicalStack value = ChemicalStack.EMPTY;
+            private ChemicalResource value = ChemicalResource.EMPTY;
 
             @Override
-            public ChemicalStack get() {
+            public ChemicalResource get() {
                 return value;
             }
 
             @Override
-            public void set(ChemicalStack value) {
+            public void set(ChemicalResource value) {
                 this.value = value;
             }
         };
     }
 
-    public static ChemicalStackSyncSlot simple(Supplier<ChemicalStack> getter, Consumer<ChemicalStack> setter) {
+    public static ChemicalStackSyncSlot simple(Supplier<ChemicalResource> getter, Consumer<ChemicalResource> setter) {
         return new ChemicalStackSyncSlot() {
 
             @Override
-            public ChemicalStack get() {
+            public ChemicalResource get() {
                 return getter.get();
             }
 
             @Override
-            public void set(ChemicalStack value) {
+            public void set(ChemicalResource value) {
                 setter.accept(value);
             }
         };
     }
 
-    public static ChemicalStackSyncSlot readOnly(Supplier<ChemicalStack> getter) {
+    public static ChemicalStackSyncSlot readOnly(Supplier<ChemicalResource> getter) {
         return new ChemicalStackSyncSlot() {
 
             @Override
-            public ChemicalStack get() {
+            public ChemicalResource get() {
                 return getter.get();
             }
 
             @Override
-            public void set(ChemicalStack value) {
+            public void set(ChemicalResource value) {
                 throw new UnsupportedOperationException("Attempt to set a read-only sync slot.");
             }
         };
     }
 
-    private ChemicalStack lastValue = ChemicalStack.EMPTY;
+    private ChemicalResource lastValue = ChemicalResource.EMPTY;
 
-    public abstract ChemicalStack get();
+    public abstract ChemicalResource get();
 
-    public abstract void set(ChemicalStack value);
+    public abstract void set(ChemicalResource value);
 
     @Override
     public ChangeType detectChanges() {
@@ -75,7 +77,7 @@ public abstract class ChemicalStackSyncSlot implements SyncSlot {
             return ChangeType.NONE;
         }
 
-        var changeType = currentValue.getChemical().equals(lastValue.getChemical()) ? ChangeType.PARTIAL : ChangeType.FULL;
+        var changeType = ChemicalResource.isSameChemical(currentValue, lastValue) ? ChangeType.PARTIAL : ChangeType.FULL;
         lastValue = currentValue.copy();
         return changeType;
     }
@@ -86,19 +88,27 @@ public abstract class ChemicalStackSyncSlot implements SyncSlot {
             return new LongSlotPayload(get().getAmount());
         }
 
-        return new PairSlotPayload(new ResourceLocationSlotPayload(get().getChemical().getRegistryName()), new LongSlotPayload(get().getAmount()));
+        var value = get();
+        if (value.isEmpty()) return new NullSlotPayload();
+        return new PairSlotPayload(new PairSlotPayload(new StringSlotPayload(value.family().getSerializedName()),
+            new ResourceLocationSlotPayload(value.getChemical().getRegistryName())), new LongSlotPayload(value.getAmount()));
     }
 
     @Override
     public void unpackPayload(Level level, SlotPayload payload) {
-        if (payload instanceof LongSlotPayload(long amount)) {
-            set(get().copyWithAmount(amount));
-        } else if (payload instanceof PairSlotPayload(SlotPayload left, SlotPayload right)) {
-            if (left instanceof ResourceLocationSlotPayload(ResourceLocation chemicalId)
-                && right instanceof LongSlotPayload(long amount)) {
-                var stack = new ChemicalStack(MekanismAPI.CHEMICAL_REGISTRY.get(chemicalId), amount);
-                set(stack);
-            }
+        if (payload instanceof NullSlotPayload) {
+            set(ChemicalResource.EMPTY);
+        } else if (payload instanceof LongSlotPayload amountPayload) {
+            if (amountPayload.value() < 0 || get().isEmpty()) throw new IllegalArgumentException("Invalid partial chemical update");
+            set(get().copyWithAmount(amountPayload.value()));
+        } else if (payload instanceof PairSlotPayload pair
+                && pair.left() instanceof PairSlotPayload identity
+                && identity.left() instanceof StringSlotPayload family
+                && identity.right() instanceof ResourceLocationSlotPayload chemical
+                && pair.right() instanceof LongSlotPayload amount) {
+            set(ChemicalResource.fromRegistry(ChemicalType.fromString(family.value()), chemical.value(), amount.value()));
+        } else {
+            throw new IllegalArgumentException("Invalid chemical sync payload");
         }
     }
 }

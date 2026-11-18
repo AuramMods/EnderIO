@@ -7,7 +7,7 @@ import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import mekanism.api.chemical.ChemicalStack;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import org.jetbrains.annotations.Nullable;
@@ -20,23 +20,24 @@ public class ChemicalConduitData implements ConduitData<ChemicalConduitData> {
             .mapCodec(
                     instance -> instance
                             .group(Codec.BOOL.fieldOf("should_reset").forGetter(i -> i.shouldReset),
-                                    ChemicalStack.OPTIONAL_CODEC.optionalFieldOf("locked_fluid", ChemicalStack.EMPTY)
+                                    new com.enderio.core.common.serialization.StrictOptionalFieldCodec<>(ChemicalResource.OPTIONAL_CODEC, "locked_fluid")
+                                            .xmap(value -> value.orElse(ChemicalResource.EMPTY), java.util.Optional::of)
                                             .forGetter(i -> i.lockedChemical))
                             .apply(instance, ChemicalConduitData::new));
 
     public static final PacketCodec<ChemicalConduitData> STREAM_CODEC = PacketCodec.composite(
-            PacketCodecs.BOOL, i -> i.shouldReset, ChemicalStack.OPTIONAL_STREAM_CODEC, i -> i.lockedChemical,
+            PacketCodecs.BOOL, i -> i.shouldReset, ChemicalResource.OPTIONAL_STREAM_CODEC, i -> i.lockedChemical,
             ChemicalConduitData::new);
 
-    private ChemicalStack lockedChemical = ChemicalStack.EMPTY;
+    private ChemicalResource lockedChemical = ChemicalResource.EMPTY;
     private boolean shouldReset = false;
 
     public ChemicalConduitData() {
     }
 
-    public ChemicalConduitData(boolean shouldReset, ChemicalStack lockedChemical) {
+    public ChemicalConduitData(boolean shouldReset, ChemicalResource lockedChemical) {
         this.shouldReset = shouldReset;
-        this.lockedChemical = lockedChemical;
+        this.lockedChemical = lockedChemical.copy();
     }
 
     public boolean shouldReset() {
@@ -47,12 +48,12 @@ public class ChemicalConduitData implements ConduitData<ChemicalConduitData> {
         this.shouldReset = shouldReset;
     }
 
-    public ChemicalStack lockedChemical() {
+    public ChemicalResource lockedChemical() {
         return lockedChemical;
     }
 
-    public void setLockedChemical(ChemicalStack lockedChemical) {
-        this.lockedChemical = lockedChemical;
+    public void setLockedChemical(ChemicalResource lockedChemical) {
+        this.lockedChemical = lockedChemical.copy();
     }
 
     @Override

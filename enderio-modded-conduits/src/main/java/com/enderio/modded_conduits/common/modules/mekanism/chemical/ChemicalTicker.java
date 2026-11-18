@@ -9,8 +9,8 @@ import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
 import com.google.common.collect.Maps;
 import mekanism.api.Action;
 import mekanism.api.chemical.Chemical;
-import mekanism.api.chemical.ChemicalStack;
-import mekanism.api.chemical.IChemicalHandler;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalHandlerAdapter;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 
@@ -40,8 +40,7 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
                 var extractConduit = extractConnection.node().conduit(conduitType());
                 final long transferRate = extractConduit.value().transferRatePerTick() * conduitType().getTickRate(extractConduit);
 
-                IChemicalHandler extractHandler = extractConnection
-                        .getSidedCapability(MekanismModule.Capabilities.CHEMICAL);
+                ChemicalHandlerAdapter extractHandler = ChemicalHandlerAdapter.find(extractConnection::getSidedCapability);
                 if (extractHandler == null) {
                     continue;
                 }
@@ -62,11 +61,10 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
 
     private long doChemicalTransfer(Chemical chemical, long maxTransfer, ConduitBlockConnection extractConnection,
             List<ConduitConnectionPath> insertPaths, Map<ConduitConnectionPath, Long> insertedPerPath) {
-        var receiverHandler = Objects
-                .requireNonNull(extractConnection.getSidedCapability(MekanismModule.Capabilities.CHEMICAL));
+        var receiverHandler = Objects.requireNonNull(ChemicalHandlerAdapter.find(extractConnection::getSidedCapability));
 
         // Attempt to drain chemical from the target.
-        var extractedChemical = receiverHandler.extractChemical(new ChemicalStack(chemical, maxTransfer),
+        var extractedChemical = receiverHandler.extractChemical(new ChemicalResource(chemical, maxTransfer),
                 Action.SIMULATE);
         if (extractedChemical.isEmpty()) {
             return maxTransfer;
@@ -75,7 +73,7 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
         // Test the extracted fluid against the target
         var extractFilter = extractConnection.inventory()
                 .getStackInSlot(ChemicalConduit.EXTRACT_FILTER_SLOT)
-                .getCapability(MekanismModule.Capabilities.CHEMICAL_FILTER);
+                .getCapability(MekanismModule.Capabilities.CHEMICAL_FILTER).orElse(null);
 
         if (extractFilter != null) {
             extractedChemical = extractFilter.test(receiverHandler, extractedChemical);
@@ -95,7 +93,7 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
                 continue;
             }
 
-            IChemicalHandler insertHandler = insertConnection.getSidedCapability(MekanismModule.Capabilities.CHEMICAL);
+            ChemicalHandlerAdapter insertHandler = ChemicalHandlerAdapter.find(insertConnection::getSidedCapability);
             if (insertHandler == null) {
                 continue;
             }
@@ -110,7 +108,7 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
             // Test fluid against insert filter.
             var insertFilter = insertConnection.inventory()
                     .getStackInSlot(ChemicalConduit.INSERT_FILTER_SLOT)
-                    .getCapability(MekanismModule.Capabilities.CHEMICAL_FILTER);
+                    .getCapability(MekanismModule.Capabilities.CHEMICAL_FILTER).orElse(null);
 
             if (insertFilter != null) {
                 chemicalToInsert = insertFilter.test(insertHandler, chemicalToInsert);
@@ -136,24 +134,24 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
         return maxTransfer;
     }
 
-    public static ChemicalStack tryChemicalTransfer(IChemicalHandler chemicalDestination,
-            IChemicalHandler chemicalSource, int maxAmount, boolean doTransfer) {
-        ChemicalStack drainable = chemicalSource.extractChemical(maxAmount, Action.SIMULATE);
+    public static ChemicalResource tryChemicalTransfer(ChemicalHandlerAdapter chemicalDestination,
+            ChemicalHandlerAdapter chemicalSource, int maxAmount, boolean doTransfer) {
+        ChemicalResource drainable = chemicalSource.extractChemical(maxAmount, Action.SIMULATE);
         return !drainable.isEmpty()
                 ? tryChemicalTransfer_Internal(chemicalDestination, chemicalSource, drainable, doTransfer)
-                : ChemicalStack.EMPTY;
+                : ChemicalResource.EMPTY;
     }
 
-    public static ChemicalStack tryChemicalTransfer(IChemicalHandler chemicalDestination,
-            IChemicalHandler chemicalSource, ChemicalStack resource, boolean doTransfer) {
-        ChemicalStack drainable = chemicalSource.extractChemical(resource, Action.SIMULATE);
-        return !drainable.isEmpty() && ChemicalStack.isSameChemical(resource, drainable)
+    public static ChemicalResource tryChemicalTransfer(ChemicalHandlerAdapter chemicalDestination,
+            ChemicalHandlerAdapter chemicalSource, ChemicalResource resource, boolean doTransfer) {
+        ChemicalResource drainable = chemicalSource.extractChemical(resource, Action.SIMULATE);
+        return !drainable.isEmpty() && ChemicalResource.isSameChemical(resource, drainable)
                 ? tryChemicalTransfer_Internal(chemicalDestination, chemicalSource, drainable, doTransfer)
-                : ChemicalStack.EMPTY;
+                : ChemicalResource.EMPTY;
     }
 
-    private static ChemicalStack tryChemicalTransfer_Internal(IChemicalHandler chemicalDestination,
-            IChemicalHandler chemicalSource, ChemicalStack drainable, boolean doTransfer) {
+    private static ChemicalResource tryChemicalTransfer_Internal(ChemicalHandlerAdapter chemicalDestination,
+            ChemicalHandlerAdapter chemicalSource, ChemicalResource drainable, boolean doTransfer) {
         long fillableAmount = drainable.getAmount()
                 - chemicalDestination.insertChemical(drainable, Action.SIMULATE).getAmount();
         if (fillableAmount > 0) {
@@ -162,7 +160,7 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
                 return drainable;
             }
 
-            ChemicalStack drained = chemicalSource.extractChemical(drainable, Action.EXECUTE);
+            ChemicalResource drained = chemicalSource.extractChemical(drainable, Action.EXECUTE);
             if (!drained.isEmpty()) {
                 long remainder = chemicalDestination.insertChemical(drained, Action.EXECUTE).getAmount();
                 drained.setAmount(drained.getAmount() - remainder);
@@ -170,6 +168,6 @@ public class ChemicalTicker extends ConduitTickerBase<ChemicalConduit> {
             }
         }
 
-        return ChemicalStack.EMPTY;
+        return ChemicalResource.EMPTY;
     }
 }

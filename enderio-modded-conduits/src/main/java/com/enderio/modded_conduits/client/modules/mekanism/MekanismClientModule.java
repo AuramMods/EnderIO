@@ -9,7 +9,8 @@ import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.EnderChemicalFilter;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
-import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraft.client.gui.screens.MenuScreens;
 
 public class MekanismClientModule implements ConduitClientModule {
 
@@ -30,8 +31,8 @@ public class MekanismClientModule implements ConduitClientModule {
         event.register(MekanismModule.TYPE_HEAT.get(), new HeatConduitScreenType());
     }
 
-    private void registerMenuScreens(RegisterMenuScreensEvent event) {
-        event.register(MekanismModule.CHEMICAL_FILTER_MENU.get(), EnderChemicalFilterScreen::new);
+    private void registerMenuScreens(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> MenuScreens.register(MekanismModule.CHEMICAL_FILTER_MENU.get(), EnderChemicalFilterScreen::new));
     }
 
     private void registerClientComponents(RegisterClientTooltipComponentFactoriesEvent event) {

@@ -19,7 +19,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
+import com.enderio.core.common.serialization.ComponentCodecs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -42,7 +42,7 @@ public record ChemicalConduit(ResourceLocation texture, Component description, l
         .mapCodec(
             builder -> builder
                 .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(ChemicalConduit::texture),
-                    ComponentSerialization.CODEC.fieldOf("description")
+                    ComponentCodecs.COMPONENT.fieldOf("description")
                         .forGetter(ChemicalConduit::description),
                     Codec.LONG.fieldOf("transfer_rate").forGetter(ChemicalConduit::transferRatePerTick))
                 .apply(builder, ChemicalConduit::new));
@@ -76,7 +76,7 @@ public record ChemicalConduit(ResourceLocation texture, Component description, l
 
     @Override
     public boolean canConnectToBlock(Level level, ConduitCapabilityAccessor capabilityAccessor, BlockPos conduitPos, Direction direction) {
-        return capabilityAccessor.getSidedCapability(MekanismModule.Capabilities.CHEMICAL, direction) != null;
+        return ChemicalHandlerAdapter.find(capability -> capabilityAccessor.getSidedCapability(capability, direction)) != null;
     }
 
     @Override
@@ -98,7 +98,7 @@ public record ChemicalConduit(ResourceLocation texture, Component description, l
 
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
-        return stack.getCapability(MekanismModule.Capabilities.CHEMICAL_FILTER) != null;
+        return stack.getCapability(MekanismModule.Capabilities.CHEMICAL_FILTER).isPresent();
     }
 
     @Override

@@ -10,7 +10,7 @@ import com.enderio.enderio.content.filters.item.general.EnderItemFilterMenu;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.ChemicalFilterSlot;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.EnderChemicalFilterMenu;
 import com.mojang.blaze3d.systems.RenderSystem;
-import mekanism.api.chemical.ChemicalStack;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -123,7 +123,7 @@ public class EnderChemicalFilterScreen extends EnderContainerScreen<EnderChemica
     @Override
     protected boolean renderCustomTooltip(GuiGraphics guiGraphics, int x, int y) {
         if (this.menu.getCarried().isEmpty() && this.hoveredSlot instanceof ChemicalFilterSlot chemicalFilterSlot) {
-            ChemicalStack value = chemicalFilterSlot.getResource();
+            ChemicalResource value = chemicalFilterSlot.getResource();
             if (!value.isEmpty()) {
                 guiGraphics.renderTooltip(this.font, value.getTextComponent(), x, y);
                 return true;

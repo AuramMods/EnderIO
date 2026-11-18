@@ -8,6 +8,21 @@ val gameTestSourceSet = sourceSets.create("gametest") {
 }
 configurations[gameTestSourceSet.implementationConfigurationName].extendsFrom(configurations.implementation.get())
 
+// The optional Mekanism test profile loads the real mod without making it a core dependency.
+val mekanismGameTestSourceSet = sourceSets.create("mekanismGametest") {
+    compileClasspath += sourceSets.main.get().output + gameTestSourceSet.output
+    runtimeClasspath += sourceSets.main.get().output + gameTestSourceSet.output
+}
+configurations[mekanismGameTestSourceSet.implementationConfigurationName]
+    .extendsFrom(configurations[gameTestSourceSet.implementationConfigurationName])
+
+tasks.named<JavaCompile>(mekanismGameTestSourceSet.compileJavaTaskName) {
+    val addonSource = rootProject.file("enderio-modded-conduits/src/main/java/com/enderio/modded_conduits/common/modules/mekanism")
+    source(listOf("chemical/ChemicalResource.java", "chemical/ChemicalHandlerAdapter.java",
+        "chemical_filter/ChemicalFilter.java", "chemical_filter/EnderChemicalFilter.java",
+        "chemical_filter/ChemicalStackSyncSlot.java").map { addonSource.resolve(it) })
+}
+
 // Exercise the actual standalone main-mod state classes while the rest of the port
 // still cannot compile. These sources enter only the test output, never EnderCore's jar.
 tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
@@ -172,6 +187,9 @@ legacyForge {
         create("endercore") {
             sourceSet(sourceSets["main"])
         }
+        create("endercore_mekanism_tests") {
+            sourceSet(mekanismGameTestSourceSet)
+        }
         create("endercore_tests") {
             sourceSet(gameTestSourceSet)
         }
@@ -179,8 +197,19 @@ legacyForge {
 
     addModdingDependenciesTo(sourceSets.test.get())
     addModdingDependenciesTo(gameTestSourceSet)
+    addModdingDependenciesTo(mekanismGameTestSourceSet)
 
     runs {
+        create("mekanismGameTestServer") {
+            type = "gameTestServer"
+            programArguments.add("nogui")
+            systemProperty("java.awt.headless", "true")
+            sourceSet = mekanismGameTestSourceSet
+            gameDirectory = project.file("run/mekanism-gametest-server")
+            loadedMods = listOf(mods["endercore"], mods["endercore_tests"], mods["endercore_mekanism_tests"])
+            systemProperty("forge.enabledGameTestNamespaces", "endercore_mekanism_tests")
+            systemProperty("endercore.gametest.report", layout.buildDirectory.file("test-results/mekanismGameTestServer/results.xml").get().asFile.absolutePath)
+        }
         create("gameTestServer") {
             type = "gameTestServer"
             programArguments.add("nogui")
@@ -194,6 +223,10 @@ legacyForge {
     }
 }
 
+val mekanismTestModDependencies = obfuscation.createRemappingConfiguration(
+    configurations[mekanismGameTestSourceSet.implementationConfigurationName])
+dependencies.add(mekanismTestModDependencies.name, libs.mekanism)
+
 val prepareGameTestServerProfile = tasks.register<PrepareTestProfile>("prepareGameTestServerProfile") {
     gameDirectory = layout.projectDirectory.dir("run/gametest-server")
     client = false
@@ -202,7 +235,7 @@ tasks.matching { it.name == "runGameTestServer" }.configureEach {
     dependsOn(prepareGameTestServerProfile)
 }
 tasks.named("check") {
-    dependsOn("runGameTestServer")
+    dependsOn("runGameTestServer", "runMekanismGameTestServer")
 }
 
 // Expand variables in mods.toml
@@ -273,4 +306,12 @@ tasks.named<ProcessResources>(gameTestSourceSet.processResourcesTaskName) {
         include("data/c/tags/entity_types/bosses.json")
         include("data/c/tags/entity_types/capturing_not_supported.json")
     }
+}
+
+val prepareMekanismGameTestServerProfile = tasks.register<PrepareTestProfile>("prepareMekanismGameTestServerProfile") {
+    gameDirectory = layout.projectDirectory.dir("run/mekanism-gametest-server")
+    client = false
+}
+tasks.matching { it.name == "runMekanismGameTestServer" }.configureEach {
+    dependsOn(prepareMekanismGameTestServerProfile)
 }

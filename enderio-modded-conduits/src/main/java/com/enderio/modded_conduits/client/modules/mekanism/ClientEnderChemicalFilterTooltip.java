@@ -3,7 +3,7 @@ package com.enderio.modded_conduits.client.modules.mekanism;
 import com.enderio.core.client.gui.tooltip.AbstractClientSlotListTooltip;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.EnderChemicalFilter;
 import com.mojang.blaze3d.systems.RenderSystem;
-import mekanism.api.chemical.ChemicalStack;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -25,7 +25,7 @@ public class ClientEnderChemicalFilterTooltip extends AbstractClientSlotListTool
         this.filter = filter;
     }
 
-    protected List<ChemicalStack> chemicalStacksToDisplay() {
+    protected List<ChemicalResource> chemicalStacksToDisplay() {
         return filter.matches().stream()
             .filter(fluidStack -> !fluidStack.isEmpty())
             .toList();
