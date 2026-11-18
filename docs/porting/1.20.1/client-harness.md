@@ -10,7 +10,7 @@ This test-only harness runs an actual Forge 1.20.1 client on the current macOS h
 
 The `clientSmoke` source set loads a separate QA mod. After the actual title screen finishes fading in, it checks narrator, all ten volume categories, native window/input state and all twelve enchanter/spawner baked block states. It captures `title-screen.png`, writes `result.json`, and stops the client. `run_smoke.py` combines that result with the native observer and ERROR/FATAL log lines. Inspect the image as well as the JSON.
 
-The development smoke profile loads Ender IO and EnderCore without optional integrations. The separate packaged profile below loads the shipped main jar, its nested EnderCore/addon/GraphLib dependencies and a standalone remapped QA mod. Integrated server, actual interactions, resource reload and multiplayer still need dedicated scenarios. The agent, QA mod, Swift observer and tests are excluded from distributable jars.
+The development smoke profile loads Ender IO and EnderCore without optional integrations. The separate packaged profile below loads the shipped main jar, its nested EnderCore/addon/GraphLib dependencies and a standalone remapped QA mod. The single-player tank scenarios below provide limited integrated-server interaction/persistence evidence; other interactions, resource reload and dedicated multiplayer still need scenarios. The agent, QA mod, Swift observer and tests are excluded from distributable jars.
 
 ## Commands
 
@@ -88,3 +88,26 @@ Preparation reads the official Mojang version manifest and installed Forge versi
 The isolated `mods` directory receives only the main distributable and the separate QA jar during this no-optional-mod scenario. `installation.json` records both source hashes, installer hash, official client hash and resolved library/asset counts. The QA result records actual loaded mod IDs, versions and file paths (Forge's nested virtual jars report an empty file path here), and requires `endercore`, `enderio` and `enderio_modded_conduits`.
 
 [Cycle 039](cycle-039.md) verifies this installed profile's actual title-screen renderer and model loading, with zero observed native activation/visibility events and no ERROR/FATAL log lines. It does not establish gameplay or complete client parity. Use a disposable offline identity for local tests; Realms authentication is outside this harness.
+
+## Packaged single-player tanks
+
+The `singleplayer` scenario creates a disposable flat survival world through native `WorldOpenFlows`, opens a tank using the normal block-use packet and moves a water bucket through the normal inventory-click packet. It verifies the actual menu, exact container counts and fluid synchronization. A real redstone picker scroll sends the menu update to the server; a server-side fixture then adds 500 mB. The client verifies both menu and block-entity fluid, captures the rendered world, closes/saves the integrated server and reopens that same disk world. It opens a fresh menu and verifies persisted fluid, mode and inventory.
+
+After rebuilding and preparing the packaged installation with the current QA jar, run each variant separately:
+
+```sh
+python3 scripts/porting/client/run_smoke.py \
+  --launch build/port-runtime/cycle-040-client/launch.json \
+  --scenario singleplayer --tank standard --timeout 300 \
+  --output build/port-evidence/singleplayer-standard-example
+python3 scripts/porting/client/run_smoke.py \
+  --launch build/port-runtime/cycle-040-client/launch.json \
+  --scenario singleplayer --tank pressurized --timeout 300 \
+  --output build/port-evidence/singleplayer-pressurized-example
+```
+
+Use unique output names; the output basename also names the owned world inside the isolated installation. Do not run these concurrently against the same installation. Preparation resets the quiet options before launches. No user worlds, OS input injection, visible window, client teleport command or development classpath is used. Test fixture setup places blocks and seeds the player's inventory on the actual server thread; it is not player-driven placement coverage.
+
+Expected capacities are 16,000/32,000 mB. The bucket operation produces exactly one empty bucket and 1,000 mB, with no remaining water bucket. The later fixture addition produces 1,500 mB, visible to both the menu and renderer; `ACTIVE_WITH_SIGNAL`, that fluid amount and the single output bucket survive reopen. Fifteen checks and six actual framebuffer captures per variant are recorded in `result.json`, with independent native observation in `focus.json`.
+
+[Cycle 040](cycle-040.md) verifies both variants. This is limited packaged gameplay and integrated-server persistence evidence. It does not test a dedicated TCP server, all tank operations, all machines, all rendering backends or full feature parity.

@@ -11,6 +11,8 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--output", required=True, type=Path)
 parser.add_argument("--timeout", default=180, type=int)
 parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-harness/client-smoke-launch.json")
+parser.add_argument("--scenario", choices=("title", "singleplayer"), default="title")
+parser.add_argument("--tank", choices=("standard", "pressurized"), default="standard")
 args = parser.parse_args()
 output = args.output.resolve()
 output.mkdir(parents=True, exist_ok=False)
@@ -18,6 +20,9 @@ harness = json.loads((ROOT / "build/port-client-harness/harness.json").read_text
 launch = json.loads(args.launch.read_text())
 arguments = launch["arguments"]
 arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.output=" + str(output))
+arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.scenario=" + args.scenario)
+arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.worldName=" + output.name)
+arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.pressurized=" + str(args.tank == "pressurized").lower())
 environment = os.environ.copy()
 environment.update(launch["environment"])
 command = [harness["watch"], str(output / "focus.json"), str(args.timeout),
