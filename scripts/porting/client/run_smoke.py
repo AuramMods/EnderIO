@@ -15,6 +15,7 @@ parser.add_argument("--scenario", choices=("title", "singleplayer", "multiplayer
 parser.add_argument("--tank", choices=("standard", "pressurized"), default="standard")
 parser.add_argument("--server", default="127.0.0.1:25641")
 parser.add_argument("--multiplayer-phase", choices=("exercise", "verify"), default="exercise")
+parser.add_argument("--data-maps", action="store_true")
 args = parser.parse_args()
 output = args.output.resolve()
 output.mkdir(parents=True, exist_ok=False)
@@ -27,6 +28,8 @@ arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.worldName=" + outpu
 arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.pressurized=" + str(args.tank == "pressurized").lower())
 arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.server=" + args.server)
 arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.multiplayerPhase=" + args.multiplayer_phase)
+if args.data_maps:
+    arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.dataMaps=true")
 environment = os.environ.copy()
 environment.update(launch["environment"])
 command = [harness["watch"], str(output / "focus.json"), str(args.timeout),

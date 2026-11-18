@@ -1,5 +1,6 @@
 package com.enderio.port.clientqa;
 
+import com.enderio.core.common.datamap.DataMaps;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.client.content.machines.gui.screen.FluidTankScreen;
 import com.enderio.enderio.client.foundation.widgets.RedstoneControlPickerWidget;
@@ -18,6 +19,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
@@ -32,10 +34,12 @@ import java.util.Map;
 
 /** Only the client is instrumented; the external server receives real packets/console fixture commands. */
 final class ClientMultiplayerSmoke {
-    private enum Stage { TITLE, CONNECTING, FIXTURE, MENU, FILL, UPDATE, WORLD, DISCONNECTED, RECONNECTED, VERIFY, DONE }
+    private enum Stage { TITLE, CONNECTING, MAP_INITIAL, MAP_OVERRIDE, MAP_FINAL, FIXTURE, MENU, FILL, UPDATE, WORLD, DISCONNECTED, RECONNECTED, VERIFY, DONE }
     private final Minecraft minecraft = Minecraft.getInstance();
     private final String address = System.getProperty("enderio.clientqa.server");
     private final boolean verifyOnly = System.getProperty("enderio.clientqa.multiplayerPhase").equals("verify");
+    private final boolean dataMaps = Boolean.getBoolean("enderio.clientqa.dataMaps");
+    private RecipeManager disconnectedMapOwner;
     private final BlockPos tankPos = new BlockPos(0, 80, 0);
     private final Map<String, Object> checks = new LinkedHashMap<>();
     private final Map<String, Object> observations = new LinkedHashMap<>();
@@ -96,6 +100,20 @@ final class ClientMultiplayerSmoke {
             new BlockHitResult(new Vec3(0.5, 80.5, 1), Direction.SOUTH, tankPos, false));
     }
 
+    private boolean awaitDataMaps(String phase, ClientDataMapProbe expected) {
+        var observed = ClientDataMapProbe.read();
+        observations.put(phase + "_data_maps", observed);
+        if (!expected.equals(observed)) {
+            if (System.nanoTime() - stageStarted > 25_000_000_000L) {
+                throw new AssertionError(phase + " data map snapshot did not arrive. Actual " + observed);
+            }
+            return false;
+        }
+        check(phase + "_data_maps", true);
+        check(phase + "_grinding_ball_tooltips", expected.tooltipsMatch(minecraft.player));
+        return true;
+    }
+
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
@@ -116,7 +134,22 @@ final class ClientMultiplayerSmoke {
                     if (!inWorld()) return;
                     checkConnection("dedicated_tcp_connection");
                     signal("connected");
-                    next(verifyOnly ? Stage.RECONNECTED : Stage.FIXTURE);
+                    next(verifyOnly ? Stage.RECONNECTED : dataMaps ? Stage.MAP_INITIAL : Stage.FIXTURE);
+                }
+                case MAP_INITIAL -> {
+                    if (!awaitDataMaps("tcp_login", ClientDataMapProbe.BASE)) return;
+                    signal("data_maps_initial");
+                    next(Stage.MAP_OVERRIDE);
+                }
+                case MAP_OVERRIDE -> {
+                    if (!awaitDataMaps("tcp_override", ClientDataMapProbe.OVERRIDE)) return;
+                    signal("data_maps_override");
+                    next(Stage.MAP_FINAL);
+                }
+                case MAP_FINAL -> {
+                    if (!awaitDataMaps("tcp_reload", ClientDataMapProbe.FINAL)) return;
+                    signal("data_maps_final");
+                    next(Stage.FIXTURE);
                 }
                 case FIXTURE -> {
                     if (!inWorld() || minecraft.player.distanceToSqr(0.5, 80, 4.5) > 1
@@ -166,9 +199,11 @@ final class ClientMultiplayerSmoke {
                     check("tcp_block_entity_update_reaches_renderer", true);
                     capture("world-filled");
                     next(Stage.DISCONNECTED);
+                    if (dataMaps) disconnectedMapOwner = minecraft.level.getRecipeManager();
                     minecraft.level.disconnect();
                     minecraft.clearLevel(new TitleScreen());
                     check("client_disconnected", minecraft.level == null && minecraft.getConnection() == null);
+                    if (dataMaps) check("tcp_logout_clears_data_maps", DataMaps.snapshot(disconnectedMapOwner).maps().isEmpty());
                     signal("disconnected");
                 }
                 case DISCONNECTED -> {
@@ -178,6 +213,13 @@ final class ClientMultiplayerSmoke {
                 }
                 case RECONNECTED -> {
                     if (!inWorld() || !minecraft.level.getBlockState(tankPos).is(EIOBlocks.FLUID_TANK.get())) return;
+                    if (dataMaps) {
+                        var phase = verifyOnly ? "tcp_restart" : "tcp_reconnect";
+                        if (!awaitDataMaps(phase, ClientDataMapProbe.FINAL)) return;
+                        if (!verifyOnly) {
+                            check("tcp_reconnect_new_recipe_owner", minecraft.level.getRecipeManager() != disconnectedMapOwner);
+                        }
+                    }
                     checkConnection(verifyOnly ? "tcp_after_server_restart" : "tcp_reconnected");
                     openTank();
                     next(Stage.VERIFY);

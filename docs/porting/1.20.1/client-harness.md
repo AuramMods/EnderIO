@@ -138,3 +138,5 @@ The expected sequence is:
 5. Stop/save the server, start a new server process on the same disk world and assert its saved NBT. Launch a new guarded client and verify the same state again through TCP and a fresh menu.
 
 No OS input is injected. Each client run records native focus/visibility observations, quiet settings, actual framebuffer PNGs, checks and logs beneath `build/port-evidence/<name>-exercise` or `-verify`. The server's `multiplayer-results.json` combines client summaries, native-console assertions, exit statuses and client/server artifact hashes. A native disconnect screen is captured immediately as a failed scenario, including its actual reason in `failure.png`. Console setup and direct fixture updates are not player placement or complete machine gameplay coverage.
+
+The optional `--data-maps` flag runs two live server-only datapack reloads before opening the tank. The client checks grinding-ball, VAT and range extender values, item tag changes, the native grinding-ball tooltip, logout cleanup and the final snapshot after reconnect and server restart. See the [cycle 046 scenario and commands](cycle-046.md).

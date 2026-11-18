@@ -50,18 +50,53 @@ def tank_state(amount, player=False):
     return conditions
 
 
+def write_data_map_fixture(pack, initial_override):
+    def write(relative, value):
+        path = pack / "data/enderio" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(value) + "\n")
+
+    grinding_tag = ["minecraft:flint", "minecraft:charcoal"] if initial_override else ["minecraft:flint"]
+    write("tags/items/port_qa_grinding.json", {"replace": True, "values": grinding_tag})
+    grinding = ({"OutputMultiplier": 1.5, "BonusMultiplier": 1.75, "PowerUse": 0.5, "Durability": 45678}
+                if initial_override else
+                {"OutputMultiplier": 2.0, "BonusMultiplier": 1.25, "PowerUse": 0.75, "Durability": 33333})
+    write("data_maps/item/grinding_ball.json", {"values": {"#enderio:port_qa_grinding": grinding}})
+    vat = "data_maps/item/vat_reagent.json"
+    range_extender = "data_maps/block/range_extender.json"
+    if initial_override:
+        write(vat, {"values": {"minecraft:gunpowder": {"#enderio:explosives": 2.25}},
+                    "remove": ["minecraft:fire_charge"]})
+        write(range_extender, {"values": {"enderio:wireless_charger_antenna": {"#enderio:range_extender": 29}},
+                               "remove": ["enderio:wireless_charger_antenna_advanced"]})
+    else:
+        (pack / "data/enderio" / vat).unlink()
+        (pack / "data/enderio" / range_extender).unlink()
+
+
 def run_client(args, server, phase, report):
     output = ROOT / "build/port-evidence" / (args.name + "-" + phase)
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
                "--launch", str(args.launch.resolve()), "--scenario", "multiplayer",
                "--server", f"127.0.0.1:{args.port}", "--multiplayer-phase", phase,
                "--timeout", "300", "--output", str(output)]
+    if args.data_maps:
+        command.append("--data-maps")
     with (output.parent / (output.name + "-run.log")).open("w") as log:
         client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         try:
             wait_signal(client, output, "connected")
             print(f"Client {phase}: actual TCP world connection established", flush=True)
             if phase == "exercise":
+                if args.data_maps:
+                    pack = server.directory / "port-multiplayer/datapacks/port_data_maps"
+                    wait_signal(client, output, "data_maps_initial")
+                    write_data_map_fixture(pack, True)
+                    server.command("reload")
+                    wait_signal(client, output, "data_maps_override")
+                    write_data_map_fixture(pack, False)
+                    server.command("reload")
+                    wait_signal(client, output, "data_maps_final")
                 server.command("clear EnderIOQA")
                 server.command("item replace entity EnderIOQA inventory.0 with minecraft:water_bucket 1")
                 server.command("tp EnderIOQA 0.5 80 4.5 180 15")
@@ -88,6 +123,7 @@ def main():
     parser.add_argument("--jar", required=True, type=Path)
     parser.add_argument("--launch", required=True, type=Path)
     parser.add_argument("--port", type=int, default=25641)
+    parser.add_argument("--data-maps", action="store_true", help="Exercise live server-only data map and tag changes")
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a single directory name")
@@ -96,7 +132,8 @@ def main():
     artifact = args.jar.read_bytes()
     report = {"passed": False, "port": args.port, "serverAddress": "127.0.0.1", "onlineMode": False,
               "jar": str(args.jar.resolve()), "sha256": hashlib.sha256(artifact).hexdigest(),
-              "installerSha256": digest(args.installer), "assertions": [], "clients": [], "servers": []}
+              "installerSha256": digest(args.installer), "assertions": [], "clients": [], "servers": [],
+              "dataMaps": args.data_maps}
     try:
         with (directory / "installer.log").open("w") as log:
             subprocess.run([args.java, "-Djava.awt.headless=true", "-jar", str(args.installer.resolve()),
@@ -114,6 +151,10 @@ def main():
             f"level-name=port-multiplayer\nlevel-type=minecraft:flat\ngenerator-settings={flat}\n"
             "generate-structures=false\nview-distance=4\nsimulation-distance=4\nmax-players=2\n"
             "spawn-protection=0\nallow-flight=true\ndifficulty=peaceful\ngamemode=survival\n")
+        if args.data_maps:
+            pack = directory / "port-multiplayer/datapacks/port_data_maps"
+            pack.mkdir(parents=True)
+            (pack / "pack.mcmeta").write_text(json.dumps({"pack": {"pack_format": 15, "description": "Ender IO map QA"}}))
         for stage in (1, 2):
             print(f"Starting actual dedicated server session {stage}", flush=True)
             server = Server(directory, args.java, stage)
