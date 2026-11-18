@@ -19,7 +19,7 @@ Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions
 | FTB Ultimine | 2001.1.8 | `dev.ftb.mods:ftb-ultimine-forge` | Pending |
 | FTB Library | 2001.2.13 | `dev.ftb.mods:ftb-library-forge` | Pending |
 | Architectury | 9.2.14+forge | Modrinth `architectury-api:1MKTLiiG` | Pending |
-| Curios | 5.14.1+1.20.1 | Modrinth `curios:IPQlZkz1` | Pending |
+| Curios | 5.14.1+1.20.1 | Modrinth `curios:IPQlZkz1` | Packaged TCP verifies wireless charging, both Ender IO keybindings, client sync and restart persistence with configured regular slots. The same inventory paths pass without Curios. [Cycle 060](cycle-060.md) |
 | Embeddium | 0.3.31+mc1.20.1 | Modrinth `embeddium:UTbfe5d1`; compile-only mesh-appender API and optional renderer profile | Pending; adapter implemented in cycle 022 |
 | Oculus | 1.20.1-1.8.0 | Modrinth `oculus:iQ1SwGc3`; shader compatibility profile | Pending; Forge mod-ID detection corrected in cycle 022 |
 | GraphLib3 | 3.0.5 | Existing `dev.gigaherz.graph:GraphLib3` bundled library | Pending |

@@ -62,6 +62,7 @@ def main():
     parser.add_argument("--installer", required=True, type=Path)
     parser.add_argument("--jar", required=True, type=Path)
     parser.add_argument("--qa-jar", required=True, type=Path)
+    parser.add_argument("--mod", action="append", default=[], type=Path, help="Install an optional integration jar")
     parser.add_argument("--assets", required=True, type=Path)
     parser.add_argument("--install", action="store_true", help="Run the official installer, including on a fresh directory")
     args = parser.parse_args()
@@ -113,7 +114,9 @@ def main():
     mods = directory / "mods"
     mods.mkdir(exist_ok=True)
     records = []
-    for source, name in ((args.jar, "enderio.jar"), (args.qa_jar, "enderio-client-qa.jar")):
+    artifacts = [(args.jar, "enderio.jar"), (args.qa_jar, "enderio-client-qa.jar")]
+    artifacts.extend((mod, mod.name) for mod in args.mod)
+    for source, name in artifacts:
         data = source.read_bytes()
         (mods / name).write_bytes(data)
         records.append({"source": str(source.resolve()), "installed": name,
