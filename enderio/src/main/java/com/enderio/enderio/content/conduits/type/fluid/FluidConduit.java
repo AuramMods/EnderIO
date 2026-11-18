@@ -48,6 +48,7 @@ public record FluidConduit(ResourceLocation texture, Component description, int 
 
     public static final int EXTRACT_FILTER_SLOT = 0;
     public static final int INSERT_FILTER_SLOT = 1;
+    private static final String RETAINED_FLUID = "enderio:retained_fluid";
 
     public static final MapCodec<FluidConduit> CODEC = RecordCodecBuilder.mapCodec(builder -> builder
         .group(ResourceLocation.CODEC.fieldOf("texture").forGetter(FluidConduit::texture),
@@ -65,6 +66,24 @@ public record FluidConduit(ResourceLocation texture, Component description, int 
     @Override
     public boolean hasMenu() {
         return true;
+    }
+
+    @Override
+    public void saveItemData(ConduitNode node, ItemStack stack) {
+        var data = node.getNodeData(EIOConduitTypes.NodeData.FLUID.get());
+        if (data != null && !data.isEmpty()) {
+            stack.getOrCreateTag().put(RETAINED_FLUID, FluidConduitNodeData.CODEC.codec()
+                .encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, data).getOrThrow(false, message -> {}));
+        }
+    }
+
+    @Override
+    public void loadItemData(ConduitNode node, ItemStack stack) {
+        if (stack.hasTag() && stack.getTag().contains(RETAINED_FLUID)) {
+            var carried = FluidConduitNodeData.CODEC.codec().parse(net.minecraft.nbt.NbtOps.INSTANCE,
+                stack.getTag().get(RETAINED_FLUID)).getOrThrow(false, message -> {});
+            node.getOrCreateNodeData(EIOConduitTypes.NodeData.FLUID.get()).addAll(carried);
+        }
     }
 
     @Override

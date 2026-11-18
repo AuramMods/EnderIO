@@ -111,6 +111,9 @@ public class EIOConduitTypes {
 
         public static final Supplier<NodeDataType<ItemConduitNodeData>> ITEM = NODE_DATA_TYPES.register("item",
                 () -> ItemConduitNodeData.TYPE);
+
+        public static final Supplier<NodeDataType<com.enderio.enderio.content.conduits.type.fluid.FluidConduitNodeData>> FLUID =
+            NODE_DATA_TYPES.register("fluid", () -> com.enderio.enderio.content.conduits.type.fluid.FluidConduitNodeData.TYPE);
     }
 
     public static class ContextTypes {

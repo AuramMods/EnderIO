@@ -43,6 +43,7 @@ public class EnderGameTestHelper {
     public void assertBlockPresent(Block block, int x, int y, int z) { delegate.assertBlockPresent(block, x, y, z); }
     public void assertItemEntityPresent(Item item, BlockPos pos, double radius) { delegate.assertItemEntityPresent(item, pos, radius); }
     public void assertContainerEmpty(int x, int y, int z) { delegate.assertContainerEmpty(new BlockPos(x, y, z)); }
+    public void assertTrue(boolean condition, String message) { delegate.assertTrue(condition, message); }
 
     public <T extends BlockEntity> T getBlockEntity(int x, int y, int z, Class<T> type) {
         var entity = delegate.getBlockEntity(new BlockPos(x, y, z));

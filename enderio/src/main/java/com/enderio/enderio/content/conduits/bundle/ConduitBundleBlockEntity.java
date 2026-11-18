@@ -672,7 +672,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
         // Drop the conduit and it's inventory items.
         if (!level.isClientSide() && droppedItemConsumer != null) {
             // Drop the conduit item.
-            droppedItemConsumer.accept(ConduitBlockItem.getStackFor(conduit, 1));
+            droppedItemConsumer.accept(createConduitDrop(conduit));
 
             // Empty connection inventories.
             dropConnectionInventories(conduit, droppedItemConsumer);
@@ -707,6 +707,22 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
         }
 
         bundleChanged();
+    }
+
+    public ItemStack createConduitDrop(Holder<Conduit<?, ?>> conduit) {
+        var stack = ConduitBlockItem.getStackFor(conduit, 1);
+        if (level != null && !level.isClientSide()) conduit.value().saveItemData(getConduitNode(conduit), stack);
+        return stack;
+    }
+
+    public AddConduitResult addConduitFromItem(Holder<Conduit<?, ?>> conduit, @Nullable Direction side,
+            @Nullable Player player, ItemStack stack) {
+        var result = addConduit(conduit, side, player);
+        if (!(result instanceof AddConduitResult.Blocked) && level != null && !level.isClientSide()) {
+            conduit.value().loadItemData(getConduitNode(conduit), stack);
+            setChanged();
+        }
+        return result;
     }
 
     public void dropConnectionInventories(Holder<Conduit<?, ?>> conduit, Consumer<ItemStack> droppedItemConsumer) {

@@ -242,6 +242,29 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     // region Place & Destroy Logic
 
     @Override
+    public java.util.List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder params) {
+        var drops = new java.util.ArrayList<>(super.getDrops(state, params));
+        if (params.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY)
+                instanceof ConduitBundleBlockEntity bundle) {
+            // Native destruction/explosions query drops before onRemove clears the graph. Player removal
+            // already emits its selected contents and clears them, so its later harvest sees an empty bundle.
+            for (var conduit : bundle.getConduits()) {
+                drops.add(bundle.createConduitDrop(conduit));
+                for (var side : Direction.values()) {
+                    var inventory = bundle.getConnectionInventory(conduit, side);
+                    if (inventory == null) continue;
+                    for (int slot = 0; slot < inventory.getSlots(); slot++) {
+                        var stack = inventory.getStackInSlot(slot);
+                        if (!stack.isEmpty()) drops.add(stack.copy());
+                    }
+                }
+            }
+            if (bundle.hasFacade()) drops.add(bundle.getFacadeProvider().copy());
+        }
+        return drops;
+    }
+
+    @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer,
             ItemStack stack) {
         // Try to get placing player.
@@ -257,7 +280,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
                 Direction primaryConnectionSide = conduitBundle.primaryConnectionSide;
                 conduitBundle.primaryConnectionSide = null;
 
-                conduitBundle.addConduit(conduit, primaryConnectionSide, player);
+                conduitBundle.addConduitFromItem(conduit, primaryConnectionSide, player, stack);
             } else {
                 // We might be placed using a facade item. If we are, apply the facade to the
                 var facadeProvider = stack.getCapability(EnderIOCapabilities.CONDUIT_FACADE_PROVIDER).orElse(null);
@@ -305,7 +328,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
                     } else {
                         var lastConduit = conduitBundle.getConduits().get(0);
                         conduitBundle.dropConnectionInventories(lastConduit, stack -> popResource(level, pos, stack));
-                        popResource(level, pos, ConduitBlockItem.getStackFor(lastConduit, 1));
+                        popResource(level, pos, conduitBundle.createConduitDrop(lastConduit));
                     }
                 }
             }
@@ -366,7 +389,8 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         // Wipe out all conduits and facades before the block is removed - this sends the relevant notifications to neighboring conduits
         // TODO: I think conduits would do well to interact over capabilities instead of relying on manual block entity manipulation. A topic for 26.1.
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity conduitBundle) {
+        if (!state.is(newState.getBlock()) && !level.isClientSide()
+                && level.getBlockEntity(pos) instanceof ConduitBundleBlockEntity conduitBundle) {
             conduitBundle.clearContent();
         }
 
@@ -416,7 +440,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
             primaryConnectionSide = blockHitResult.getDirection().getOpposite();
         }
 
-        AddConduitResult addResult = conduitBundle.addConduit(conduit, primaryConnectionSide, player);
+        AddConduitResult addResult = conduitBundle.addConduitFromItem(conduit, primaryConnectionSide, player, stack);
 
         if (addResult instanceof AddConduitResult.Upgrade upgrade) {
             Holder<Conduit<?, ?>> replacedConduit = upgrade.replacedConduit();

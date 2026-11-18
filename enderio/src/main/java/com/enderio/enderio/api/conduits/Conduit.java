@@ -207,6 +207,14 @@ public interface Conduit<TConduit extends Conduit<TConduit, TConnectionConfig>, 
     default void onRemoved(ConduitNode node, Level level, BlockPos pos) {
     }
 
+    /** Copy owned resources into a dropped conduit item, without mutating the live node. */
+    default void saveItemData(ConduitNode node, ItemStack stack) {
+    }
+
+    /** Restore carried resources after insertion/upgrade; implementations must preserve existing resources. */
+    default void loadItemData(ConduitNode node, ItemStack stack) {
+    }
+
     default void onConnectionsUpdated(ConduitNode node, Level level, BlockPos pos, Set<Direction> connectedSides) {
     }
 
