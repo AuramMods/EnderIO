@@ -5,6 +5,7 @@ import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.machines.solar_panel.SolarPanelBlock;
 import com.enderio.enderio.content.machines.solar_panel.SolarPanelTier;
 import com.enderio.enderio.content.misc_blocks.ResettingLeverBlock;
+import com.enderio.enderio.content.misc_blocks.light.LegacyLightBlock;
 import com.enderio.enderio.content.paint.block.PaintedStairBlock;
 import com.enderio.enderio.datagen.client.models.block.ConduitModelBuilder;
 import com.enderio.enderio.datagen.client.models.block.EIOBlockState;
@@ -31,6 +32,7 @@ import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
 import net.minecraftforge.client.model.generators.loaders.CompositeModelBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
+import java.util.List;
 import java.util.Locale;
 
 public class EIOBlockStateProvider extends BlockStateProvider {
@@ -100,6 +102,8 @@ public class EIOBlockStateProvider extends BlockStateProvider {
                 return new ConfiguredModel[] { new ConfiguredModel(model, rotationX, rotationY, false) };
             });
         }
+
+        legacyLights();
 
         // Glass Blocks
         ModelFile fusedQuartzModel = models().getExistingFile(modLoc("block/fused_quartz"));
@@ -240,6 +244,32 @@ public class EIOBlockStateProvider extends BlockStateProvider {
         for (var fluidBlock : EIOFluids.FLUIDS.blocksRegister().getEntries()) {
             simpleBlock(fluidBlock.get(), water);
         }
+    }
+
+    private void legacyLights() {
+        ResourceLocation parent = modLoc("block/lightblock");
+        ModelFile off = models().withExistingParent("legacy_light_off", parent).texture("texture", mcLoc("block/redstone_lamp"));
+        ModelFile on = models().withExistingParent("legacy_light_on", parent).texture("texture", mcLoc("block/redstone_lamp_on"));
+        for (var light : List.of(EIOBlocks.LIGHT, EIOBlocks.LIGHT_INVERTED, EIOBlocks.POWERED_LIGHT,
+            EIOBlocks.POWERED_LIGHT_INVERTED, EIOBlocks.POWERED_LIGHT_WIRELESS, EIOBlocks.POWERED_LIGHT_INVERTED_WIRELESS)) {
+            var block = light.get();
+            getVariantBuilder(block).forAllStates(state -> {
+                AttachFace face = state.getValue(LegacyLightBlock.FACE);
+                int rotationX = switch (face) {
+                    case CEILING -> 180;
+                    case WALL -> 90;
+                    case FLOOR -> 0;
+                };
+                int rotationY = state.getValue(LegacyLightBlock.FACING).get2DDataValue() * 90;
+                if (face != AttachFace.CEILING) {
+                    rotationY = (rotationY + 180) % 360;
+                }
+                return new ConfiguredModel[] { new ConfiguredModel(state.getValue(LegacyLightBlock.ENABLED) ? on : off,
+                    rotationX, rotationY, face == AttachFace.WALL) };
+            });
+            simpleBlockItem(block, on);
+        }
+        simpleBlock(EIOBlocks.LIGHT_NODE.get(), models().getBuilder("light_node"));
     }
 
     private void simpleTranslucentBlock(Block block) {

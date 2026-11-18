@@ -27,6 +27,14 @@ INTEGRATION_CONDUITS = [(kind + "_conduit", variant) for kind, variant in
 STORAGE_ROUTES = {4: ("me", "me"), 7: ("dense_me", "dense_me"), 10: ("me", "dense_me"), 13: ("rs", "rs")}
 MEKANISM_ROUTES = {0: "chemical", 3: "pressurized_chemical", 6: "ender_chemical",
                    9: "ender_chemical", 12: "heat", 15: "chemical"}
+LIGHTS = {
+    "light": (1028, 95, 1029, "floor", "east"),
+    "light_inverted": (1034, 95, 1029, "ceiling", "west"),
+    "powered_light": (1028, 95, 1040, "wall", "east"),
+    "powered_light_inverted": (1034, 95, 1040, "floor", "north"),
+    "powered_light_wireless": (1041, 95, 1030, "floor", "south"),
+    "powered_light_inverted_wireless": (1048, 95, 1030, "wall", "north"),
+}
 
 
 def tank_state(x, legacy):
@@ -40,7 +48,7 @@ def tank_state(x, legacy):
 
 
 def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits,
-             placed_mekanism_conduits, extraction_upgrades):
+             placed_mekanism_conduits, extraction_upgrades, legacy_lights):
     server.wait('For help, type "help"')
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
@@ -77,6 +85,8 @@ def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_sto
         exercise_mekanism_conduits(server, stage, results)
     if extraction_upgrades:
         exercise_extraction_upgrades(server, stage, results)
+    if legacy_lights:
+        exercise_lights(server, stage, results)
     server.command("save-all flush")
 
 
@@ -350,12 +360,80 @@ def assert_extraction_upgrades(server, stage, results, loose_barrel):
                  "Native extraction upgrade rates verified: [8, 16, 32, 64]", results)
 
 
+def exercise_lights(server, stage, results):
+    chunks = "1024 1024 1055 1055"
+    server.command(f"forceload add {chunks}")
+    legacy = stage == "legacy"
+    barrel = "1035 95 1047"
+    stacks = [f'{{Slot:{i}b,id:"enderio:{name}",Count:{i + 2}b,tag:{{PortLegacyLight:{i}}}}}'
+              for i, name in enumerate(LIGHTS)]
+    if legacy:
+        for support in ("1028 94 1029", "1034 96 1029", "1027 95 1040", "1034 94 1040",
+                        "1041 94 1030", "1048 95 1031"):
+            server.command(f"setblock {support} minecraft:stone")
+        for name, (x, y, z, face, facing) in LIGHTS.items():
+            server.command(f"setblock {x} {y} {z} enderio:{name}[face={face},facing={facing}]")
+        server.command("setblock 1049 95 1030 minecraft:redstone_block")
+        server.command(f'setblock {barrel} minecraft:barrel{{Items:[{",".join(stacks)}]}}')
+
+    stages = [stage]
+    if stage == "converted":
+        stages.append("chunk_reload")
+    for observation in stages:
+        if observation == "chunk_reload":
+            server.command(f"forceload remove {chunks}")
+            server.assert_state("light_chunks_unloaded", "unless loaded 1028 95 1029 unless loaded 1041 95 1030",
+                                results, timeout=40)
+            server.command(f"forceload add {chunks}")
+        for name, (x, y, z, face, facing) in LIGHTS.items():
+            expected = f"face={face},facing={facing}"
+            if not legacy or not name.startswith("powered_"):
+                enabled = name in ("light", "powered_light_wireless", "powered_light_inverted_wireless")
+                expected += f",enabled={str(enabled).lower()}"
+            server.assert_state(f"{name}_{observation}", f"if block {x} {y} {z} enderio:{name}[{expected}]", results)
+        for i, stack in enumerate(stacks):
+            server.assert_state(f"light_item_{i}_{observation}", f"if data block {barrel} Items[{stack}]", results)
+        for name, node, owner_x in (("standard", "1042 95 1030", 1041), ("cross_chunk", "1039 95 1030", 1041),
+                                    ("inverted", "1047 95 1030", 1048)):
+            owner = f"{{BlockPos:{{X:{owner_x},Y:95,Z:1030}}}}"
+            server.assert_state(f"{name}_node_owner_{observation}", f"if block {node} enderio:light_node "
+                                f"if data block {node} {owner} if data block {owner_x} 95 1030 {{Active:1b}}", results)
+
+    if stage == "converted":
+        server.command("setblock 1028 95 1030 minecraft:redstone_block")
+        server.command("setblock 1035 95 1029 minecraft:redstone_block")
+        server.command("setblock 1041 95 1031 minecraft:redstone_block")
+        server.command("setblock 1049 95 1030 minecraft:air")
+        for name, (x, y, z, _, _) in LIGHTS.items():
+            if name in ("powered_light", "powered_light_inverted"):
+                continue
+            enabled = str(name == "light_inverted").lower()
+            server.assert_state(f"{name}_redstone", f"if block {x} {y} {z} enderio:{name}[enabled={enabled}]", results)
+        server.assert_state("disabled_nodes_removed", "if block 1042 95 1030 minecraft:air "
+                            "if block 1047 95 1030 minecraft:air", results)
+        server.command("setblock 1028 95 1030 minecraft:air")
+        server.command("setblock 1035 95 1029 minecraft:air")
+        server.command("setblock 1041 95 1031 minecraft:air")
+        server.command("setblock 1049 95 1030 minecraft:redstone_block")
+        server.command("setblock 1042 95 1030 minecraft:stone")
+        server.assert_state("node_cannot_replace_block", "if block 1042 95 1030 minecraft:stone "
+                            "if block 1043 95 1030 minecraft:air", results)
+        server.command("setblock 1042 95 1030 minecraft:air")
+        server.assert_state("unblocked_light_returns", "if block 1042 95 1030 enderio:light_node "
+                            "if block 1043 95 1030 enderio:light_node", results)
+    if stage == "restart":
+        server.command("setblock 1048 95 1030 minecraft:air destroy")
+        server.assert_state("broken_light_clears_owned_nodes_and_drops_item", "if block 1047 95 1030 minecraft:air "
+                            'if entity @e[type=item,x=1048,y=95,z=1030,distance=..2,'
+                            'nbt={Item:{id:"enderio:powered_light_inverted_wireless",Count:1b}}]', results)
+
+
 def run_server(directory, java, stage, report, conduit_fixture, loose_conduits, placed_storage_conduits,
-               placed_mekanism_conduits, extraction_upgrades):
+               placed_mekanism_conduits, extraction_upgrades, legacy_lights):
     server = Server(directory, java, stage)
     try:
         exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits,
-                 placed_storage_conduits, placed_mekanism_conduits, extraction_upgrades)
+                 placed_storage_conduits, placed_mekanism_conduits, extraction_upgrades, legacy_lights)
     finally:
         exit_status = server.stop()
         errors = [line.strip() for line in server.lines if "/ERROR]" in line or "/FATAL]" in line]
@@ -384,6 +462,7 @@ def main():
                         help="Migrate placed heat and chemical routes with the legacy fixture and Mekanism probe")
     parser.add_argument("--extraction-upgrades", action="store_true",
                         help="Migrate loose and installed extraction upgrades with the legacy fixture and upgrade probe")
+    parser.add_argument("--legacy-lights", action="store_true", help="Migrate placed lights, nodes and tagged light stacks")
     parser.add_argument("--mod", action="append", type=Path, default=[], help="Install a Forge dependency in both profiles")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
@@ -420,7 +499,7 @@ def main():
             shutil.copyfile(args.conduit_fixture, legacy / "mods" / "port-legacy-fixture.jar")
             report["fixtureSha256"] = digest(args.conduit_fixture)
         fixtures = (args.conduit_fixture, loose_conduits, args.placed_storage_conduits,
-                    args.placed_mekanism_conduits, args.extraction_upgrades)
+                    args.placed_mekanism_conduits, args.extraction_upgrades, args.legacy_lights)
         run_server(legacy, args.java, "legacy", report, *fixtures)
         shutil.copytree(legacy / WORLD, converted / WORLD)
         run_server(converted, args.java, "converted", report, *fixtures)

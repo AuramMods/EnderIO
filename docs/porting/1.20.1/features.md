@@ -316,6 +316,13 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | Mekanism heat conduits | Heat transfer, equilibrium, disconnect/reconnect, unload/reload | Partial. A packaged cross-chunk legacy route keeps its I/O directions, disabled face and redstone controls. A real native conductor warms after each pulse on initial conversion, chunk reload and restart. Equilibrium, toggle behavior and client verification remain open. [Cycle 054](cycle-054.md) |
 | Refined Storage conduits | 1.x network integration, connectivity, split/merge, saved nodes and missing-RS loading | Partial. Native controller routing, split/reconnect and bundle reload pass. Packaged migration keeps the controller-to-drive route and both owners across chunk reload and server restart. The core packaged profile passes without Refined Storage. [Cycle 053](cycle-053.md) |
 
+## Historical 6.2 save compatibility
+
+| Feature | Verified behavior | Evidence |
+| --- | --- | --- |
+| Standard, inverted, wired and wireless lights | Six placed block IDs and six tagged items survive conversion, chunk eviction and restart. Owned light nodes persist across a chunk edge. Redstone toggling, wired energy use, node cleanup and single-player lighting updates pass. The six variants use the retained historical fixture geometry and vanilla lamp textures. | [Cycle 056](cycle-056.md) |
+| Primitive alloy smelter | The placed block and item still appear in Forge's unresolved registry report on conversion. The saved fuel, job and output require compatibility coverage. | [Cycle 056](cycle-056.md) |
+
 ## Shared state and presentation
 
 Capabilities and invalidation, NBT item state, codecs, packets, menus, attachment replacements, data-map replacements, keybindings, dynamic models, particles and resource reload remain pending. Existing test scenarios are listed individually in `baseline.json`; port their actual assertions rather than replacing them with compile-only checks.

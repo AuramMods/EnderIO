@@ -602,6 +602,13 @@ public class EIOLanguageProvider extends LanguageProvider {
         add(EIOBlocks.PAINTED_WOODEN_PRESSURE_PLATE.get(), "Painted Wooden Pressure Plate");
         add(EIOBlocks.PAINTED_SLAB.get(), "Painted Slab");
         add(EIOBlocks.PAINTED_GLOWSTONE.get(), "Painted Glowstone");
+        add(EIOBlocks.LIGHT.get(), "Light");
+        add(EIOBlocks.LIGHT_INVERTED.get(), "Light Inverted");
+        add(EIOBlocks.POWERED_LIGHT.get(), "Powered Light");
+        add(EIOBlocks.POWERED_LIGHT_INVERTED.get(), "Powered Light Inverted");
+        add(EIOBlocks.POWERED_LIGHT_WIRELESS.get(), "Powered Light Wireless");
+        add(EIOBlocks.POWERED_LIGHT_INVERTED_WIRELESS.get(), "Powered Light Inverted Wireless");
+        add(EIOBlocks.LIGHT_NODE.get(), "Light Node");
         add(EIOBlocks.PAINTED_WALL.get(), "Painted Wall");
 
         // Resetting Levers

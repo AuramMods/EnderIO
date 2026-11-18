@@ -42,6 +42,13 @@ public class EIOBlockLootProvider extends BlockLootSubProvider {
 
     @Override
     protected void generate() {
+        dropSelf(EIOBlocks.LIGHT.get());
+        dropSelf(EIOBlocks.LIGHT_INVERTED.get());
+        dropSelf(EIOBlocks.POWERED_LIGHT.get());
+        dropSelf(EIOBlocks.POWERED_LIGHT_INVERTED.get());
+        dropSelf(EIOBlocks.POWERED_LIGHT_WIRELESS.get());
+        dropSelf(EIOBlocks.POWERED_LIGHT_INVERTED_WIRELESS.get());
+
         // Alloys
         dropSelf(EIOBlocks.CONDUCTIVE_ALLOY_BLOCK.get());
         dropSelf(EIOBlocks.ENERGETIC_ALLOY_BLOCK.get());

@@ -37,6 +37,9 @@ import com.enderio.enderio.content.misc_blocks.EIOPressurePlateBlock;
 import com.enderio.enderio.content.misc_blocks.IndustrialInsulationBlock;
 import com.enderio.enderio.content.misc_blocks.ReinforcedObsidianBlock;
 import com.enderio.enderio.content.misc_blocks.ResettingLeverBlock;
+import com.enderio.enderio.content.misc_blocks.light.LegacyLightBlock;
+import com.enderio.enderio.content.misc_blocks.light.LegacyLightNodeBlock;
+import com.enderio.enderio.content.misc_blocks.light.LegacyPoweredLightBlock;
 import com.enderio.enderio.content.misc_blocks.SilentPressurePlateBlock;
 import com.enderio.enderio.content.misc_blocks.SilentWeightedPressurePlateBlock;
 import com.enderio.enderio.content.misc_blocks.skull.EnderSkullBlock;
@@ -189,6 +192,25 @@ public class EIOBlocks {
     public static final BlockDeferredHolder<PaintedWoodenPressurePlateBlock> PAINTED_WOODEN_PRESSURE_PLATE = registerPainted("painted_wooden_pressure_plate", PaintedWoodenPressurePlateBlock::new, Blocks.OAK_PRESSURE_PLATE);
     public static final BlockDeferredHolder<PaintedSlabBlock> PAINTED_SLAB = registerPainted("painted_slab", PaintedSlabBlock::new, Blocks.OAK_SLAB);
     public static final BlockDeferredHolder<SinglePaintedBlock> PAINTED_GLOWSTONE = registerPainted("painted_glowstone", SinglePaintedBlock::new, Blocks.GLOWSTONE);
+
+    public static final BlockDeferredHolder<LegacyLightBlock> LIGHT = legacyLight("light", properties -> new LegacyLightBlock(properties, false));
+    public static final BlockDeferredHolder<LegacyLightBlock> LIGHT_INVERTED = legacyLight("light_inverted", properties -> new LegacyLightBlock(properties, true));
+    public static final BlockDeferredHolder<LegacyPoweredLightBlock> POWERED_LIGHT = legacyLight("powered_light",
+        properties -> new LegacyPoweredLightBlock(properties, false, false));
+    public static final BlockDeferredHolder<LegacyPoweredLightBlock> POWERED_LIGHT_INVERTED = legacyLight("powered_light_inverted",
+        properties -> new LegacyPoweredLightBlock(properties, true, false));
+    public static final BlockDeferredHolder<LegacyPoweredLightBlock> POWERED_LIGHT_WIRELESS = legacyLight("powered_light_wireless",
+        properties -> new LegacyPoweredLightBlock(properties, false, true));
+    public static final BlockDeferredHolder<LegacyPoweredLightBlock> POWERED_LIGHT_INVERTED_WIRELESS = legacyLight("powered_light_inverted_wireless",
+        properties -> new LegacyPoweredLightBlock(properties, true, true));
+    public static final BlockDeferredHolder<LegacyLightNodeBlock> LIGHT_NODE = BLOCKS.registerBlock("light_node", LegacyLightNodeBlock::new,
+        BlockBehaviour.Properties.of().replaceable().noCollission().noOcclusion().noLootTable().lightLevel(state -> 15)
+            .pushReaction(PushReaction.DESTROY));
+
+    private static <B extends LegacyLightBlock> BlockDeferredHolder<B> legacyLight(String id, Function<BlockBehaviour.Properties, B> factory) {
+        return registerWithItem(id, factory, BlockBehaviour.Properties.of().noOcclusion().sound(SoundType.METAL).mapColor(MapColor.METAL)
+            .lightLevel(state -> state.getValue(LegacyLightBlock.ENABLED) ? 15 : 0));
+    }
     public static final BlockDeferredHolder<PaintedWallBlock> PAINTED_WALL = registerPainted("painted_wall", PaintedWallBlock::new, Blocks.COBBLESTONE_WALL);
 
     private static <B extends Block> BlockDeferredHolder<B> registerPainted(String name, Function<BlockBehaviour.Properties, B> factory, Block reference) {

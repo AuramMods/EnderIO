@@ -1,0 +1,6 @@
+{
+  "parent": "enderio:block/lightblock",
+  "textures": {
+    "texture": "minecraft:block/redstone_lamp_on"
+  }
+}

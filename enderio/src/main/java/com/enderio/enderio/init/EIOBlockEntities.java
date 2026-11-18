@@ -35,6 +35,8 @@ import com.enderio.enderio.content.machines.vacuum.xp.XPVacuumBlockEntity;
 import com.enderio.enderio.content.machines.vat.VatBlockEntity;
 import com.enderio.enderio.content.machines.wired_charger.WiredChargerBlockEntity;
 import com.enderio.enderio.content.machines.wireless_charger.WirelessChargerBlockEntity;
+import com.enderio.enderio.content.misc_blocks.light.LegacyLightNodeBlockEntity;
+import com.enderio.enderio.content.misc_blocks.light.LegacyPoweredLightBlockEntity;
 import com.enderio.enderio.content.paint.block.entity.DoublePaintedBlockEntity;
 import com.enderio.enderio.content.paint.block.entity.SinglePaintedBlockEntity;
 import com.enderio.enderio.content.storage.crafter.CrafterBlockEntity;
@@ -79,6 +81,16 @@ public class EIOBlockEntities {
 
     public static final RegistryObject<BlockEntityType<ConduitBundleBlockEntity>> CONDUIT = BLOCK_ENTITY_TYPES.register("conduit",
         ConduitBundleBlockEntity::new, EIOBlocks.CONDUIT_BUNDLE::get);
+
+    public static final RegistryObject<BlockEntityType<LegacyPoweredLightBlockEntity>> POWERED_LIGHT = BLOCK_ENTITY_TYPES
+        .builder("powered_light", LegacyPoweredLightBlockEntity::new, EIOBlocks.POWERED_LIGHT::get)
+        .validBlock(EIOBlocks.POWERED_LIGHT_INVERTED::get)
+        .validBlock(EIOBlocks.POWERED_LIGHT_WIRELESS::get)
+        .validBlock(EIOBlocks.POWERED_LIGHT_INVERTED_WIRELESS::get)
+        .build();
+
+    public static final RegistryObject<BlockEntityType<LegacyLightNodeBlockEntity>> LIGHT_NODE = BLOCK_ENTITY_TYPES.register("light_node",
+        LegacyLightNodeBlockEntity::new, EIOBlocks.LIGHT_NODE::get);
 
     public static final RegistryObject<BlockEntityType<CreativePowerBlockEntity>> CREATIVE_POWER = BLOCK_ENTITY_TYPES
         .builder("creative_power", CreativePowerBlockEntity::new, EIOBlocks.CREATIVE_POWER::get)
