@@ -10,7 +10,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.ModList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
@@ -21,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Automated observations of the real renderer; never included in distributable jars. */
-@Mod("enderio_client_qa")
 public final class ClientSmoke {
     private final long started = System.nanoTime();
     private int readyFrames;
@@ -47,6 +45,7 @@ public final class ClientSmoke {
             case "obelisks" -> new ClientObeliskSmoke();
             case "entity-obelisks" -> new ClientEntityObeliskSmoke();
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
+            case "natural-spawns" -> new ClientNaturalSpawnSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();
             case "curios" -> new ClientCuriosSmoke();
             case "solar-wired" -> new ClientSolarWiredSmoke();

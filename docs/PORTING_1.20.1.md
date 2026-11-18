@@ -257,7 +257,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 073: entity obelisks | Restore capacitor gating and both teleport endpoints. Choose supported Relocator destinations and verify all four obelisk menus | The full build passes 78 unit and 444 native tests. Packaged Forge passes 24 server and 24 client checks, including real pearl throws, native pathfinding and setting persistence after restart. The official 6.2 Aversion range and filter migration gap was reproduced. [Evidence and commands](porting/1.20.1/cycle-073.md) | `df547a570` |
 
-| 074: legacy Aversion and soul filter | Restore Forge 6 placed and carried settings, explicit zero range, five-slot filters and tag synchronization | The full build passes 79 unit and 448 native tests. Packaged Forge passes 10 server and nine client checks on a copied 6.2.18-beta world, including survival replanting, live filter edits and restart. [Evidence and commands](porting/1.20.1/cycle-074.md) | Commit containing cycle 074 |
+| 074: legacy Aversion and soul filter | Restore Forge 6 placed and carried settings, explicit zero range, five-slot filters and tag synchronization | The full build passes 79 unit and 448 native tests. Packaged Forge passes 10 server and nine client checks on a copied 6.2.18-beta world, including survival replanting, live filter edits and restart. [Evidence and commands](porting/1.20.1/cycle-074.md) | `5e676f698` |
+
+| 075: scheduled natural spawning | Observe native Aversion and Relocator behavior, destination inhibition and chunk reload in a real survival session | The full build passes 79 unit and 448 native tests. The packaged test passes 16 assertions across 66 native spawn attempts. Relocator landings have solid support and block light 12. [Evidence and commands](porting/1.20.1/cycle-075.md) | Commit containing cycle 075 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
