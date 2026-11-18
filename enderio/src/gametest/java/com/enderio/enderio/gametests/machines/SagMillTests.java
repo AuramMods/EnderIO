@@ -9,18 +9,16 @@ import com.enderio.enderio.init.EIORecipes;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
-@ForEachTest(groups = "machines.sag_mill")
+// Scenario group: machines.sag_mill
 public class SagMillTests {
 
     @GameTest
-    @TestHolder(description = "Tests that the SAG Mill can process stone to cobblestone.")
-    public static void testSagMillStoneGrinding(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1)
+    // Tests that the SAG Mill can process stone to cobblestone.
+    public static void testSagMillStoneGrinding(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
             .set(0, 0, 0, EIOBlocks.SAG_MILL.get().defaultBlockState()));
 
         int energyToAdd = 10000;
@@ -44,7 +42,7 @@ public class SagMillTests {
                     // Ensure energy was consumed correctly
                     var input = new SagMillingRecipe.Input(new ItemStack(Items.STONE, 1), GrindingBallData.IDENTITY);
                     var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.SAG_MILLING.type().get(), input, helper.getLevel()).orElseThrow();
-                    int expectedEnergy = energyToAdd - recipe.value().getBaseEnergyCost() * 2;
+                    int expectedEnergy = energyToAdd - recipe.getBaseEnergyCost() * 2;
                     helper.assertEnergyStored(0, 1, 0, expectedEnergy);
                 })
                 .thenSucceed();
@@ -53,9 +51,9 @@ public class SagMillTests {
 
     //TODO can we properly handle conditional outputs?
     @GameTest
-    @TestHolder(description = "Tests that the SAG Mill can process copper ore to raw copper.")
-    public static void testSagMillCopperOreGrinding(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1)
+    // Tests that the SAG Mill can process copper ore to raw copper.
+    public static void testSagMillCopperOreGrinding(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
             .set(0, 0, 0, EIOBlocks.SAG_MILL.get().defaultBlockState()));
 
         int energyToAdd = 10000;
@@ -79,7 +77,7 @@ public class SagMillTests {
                     // Ensure energy was consumed correctly
                     var input = new SagMillingRecipe.Input(new ItemStack(Items.COPPER_ORE, 1), GrindingBallData.IDENTITY);
                     var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.SAG_MILLING.type().get(), input, helper.getLevel()).orElseThrow();
-                    int expectedEnergy = energyToAdd - recipe.value().getBaseEnergyCost() * 2;
+                    int expectedEnergy = energyToAdd - recipe.getBaseEnergyCost() * 2;
                     helper.assertEnergyStored(0, 1, 0, expectedEnergy);
                 })
                 .thenSucceed();
@@ -87,9 +85,9 @@ public class SagMillTests {
     }
 
     @GameTest
-    @TestHolder(description = "Tests that the SAG Mill can process raw copper to copper dust.")
-    public static void testSagMillRawCopperGrinding(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1)
+    // Tests that the SAG Mill can process raw copper to copper dust.
+    public static void testSagMillRawCopperGrinding(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
             .set(0, 0, 0, EIOBlocks.SAG_MILL.get().defaultBlockState()));
 
         int energyToAdd = 10000;
@@ -113,7 +111,7 @@ public class SagMillTests {
                     // Ensure energy was consumed correctly
                     var input = new SagMillingRecipe.Input(new ItemStack(Items.RAW_COPPER, 1), GrindingBallData.IDENTITY);
                     var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.SAG_MILLING.type().get(), input, helper.getLevel()).orElseThrow();
-                    int expectedEnergy = energyToAdd - recipe.value().getBaseEnergyCost() * 2;
+                    int expectedEnergy = energyToAdd - recipe.getBaseEnergyCost() * 2;
                     helper.assertEnergyStored(0, 1, 0, expectedEnergy);
                 })
                 .thenSucceed();

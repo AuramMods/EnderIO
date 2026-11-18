@@ -8,20 +8,18 @@ import com.enderio.enderio.init.EIORecipes;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 import java.util.List;
 
-@ForEachTest(groups = "machines.slicer")
+// Scenario group: machines.slicer
 public class SlicerTests {
 
     @GameTest
-    @TestHolder(description = "Tests that the Slice'N'Splice can process a zombie electrode recipe.")
-    public static void testSlicerRecipe(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1)
+    // Tests that the Slice'N'Splice can process a zombie electrode recipe.
+    public static void testSlicerRecipe(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
             .set(0, 0, 0, EIOBlocks.SLICE_AND_SPLICE.get().defaultBlockState()));
 
         int energyToAdd = 10000;
@@ -61,7 +59,7 @@ public class SlicerTests {
                 ));
 
                 var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.SLICING.type().get(), input, helper.getLevel()).orElseThrow();
-                int expectedEnergy = energyToAdd - recipe.value().energy();
+                int expectedEnergy = energyToAdd - recipe.energy();
                 helper.assertEnergyStored(0, 1, 0, expectedEnergy);
             })
             .thenSucceed());

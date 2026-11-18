@@ -9,21 +9,19 @@ import com.enderio.enderio.init.EIOItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
-@ForEachTest(groups = "content.fire_crafting")
+// Scenario group: content.fire_crafting
 public class FireCraftingTests {
 
     private static final BlockPos FIRE_POS = new BlockPos(0, 2, 0);
     private static final BlockPos BASE_POS = new BlockPos(0, 1, 0);
 
     @GameTest(timeoutTicks = 300)
-    @TestHolder(description = "Tests that fire on a valid base block produces item drops.")
-    public static void testFireBlockCraftingDrops(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 2, 1)
+    // Tests that fire on a valid base block produces item drops.
+    public static void testFireBlockCraftingDrops(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 2, 1)
                 .set(0, 0, 0, Blocks.GRANITE.defaultBlockState()));
 
         test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
@@ -38,9 +36,9 @@ public class FireCraftingTests {
 
     // TODO: This test is flakey.
 //    @GameTest(timeoutTicks = 300)
-//    @TestHolder(description = "Tests that cold fire on a valid base block produces item drops.")
-//    public static void testColdFireBlockCraftingDrops(final DynamicTest test) {
-//        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 2, 1)
+//    // Tests that cold fire on a valid base block produces item drops.
+//    public static void testColdFireBlockCraftingDrops(final GameplayTest test) {
+//        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 2, 1)
 //            .set(0, 0, 0, Blocks.GRANITE.defaultBlockState()));
 //
 //        test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
@@ -55,9 +53,9 @@ public class FireCraftingTests {
 //    }
 
     @GameTest
-    @TestHolder(description = "Tests that fire water on a valid base block produces item drops after a random tick.")
-    public static void testFireWaterCraftingDrops(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 2, 1)
+    // Tests that fire water on a valid base block produces item drops after a random tick.
+    public static void testFireWaterCraftingDrops(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 2, 1)
                 .set(0, 0, 0, Blocks.GRANITE.defaultBlockState())
                 .set(0, 1, 0, EIOFluids.FIRE_WATER.block().get().defaultBlockState()));
 
@@ -71,9 +69,9 @@ public class FireCraftingTests {
     }
 
     @GameTest(timeoutTicks = 300)
-    @TestHolder(description = "Tests that fire on a valid base block produces item drops and changes the block below.")
-    public static void testFireBlockCraftingDropsAndBlockChange(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 2, 1)
+    // Tests that fire on a valid base block produces item drops and changes the block below.
+    public static void testFireBlockCraftingDropsAndBlockChange(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 2, 1)
                 .set(0, 0, 0, Blocks.COBBLESTONE.defaultBlockState()));
 
         test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
@@ -87,9 +85,9 @@ public class FireCraftingTests {
     }
 
     @GameTest
-    @TestHolder(description = "Tests that fire water on a valid base block produces item drops and changes the block below.")
-    public static void testFireWaterCraftingDropsAndBlockChange(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 2, 1)
+    // Tests that fire water on a valid base block produces item drops and changes the block below.
+    public static void testFireWaterCraftingDropsAndBlockChange(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 2, 1)
                 .set(0, 0, 0, Blocks.COBBLESTONE.defaultBlockState())
                 .set(0, 1, 0, EIOFluids.FIRE_WATER.block().get().defaultBlockState()));
 
@@ -103,9 +101,9 @@ public class FireCraftingTests {
     }
 
     @GameTest(timeoutTicks = 310)
-    @TestHolder(description = "Tests that cold fire goes out.")
-    public static void testColdFireAges(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 2, 1)
+    // Tests that cold fire goes out.
+    public static void testColdFireAges(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 2, 1)
             .set(0, 0, 0, Blocks.GRANITE.defaultBlockState()));
 
         test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()

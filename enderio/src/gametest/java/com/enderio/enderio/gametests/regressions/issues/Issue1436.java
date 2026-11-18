@@ -9,17 +9,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
-@ForEachTest(groups = "regression.issue1436")
+// Scenario group: regression.issue1436
 public class Issue1436 {
     @GameTest(timeoutTicks = 650)
-    @TestHolder(description = "Ensures an alloy smelter with 3 slots of standard material generates the right result count")
-    public static void testIssue1436(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(2, 1, 2)
+    // Ensures an alloy smelter with 3 slots of standard material generates the right result count
+    public static void testIssue1436(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(2, 1, 2)
             .set(0, 0, 0, EIOBlocks.ALLOY_SMELTER.get().defaultBlockState())
             .set(1, 0, 0, EIOBlocks.CREATIVE_POWER.get().defaultBlockState())
             .set(0, 0, 1, Blocks.CHEST.defaultBlockState()));

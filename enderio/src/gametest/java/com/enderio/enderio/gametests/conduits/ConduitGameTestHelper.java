@@ -11,7 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestAssertException;
-import net.minecraft.gametest.framework.GameTestInfo;
+import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
@@ -20,7 +20,7 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -30,7 +30,7 @@ public class ConduitGameTestHelper extends EnderGameTestHelper {
     private static final UUID DEFAULT_FAKE_PLAYER_UUID = UUID.fromString("dc8dcc7b-033e-4157-a547-26cae4971aba");
     private final Player fakePlayer;
 
-    public ConduitGameTestHelper(GameTestInfo info) {
+    public ConduitGameTestHelper(GameTestHelper info) {
         super(info);
         fakePlayer = FakePlayerFactory.get(info.getLevel(), new GameProfile(DEFAULT_FAKE_PLAYER_UUID, "[EnderIO]"));
     }
@@ -50,7 +50,7 @@ public class ConduitGameTestHelper extends EnderGameTestHelper {
         var conduitItem = ConduitBlockItem.getStackFor(conduit, 1);
         if (conduitItem.getItem() instanceof BlockItem blockItem) {
             blockItem.place(new BlockPlaceContext(getLevel(), fakePlayer, InteractionHand.MAIN_HAND, conduitItem,
-                    new BlockHitResult(absolutePos.getCenter(), Direction.DOWN, absolutePos, false)));
+                    new BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(absolutePos), Direction.DOWN, absolutePos, false)));
         }
     }
 

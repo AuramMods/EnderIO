@@ -1,36 +1,34 @@
 package com.enderio.enderio.gametests.machines;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.gametests.EnderIOTests;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorTier;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.RegisterStructureTemplate;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureTemplate;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 import java.util.function.Supplier;
 
-@ForEachTest(groups = "machines.capacitor_bank")
+// Scenario group: machines.capacitor_bank
 public class CapacitorBankTests {
 
-    private static final String DOUBLE_CAPACITOR_BANKS = EnderIO.MOD_ID + ":double_capacitor_banks";
-    private static final String SPLIT_CAPACITOR_BANKS = EnderIO.MOD_ID + ":split_capacitor_banks";
+    private static final String DOUBLE_CAPACITOR_BANKS = EnderIOTests.MOD_ID + ":double_capacitor_banks";
+    private static final String SPLIT_CAPACITOR_BANKS = EnderIOTests.MOD_ID + ":split_capacitor_banks";
 
     // @formatter:off
-    @RegisterStructureTemplate(DOUBLE_CAPACITOR_BANKS)
-    public static final Supplier<StructureTemplate> DOUBLE_CAPACITOR_BANKS_TEMPLATE = StructureTemplateBuilder.lazy(1, 2, 1,
+    @FixtureTemplate(DOUBLE_CAPACITOR_BANKS)
+    public static final Supplier<StructureTemplate> DOUBLE_CAPACITOR_BANKS_TEMPLATE = FixtureBuilder.lazy(1, 2, 1,
         builder -> builder
             .set(0, 0, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState())
             .set(0, 1, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState())
     );
 
-    @RegisterStructureTemplate(SPLIT_CAPACITOR_BANKS)
-    public static final Supplier<StructureTemplate> SPLIT_CAPACITOR_BANKS_TEMPLATE = StructureTemplateBuilder.lazy(1, 3, 1,
+    @FixtureTemplate(SPLIT_CAPACITOR_BANKS)
+    public static final Supplier<StructureTemplate> SPLIT_CAPACITOR_BANKS_TEMPLATE = FixtureBuilder.lazy(1, 3, 1,
         builder -> builder
             .set(0, 0, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState())
             .set(0, 2, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState())
@@ -38,9 +36,9 @@ public class CapacitorBankTests {
     // @formatter:on
 
     @GameTest
-    @TestHolder(description = "Tests that the capacitor bank can have power.")
-    public static void testSingleCapBank(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1)
+    // Tests that the capacitor bank can have power.
+    public static void testSingleCapBank(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
             .set(0, 0, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState()));
 
         test.onGameTest(EnderGameTestHelper.class, helper -> {
@@ -54,7 +52,7 @@ public class CapacitorBankTests {
     }
 
     @GameTest(template = DOUBLE_CAPACITOR_BANKS)
-    @TestHolder(description = "Tests that the double capacitor bank can have power.")
+    // Tests that the double capacitor bank can have power.
     public static void testDoubleCapBank(final EnderGameTestHelper helper) {
         helper.startSequence()
             .thenExecute(() -> helper.provideEnergy(0,1,0, CapacitorTier.BASIC.getStorageCapacity()))
@@ -67,7 +65,7 @@ public class CapacitorBankTests {
     }
 
     @GameTest(template = DOUBLE_CAPACITOR_BANKS)
-    @TestHolder(description = "Tests that that removing a cap bank does not delete the power.")
+    // Tests that that removing a cap bank does not delete the power.
     public static void testRemoveCapBank(final EnderGameTestHelper helper) {
         helper.startSequence()
             .thenExecute(() -> helper.provideEnergy(0,1,0, CapacitorTier.BASIC.getStorageCapacity()))
@@ -83,7 +81,7 @@ public class CapacitorBankTests {
     }
 
     @GameTest(template = SPLIT_CAPACITOR_BANKS)
-    @TestHolder(description = "Tests that that cap banks can merge")
+    // Tests that that cap banks can merge
     public static void testMergeCapBank(final EnderGameTestHelper helper) {
         helper.startSequence()
             .thenExecute(() -> helper.provideEnergy(0,1,0, CapacitorTier.BASIC.getStorageCapacity()))

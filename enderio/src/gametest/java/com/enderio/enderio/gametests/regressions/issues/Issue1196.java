@@ -13,22 +13,20 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import net.minecraftforge.fluids.FluidStack;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 /**
  * Test for Issue #1196 - Infinite Fluids from the VAT
  * https://github.com/Team-EnderIO/EnderIO/issues/1196
  */
-@ForEachTest(groups = "regression.issue1196")
+// Scenario group: regression.issue1196
 public class Issue1196 {
     @GameTest
-    @TestHolder(description = "Ensures that the VAT doesn't produce infinite outputs.")
-    public static void testIssue1196(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 2)
+    // Ensures that the VAT doesn't produce infinite outputs.
+    public static void testIssue1196(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 2)
             .set(0, 0, 0, EIOBlocks.VAT.get().defaultBlockState())
             .set(0, 0, 1, EIOBlocks.FLUID_TANK.get().defaultBlockState()));
 
@@ -56,8 +54,8 @@ public class Issue1196 {
                     // Determine how much Cloud Seed is created per craft
                     var recipeInput = new FermentingRecipe.Input(new ItemStack(Items.DIRT, 1), new ItemStack(Items.COBBLESTONE, 1), new FluidStack(Fluids.WATER, 1000), helper.getLevel());
                     var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.VAT_FERMENTING.type().get(), recipeInput, helper.getLevel()).orElseThrow();
-                    var outputs = recipe.value().craft(recipeInput, helper.getLevel().registryAccess());
-                    int amountCreated = outputs.getFirst().getFluid().getAmount();
+                    var outputs = recipe.craft(recipeInput, helper.getLevel().registryAccess());
+                    int amountCreated = outputs.get(0).getFluid().getAmount();
 
                     // Ensure no more fluid appeared out of thin air.
                     if (storedInVat + storedInTank > VatBlockEntity.TANK_CAPACITY + amountCreated) {

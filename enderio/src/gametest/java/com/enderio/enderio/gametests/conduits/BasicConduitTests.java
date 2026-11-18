@@ -3,17 +3,15 @@ package com.enderio.enderio.gametests.conduits;
 import com.enderio.enderio.init.EIOConduits;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
-@ForEachTest(groups = "conduit.basic")
+// Scenario group: conduit.basic
 public class BasicConduitTests {
     @GameTest
-    @TestHolder(description = "Ensures that placing conduits forms a network and breaking the middle splits the network.")
-    public static void testPlacementAndNetworkSplitting(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 6)
+    // Ensures that placing conduits forms a network and breaking the middle splits the network.
+    public static void testPlacementAndNetworkSplitting(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 6)
                 .set(0, 0, 0, Blocks.CHEST.defaultBlockState())
                 .set(0, 0, 5, Blocks.CHEST.defaultBlockState()));
 
@@ -38,9 +36,9 @@ public class BasicConduitTests {
     }
 
     @GameTest
-    @TestHolder(description = "Ensures that placing a conduit which connects other networks merges correctly.")
-    public static void testConduitNetworkMerging(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(3, 1, 3));
+    // Ensures that placing a conduit which connects other networks merges correctly.
+    public static void testConduitNetworkMerging(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(3, 1, 3));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);

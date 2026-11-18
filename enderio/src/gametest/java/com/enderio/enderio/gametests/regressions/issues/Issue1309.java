@@ -10,22 +10,20 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 /**
  * Regression test for issue #1309 - Item Conduits do not transfer if connection is broken with adjacent conduit.
  * https://github.com/Team-EnderIO/EnderIO/issues/1309
  */
-@ForEachTest(groups = "regression.issue1309")
+// Scenario group: regression.issue1309
 public class Issue1309 {
 
     @GameTest
-    @TestHolder(description = "Tests that item conduits can still transfer after breaking connection between adjacent conduits.")
-    public static void testIssue1309(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(5, 1, 3)
+    // Tests that item conduits can still transfer after breaking connection between adjacent conduits.
+    public static void testIssue1309(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(5, 1, 3)
             .set(1, 0, 2, Blocks.CHEST.defaultBlockState())
             .set(2, 0, 2, Blocks.CHEST.defaultBlockState())
             .set(3, 0, 2, Blocks.CHEST.defaultBlockState())

@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 034 restores all 128 existing main-module JUnit cases: 16 CPU-only cases and 112 registry cases running inside native Forge. The full repository build now passes, with 78 ordinary JUnit and 307 native GameTest executions across verified profiles. The separate 34-file gameplay GameTest suite and its CI invocation still need migration. Complete gameplay, clean packaged installations, client visuals and dedicated multiplayer remain unverified. No client has been launched.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 035 restores all 58 enabled baseline gameplay GameTests, adds four tank reload/resumption regressions and fixes native fluid-tank loading. Full build and the CI check command pass with 78 ordinary JUnit and 369 native GameTest executions. Post-run discovery/execution reconciliation detects filtered-out tests. Complete feature parity, clean packaged installations, client visuals and real dedicated multiplayer remain unverified. No client has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -37,7 +37,7 @@ EnderCore is already part of this repository and bundled by the Ender IO build. 
 
 Current build ownership is in `settings.gradle.kts`, `gradle/libs.versions.toml`, `buildSrc/src/main/kotlin/mod-common-conventions.gradle.kts`, and the three module build files. It uses ModDevGradle 2.0.148 and Gradle 9.8.2. The historical build uses ForgeGradle 6 with additional mapping/mixin plugins; its old repositories and versions are reference material, not assumed to remain resolvable.
 
-The baseline tests include 33 Java files under `src/test` and 34 under `src/gametest`, including helpers and package descriptors. These are file counts, not executed test counts. The build now targets Java 17. Cycle 034 ports the main JUnit suite to CPU/native-server profiles; the separate main gameplay GameTest framework and CI invocation still require migration.
+The baseline tests include 33 Java files under `src/test` and 34 under `src/gametest`, including helpers and package descriptors. These are file counts, not executed test counts. The build now targets Java 17. Cycles 034–035 port the main JUnit and gameplay suites to CPU/native Forge profiles; all 58 enabled baseline gameplay IDs are present in the passing runtime report. CI now invokes all profiles through `check --continue`; remote CI has not run.
 
 ## Main conversion areas
 
@@ -56,7 +56,7 @@ These are source-grounded work estimates. Exact target APIs and dependency versi
 | Recipes and resources | Current generated resources and GameTest data use `recipe` and `tags/item` paths | Generate 1.20.1 layouts and JSON schemas, including plural directories where required; translate tags, ingredients, loot, advancements and pack metadata |
 | Rendering and UI | Client code, dynamic conduit/facade rendering, painted blocks, screens, particles, six main-module mixin Java files | Port render and model APIs, GUI hooks, key mappings, access transformers and mixin targets; test visual results and interactions |
 | Optional integrations | Version catalog and `compat`/modded-conduit modules | Pin Forge 1.20.1 variants and adapt older APIs, especially Refined Storage and Mekanism; test both presence and absence |
-| Test infrastructure | `gametests/EnderIOTests.java` uses NeoForge test framework configuration/dumpers | Cycle 034 preserves all 128 main JUnit cases using 16 CPU tests and 112 real-Jupiter cases inside native Forge. The separate gameplay GameTest framework remains unported; preserve its coverage and report actual executed counts |
+| Test infrastructure | `gametests/EnderIOTests.java` uses NeoForge test framework configuration/dumpers | Cycles 034–035 preserve all 128 main JUnit cases and restore 58 baseline native gameplay scenarios, plus four tank regressions. Native reports and post-run coverage reconciliation feed `check`/CI; broader runtime coverage remains pending |
 
 Counts above are lexical file matches across module Java sources, including tests and datagen; they overlap and are not estimates of required edits.
 
@@ -177,7 +177,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 033: live integration networks and chemical budgets | Native ME/RS split/merge/face/reload tests, four-family chemical transfer rates and branch/overflow limits, LaserIO book dependency and orphan recipe cleanup, isolated serial datagen | 62 unit/195 native GameTests pass across verified profiles; both datagens and main jar/reobf pass. Full build fails on 42 early main-test compile errors. Complete gameplay, packaged and client verification remain pending. [Evidence](porting/1.20.1/cycle-033.md) | `8dca0c746` |
 
-| 034: main registry tests in native Forge | Preserve all main JUnit methods/assertions, run actual Jupiter in a headless Forge profile, native test APIs/fixtures and failure propagation | Full `build` passes; 78 ordinary JUnit/307 native GameTests pass with no skips. Separate main gameplay GameTests/CI, packaged installs and client/multiplayer validation remain incomplete. [Evidence](porting/1.20.1/cycle-034.md) | Commit containing cycle 034 |
+| 034: main registry tests in native Forge | Preserve all main JUnit methods/assertions, run actual Jupiter in a headless Forge profile, native test APIs/fixtures and failure propagation | Full `build` passes; 78 ordinary JUnit/307 native GameTests pass with no skips. Separate main gameplay GameTests/CI, packaged installs and client/multiplayer validation remain incomplete. [Evidence](porting/1.20.1/cycle-034.md) | `b8e093ee9` |
+
+| 035: native gameplay tests and tank reloads | Restore 58 baseline gameplay cases, add four tank lifecycle regressions, fix pre-level load and recipe resumption, reconcile actual execution and wire CI | Full build and final CI check command pass: 78 ordinary JUnit/369 native GameTests. Filtering probe and tank failures reproduced before fixes. Full parity, packaged installs and client/multiplayer remain incomplete. [Evidence](porting/1.20.1/cycle-035.md) | Commit containing cycle 035 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

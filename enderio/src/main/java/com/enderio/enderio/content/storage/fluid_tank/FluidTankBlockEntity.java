@@ -85,6 +85,17 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
     }
 
     @Override
+    public void onLoad() {
+        super.onLoad();
+        // Inventory/fluid callbacks run before the level exists during native loading.
+        // Rebuild the transient recipe and state once registry/world access is available.
+        onTankContentsChanged();
+        if (!level.isClientSide()) {
+            updateMachineState(MachineState.EMPTY_TANK, getFluidTank().isEmpty());
+        }
+    }
+
+    @Override
     public boolean isActive() {
         // No active state on tanks
         return false;
@@ -201,7 +212,10 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
                 setChanged();
                 super.onContentsChanged(slot);
                 updateMachineState(MachineState.EMPTY_TANK, TANK.getFluidAmount(this) <= 0);
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+                // Native chunk loading restores fluid NBT before assigning the level.
+                if (level != null) {
+                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+                }
             }
         };
     }

@@ -9,10 +9,8 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 /**
  * Regression test for issue #1171 - BlockDetector doesn't update neighbors.
@@ -24,13 +22,13 @@ import net.neoforged.testframework.gametest.StructureTemplateBuilder;
  * - A lamp is on the other side of the stone block and should turn off when the detector is active.
  * - Bug: The lamp stays lit because the detector doesn't notify neighbors
  */
-@ForEachTest(groups = "regression.issue1171")
+// Scenario group: regression.issue1171
 public class Issue1171 {
     
     @GameTest
-    @TestHolder(description = "Tests that BlockDetector properly updates neighbors when detected block changes")
-    public static void testBlockDetectorUpdatesNeighbors(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(4, 2, 1)
+    // Tests that BlockDetector properly updates neighbors when detected block changes
+    public static void testBlockDetectorUpdatesNeighbors(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(4, 2, 1)
             // Block to detect
             .set(0, 0, 0, Blocks.STONE.defaultBlockState())
             // BlockDetector facing west (toward the stone)

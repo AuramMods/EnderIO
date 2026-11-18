@@ -8,20 +8,18 @@ import com.enderio.enderio.init.EIORecipes;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 import java.util.List;
 
-@ForEachTest(groups = "machines.alloy_smelter")
+// Scenario group: machines.alloy_smelter
 public class AlloySmelterTests {
 
     @GameTest
-    @TestHolder(description = "Tests that the Alloy Smelter can process a basic alloy recipe.")
-    public static void testAlloySmelterAlloyingRecipe(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1)
+    // Tests that the Alloy Smelter can process a basic alloy recipe.
+    public static void testAlloySmelterAlloyingRecipe(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
             .set(0, 0, 0, EIOBlocks.ALLOY_SMELTER.get().defaultBlockState()));
 
         int energyToAdd = 10000;
@@ -57,7 +55,7 @@ public class AlloySmelterTests {
 
                     // Ensure energy was consumed correctly
                     var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.ALLOY_SMELTING.type().get(), input, helper.getLevel()).orElseThrow();
-                    int expectedEnergy = energyToAdd - recipe.value().energy();
+                    int expectedEnergy = energyToAdd - recipe.energy();
                     helper.assertEnergyStored(0, 1, 0, expectedEnergy);
                 })
                 .thenSucceed();
@@ -65,9 +63,9 @@ public class AlloySmelterTests {
     }
 
     @GameTest
-    @TestHolder(description = "Tests that the Alloy Smelter can process vanilla smelting recipes (Iron Ingot from ore).")
-    public static void testAlloySmelterVanillaSmeltingRecipe(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1)
+    // Tests that the Alloy Smelter can process vanilla smelting recipes (Iron Ingot from ore).
+    public static void testAlloySmelterVanillaSmeltingRecipe(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
             .set(0, 0, 0, EIOBlocks.ALLOY_SMELTER.get().defaultBlockState()));
 
         int energyToAdd = 10000;
@@ -96,7 +94,7 @@ public class AlloySmelterTests {
                     ), 3);
 
                     var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.ALLOY_SMELTING.type().get(), input, helper.getLevel()).orElseThrow();
-                    int expectedEnergy = energyToAdd - recipe.value().energy();
+                    int expectedEnergy = energyToAdd - recipe.energy();
                     helper.assertEnergyStored(0, 1, 0, expectedEnergy);
                 })
                 .thenSucceed();

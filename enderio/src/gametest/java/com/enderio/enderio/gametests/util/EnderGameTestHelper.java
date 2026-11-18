@@ -4,21 +4,63 @@ import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.foundation.io.energy.IMachineEnergyStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestAssertException;
-import net.minecraft.gametest.framework.GameTestInfo;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.GameTestSequence;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.common.capabilities.Capability;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.testframework.gametest.ExtendedGameTestHelper;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.function.Consumer;
 
-public class EnderGameTestHelper extends ExtendedGameTestHelper {
-    public EnderGameTestHelper(GameTestInfo info) {
-        super(info);
+public class EnderGameTestHelper {
+    private final GameTestHelper delegate;
+
+    public EnderGameTestHelper(GameTestHelper delegate) {
+        this.delegate = delegate;
     }
+
+    public ServerLevel getLevel() { return delegate.getLevel(); }
+    public GameTestSequence startSequence() { return delegate.startSequence(); }
+    public BlockPos absolutePos(BlockPos pos) { return delegate.absolutePos(pos); }
+    public BlockState getBlockState(BlockPos pos) { return delegate.getBlockState(pos); }
+    public void setBlock(int x, int y, int z, BlockState state) { delegate.setBlock(x, y, z, state); }
+    public void setBlock(int x, int y, int z, Block block) { delegate.setBlock(x, y, z, block); }
+    public void setBlock(BlockPos pos, BlockState state) { delegate.setBlock(pos, state); }
+    public void setBlock(BlockPos pos, Block block) { delegate.setBlock(pos, block); }
+    public void destroyBlock(BlockPos pos) { delegate.destroyBlock(pos); }
+    public void randomTick(BlockPos pos) { delegate.randomTick(pos); }
+    public void assertBlockPresent(Block block, BlockPos pos) { delegate.assertBlockPresent(block, pos); }
+    public void assertBlockPresent(Block block, int x, int y, int z) { delegate.assertBlockPresent(block, x, y, z); }
+    public void assertItemEntityPresent(Item item, BlockPos pos, double radius) { delegate.assertItemEntityPresent(item, pos, radius); }
+    public void assertContainerEmpty(int x, int y, int z) { delegate.assertContainerEmpty(new BlockPos(x, y, z)); }
+
+    public <T extends BlockEntity> T getBlockEntity(int x, int y, int z, Class<T> type) {
+        var entity = delegate.getBlockEntity(new BlockPos(x, y, z));
+        if (!type.isInstance(entity)) throw new GameTestAssertException("Expected " + type.getName() + " at " + x + "," + y + "," + z);
+        return type.cast(entity);
+    }
+
+    public <T> void assertValueEqual(T actual, T expected, String description) {
+        if (!java.util.Objects.equals(actual, expected)) {
+            throw new GameTestAssertException(description + ": expected " + expected + ", got " + actual);
+        }
+    }
+
+    private <T> @Nullable T capability(Capability<T> capability, BlockPos absolute, @Nullable Direction side) {
+        var entity = getLevel().getBlockEntity(absolute);
+        return entity == null ? null : entity.getCapability(capability, side).orElse(null);
+    }
+
 
     public void changeIoConfig(int x, int y, int z, Consumer<IOConfigurable> configurer) {
         var blockEntity = getLevel().getBlockEntity(absolutePos(new BlockPos(x, y, z)));
@@ -36,7 +78,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
     }
 
     public void insertIntoContainer(int x, int y, int z, ItemStack itemStack) {
-        var itemHandler = getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolutePos(new BlockPos(x, y, z)),
+        var itemHandler = capability(ForgeCapabilities.ITEM_HANDLER, absolutePos(new BlockPos(x, y, z)),
             null);
         if (itemHandler == null) {
             throw new GameTestAssertException("No item handler at " + x + "," + y + "," + z);
@@ -60,7 +102,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
     }
 
     public void assertContainerHasExactly(int x, int y, int z, Item item, int count) {
-        var itemHandler = getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolutePos(new BlockPos(x, y, z)),
+        var itemHandler = capability(ForgeCapabilities.ITEM_HANDLER, absolutePos(new BlockPos(x, y, z)),
             null);
         if (itemHandler == null) {
             throw new GameTestAssertException("No item handler at " + x + "," + y + "," + z);
@@ -81,7 +123,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
     }
 
     public void assertContainerHasAtleast(int x, int y, int z, Item item, int count) {
-        var itemHandler = getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolutePos(new BlockPos(x, y, z)),
+        var itemHandler = capability(ForgeCapabilities.ITEM_HANDLER, absolutePos(new BlockPos(x, y, z)),
             null);
         if (itemHandler == null) {
             throw new GameTestAssertException("No item handler at " + x + "," + y + "," + z);
@@ -105,7 +147,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
      * Insert an item into a specific slot of a container.
      */
     public void insertItemIntoSlot(int x, int y, int z, int slot, ItemStack itemStack) {
-        var itemHandler = getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolutePos(new BlockPos(x, y, z)), null);
+        var itemHandler = capability(ForgeCapabilities.ITEM_HANDLER, absolutePos(new BlockPos(x, y, z)), null);
         if (itemHandler == null) {
             throw new GameTestAssertException("No item handler at " + x + "," + y + "," + z);
         }
@@ -122,7 +164,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
      * Get the item stack in a specific slot of a container.
      */
     public ItemStack getItemInSlot(int x, int y, int z, int slot) {
-        var itemHandler = getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolutePos(new BlockPos(x, y, z)), null);
+        var itemHandler = capability(ForgeCapabilities.ITEM_HANDLER, absolutePos(new BlockPos(x, y, z)), null);
         if (itemHandler == null) {
             throw new GameTestAssertException("No item handler at " + x + "," + y + "," + z);
         }
@@ -157,7 +199,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
     // endregion
 
     public void fillContainer(int x, int y, int z, FluidStack stack) {
-        var fluidHandler = getLevel().getCapability(Capabilities.FluidHandler.BLOCK, absolutePos(new BlockPos(x, y, z)),
+        var fluidHandler = capability(ForgeCapabilities.FLUID_HANDLER, absolutePos(new BlockPos(x, y, z)),
             null);
         if (fluidHandler == null) {
             throw new GameTestAssertException("No fluid handler at " + x + "," + y + "," + z);
@@ -176,7 +218,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
     }
 
     public long getAmountInHandler(int x, int y, int z, Fluid fluid) {
-        var fluidHandler = getLevel().getCapability(Capabilities.FluidHandler.BLOCK, absolutePos(new BlockPos(x, y, z)),
+        var fluidHandler = capability(ForgeCapabilities.FLUID_HANDLER, absolutePos(new BlockPos(x, y, z)),
             null);
         if (fluidHandler == null) {
             throw new GameTestAssertException("No fluid handler at " + x + "," + y + "," + z);
@@ -184,7 +226,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
 
         long totalAmount = 0;
         for (int i = 0; i < fluidHandler.getTanks(); i++) {
-            if (fluidHandler.getFluidInTank(i).is(fluid)) {
+            if (fluidHandler.getFluidInTank(i).getFluid() == fluid) {
                 totalAmount += fluidHandler.getFluidInTank(i).getAmount();
             }
         }
@@ -193,13 +235,13 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
     }
 
     public void assertContainerHasExactly(int x, int y, int z, FluidStack stack) {
-        var fluidHandler = getLevel().getCapability(Capabilities.FluidHandler.BLOCK, absolutePos(new BlockPos(x, y, z)),
+        var fluidHandler = capability(ForgeCapabilities.FLUID_HANDLER, absolutePos(new BlockPos(x, y, z)),
             null);
         if (fluidHandler == null) {
             throw new GameTestAssertException("No fluid handler at " + x + "," + y + "," + z);
         }
 
-        int foundAmount = fluidHandler.drain(stack.copyWithAmount(Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE).getAmount();
+        int foundAmount = fluidHandler.drain(copyWithAmount(stack, Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE).getAmount();
 
         if (foundAmount != stack.getAmount()) {
             throw new GameTestAssertException("Expected " + stack.getAmount() + " of " + stack + " in tank at " + x + "," + y
@@ -208,7 +250,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
     }
 
     public void assertContainerHasExactly(int x, int y, int z, Fluid fluid, int amount) {
-        var fluidHandler = getLevel().getCapability(Capabilities.FluidHandler.BLOCK, absolutePos(new BlockPos(x, y, z)),
+        var fluidHandler = capability(ForgeCapabilities.FLUID_HANDLER, absolutePos(new BlockPos(x, y, z)),
             null);
         if (fluidHandler == null) {
             throw new GameTestAssertException("No fluid handler at " + x + "," + y + "," + z);
@@ -226,7 +268,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
      * Provide energy to a block entity by directly accessing its energy capability.
      */
     public void provideEnergyExact(int x, int y, int z, int amount) {
-        var energyHandler = getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, absolutePos(new BlockPos(x, y, z)), null);
+        var energyHandler = capability(ForgeCapabilities.ENERGY, absolutePos(new BlockPos(x, y, z)), null);
         if (energyHandler == null) {
             throw new GameTestAssertException("No energy handler at " + x + "," + y + "," + z);
         }
@@ -251,7 +293,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
      * Provide energy to a block entity by directly accessing its energy capability.
      */
     public void provideEnergy(int x, int y, int z, int amount) {
-        var energyHandler = getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, absolutePos(new BlockPos(x, y, z)), null);
+        var energyHandler = capability(ForgeCapabilities.ENERGY, absolutePos(new BlockPos(x, y, z)), null);
         if (energyHandler == null) {
             throw new GameTestAssertException("No energy handler at " + x + "," + y + "," + z);
         }
@@ -269,7 +311,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
      * Assert that a block has exactly the expected amount of energy stored.
      */
     public void assertEnergyStored(int x, int y, int z, int expectedAmount) {
-        var energyHandler = getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, absolutePos(new BlockPos(x, y, z)), null);
+        var energyHandler = capability(ForgeCapabilities.ENERGY, absolutePos(new BlockPos(x, y, z)), null);
         if (energyHandler == null) {
             throw new GameTestAssertException("No energy handler at " + x + "," + y + "," + z);
         }
@@ -284,7 +326,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
      * Assert that a block has at least the expected minimum amount of energy stored.
      */
     public void assertEnergyStoredAtLeast(int x, int y, int z, int minAmount) {
-        var energyHandler = getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, absolutePos(new BlockPos(x, y, z)), null);
+        var energyHandler = capability(ForgeCapabilities.ENERGY, absolutePos(new BlockPos(x, y, z)), null);
         if (energyHandler == null) {
             throw new GameTestAssertException("No energy handler at " + x + "," + y + "," + z);
         }
@@ -299,7 +341,7 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
      * Assert that a block has at most the expected maximum amount of energy stored.
      */
     public void assertEnergyStoredAtMost(int x, int y, int z, int maxAmount) {
-        var energyHandler = getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, absolutePos(new BlockPos(x, y, z)), null);
+        var energyHandler = capability(ForgeCapabilities.ENERGY, absolutePos(new BlockPos(x, y, z)), null);
         if (energyHandler == null) {
             throw new GameTestAssertException("No energy handler at " + x + "," + y + "," + z);
         }
@@ -314,11 +356,16 @@ public class EnderGameTestHelper extends ExtendedGameTestHelper {
      * Get the amount of energy stored in a block.
      */
     public int getEnergyStored(int x, int y, int z) {
-        var energyHandler = getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, absolutePos(new BlockPos(x, y, z)), null);
+        var energyHandler = capability(ForgeCapabilities.ENERGY, absolutePos(new BlockPos(x, y, z)), null);
         if (energyHandler == null) {
             throw new GameTestAssertException("No energy handler at " + x + "," + y + "," + z);
         }
 
         return energyHandler.getEnergyStored();
+    }
+    private static FluidStack copyWithAmount(FluidStack stack, int amount) {
+        var copy = stack.copy();
+        copy.setAmount(amount);
+        return copy;
     }
 }

@@ -15,7 +15,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -24,24 +24,22 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import net.minecraftforge.common.util.FakePlayer;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@ForEachTest(groups = "conduit.break")
+// Scenario group: conduit.break
 public class ConduitBreakTests {
     private static final BlockPos BUNDLE_POS = new BlockPos(0, 1, 0);
 
     @GameTest
-    @TestHolder(description = "Ensures breaking the last conduit drops its conduit item and installed filters.")
-    public static void breaksSingleConduit(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1));
+    // Ensures breaking the last conduit drops its conduit item and installed filters.
+    public static void breaksSingleConduit(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -62,9 +60,9 @@ public class ConduitBreakTests {
     }
 
     @GameTest
-    @TestHolder(description = "Ensures breaking one conduit from a bundle preserves the other conduit and its resources.")
-    public static void breaksOneOfMultipleConduits(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1));
+    // Ensures breaking one conduit from a bundle preserves the other conduit and its resources.
+    public static void breaksOneOfMultipleConduits(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -88,9 +86,9 @@ public class ConduitBreakTests {
     }
 
     @GameTest
-    @TestHolder(description = "Ensures a visible facade is broken before the final conduit and its filters.")
-    public static void breaksFacadeBeforeSingleConduit(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1));
+    // Ensures a visible facade is broken before the final conduit and its filters.
+    public static void breaksFacadeBeforeSingleConduit(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -125,9 +123,9 @@ public class ConduitBreakTests {
     }
 
     @GameTest
-    @TestHolder(description = "Ensures a visible facade is broken before one conduit from a multi-conduit bundle.")
-    public static void breaksFacadeBeforeOneOfMultipleConduits(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1));
+    // Ensures a visible facade is broken before one conduit from a multi-conduit bundle.
+    public static void breaksFacadeBeforeOneOfMultipleConduits(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -165,9 +163,9 @@ public class ConduitBreakTests {
     }
 
     @GameTest
-    @TestHolder(description = "Ensures replacing a conduit bundle block does not drop its conduits, facade, or filters.")
-    public static void overwritingBundleDoesNotDropResources(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1));
+    // Ensures replacing a conduit bundle block does not drop its conduits, facade, or filters.
+    public static void overwritingBundleDoesNotDropResources(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -189,9 +187,9 @@ public class ConduitBreakTests {
     }
 
     @GameTest
-    @TestHolder(description = "Ensures sneaking with a wrench removes the final conduit and drops its resources.")
-    public static void wrenchRemovesSingleConduit(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1));
+    // Ensures sneaking with a wrench removes the final conduit and drops its resources.
+    public static void wrenchRemovesSingleConduit(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -210,9 +208,9 @@ public class ConduitBreakTests {
     }
 
     @GameTest
-    @TestHolder(description = "Ensures sneaking with a wrench removes only one conduit from a multi-conduit bundle.")
-    public static void wrenchRemovesOneOfMultipleConduits(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1));
+    // Ensures sneaking with a wrench removes only one conduit from a multi-conduit bundle.
+    public static void wrenchRemovesOneOfMultipleConduits(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -234,9 +232,9 @@ public class ConduitBreakTests {
     }
 
     @GameTest
-    @TestHolder(description = "Ensures sneaking with a wrench removes a final conduit while preserving its facade.")
-    public static void wrenchRemovesSingleConduitWithFacade(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1));
+    // Ensures sneaking with a wrench removes a final conduit while preserving its facade.
+    public static void wrenchRemovesSingleConduitWithFacade(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -259,9 +257,9 @@ public class ConduitBreakTests {
     }
 
     @GameTest
-    @TestHolder(description = "Ensures sneaking with a wrench preserves a facade while removing one conduit.")
-    public static void wrenchRemovesOneOfMultipleConduitsWithFacade(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1));
+    // Ensures sneaking with a wrench preserves a facade while removing one conduit.
+    public static void wrenchRemovesOneOfMultipleConduitsWithFacade(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -317,14 +315,14 @@ public class ConduitBreakTests {
 
     private static ItemStack facadeStack() {
         var facade = new ItemStack(EIOItems.CONDUIT_FACADE.get());
-        facade.set(EIODataComponents.BLOCK_PAINT, BlockPaintData.of(Blocks.STONE));
+        EIODataComponents.BLOCK_PAINT.set(facade, BlockPaintData.of(Blocks.STONE));
         return facade;
     }
 
     private static boolean breakAsPlayer(ConduitGameTestHelper helper) {
         BlockPos pos = helper.absolutePos(BUNDLE_POS);
         var state = helper.getLevel().getBlockState(pos);
-        var hit = new BlockHitResult(pos.getCenter(), Direction.NORTH, pos, false);
+        var hit = new BlockHitResult(Vec3.atCenterOf(pos), Direction.NORTH, pos, false);
         var player = new TargetingFakePlayer(helper.getLevel(), hit);
         return state.onDestroyedByPlayer(helper.getLevel(), pos, player, true, helper.getLevel().getFluidState(pos));
     }
@@ -343,9 +341,9 @@ public class ConduitBreakTests {
         player.setShiftKeyDown(true);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(EIOItems.YETA_WRENCH.get()));
 
-        ItemInteractionResult result = bundle(helper).onWrenched(
-            new UseOnContext(player, InteractionHand.MAIN_HAND, (BlockHitResult) player.pick(player.blockInteractionRange() + 5, 0.0f, false)));
-        if (result == ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) {
+        InteractionResult result = bundle(helper).onWrenched(
+            new UseOnContext(player, InteractionHand.MAIN_HAND, (BlockHitResult) player.pick(player.getBlockReach() + 5, 0.0f, false)));
+        if (result == InteractionResult.PASS) {
             throw new GameTestAssertException("Wrenching a conduit was not handled.");
         }
     }
@@ -360,7 +358,7 @@ public class ConduitBreakTests {
             }
         }
 
-        throw new GameTestAssertException("Could not create a player hit for conduit " + target.getRegisteredName());
+        throw new GameTestAssertException("Could not create a player hit for conduit " + target.unwrapKey().orElseThrow().location());
     }
 
     private static class TargetingFakePlayer extends FakePlayer {
@@ -386,14 +384,14 @@ public class ConduitBreakTests {
 
         for (Holder<Conduit<?, ?>> expectedConduit : expectedConduits) {
             if (!bundle.hasConduitStrict(expectedConduit)) {
-                throw new GameTestAssertException("Expected conduit to remain in the bundle: " + expectedConduit.getRegisteredName());
+                throw new GameTestAssertException("Expected conduit to remain in the bundle: " + expectedConduit.unwrapKey().orElseThrow().location());
             }
         }
     }
 
     private static void assertItemFilterRemains(ConduitGameTestHelper helper, Holder<Conduit<?, ?>> itemConduit) {
         var filter = bundle(helper).getConnectionInventory(itemConduit, Direction.NORTH).getStackInSlot(0);
-        if (!ItemStack.isSameItemSameComponents(filter, basicItemFilter())) {
+        if (!ItemStack.isSameItemSameTags(filter, basicItemFilter())) {
             throw new GameTestAssertException("The filter on the remaining item conduit was removed.");
         }
     }
@@ -413,7 +411,7 @@ public class ConduitBreakTests {
         List<ItemStack> unmatchedDrops = new ArrayList<>(actualDrops);
         for (ItemStack expected : expectedDrops) {
             boolean matched = unmatchedDrops.removeIf(
-                actual -> actual.getCount() == expected.getCount() && ItemStack.isSameItemSameComponents(actual, expected));
+                actual -> actual.getCount() == expected.getCount() && ItemStack.isSameItemSameTags(actual, expected));
             if (!matched) {
                 throw new GameTestAssertException("Expected drop was not found: " + expected);
             }

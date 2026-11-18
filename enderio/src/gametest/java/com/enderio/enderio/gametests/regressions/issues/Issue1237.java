@@ -10,22 +10,20 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 /**
  * Regression test for issue #1237 - Redstone conduits don't produce block update when state changes.
  * https://github.com/Team-EnderIO/EnderIO/issues/1237
  */
-@ForEachTest(groups = "regression.issue1237")
+// Scenario group: regression.issue1237
 public class Issue1237 {
     
     @GameTest
-    @TestHolder(description = "Tests that pistons extend when receiving redstone signal via conduit")
-    public static void testPistonExtensionViaRedstoneConduit(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(6, 2, 1)
+    // Tests that pistons extend when receiving redstone signal via conduit
+    public static void testPistonExtensionViaRedstoneConduit(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(6, 2, 1)
             .set(0, 0, 0, Blocks.REDSTONE_BLOCK.defaultBlockState())
             .set(4, 0, 0, Blocks.PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.EAST)));
 

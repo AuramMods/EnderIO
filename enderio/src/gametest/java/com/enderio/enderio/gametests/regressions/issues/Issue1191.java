@@ -8,21 +8,19 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 /**
  * Regression tests for issue #1191 - Fluid tank infinitely produces / dupes xp juice from two Bottles o' Enchanting.
  * https://github.com/Team-EnderIO/EnderIO/issues/1191
  */
-@ForEachTest(groups = "regression.issue1191")
+// Scenario group: regression.issue1191
 public class Issue1191 {
     @GameTest
-    @TestHolder(description = "Ensures that experience cannot be duped using the fluid tank.")
-    public static void testIssue1191(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 3)
+    // Ensures that experience cannot be duped using the fluid tank.
+    public static void testIssue1191(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 3)
             .set(0, 0, 0, Blocks.CHEST.defaultBlockState())
             .set(0, 0, 1, EIOBlocks.FLUID_TANK.get().defaultBlockState())
             .set(0, 0, 2, EIOBlocks.XP_OBELISK.get().defaultBlockState()));

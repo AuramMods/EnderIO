@@ -5,10 +5,8 @@ import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.Items;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 /**
  * Regression test for issue #1302 - Sponge Dupe.
@@ -17,13 +15,13 @@ import net.neoforged.testframework.gametest.StructureTemplateBuilder;
  * Both fillInternal() and tryTankRecipe() process wet sponges, causing a double-consume
  * in the same tick.
  */
-@ForEachTest(groups = "regression.issue1302")
+// Scenario group: regression.issue1302
 public class Issue1302 {
 
     @GameTest
-    @TestHolder(description = "Ensures that wet sponges are not duped when emptied in a fluid tank.")
-    public static void testIssue1302(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1)
+    // Ensures that wet sponges are not duped when emptied in a fluid tank.
+    public static void testIssue1302(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
             .set(0, 0, 0, EIOBlocks.FLUID_TANK.get().defaultBlockState()));
 
         test.onGameTest(EnderGameTestHelper.class, helper -> {

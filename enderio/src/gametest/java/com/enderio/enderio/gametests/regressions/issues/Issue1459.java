@@ -13,28 +13,26 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
-@ForEachTest(groups = "regression.issue1459")
+// Scenario group: regression.issue1459
 public class Issue1459 {
 
     @GameTest
-    @TestHolder(description = "Ensures an extract limited item filter leaves its configured stock in the source inventory.")
-    public static void itemConduitLimitedExtractFilter(final DynamicTest test) {
+    // Ensures an extract limited item filter leaves its configured stock in the source inventory.
+    public static void itemConduitLimitedExtractFilter(final GameplayTest test) {
         testLimitedFilterTransfer(test, false);
     }
 
     @GameTest
-    @TestHolder(description = "Ensures an insert limited item filter caps the destination at its configured stock.")
-    public static void itemConduitLimitedInsertFilter(final DynamicTest test) {
+    // Ensures an insert limited item filter caps the destination at its configured stock.
+    public static void itemConduitLimitedInsertFilter(final GameplayTest test) {
         testLimitedFilterTransfer(test, true);
     }
 
-    private static void testLimitedFilterTransfer(final DynamicTest test, boolean insertFilter) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 3)
+    private static void testLimitedFilterTransfer(final GameplayTest test, boolean insertFilter) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 3)
             // Sender
             .set(0, 0, 0, Blocks.CHEST.defaultBlockState())
 
@@ -49,7 +47,7 @@ public class Issue1459 {
             var filterStack = new ItemStack(EIOItems.LIMITED_ITEM_FILTER.get());
             var filter = new LimitedItemFilter(LimitedItemFilter.SLOT_COUNT);
             filter.matches().set(0, new ItemStack(Items.COBBLESTONE, stockLimit));
-            filterStack.set(EIODataComponents.LIMITED_ITEM_FILTER, filter);
+            EIODataComponents.LIMITED_ITEM_FILTER.set(filterStack, filter);
 
             helper.startSequence()
                 // Clear and place the conduit between the source and destination chests.

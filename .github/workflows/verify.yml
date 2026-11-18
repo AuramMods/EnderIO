@@ -22,7 +22,13 @@ on:
       - ready_for_review
       - reopened
     paths:
-      - '**.java'
+      - '**/*.java'
+      - '**/*.kt'
+      - '**/*.kts'
+      - '**/src/**'
+      - 'gradle/**'
+      - 'gradle.properties'
+      - '.github/workflows/verify.yml'
 
 jobs:
   test:
@@ -50,13 +56,10 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Run Game Tests with Gradle
-        run: ./gradlew runGameTestServer
-
-      - name: Run Unit Tests with Gradle
-        # Run even if game tests failed so both reports are produced
-        if: ${{ !cancelled() }}
-        run: ./gradlew test
+      - name: Run unit and native Forge GameTests
+        # check includes core, Mekanism, main registry/gameplay and addon profiles.
+        # Continue independent suites after failures so their reports are retained.
+        run: ./gradlew check --continue
 
       # Upload for test-report to pick up
       - name: Upload Test Results

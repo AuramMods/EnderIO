@@ -12,19 +12,17 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import net.minecraftforge.fluids.FluidStack;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
-@ForEachTest(groups = "machines.soul_binder")
+// Scenario group: machines.soul_binder
 public class SoulBinderTests {
 
     @GameTest
-    @TestHolder(description = "Tests that the Soul Binder can process a basic soul binding recipe (Enticing Crystal).")
-    public static void testSoulBinderRecipe(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 1, 1)
+    // Tests that the Soul Binder can process a basic soul binding recipe (Enticing Crystal).
+    public static void testSoulBinderRecipe(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
             .set(0, 0, 0, EIOBlocks.SOUL_BINDER.get().defaultBlockState()));
 
         int energyToAdd = 10000;
@@ -55,11 +53,11 @@ public class SoulBinderTests {
                 var input = new SoulBindingRecipe.Input(
                     SoulVialItem.forSoul(Soul.of(EntityType.VILLAGER)),
                     new ItemStack(Items.COBBLESTONE, 1),
-                    new FluidStack(EIOFluids.XP_JUICE.source(), 10000)
+                    new FluidStack(EIOFluids.XP_JUICE.source().get(), 10000)
                 );
 
                 var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.SOUL_BINDING.type().get(), input, helper.getLevel()).orElseThrow();
-                int expectedEnergy = energyToAdd - recipe.value().energy();
+                int expectedEnergy = energyToAdd - recipe.energy();
                 helper.assertEnergyStored(0, 1, 0, expectedEnergy);
             })
             .thenSucceed());

@@ -1,0 +1,9 @@
+# Native Forge gameplay tests
+
+Run `./gradlew :enderio:verifyGameplayTests` for the gameplay suite plus discovery/execution reconciliation. `./gradlew :enderio:check` includes the CPU, registry and gameplay suites. Repository CI runs `./gradlew check --continue` to include every module's native profiles and retain independent results after a failure.
+
+The gameplay profile runs headlessly under `enderio/run/gametest-server`, using the actual Ender IO mod without the optional integrations in the addon profile. It never launches a client. Native XML results and the discovered case list are written under `enderio/build/test-results/gameTestServer`. The post-run check compares those names after the server has executed; it detects namespace-filtered or otherwise missing cases as well as failures/skips.
+
+`resources/gameplay-tests.txt` lists scenario classes. Their native `@GameTest` annotations retain timeouts, attempts and required/success settings. `GameplayTest` binds each dynamic fixture to a native helper callback; methods accepting `EnderGameTestHelper` or `ConduitGameTestHelper` can share a field marked `@FixtureTemplate`. Keep fixtures in the `enderio_tests` namespace. `FixtureBuilder` loads native structure NBT through public Minecraft APIs, and `EnderGameTestHelper` delegates world operations to the native helper and Forge capabilities. Test sequence timing and assertions remain in their original scenario classes.
+
+Cycle 035 executes all 58 enabled baseline scenarios plus four tank load/resumption regressions. The baseline's commented-out cold-fire crafting test remains unexecuted; the active cold-fire expiration test is included. Tests and fixture recipes are never packaged with the mod. No GUI, client rendering or clean packaged multiplayer claim follows from this suite.

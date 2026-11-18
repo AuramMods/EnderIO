@@ -1,6 +1,5 @@
 package com.enderio.enderio.gametests.conduits.fluid;
 
-import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.gametests.EnderIOTests;
 import com.enderio.enderio.gametests.conduits.ConduitGameTestHelper;
@@ -13,24 +12,22 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.RegisterStructureTemplate;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import net.minecraftforge.fluids.FluidStack;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureTemplate;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 import java.util.function.Supplier;
 
-@ForEachTest(groups = "conduit.item")
+// Scenario group: conduit.item
 public class FluidConduitTests {
 
-    private static final String THREE_TANKS = EnderIO.MOD_ID + ":fluid_conduit_three_tanks";
-    private static final String TWO_TANKS = EnderIO.MOD_ID + ":fluid_conduit_two_tanks";
+    private static final String THREE_TANKS = EnderIOTests.MOD_ID + ":fluid_conduit_three_tanks";
+    private static final String TWO_TANKS = EnderIOTests.MOD_ID + ":fluid_conduit_two_tanks";
 
     // @formatter:off
-    @RegisterStructureTemplate(THREE_TANKS)
-    public static final Supplier<StructureTemplate> THREE_TANKS_TEMPLATE = StructureTemplateBuilder.lazy(3, 1, 3,
+    @FixtureTemplate(THREE_TANKS)
+    public static final Supplier<StructureTemplate> THREE_TANKS_TEMPLATE = FixtureBuilder.lazy(3, 1, 3,
         builder -> builder
             // Sender
             .set(2, 0, 0, EIOBlocks.FLUID_TANK.get().defaultBlockState())
@@ -42,8 +39,8 @@ public class FluidConduitTests {
     // @formatter:on
 
     // @formatter:off
-    @RegisterStructureTemplate(TWO_TANKS)
-    public static final Supplier<StructureTemplate> TWO_TANKS_TEMPLATE = StructureTemplateBuilder.lazy(3, 1, 1,
+    @FixtureTemplate(TWO_TANKS)
+    public static final Supplier<StructureTemplate> TWO_TANKS_TEMPLATE = FixtureBuilder.lazy(3, 1, 1,
         builder -> builder
             .set(0, 0, 0, EIOBlocks.FLUID_TANK.get().defaultBlockState())
             .set(2, 0, 0, EIOBlocks.FLUID_TANK.get().defaultBlockState())
@@ -51,9 +48,9 @@ public class FluidConduitTests {
     // @formatter:on
 
     @GameTest
-    @TestHolder(description = "Tests basic fluid conduit functionality.")
-    public static void fluidConduitBasicTransfer(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder
+    // Tests basic fluid conduit functionality.
+    public static void fluidConduitBasicTransfer(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder
             .withSize(1, 1, 3)
             .set(0, 0, 0, EIOBlocks.FLUID_TANK.get().defaultBlockState())
             .set(0, 0, 2, EIOBlocks.FLUID_TANK.get().defaultBlockState()));
@@ -94,7 +91,7 @@ public class FluidConduitTests {
     }
 
     @GameTest(template = THREE_TANKS)
-    @TestHolder(description = "Ensures fluid conduits prioritise closest container first.")
+    // Ensures fluid conduits prioritise closest container first.
     public static void fluidConduitDistancePriority(final ConduitGameTestHelper helper) {
         var fluidConduit = helper.getConduit(EIOConduits.FLUID);
         final int tickRate = fluidConduit.value().type().getTickRate(fluidConduit);
@@ -125,7 +122,7 @@ public class FluidConduitTests {
     }
 
     @GameTest(template = THREE_TANKS)
-    @TestHolder(description = "Ensures fluid conduits prioritise highest priority container first, before closest.")
+    // Ensures fluid conduits prioritise highest priority container first, before closest.
     public static void fluidConduitManualPriority(final ConduitGameTestHelper helper) {
         var fluidConduit = helper.getConduit(EIOConduits.ENERGETIC_FLUID);
         final int tickRate = fluidConduit.value().type().getTickRate(fluidConduit);
@@ -156,13 +153,13 @@ public class FluidConduitTests {
     }
 
     @GameTest(template = TWO_TANKS)
-    @TestHolder(description = "Ensures fluid conduits keep fluid components intact.")
+    // Ensures fluid conduits keep fluid components intact.
     public static void fluidConduitsKeepComponents(final ConduitGameTestHelper helper) {
         var fluidConduit = helper.getConduit(EIOConduits.ENERGETIC_FLUID);
         final int tickRate = fluidConduit.value().type().getTickRate(fluidConduit);
 
         var fluidWithComponent = new FluidStack(Fluids.WATER, 1);
-        fluidWithComponent.set(EnderIOTests.TEST_NUMBER, 2);
+        fluidWithComponent.getOrCreateTag().putInt(EnderIOTests.TEST_NUMBER, 2);
 
         helper.startSequence()
             // Destroy the previous conduit

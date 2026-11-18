@@ -8,4 +8,4 @@ The registry suite loads the actual Ender IO mod in an isolated headless Forge s
 
 JUnit libraries are packaged as a test-only Forge game library because ordinary JVM classpaths do not provide Forge's transformed Minecraft classes. No fake Minecraft/Forge bootstrap is used, and neither this source set nor its library jar is included in shipped artifacts.
 
-At cycle 034, this profile preserves 112 existing cases in 20 classes. The other 16 main-module JUnit cases remain in `src/test`. The separate older `src/gametest` suite is still awaiting migration; this profile does not replace its gameplay coverage.
+At cycle 034, this profile preserves 112 existing cases in 20 classes. The other 16 main-module JUnit cases remain in `src/test`. The separate `src/gametest` suite now runs 62 native gameplay tests and is also included in `:enderio:check`; this registry profile complements that coverage.

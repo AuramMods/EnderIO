@@ -70,24 +70,24 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `SILENT_POLISHED_BLACKSTONE_PRESSURE_PLATE` | [EIOBlocks:269](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `SILENT_HEAVY_WEIGHTED_PRESSURE_PLATE` | [EIOBlocks:272](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `SILENT_LIGHT_WEIGHTED_PRESSURE_PLATE` | [EIOBlocks:275](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `CONDUIT_BUNDLE` | [EIOBlocks:293](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `CONDUIT_BUNDLE` | [EIOBlocks:293](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: native routing/split/merge, priority/tier transfer and nine break/wrench/drop scenarios pass; full lifecycle/render coverage remains pending ([cycle 035](cycle-035.md)) |
 | `SOUL_CHAIN` | [EIOBlocks:301](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `COLD_FIRE` | [EIOBlocks:309](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `COLD_FIRE` | [EIOBlocks:309](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: age/expiration scenario passes; the baseline cold-fire crafting scenario remains commented out and unverified ([cycle 035](cycle-035.md)) |
 | `ENDERMAN_HEAD` | [EIOBlocks:312](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `WALL_ENDERMAN_HEAD` | [EIOBlocks:315](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `INDUSTRIAL_INSULATION` | [EIOBlocks:318](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `FLUID_TANK` | [EIOBlocks:326](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `PRESSURIZED_FLUID_TANK` | [EIOBlocks:333](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `FLUID_TANK` | [EIOBlocks:326](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: fluid NBT, sponge/mending regressions and native pre-level load/recipe resumption pass; GUI and full restart coverage remain pending ([cycle 035](cycle-035.md)) |
+| `PRESSURIZED_FLUID_TANK` | [EIOBlocks:333](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: native pre-level load retains fluid NBT/inventory and resumes saved recipes; full gameplay/render coverage remains pending ([cycle 035](cycle-035.md)) |
 | `ENCHANTER` | [EIOBlocks:341](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `ENDERFACE` | [EIOBlocks:348](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `ALLOY_SMELTER` | [EIOBlocks:356](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `ALLOY_SMELTER` | [EIOBlocks:356](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: alloying and vanilla smelting inputs/outputs/energy pass; full automation/persistence/GUI coverage remains pending ([cycle 035](cycle-035.md)) |
 | `PAINTING_MACHINE` | [EIOBlocks:359](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `WIRELESS_CHARGER` | [EIOBlocks:362](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `STIRLING_GENERATOR` | [EIOBlocks:365](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `SAG_MILL` | [EIOBlocks:368](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `SLICE_AND_SPLICE` | [EIOBlocks:371](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `SAG_MILL` | [EIOBlocks:368](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: stone, copper ore and raw copper processing/energy pass; bonus outputs/full automation/persistence/GUI remain pending ([cycle 035](cycle-035.md)) |
+| `SLICE_AND_SPLICE` | [EIOBlocks:371](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: test electrode recipe inputs/output/energy pass; full automation/persistence/GUI remain pending ([cycle 035](cycle-035.md)) |
 | `IMPULSE_HOPPER` | [EIOBlocks:374](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `SOUL_BINDER` | [EIOBlocks:377](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `SOUL_BINDER` | [EIOBlocks:377](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: test binding recipe soul/inputs/output/energy pass; full automation/persistence/GUI remain pending ([cycle 035](cycle-035.md)) |
 | `CRAFTER` | [EIOBlocks:380](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `DRAIN` | [EIOBlocks:383](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `WIRED_CHARGER` | [EIOBlocks:387](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
@@ -101,11 +101,11 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `TRAVEL_ANCHOR` | [EIOBlocks:432](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `PAINTED_TRAVEL_ANCHOR` | [EIOBlocks:436](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `SOLAR_PANELS` | [EIOBlocks:442](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `CAPACITOR_BANKS` | [EIOBlocks:452](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `CAPACITOR_BANKS` | [EIOBlocks:452](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: basic-bank capacity/split/merge and conduit energy scenarios pass; all tier/render/restart coverage remains pending ([cycle 035](cycle-035.md)) |
 | `SOUL_ENGINE` | [EIOBlocks:462](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `NIARD` | [EIOBlocks:467](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `VAT` | [EIOBlocks:475](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `BLOCK_DETECTOR` | [EIOBlocks:480](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `VAT` | [EIOBlocks:475](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: reagent ordering and full-output handling regressions pass; full progression/automation/persistence/GUI remain pending ([cycle 035](cycle-035.md)) |
+| `BLOCK_DETECTOR` | [EIOBlocks:480](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: neighbor-update regression passes; all configurations/render/restart behavior remain pending ([cycle 035](cycle-035.md)) |
 | `FARMING_STATION` | [EIOBlocks:485](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `XP_OBELISK` | [EIOBlocks:490](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `INHIBITOR_OBELISK` | [EIOBlocks:493](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
@@ -274,7 +274,7 @@ Register, render, fill/drain, world behavior where applicable, recipes and persi
 | `VAPOR_OF_LEVITY` | [EIOFluids:29](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `HOOTCH` | [EIOFluids:35](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `ROCKET_FUEL` | [EIOFluids:41](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
-| `FIRE_WATER` | [EIOFluids:47](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
+| `FIRE_WATER` | [EIOFluids:47](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Partial: fire-crafting drops and block conversion pass with test recipes; full fluid/visual/lifecycle behavior remains pending ([cycle 035](cycle-035.md)) |
 | `XP_JUICE` | [EIOFluids:55](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `LIQUID_SUNSHINE` | [EIOFluids:62](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `LIQUID_DARKNESS` | [EIOFluids:70](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
@@ -335,3 +335,5 @@ Cycle 032 runs six tests with the **actual Ender IO mod** and pinned integration
 Cycle 033 adds 12 actual-mod native tests: ME grid split/merge and owner-preserving bundle reload; RS controller/disk-drive route split/reconnect, disabled-face behavior and owner-preserving bundle reload; gas/infusion/pigment/slurry transfers through native Mekanism tank blocks; partial-destination and large-rate budgets; and LaserIO book crafting. Chemical rates and extraction budgets are corrected after reproductions. This does not prove disk-backed chunk/restart behavior, powered ME channels/storage, RS storage operations, chemical execution-time remainder safety, client behavior or packaged installations. The source baseline's orphan `enderio:darksteel_upgrade` recipe has no implemented serializer and is explicitly removed; the immutable baseline inventory still records it. See [cycle 033](cycle-033.md).
 
 Cycle 034 preserves all 128 existing main JUnit cases: 16 CPU-only cases and 112 registry-dependent cases executed by real Jupiter inside native Forge. The moved filter, soul, recipe, fluid-bucket, ghost-slot, transfer, conduit-pathing and save-codec tests retain all 310 assertion calls. The full build passes with 78 ordinary JUnit and 307 native GameTest executions across configured profiles. This does not cover the separate 43 main gameplay GameTest registrations, full integration absence, packaged installs, restart persistence or client/multiplayer behavior. Feature-family completion remains pending; see [cycle 034](cycle-034.md).
+
+Cycle 035 restores all 58 enabled baseline gameplay GameTests and adds four fluid-tank load/resumption regressions. All 62 execute in native Forge. The first shared-template run exposed 15 namespace-filtered tests; a post-run comparison now reconciles actual discovered and executed names, and an intentional filtering probe correctly fails after the remaining tests pass. Both tank variants now load before level assignment and rebuild cached recipes on load. GUI, packaged installation and broader feature-family acceptance remain incomplete. See [cycle 035](cycle-035.md).

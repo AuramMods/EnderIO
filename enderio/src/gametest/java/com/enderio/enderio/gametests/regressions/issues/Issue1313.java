@@ -9,22 +9,20 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 /**
  * Regression test for issue #1313 - Disconnecting two conduits of differing tiers causes a crash
  * https://github.com/Team-EnderIO/EnderIO/issues/1313
  */
-@ForEachTest(groups = "regression.issue1313")
+// Scenario group: regression.issue1313
 public class Issue1313 {
 
     @GameTest
-    @TestHolder(description = "Tests disconnection of two different conduit types doesn't crash")
-    public static void testIssue1313(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(2, 1, 1));
+    // Tests disconnection of two different conduit types doesn't crash
+    public static void testIssue1313(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(2, 1, 1));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);

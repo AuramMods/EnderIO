@@ -1,67 +1,21 @@
 package com.enderio.enderio.gametests;
 
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.serialization.Codec;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.ExtraCodecs;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.testframework.conf.ClientConfiguration;
-import net.neoforged.testframework.conf.Feature;
-import net.neoforged.testframework.conf.FrameworkConfiguration;
-import net.neoforged.testframework.impl.MutableTestFramework;
-import net.neoforged.testframework.summary.GitHubActionsStepSummaryDumper;
-import net.neoforged.testframework.summary.JUnitSummaryDumper;
-import org.lwjgl.glfw.GLFW;
-
-import java.nio.file.Path;
-import java.util.function.UnaryOperator;
+import com.enderio.enderio.gametests.util.GameplayTests;
+import net.minecraft.gametest.framework.GlobalTestReporter;
+import net.minecraft.gametest.framework.JUnitLikeTestReporter;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.server.ServerAboutToStartEvent;
+import net.minecraftforge.fml.common.Mod;
 
 @Mod(EnderIOTests.MOD_ID)
-public class EnderIOTests {
-
+public final class EnderIOTests {
     public static final String MOD_ID = "enderio_tests";
+    public static final String TEST_NUMBER = "enderio_tests:test_number";
 
-    private static final DeferredRegister<DataComponentType<?>> DATA_COMPONENT_TYPES = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, MOD_ID);
-
-    public static final DataComponentType<Integer> TEST_NUMBER = registerDataComponentType("test_number",
-        builder -> builder.persistent(Codec.INT));
-
-    public EnderIOTests(IEventBus eventBus, ModContainer container) {
-        final MutableTestFramework framework = FrameworkConfiguration
-                .builder(ResourceLocation.fromNamespaceAndPath(MOD_ID, "tests"))
-                .clientConfiguration(() -> ClientConfiguration.builder()
-                        .toggleOverlayKey(GLFW.GLFW_KEY_O)
-                        .openManagerKey(GLFW.GLFW_KEY_M)
-                        .build())
-                .enable(Feature.CLIENT_SYNC, Feature.TEST_STORE)
-            // TODO: Review the local publish path
-            .dumpers(new JUnitSummaryDumper(Path.of(System.getProperty("enderio.gametest.junit_dir", "../build/test-results/gameTestServer"))), new GitHubActionsStepSummaryDumper())
-                .build()
-                .create();
-
-        DATA_COMPONENT_TYPES.register(eventBus);
-
-        framework.init(eventBus, container);
-
-        NeoForge.EVENT_BUS.addListener((final RegisterCommandsEvent event) -> {
-            final LiteralArgumentBuilder<CommandSourceStack> node = Commands.literal("tests");
-            framework.registerCommands(node);
-            event.getDispatcher().register(node);
-        });
-    }
-
-    private static <T> DataComponentType<T> registerDataComponentType(String name, UnaryOperator<DataComponentType.Builder<T>> builder) {
-        var componentType = builder.apply(DataComponentType.builder()).build();
-        DATA_COMPONENT_TYPES.register(name, () -> componentType);
-        return componentType;
+    public EnderIOTests() throws javax.xml.parsers.ParserConfigurationException {
+        var directory = new java.io.File(System.getProperty("enderio.gametest.junit_dir", "../build/test-results/gameTestServer"));
+        directory.mkdirs();
+        GlobalTestReporter.replaceWith(new JUnitLikeTestReporter(new java.io.File(directory, "results.xml")));
+        MinecraftForge.EVENT_BUS.addListener((ServerAboutToStartEvent event) -> GameplayTests.installTemplates(event.getServer()));
     }
 }

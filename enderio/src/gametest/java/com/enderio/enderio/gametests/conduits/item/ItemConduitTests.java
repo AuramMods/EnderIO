@@ -1,6 +1,6 @@
 package com.enderio.enderio.gametests.conduits.item;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.gametests.EnderIOTests;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.gametests.conduits.ConduitGameTestHelper;
 import com.enderio.enderio.content.conduits.type.item.ItemConduit;
@@ -11,22 +11,20 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.RegisterStructureTemplate;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureTemplate;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 import java.util.function.Supplier;
 
-@ForEachTest(groups = "conduit.item")
+// Scenario group: conduit.item
 public class ItemConduitTests {
 
-    private static final String THREE_CHESTS = EnderIO.MOD_ID + ":item_conduit_three_chests";
+    private static final String THREE_CHESTS = EnderIOTests.MOD_ID + ":item_conduit_three_chests";
 
     // @formatter:off
-    @RegisterStructureTemplate(THREE_CHESTS)
-    public static final Supplier<StructureTemplate> THREE_CHESTS_TEMPLATE = StructureTemplateBuilder.lazy(3, 1, 3,
+    @FixtureTemplate(THREE_CHESTS)
+    public static final Supplier<StructureTemplate> THREE_CHESTS_TEMPLATE = FixtureBuilder.lazy(3, 1, 3,
         builder -> builder
             // Sender
             .set(2, 0, 0, Blocks.CHEST.defaultBlockState())
@@ -38,10 +36,10 @@ public class ItemConduitTests {
     // @formatter:on
 
     @GameTest
-    @TestHolder(description = "Tests basic item conduit functionality.")
-    public static void itemConduitBasicTransfer(final DynamicTest test) {
+    // Tests basic item conduit functionality.
+    public static void itemConduitBasicTransfer(final GameplayTest test) {
         test.registerGameTestTemplate(
-            () -> StructureTemplateBuilder.withSize(1, 1, 3).set(0, 0, 0, Blocks.CHEST.defaultBlockState()).set(0, 0, 2, Blocks.CHEST.defaultBlockState()));
+            () -> FixtureBuilder.withSize(1, 1, 3).set(0, 0, 0, Blocks.CHEST.defaultBlockState()).set(0, 0, 2, Blocks.CHEST.defaultBlockState()));
 
         test.onGameTest(ConduitGameTestHelper.class, helper -> {
             var itemConduit = helper.getConduit(EIOConduits.ITEM);
@@ -79,7 +77,7 @@ public class ItemConduitTests {
     }
 
     @GameTest(template = THREE_CHESTS)
-    @TestHolder(description = "Ensures item conduits prioritise closest container first.")
+    // Ensures item conduits prioritise closest container first.
     public static void itemConduitDistancePriority(final ConduitGameTestHelper helper) {
         var itemConduit = helper.getConduit(EIOConduits.ITEM);
         final int tickRate = itemConduit.value().type().getTickRate(itemConduit);
@@ -110,7 +108,7 @@ public class ItemConduitTests {
     }
 
     @GameTest(template = THREE_CHESTS)
-    @TestHolder(description = "Ensures item conduits prioritise highest priority container first, before closest.")
+    // Ensures item conduits prioritise highest priority container first, before closest.
     public static void itemConduitManualPriority(final ConduitGameTestHelper helper) {
         var itemConduit = helper.getConduit(EIOConduits.ITEM);
         final int tickRate = itemConduit.value().type().getTickRate(itemConduit);
@@ -141,7 +139,7 @@ public class ItemConduitTests {
     }
 
     @GameTest(template = THREE_CHESTS)
-    @TestHolder(description = "Ensures item conduit round robin works.")
+    // Ensures item conduit round robin works.
     public static void itemConduitRoundRobin(final ConduitGameTestHelper helper) {
         var itemConduit = helper.getConduit(EIOConduits.ITEM);
         final int tickRate = itemConduit.value().type().getTickRate(itemConduit);

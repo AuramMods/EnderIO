@@ -1,6 +1,6 @@
 package com.enderio.enderio.gametests.conduits.energy;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.gametests.EnderIOTests;
 import com.enderio.enderio.api.io.IOMode;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.content.conduits.type.energy.EnergyConduitConnectionConfig;
@@ -13,30 +13,28 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.RegisterStructureTemplate;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureTemplate;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 import java.util.function.Supplier;
 
-@ForEachTest(groups = "conduit.energy")
+// Scenario group: conduit.energy
 public class EnergyConduitTests {
 
-    private static final String TWO_CAPACITOR_BANKS = EnderIO.MOD_ID + ":energy_conduit_two_capacitor_banks";
-    private static final String THREE_CAPACITOR_BANKS = EnderIO.MOD_ID + ":energy_conduit_three_capacitor_banks";
+    private static final String TWO_CAPACITOR_BANKS = EnderIOTests.MOD_ID + ":energy_conduit_two_capacitor_banks";
+    private static final String THREE_CAPACITOR_BANKS = EnderIOTests.MOD_ID + ":energy_conduit_three_capacitor_banks";
 
     // @formatter:off
-    @RegisterStructureTemplate(TWO_CAPACITOR_BANKS)
-    public static final Supplier<StructureTemplate> TWO_CAPACITOR_BANKS_TEMPLATE = StructureTemplateBuilder.lazy(3, 1, 1,
+    @FixtureTemplate(TWO_CAPACITOR_BANKS)
+    public static final Supplier<StructureTemplate> TWO_CAPACITOR_BANKS_TEMPLATE = FixtureBuilder.lazy(3, 1, 1,
         builder -> builder
             .set(0, 0, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState())
             .set(2, 0, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState())
     );
 
-    @RegisterStructureTemplate(THREE_CAPACITOR_BANKS)
-    public static final Supplier<StructureTemplate> THREE_CAPACITOR_BANKS_TEMPLATE = StructureTemplateBuilder.lazy(5, 1, 1,
+    @FixtureTemplate(THREE_CAPACITOR_BANKS)
+    public static final Supplier<StructureTemplate> THREE_CAPACITOR_BANKS_TEMPLATE = FixtureBuilder.lazy(5, 1, 1,
         builder -> builder
             .set(0, 0, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState())
             .set(2, 0, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState())
@@ -45,7 +43,7 @@ public class EnergyConduitTests {
     // @formatter:on
 
     @GameTest(template = TWO_CAPACITOR_BANKS)
-    @TestHolder(description = "Tests basic energy conduit transfer from source to sink capacitor bank.")
+    // Tests basic energy conduit transfer from source to sink capacitor bank.
     public static void energyConduitBasicTransfer(final ConduitGameTestHelper helper) {
         var energyConduit = helper.getConduit(EIOConduits.ENERGY);
         final int transferRate = ((com.enderio.enderio.content.conduits.type.energy.EnergyConduit) energyConduit.value()).transferRatePerTick();
@@ -85,7 +83,7 @@ public class EnergyConduitTests {
     }
 
     @GameTest(template = TWO_CAPACITOR_BANKS)
-    @TestHolder(description = "Tests that energy conduits respect redstone control for extraction.")
+    // Tests that energy conduits respect redstone control for extraction.
     public static void energyConduitRedstoneControl(final ConduitGameTestHelper helper) {
         var energyConduit = helper.getConduit(EIOConduits.ENERGY);
         final int transferRate = ((com.enderio.enderio.content.conduits.type.energy.EnergyConduit) energyConduit.value()).transferRatePerTick();
@@ -135,7 +133,7 @@ public class EnergyConduitTests {
     }
 
     @GameTest(template = TWO_CAPACITOR_BANKS)
-    @TestHolder(description = "Tests that disabled connections do not transfer energy.")
+    // Tests that disabled connections do not transfer energy.
     public static void energyConduitDisabledConnection(final ConduitGameTestHelper helper) {
         var energyConduit = helper.getConduit(EIOConduits.ENERGY);
         final int transferRate = ((com.enderio.enderio.content.conduits.type.energy.EnergyConduit) energyConduit.value()).transferRatePerTick();
@@ -179,7 +177,7 @@ public class EnergyConduitTests {
     }
 
     @GameTest(template = THREE_CAPACITOR_BANKS)
-    @TestHolder(description = "Tests that energy conduits prioritize closer capacitor banks when distributing energy.")
+    // Tests that energy conduits prioritize closer capacitor banks when distributing energy.
     public static void energyConduitDistancePriority(final ConduitGameTestHelper helper) {
         var energyConduit = helper.getConduit(EIOConduits.ENERGY);
         final int transferRate = ((com.enderio.enderio.content.conduits.type.energy.EnergyConduit) energyConduit.value()).transferRatePerTick();
@@ -248,7 +246,7 @@ public class EnergyConduitTests {
     }
 
     @GameTest(template = THREE_CAPACITOR_BANKS)
-    @TestHolder(description = "Tests that manual priority overrides distance priority for energy distribution.")
+    // Tests that manual priority overrides distance priority for energy distribution.
     public static void energyConduitManualPriority(final ConduitGameTestHelper helper) {
         var energyConduit = helper.getConduit(EIOConduits.ENERGY);
         final int transferRate = ((com.enderio.enderio.content.conduits.type.energy.EnergyConduit) energyConduit.value()).transferRatePerTick();
@@ -305,10 +303,10 @@ public class EnergyConduitTests {
     }
 
     @GameTest
-    @TestHolder(description = "Tests that mixed tier energy conduits limit transfer to the lowest tier rate.")
-    public static void energyConduitTierLimiting(final DynamicTest test) {
+    // Tests that mixed tier energy conduits limit transfer to the lowest tier rate.
+    public static void energyConduitTierLimiting(final GameplayTest test) {
         test.registerGameTestTemplate(
-            () -> StructureTemplateBuilder.withSize(5, 1, 1)
+            () -> FixtureBuilder.withSize(5, 1, 1)
                 // Source bank at Y=0 (appears at world Y=1)
                 .set(0, 0, 0, EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.VIBRANT).get().defaultBlockState())
                 // Sink bank at Y=0 (appears at world Y=1)
@@ -373,7 +371,7 @@ public class EnergyConduitTests {
     }
 
     @GameTest(template = THREE_CAPACITOR_BANKS)
-    @TestHolder(description = "Tests energy distribution across multiple sinks.")
+    // Tests energy distribution across multiple sinks.
     public static void energyConduitMultiSinkDistribution(final ConduitGameTestHelper helper) {
         var energyConduit = helper.getConduit(EIOConduits.ENERGY);
         final int transferRate = ((com.enderio.enderio.content.conduits.type.energy.EnergyConduit) energyConduit.value()).transferRatePerTick();

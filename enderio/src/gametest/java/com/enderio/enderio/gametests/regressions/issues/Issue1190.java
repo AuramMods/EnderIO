@@ -13,10 +13,8 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedstoneLampBlock;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 /**
  * Regression tests for issue #1190 - Redstone Filters Broken (AND and NAND filters don't work).
@@ -27,13 +25,13 @@ import net.neoforged.testframework.gametest.StructureTemplateBuilder;
  * - Expected: Lamp turns on when both GREEN and BROWN have signals
  * - Actual (bug): Lamp doesn't turn on
  */
-@ForEachTest(groups = "regression.issue1190")
+// Scenario group: regression.issue1190
 public class Issue1190 {
     
     @GameTest
-    @TestHolder(description = "Tests that AND filter correctly outputs signal when both input channels are active")
-    public static void testAndFilterWithTwoInputs(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(5, 2, 3)
+    // Tests that AND filter correctly outputs signal when both input channels are active
+    public static void testAndFilterWithTwoInputs(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(5, 2, 3)
             // Redstone block for GREEN channel input
             .set(0, 0, 0, Blocks.REDSTONE_BLOCK.defaultBlockState())
             // Redstone block for BROWN channel input
@@ -111,9 +109,9 @@ public class Issue1190 {
     }
     
     @GameTest
-    @TestHolder(description = "Tests that NAND filter correctly outputs inverse signal when both input channels are active")
-    public static void testNandFilterWithTwoInputs(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(5, 2, 3)
+    // Tests that NAND filter correctly outputs inverse signal when both input channels are active
+    public static void testNandFilterWithTwoInputs(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(5, 2, 3)
             // Redstone block for GREEN channel input
             .set(0, 0, 0, Blocks.REDSTONE_BLOCK.defaultBlockState())
             // Redstone block for BROWN channel input

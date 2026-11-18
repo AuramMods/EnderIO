@@ -21,7 +21,7 @@ sourceSets {
 
     create("gametest") {
         compileClasspath += sourceSets.main.get().output
-        //runtimeClasspath += configurations.getByName("gametestLocalRuntime")
+        runtimeClasspath += sourceSets.main.get().output
     }
 
     create("registryTest") {
@@ -187,7 +187,7 @@ dependencies {
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
 
-    // GameTest sources will be migrated from NeoForge to the Forge GameTest API.
+    // Gameplay and registry tests use the native Forge profiles below.
 }
 
 legacyForge {
@@ -256,12 +256,16 @@ legacyForge {
 
         val gameTestServer by creating {
             type = "gameTestServer"
+            programArguments.add("nogui")
+            systemProperty("java.awt.headless", "true")
+            systemProperty("forge.enabledGameTestNamespaces", "enderio_tests")
             gameDirectory = project.file("run/gametest-server")
             loadedMods = listOf(modEnderio, modEnderioGametests)
             sourceSet = sourceSets["gametest"]
 
-            // Where the test framework's JUnitSummaryDumper writes its XML, for CI reporting.
+            // Native JUnit-style GameTest results, for CI reporting.
             systemProperty("enderio.gametest.junit_dir", layout.buildDirectory.dir("test-results/gameTestServer").get().asFile.absolutePath)
+            systemProperty("enderio.gametest.discovered", layout.buildDirectory.file("test-results/gameTestServer/discovered-tests.txt").get().asFile.absolutePath)
         }
 
         val registryTestServer by creating {
@@ -419,7 +423,20 @@ for ((runName, directory) in mapOf(
     }
 }
 
-tasks.check { dependsOn("runRegistryTestServer") }
+val verifyGameplayTests = tasks.register<VerifyGameTestResults>("verifyGameplayTests") {
+    dependsOn("runGameTestServer")
+    discoveredTests = layout.buildDirectory.file("test-results/gameTestServer/discovered-tests.txt")
+    results = layout.buildDirectory.file("test-results/gameTestServer/results.xml")
+}
+tasks.named("runGameTestServer") {
+    val resultDirectory = layout.buildDirectory.dir("test-results/gameTestServer").get().asFile
+    doFirst {
+        // A failed startup must not leave an older run's reports available for verification.
+        resultDirectory.resolve("results.xml").delete()
+        resultDirectory.resolve("discovered-tests.txt").delete()
+    }
+}
+tasks.check { dependsOn("runRegistryTestServer", verifyGameplayTests) }
 
 obfuscation {
     reobfuscate(tasks.named<Jar>("apiJar"), sourceSets.main.get())

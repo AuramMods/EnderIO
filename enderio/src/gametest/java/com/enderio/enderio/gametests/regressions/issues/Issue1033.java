@@ -4,18 +4,14 @@ import com.enderio.enderio.content.storage.fluid_tank.FluidTankBlockEntity;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOFluids;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.neoforged.testframework.DynamicTest;
-import net.neoforged.testframework.annotation.ForEachTest;
-import net.neoforged.testframework.annotation.TestHolder;
-import net.neoforged.testframework.gametest.StructureTemplateBuilder;
+import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.gametests.util.FixtureBuilder;
 
 /**
  * Regression test for issue #1033 - EnderIO XP Juice in Tank Deletes Mending Items.
@@ -24,13 +20,13 @@ import net.neoforged.testframework.gametest.StructureTemplateBuilder;
  * and moved to the output slot. If another mending item is then placed in the input slot
  * while the first item is still in the output slot, the first item gets deleted entirely.
  */
-@ForEachTest(groups = "regression.issue1033")
+// Scenario group: regression.issue1033
 public class Issue1033 {
     
     /**
      * Creates a damaged golden axe with mending enchantment.
      */
-    private static ItemStack createDamagedMendingAxe(Holder<Enchantment> mendingEnchantment, int damage) {
+    private static ItemStack createDamagedMendingAxe(Enchantment mendingEnchantment, int damage) {
         ItemStack axe = new ItemStack(Items.GOLDEN_AXE);
         axe.setDamageValue(damage);
         axe.enchant(mendingEnchantment, 1);
@@ -38,14 +34,13 @@ public class Issue1033 {
     }
     
     @GameTest
-    @TestHolder(description = "Ensures that items in output slot are not deleted when a second item is placed in input")
-    public static void testSecondItemDoesNotDeleteFirstItem(final DynamicTest test) {
-        test.registerGameTestTemplate(() -> StructureTemplateBuilder.withSize(1, 2, 1)
+    // Ensures that items in output slot are not deleted when a second item is placed in input
+    public static void testSecondItemDoesNotDeleteFirstItem(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 2, 1)
             .set(0, 0, 0, EIOBlocks.FLUID_TANK.get().defaultBlockState()));
 
         test.onGameTest(EnderGameTestHelper.class, helper -> {
-            var enchantmentRegistry = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-            var mendingEnchantment = enchantmentRegistry.getOrThrow(Enchantments.MENDING);
+            var mendingEnchantment = Enchantments.MENDING;
             
             helper.startSequence()
                 // Fill tank with XP Juice (1000 mB = 50 XP, enough to repair golden axes)
