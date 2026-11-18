@@ -13,7 +13,8 @@ parser.add_argument("--timeout", default=180, type=int)
 parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-harness/client-smoke-launch.json")
 parser.add_argument("--scenario",
                     choices=("title", "singleplayer", "multiplayer", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
-                             "primitive-smelter", "stirling", "soul-binder", "soul-vials", "soul-engine", "powered-spawner", "spawner-rules",
+                             "primitive-smelter", "stirling", "soul-binder", "soul-vials", "soul-engine", "soul-engine-fuels",
+                             "powered-spawner", "spawner-rules",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")

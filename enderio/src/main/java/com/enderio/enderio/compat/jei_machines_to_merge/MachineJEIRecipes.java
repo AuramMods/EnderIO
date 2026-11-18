@@ -8,7 +8,6 @@ import com.enderio.enderio.content.machines.slicer.SlicingRecipe;
 import com.enderio.enderio.content.machines.soul_binder.SoulBindingRecipe;
 import com.enderio.enderio.content.machines.vat.FermentingRecipe;
 import com.enderio.enderio.content.storage.fluid_tank.TankRecipe;
-import com.enderio.enderio.foundation.souldata.EngineSoul;
 import com.enderio.enderio.init.EIORecipes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -58,10 +57,6 @@ public class MachineJEIRecipes {
 
     public List<SagMillingRecipe> getSagMillingRecipes() {
         return recipeManager.getAllRecipesFor(EIORecipes.SAG_MILLING.type().get());
-    }
-
-    public List<EngineSoul.SoulData> getMobGeneratorRecipes() {
-        return EngineSoul.ENGINE.map.values().stream().toList();
     }
 
     public List<FermentingRecipe> getVATRecipes() {

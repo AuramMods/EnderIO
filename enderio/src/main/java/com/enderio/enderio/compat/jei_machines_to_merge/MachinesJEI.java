@@ -34,6 +34,7 @@ import com.enderio.enderio.init.EIOMenus;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.constants.RecipeTypes;
+import mezz.jei.api.registration.IAdvancedRegistration;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
@@ -88,9 +89,13 @@ public class MachinesJEI implements IModPlugin {
         registration.addRecipes(SlicingRecipeCategory.TYPE, recipes.getSlicingRecipes());
         registration.addRecipes(SoulBindingCategory.TYPE, recipes.getSoulBindingRecipes());
         registration.addRecipes(TankCategory.TYPE, recipes.getTankRecipes());
-        registration.addRecipes(SoulEngineCategory.TYPE, recipes.getMobGeneratorRecipes());
         registration.addRecipes(VATCategory.TYPE, recipes.getVATRecipes());
         registration.addRecipes(WeatherChangeCategory.TYPE, recipes.getWeatherRecipes());
+    }
+
+    @Override
+    public void registerAdvanced(IAdvancedRegistration registration) {
+        registration.addTypedRecipeManagerPlugin(SoulEngineCategory.TYPE, new SoulEngineRecipeLookup());
     }
 
     @Override

@@ -20,22 +20,19 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
-import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class SoulEngineCategory implements IRecipeCategory<EngineSoul.SoulData> {
 
@@ -72,16 +69,23 @@ public class SoulEngineCategory implements IRecipeCategory<EngineSoul.SoulData> 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, EngineSoul.SoulData recipe, IFocusGroup focuses) {
         List<FluidStack> list = new ArrayList<>();
-        String fluid = recipe.fluid();
-        if (fluid.startsWith("#")) { // We have a fluid tag instead
-            TagKey<Fluid> tag = TagKey.create(Registries.FLUID, ResourceLocation.parse(fluid.substring(1)));
-            BuiltInRegistries.FLUID.getTag(tag)
-                    .ifPresent(s -> s.forEach(f -> list.add(new FluidStack(f.value(), SoulEngineBlockEntity.FLUID_CAPACITY))));
-        } else {
-            Optional<Holder.Reference<Fluid>> delegate = BuiltInRegistries.FLUID
-                    .getHolder(ResourceKey.create(Registries.FLUID, ResourceLocation.parse(fluid)));
-            delegate.ifPresent(fluidReference -> list
-                    .add(new FluidStack(fluidReference.value(), SoulEngineBlockEntity.FLUID_CAPACITY)));
+        var id = recipe.fuelId();
+        if (id != null) {
+            if (recipe.usesFuelTag()) {
+                var tag = TagKey.create(Registries.FLUID, id);
+                BuiltInRegistries.FLUID.getTag(tag).ifPresent(fuels -> {
+                    for (var fuel : fuels) {
+                        var fluid = fuel.value();
+                        // Prefer one visible entry when a tag includes both forms of the same fluid.
+                        if (fluid instanceof FlowingFluid flowing && fluid != flowing.getSource()
+                                && flowing.getSource().is(tag)) continue;
+                        list.add(new FluidStack(fluid, SoulEngineBlockEntity.FLUID_CAPACITY));
+                    }
+                });
+            } else {
+                BuiltInRegistries.FLUID.getHolder(ResourceKey.create(Registries.FLUID, id))
+                        .ifPresent(fuel -> list.add(new FluidStack(fuel.value(), SoulEngineBlockEntity.FLUID_CAPACITY)));
+            }
         }
 
         builder.addSlot(RecipeIngredientRole.INPUT, 31, 3)

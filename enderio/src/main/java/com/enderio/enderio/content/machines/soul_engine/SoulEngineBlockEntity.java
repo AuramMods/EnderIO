@@ -28,12 +28,7 @@ import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Inventory;
@@ -244,14 +239,7 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
     }
 
     private static boolean matchesFuel(EngineSoul.SoulData rule, FluidStack fuel) {
-        if (fuel.isEmpty()) return false;
-        String fluid = rule.fluid();
-        boolean isTag = fluid.startsWith("#");
-        var id = ResourceLocation.tryParse(isTag ? fluid.substring(1) : fluid);
-        if (id == null) return false;
-        if (isTag) return fuel.getFluid().is(TagKey.create(Registries.FLUID, id));
-        return BuiltInRegistries.FLUID.getHolder(ResourceKey.create(Registries.FLUID, id))
-                .filter(entry -> fuel.getFluid().isSame(entry.value())).isPresent();
+        return !fuel.isEmpty() && rule.matchesFuel(fuel.getFluid());
     }
 
     @Nullable

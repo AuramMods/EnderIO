@@ -5,7 +5,7 @@ Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions
 | Dependency | Target release | Artifact selection | Runtime evidence |
 | --- | --- | --- | --- |
 | Forge | 47.4.28 | `net.minecraftforge:forge:1.20.1-47.4.28` through MDG legacy; recommended Forge release | Pending |
-| JEI | 15.56.0.205 | Modrinth `jei:9jqubC9n` | Pending |
+| JEI | 15.56.0.205 | Modrinth `jei:9jqubC9n` | A packaged multiplayer client displays all six Soul Engine rules and finds them by Forge fluid, spawn egg and filled Soul Vial. Reloading the server datapack replaces the Blaze rule in the viewer and its ingredient index. Other categories, recipe transfers and overlays still need coverage. [Cycle 071](cycle-071.md) |
 | CC:Tweaked | 1.121.0 | Modrinth `cc-tweaked:Qm9iIIEY` | Pending |
 | Jade | 11.13.3+forge | Modrinth `jade:xJQHCmWJ` | Pending |
 | Athena | 3.1.2 | Modrinth `athena-ctm:DULOQFj7` | Packaged Forge multiplayer loads the built-in pack on the client. The basic bank's same-tier seam updates across break and replant, and the disabled and pull markers share the model in its cutout layer. The core profile uses the vanilla bank face. Other CTM layouts and renderer combinations remain pending ([cycle 065](cycle-065.md)). |
