@@ -37,20 +37,22 @@ public class InhibitorObeliskManager extends ObeliskAreaManager<InhibitorObelisk
         }
 
         var target = BlockPos.containing(event.getTargetX(), event.getTargetY(), event.getTargetZ());
+        var targetObelisks = obeliskManager.getObelisksFor(target);
+        if (blocksTeleport(targetObelisks, event)) return;
 
-        Set<InhibitorObeliskBlockEntity> obelisks = obeliskManager.getObelisksFor(target);
-        if (obelisks.isEmpty()) {
-            var prev = BlockPos.containing(event.getPrevX(), event.getPrevY(), event.getPrevZ());
-            obelisks = obeliskManager.getObelisksFor(prev);
-            if (obelisks.isEmpty()) {
-                return;
-            }
+        var origin = BlockPos.containing(event.getPrevX(), event.getPrevY(), event.getPrevZ());
+        var originObelisks = obeliskManager.getObelisksFor(origin);
+        if (originObelisks != targetObelisks) {
+            blocksTeleport(originObelisks, event);
         }
+    }
 
+    private static boolean blocksTeleport(Set<InhibitorObeliskBlockEntity> obelisks, EntityTeleportEvent event) {
         for (InhibitorObeliskBlockEntity obelisk : obelisks) {
             if (obelisk.handleTeleportEvent(event)) {
-                break;
+                return true;
             }
         }
+        return false;
     }
 }

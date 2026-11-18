@@ -74,7 +74,6 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
     private Set<MachineState> states = new HashSet<>();
 
     private RedstoneControl redstoneControl = RedstoneControl.ALWAYS_ACTIVE;
-    private boolean isRedstoneBlocked;
 
     private final boolean supportsActiveState;
 
@@ -464,13 +463,13 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
 
     private void checkIsRedstoneBlocked() {
         if (supportsRedstoneControl()) {
-            isRedstoneBlocked = !redstoneControl.isActive(isRedstonePowered());
-            updateMachineState(MachineState.REDSTONE, isRedstoneBlocked);
+            updateMachineState(MachineState.REDSTONE, isRedstoneBlocked());
         }
     }
 
     protected boolean isRedstoneBlocked() {
-        return isRedstoneBlocked;
+        // A native NBT update can change control mode without a neighbor notification.
+        return supportsRedstoneControl() && !redstoneControl.isActive(isRedstonePowered());
     }
 
     // endregion

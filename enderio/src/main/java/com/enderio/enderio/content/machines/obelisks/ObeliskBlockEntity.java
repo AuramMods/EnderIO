@@ -94,7 +94,8 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
 
     @Override
     public boolean isActive() {
-        return canAct() && getEnergyStorage().getEnergyStored() >= getPerTickEnergyCost()
+        return canAct() && (!requiresCapacitor() || isCapacitorInstalled())
+                && getEnergyStorage().getEnergyStored() >= getPerTickEnergyCost()
                 && (!requiresFilter() || getSoulFilter() != null);
     }
 
@@ -183,7 +184,8 @@ public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extend
     }
 
     public int getPerTickEnergyCost() {
-        return Mth.ceil(getMaxEnergyUse() * ((float) getRange() / getMaxRange()));
+        int maxRange = getMaxRange();
+        return maxRange == 0 ? 0 : Mth.ceil(getMaxEnergyUse() * ((float) getRange() / maxRange));
     }
 
     @Override
