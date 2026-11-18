@@ -28,7 +28,16 @@ sourceSets {
         compileClasspath += sourceSets.main.get().output
         runtimeClasspath += sourceSets.main.get().output
     }
+
+    create("clientSmoke") {
+        compileClasspath += sourceSets.main.get().output
+        runtimeClasspath += sourceSets.main.get().output
+    }
 }
+
+configurations["clientSmokeImplementation"].extendsFrom(configurations.implementation.get())
+configurations["clientSmokeCompileOnly"].extendsFrom(configurations.compileOnly.get())
+configurations["clientSmokeRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
 
 // JUnit runs inside Forge's transformed server for registry-dependent tests.
 // Its libraries are a test-only game library, never part of a shipped mod jar.
@@ -203,6 +212,7 @@ legacyForge {
     addModdingDependenciesTo(sourceSets.getByName("datagen"))
     addModdingDependenciesTo(sourceSets.getByName("gametest"))
     addModdingDependenciesTo(sourceSets.getByName("registryTest"))
+    addModdingDependenciesTo(sourceSets.getByName("clientSmoke"))
 
     val modEnderio by mods.creating {
         sourceSet(sourceSets.getByName("datagen"))
@@ -217,6 +227,10 @@ legacyForge {
         sourceSet(sourceSets["registryTest"])
     }
 
+    val modEnderioClientSmoke by mods.creating {
+        sourceSet(sourceSets["clientSmoke"])
+    }
+
     runs {
         configureEach {
             logLevel = org.slf4j.event.Level.INFO
@@ -228,6 +242,18 @@ legacyForge {
             client()
             gameDirectory = project.file("run/client")
             loadedMods = listOf(modEnderio)
+        }
+
+        val clientSmoke by creating {
+            client()
+            sourceSet = sourceSets["clientSmoke"]
+            gameDirectory = project.file("run/client-smoke")
+            loadedMods = listOf(modEnderio, modEnderioClientSmoke)
+            systemProperty("java.awt.headless", "true")
+            systemProperty("enderio.clientqa.output", rootProject.layout.buildDirectory.dir("port-evidence/client-smoke").get().asFile.absolutePath)
+            jvmArguments.addAll("--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
+                "-javaagent:${rootProject.layout.buildDirectory.file("port-client-harness/window-guard.jar").get().asFile.absolutePath}")
+            programArguments.addAll("--username", "EnderIOQA", "--width", "960", "--height", "540")
         }
 
         val server by creating {
@@ -450,3 +476,33 @@ val prepareDataProfile = tasks.register<PrepareTestProfile>("prepareDataProfile"
     forgeLoadingThreads = 1
 }
 tasks.matching { it.name == "runData" }.configureEach { dependsOn(prepareDataProfile) }
+
+val prepareClientSmokeProfile = tasks.register<PrepareTestProfile>("prepareClientSmokeProfile") {
+    gameDirectory = layout.projectDirectory.dir("run/client-smoke")
+    client = true
+}
+tasks.named("runClientSmoke") { dependsOn(prepareClientSmokeProfile) }
+
+// Export the configured launch so the native focus observer can own the Java process directly.
+// Only the run's explicit environment entries are exported, never inherited shell credentials.
+tasks.register("exportClientSmokeLaunch") {
+    notCompatibleWithConfigurationCache("Exports the prepared JavaExec launch for the native observer")
+    val run = tasks.named<net.neoforged.moddevgradle.internal.RunGameTask>("runClientSmoke")
+    // Do not pass a provider derived from the run task: its provenance adds the run itself.
+    dependsOn("prepareClientSmokeRun", "prepareClientSmokeProfile", "clientSmokeClasses", "datagenClasses")
+    dependsOn(run.get().classpathProvider)
+    doLast {
+        val task = run.get()
+        // allJvmArgs already includes the JVM argument providers.
+        val arguments = task.allJvmArgs +
+            listOf("-cp", (task.classpath + task.classpathProvider).asPath) +
+            listOfNotNull(task.mainClass.orNull) + (task.args ?: emptyList()) +
+            task.argumentProviders.flatMap { it.asArguments() }
+        val target = rootProject.layout.buildDirectory.file("port-client-harness/client-smoke-launch.json").get().asFile
+        target.parentFile.mkdirs()
+        target.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(mapOf(
+            "java" to task.javaLauncher.get().executablePath.asFile.absolutePath,
+            "directory" to task.gameDirectory.get().asFile.absolutePath,
+            "environment" to task.environmentProperty.get(), "arguments" to arguments))))
+    }
+}

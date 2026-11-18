@@ -19,7 +19,7 @@
     "overlay",
     "front"
   ],
-  "loader": "neoforge:composite",
+  "loader": "forge:composite",
   "textures": {
     "particle": "enderio:block/soul_machine_side"
   }
