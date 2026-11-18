@@ -378,6 +378,8 @@ public class EIOBlocks {
     // Progress Machines
     public static final BlockDeferredHolder<ProgressMachineBlock<?>> ALLOY_SMELTER = progressMachine("alloy_smelter",
         () -> EIOBlockEntities.ALLOY_SMELTER::get);
+    public static final BlockDeferredHolder<ProgressMachineBlock<?>> PRIMITIVE_ALLOY_SMELTER = progressMachine("primitive_alloy_smelter",
+        () -> EIOBlockEntities.PRIMITIVE_ALLOY_SMELTER::get);
 
     public static final BlockDeferredHolder<ProgressMachineBlock<?>> PAINTING_MACHINE = progressMachine("painting_machine",
         () -> EIOBlockEntities.PAINTING_MACHINE::get);

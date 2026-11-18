@@ -503,6 +503,13 @@ public class EIOLanguageProvider extends LanguageProvider {
         add(EIOItems.NUTRITIOUS_STICK.get(), "Nutritious Stick");
         add(EIOItems.PLANT_MATTER_GREEN.get(), "Clippings and Trimmings");
         add(EIOItems.PLANT_MATTER_BROWN.get(), "Twigs and Prunings");
+        add(EIOItems.FLOUR.get(), "Flour");
+        add(EIOItems.CAKE_BASE.get(), "Cake Base");
+        add(EIOItems.CLAYED_GLOWSTONE.get(), "Clayed Glowstone");
+        add(EIOItems.NETHERCOTTA.get(), "Nethercotta");
+        add(EIOItems.ORGANIC_BLACK_DYE.get(), "Organic Black Dye");
+        add(EIOItems.ORGANIC_BROWN_DYE.get(), "Organic Brown Dye");
+        add(EIOItems.ORGANIC_GREEN_DYE.get(), "Organic Green Dye");
         add(EIOItems.GLIDER_WING.get(), "Glider Wing");
         add(EIOItems.ANIMAL_TOKEN.get(), "Animal Token");
         add(EIOItems.MONSTER_TOKEN.get(), "Monster Token");
@@ -649,6 +656,7 @@ public class EIOLanguageProvider extends LanguageProvider {
         add(EIOBlocks.ENCHANTER.get(), "Enchanter");
         add(EIOBlocks.ENDERFACE.get(), "Ender IO");
         add(EIOBlocks.ALLOY_SMELTER.get(), "Alloy Smelter");
+        add(EIOBlocks.PRIMITIVE_ALLOY_SMELTER.get(), "Primitive Alloy Smelter");
         add(EIOBlocks.PAINTING_MACHINE.get(), "Painting Machine");
         add(EIOBlocks.WIRELESS_CHARGER.get(), "Wireless Charger");
         add(EIOBlocks.STIRLING_GENERATOR.get(), "Stirling Generator");

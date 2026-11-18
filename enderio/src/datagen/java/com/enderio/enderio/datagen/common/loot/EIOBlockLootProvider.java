@@ -128,6 +128,7 @@ public class EIOBlockLootProvider extends BlockLootSubProvider {
 
         // Progress Machines
         copyComponents(EIOBlocks.ALLOY_SMELTER.get());
+        copyComponents(EIOBlocks.PRIMITIVE_ALLOY_SMELTER.get());
         copyComponents(EIOBlocks.PAINTING_MACHINE.get());
         copyComponents(EIOBlocks.WIRELESS_CHARGER.get());
         copyComponents(EIOBlocks.STIRLING_GENERATOR.get());

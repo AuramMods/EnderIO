@@ -170,6 +170,14 @@ public class EIOItems {
     public static final ItemDeferredHolder<Item> NUTRITIOUS_STICK = basic("nutritious_stick");
     public static final ItemDeferredHolder<Item> PLANT_MATTER_GREEN = basic("plant_matter_green");
     public static final ItemDeferredHolder<Item> PLANT_MATTER_BROWN = basic("plant_matter_brown");
+
+    public static final ItemDeferredHolder<Item> FLOUR = basic("flour");
+    public static final ItemDeferredHolder<Item> CAKE_BASE = basic("cake_base");
+    public static final ItemDeferredHolder<Item> CLAYED_GLOWSTONE = basic("clayed_glowstone");
+    public static final ItemDeferredHolder<Item> NETHERCOTTA = basic("nethercotta");
+    public static final ItemDeferredHolder<Item> ORGANIC_BLACK_DYE = basic("organic_black_dye");
+    public static final ItemDeferredHolder<Item> ORGANIC_BROWN_DYE = basic("organic_brown_dye");
+    public static final ItemDeferredHolder<Item> ORGANIC_GREEN_DYE = basic("organic_green_dye");
     public static final ItemDeferredHolder<Item> GLIDER_WING = basic("glider_wing");
     public static final ItemDeferredHolder<Item> ANIMAL_TOKEN = basicGlinted("animal_token");
     public static final ItemDeferredHolder<Item> MONSTER_TOKEN = basicGlinted("monster_token");

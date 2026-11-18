@@ -120,6 +120,13 @@ public class EIOItemModelProvider extends ItemModelProvider {
         basicItem(EIOItems.NUTRITIOUS_STICK.get());
         basicItem(EIOItems.PLANT_MATTER_GREEN.get());
         basicItem(EIOItems.PLANT_MATTER_BROWN.get());
+        basicItem(EIOItems.FLOUR.get());
+        basicItem(EIOItems.CAKE_BASE.get());
+        basicItem(EIOItems.CLAYED_GLOWSTONE.get());
+        basicItem(EIOItems.NETHERCOTTA.get());
+        basicItem(EIOItems.ORGANIC_BLACK_DYE.get());
+        basicItem(EIOItems.ORGANIC_BROWN_DYE.get());
+        basicItem(EIOItems.ORGANIC_GREEN_DYE.get());
         basicItem(EIOItems.GLIDER_WING.get());
         basicItem(EIOItems.ANIMAL_TOKEN.get());
         basicItem(EIOItems.MONSTER_TOKEN.get());
@@ -309,6 +316,7 @@ public class EIOItemModelProvider extends ItemModelProvider {
 
         // Progress Machines
         simpleBlockItem(EIOBlocks.ALLOY_SMELTER.get());
+        simpleBlockItem(EIOBlocks.PRIMITIVE_ALLOY_SMELTER.get());
         simpleBlockItem(EIOBlocks.PAINTING_MACHINE.get());
         simpleBlockItem(EIOBlocks.WIRELESS_CHARGER.get());
         simpleBlockItem(EIOBlocks.STIRLING_GENERATOR.get());

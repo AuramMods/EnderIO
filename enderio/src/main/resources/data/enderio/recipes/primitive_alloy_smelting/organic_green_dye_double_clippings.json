@@ -1,0 +1,19 @@
+{
+  "type": "enderio:primitive_alloy_smelting",
+  "energy": 1600,
+  "experience": 0.3,
+  "inputs": [
+    {
+      "count": 12,
+      "item": "enderio:plant_matter_green"
+    },
+    {
+      "count": 1,
+      "tag": "forge:slimeballs"
+    }
+  ],
+  "output": {
+    "id": "enderio:organic_green_dye",
+    "count": 2
+  }
+}

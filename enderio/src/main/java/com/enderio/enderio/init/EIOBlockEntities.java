@@ -8,6 +8,7 @@ import com.enderio.enderio.content.dev_tools.CreativePowerBlockEntity;
 import com.enderio.enderio.content.enchanter.EnchanterBlockEntity;
 import com.enderio.enderio.content.enderface.EnderfaceBlockEntity;
 import com.enderio.enderio.content.machines.alloy.AlloySmelterBlockEntity;
+import com.enderio.enderio.content.machines.alloy.PrimitiveAlloySmelterBlockEntity;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorTier;
 import com.enderio.enderio.content.machines.drain.DrainBlockEntity;
@@ -108,6 +109,11 @@ public class EIOBlockEntities {
     public static final RegistryObject<BlockEntityType<AlloySmelterBlockEntity>> ALLOY_SMELTER = BLOCK_ENTITY_TYPES
         .builder("alloy_smelter", AlloySmelterBlockEntity::new, EIOBlocks.ALLOY_SMELTER::get)
         .apply(EIOBlockEntities::poweredMachineBlockEntityCapabilities)
+        .build();
+
+    public static final RegistryObject<BlockEntityType<PrimitiveAlloySmelterBlockEntity>> PRIMITIVE_ALLOY_SMELTER = BLOCK_ENTITY_TYPES
+        .builder("primitive_alloy_smelter", PrimitiveAlloySmelterBlockEntity::new, EIOBlocks.PRIMITIVE_ALLOY_SMELTER::get)
+        .apply(EIOBlockEntities::machineBlockEntityCapabilities)
         .build();
 
     public static final RegistryObject<BlockEntityType<StirlingGeneratorBlockEntity>> STIRLING_GENERATOR = BLOCK_ENTITY_TYPES

@@ -1,0 +1,19 @@
+{
+  "type": "enderio:primitive_alloy_smelting",
+  "energy": 1600,
+  "experience": 0.3,
+  "inputs": [
+    {
+      "count": 2,
+      "tag": "c:dusts/coal"
+    },
+    {
+      "count": 1,
+      "tag": "forge:slimeballs"
+    }
+  ],
+  "output": {
+    "id": "enderio:organic_black_dye",
+    "count": 2
+  }
+}

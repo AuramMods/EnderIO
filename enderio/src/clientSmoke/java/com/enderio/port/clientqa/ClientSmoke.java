@@ -36,6 +36,7 @@ public final class ClientSmoke {
             case "carried-tanks" -> new ClientCarriedTankSmoke();
             case "extraction-upgrades" -> new ClientExtractionUpgradeSmoke();
             case "legacy-lights" -> new ClientLegacyLightSmoke();
+            case "primitive-smelter" -> new ClientPrimitiveSmelterSmoke();
             default -> MinecraftForge.EVENT_BUS.addListener(this::render);
         }
         System.out.println("QA_EVT {\"event\":\"client_qa_loaded\",\"status\":\"info\"}");

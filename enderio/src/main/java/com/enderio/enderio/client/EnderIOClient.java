@@ -34,6 +34,7 @@ import com.enderio.enderio.client.content.filters.soul.ClientEnderSoulFilterTool
 import com.enderio.enderio.client.content.glass.GlassIconDecorator;
 import com.enderio.enderio.client.content.machines.IOOverlayBakedModel;
 import com.enderio.enderio.client.content.machines.gui.screen.AlloySmelterScreen;
+import com.enderio.enderio.client.content.machines.gui.screen.PrimitiveAlloySmelterScreen;
 import com.enderio.enderio.client.content.machines.gui.screen.AttractorObeliskScreen;
 import com.enderio.enderio.client.content.machines.gui.screen.AversionObeliskScreen;
 import com.enderio.enderio.client.content.machines.gui.screen.CapacitorBankScreen;
@@ -200,6 +201,7 @@ public class EnderIOClient {
 
         // Machines
         MenuScreens.register(EIOMenus.ALLOY_SMELTER.get(), AlloySmelterScreen::new);
+        MenuScreens.register(EIOMenus.PRIMITIVE_ALLOY_SMELTER.get(), PrimitiveAlloySmelterScreen::new);
         MenuScreens.register(EIOMenus.SAG_MILL.get(), SagMillScreen::new);
         MenuScreens.register(EIOMenus.STIRLING_GENERATOR.get(), StirlingGeneratorScreen::new);
         MenuScreens.register(EIOMenus.SLICE_N_SPLICE.get(), SlicerScreen::new);

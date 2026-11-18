@@ -4,6 +4,7 @@
 import argparse
 import json
 from pathlib import Path
+import re
 import shutil
 import sys
 import time
@@ -48,7 +49,7 @@ def tank_state(x, legacy):
 
 
 def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits,
-             placed_mekanism_conduits, extraction_upgrades, legacy_lights):
+             placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon):
     server.wait('For help, type "help"')
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
@@ -87,6 +88,8 @@ def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_sto
         exercise_extraction_upgrades(server, stage, results)
     if legacy_lights:
         exercise_lights(server, stage, results)
+    if primitive_silicon:
+        exercise_primitive_smelter(server, stage, results, primitive_silicon)
     server.command("save-all flush")
 
 
@@ -428,12 +431,86 @@ def exercise_lights(server, stage, results):
                             'nbt={Item:{id:"enderio:powered_light_inverted_wireless",Count:1b}}]', results)
 
 
+def observe_int(server, pos, path):
+    output = server.command(f"data get block {pos} {path}")
+    match = re.search(r"has the following block data: (-?\d+)\s*$", output, re.MULTILINE)
+    if not match:
+        raise AssertionError(output)
+    return int(match[1])
+
+
+def exercise_primitive_smelter(server, stage, results, silicon):
+    machine = "1127 85 5"
+    barrel = "1127 85 9"
+    chunks = "1120 0 1135 15"
+    legacy = stage == "legacy"
+    server.command(f"forceload add {chunks}")
+    if legacy:
+        server.command(f"setblock {machine} enderio:primitive_alloy_smelter[facing=east]")
+        server.command(f'data merge block {machine} {{RedstoneControl:3,Items:{{Size:5,Items:['
+                       '{Slot:0,id:"minecraft:coal",Count:2b,tag:{PortLegacyFuel:57}},'
+                       f'{{Slot:1,id:"minecraft:copper_ingot",Count:1b}},{{Slot:3,id:"{silicon}",Count:1b}}]}}}}')
+        server.command(f'setblock {barrel} minecraft:barrel{{Items:[{{Slot:0b,id:"enderio:primitive_alloy_smelter",'
+                       'Count:2b,tag:{PortLegacyPrimitive:57}}]}')
+        server.command(f"data merge block {machine} {{RedstoneControl:0}}")
+        server.assert_state("native_primitive_job_started", f"if block {machine} enderio:primitive_alloy_smelter[powered=true] "
+                            f'if data block {machine} {{BurnDuration:1600,Task:{{RecipeId:"enderio:alloy_smelting/copper_alloy_ingot",'
+                            'HasDeterminedOutputs:1b,ProgressRequired:3200}}', results)
+        time.sleep(0.4)
+        server.command(f"data merge block {machine} {{RedstoneControl:3}}")
+        server.command("setblock 1128 85 5 minecraft:stone")
+        server.assert_state("legacy_primitive_job_paused", f"if block {machine} enderio:primitive_alloy_smelter[powered=false]", results)
+        progress = observe_int(server, machine, "Task.ProgressMade")
+        if not 0 < progress < 3200:
+            raise AssertionError(f"Expected a partially completed legacy copper alloy job, got {progress}")
+        results.append({"assertion": "native_primitive_job_mid_craft", "passed": True, "progress": progress})
+        server.command(f"data get block {machine}")
+
+    server.assert_state(f"placed_primitive_smelter_{stage}",
+                        f"if block {machine} enderio:primitive_alloy_smelter[facing=east,powered=false]", results)
+    server.assert_state(f"tagged_primitive_stack_{stage}", f'if data block {barrel} Items[{{Slot:0b,'
+                        'id:"enderio:primitive_alloy_smelter",Count:2b,tag:{PortLegacyPrimitive:57}}]', results)
+    expected = next(entry["progress"] for entry in results if entry["assertion"] == "native_primitive_job_mid_craft")
+    if stage == "converted":
+        assert_primitive_work(server, machine, silicon, expected, "converted", results)
+        server.command(f"forceload remove {chunks}")
+        server.assert_state("primitive_chunk_unloaded", f"unless loaded {machine}", results, timeout=40)
+        server.command(f"forceload add {chunks}")
+        server.assert_state("primitive_chunk_loaded", f"if loaded {machine}", results)
+        assert_primitive_work(server, machine, silicon, expected, "chunk_reload", results)
+    if stage == "restart":
+        assert_primitive_work(server, machine, silicon, expected, "restart", results)
+        server.command(f'data merge block {machine} {{RedstoneControl:"always_active"}}')
+        server.assert_state("primitive_saved_job_completes_once", f'if data block {machine} Items.Items'
+                            '[{Slot:4,id:"enderio:conductive_alloy_ingot",Count:1}] '
+                            f'unless data block {machine} Items.Items[{{Slot:1}}] '
+                            f'unless data block {machine} Items.Items[{{Slot:3}}] '
+                            f'if data block {machine} Items.Items[{{Slot:0,id:"minecraft:coal",Count:1,tag:{{PortLegacyFuel:57}}}}]',
+                            results, timeout=18)
+        server.command(f"data get block {machine}")
+
+
+def assert_primitive_work(server, machine, silicon, progress, stage, results):
+    server.assert_state(f"primitive_paused_job_{stage}",
+                        f'if data block {machine} {{RedstoneControl:"never_active",BurnDuration:1600,'
+                        f'Task:{{RecipeId:"enderio:primitive_alloy_smelting/copper_alloy_ingot",ProgressMade:{progress},'
+                        'ProgressRequired:3200,Outputs:[{Item:{id:"enderio:conductive_alloy_ingot",Count:1}}]}} '
+                        f'if data block {machine} Items.Items[{{Slot:0,id:"minecraft:coal",Count:1,tag:{{PortLegacyFuel:57}}}}] '
+                        f'if data block {machine} Items.Items[{{Slot:1,id:"minecraft:copper_ingot",Count:1}}] '
+                        f'if data block {machine} Items.Items[{{Slot:3,id:"{silicon}",Count:1}}] '
+                        f'unless data block {machine} Items.Items[{{Slot:4}}]', results)
+    burn_time = observe_int(server, machine, "BurnTime")
+    if not 0 < burn_time < 1600:
+        raise AssertionError(f"Expected original coal to be burning after {stage}, got {burn_time} ticks")
+    results.append({"assertion": f"primitive_retains_burn_{stage}", "passed": True, "burnTime": burn_time})
+
+
 def run_server(directory, java, stage, report, conduit_fixture, loose_conduits, placed_storage_conduits,
-               placed_mekanism_conduits, extraction_upgrades, legacy_lights):
+               placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon):
     server = Server(directory, java, stage)
     try:
         exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits,
-                 placed_storage_conduits, placed_mekanism_conduits, extraction_upgrades, legacy_lights)
+                 placed_storage_conduits, placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon)
     finally:
         exit_status = server.stop()
         errors = [line.strip() for line in server.lines if "/ERROR]" in line or "/FATAL]" in line]
@@ -463,6 +540,8 @@ def main():
     parser.add_argument("--extraction-upgrades", action="store_true",
                         help="Migrate loose and installed extraction upgrades with the legacy fixture and upgrade probe")
     parser.add_argument("--legacy-lights", action="store_true", help="Migrate placed lights, nodes and tagged light stacks")
+    parser.add_argument("--primitive-smelter", nargs="?", const="enderio:silicon", choices=("enderio:silicon", "ae2:silicon"),
+                        help="Migrate a saved primitive alloy smelter job using the selected silicon item")
     parser.add_argument("--mod", action="append", type=Path, default=[], help="Install a Forge dependency in both profiles")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
@@ -499,7 +578,7 @@ def main():
             shutil.copyfile(args.conduit_fixture, legacy / "mods" / "port-legacy-fixture.jar")
             report["fixtureSha256"] = digest(args.conduit_fixture)
         fixtures = (args.conduit_fixture, loose_conduits, args.placed_storage_conduits,
-                    args.placed_mekanism_conduits, args.extraction_upgrades, args.legacy_lights)
+                    args.placed_mekanism_conduits, args.extraction_upgrades, args.legacy_lights, args.primitive_smelter)
         run_server(legacy, args.java, "legacy", report, *fixtures)
         shutil.copytree(legacy / WORLD, converted / WORLD)
         run_server(converted, args.java, "converted", report, *fixtures)

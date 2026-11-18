@@ -170,6 +170,7 @@ public class EIOBlockStateProvider extends BlockStateProvider {
 
         // Progress Machines
         progressMachineBlock(EIOBlocks.ALLOY_SMELTER.get());
+        progressMachineBlock(EIOBlocks.PRIMITIVE_ALLOY_SMELTER.get());
         progressMachineBlock(EIOBlocks.PAINTING_MACHINE.get());
         progressMachineBlock(EIOBlocks.WIRELESS_CHARGER.get());
         progressMachineBlock(EIOBlocks.STIRLING_GENERATOR.get());

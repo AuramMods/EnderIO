@@ -321,7 +321,7 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | Feature | Verified behavior | Evidence |
 | --- | --- | --- |
 | Standard, inverted, wired and wireless lights | Six placed block IDs and six tagged items survive conversion, chunk eviction and restart. Owned light nodes persist across a chunk edge. Redstone toggling, wired energy use, node cleanup and single-player lighting updates pass. The six variants use the retained historical fixture geometry and vanilla lamp textures. | [Cycle 056](cycle-056.md) |
-| Primitive alloy smelter | The placed block and item still appear in Forge's unresolved registry report on conversion. The saved fuel, job and output require compatibility coverage. | [Cycle 056](cycle-056.md) |
+| Primitive alloy smelter | The original block and tagged item, remaining fuel and exact job progress survive packaged conversion, chunk eviction and restart with Ender IO or AE2 silicon. The queued output is produced once. All 47 historical recipes resolve. Native lava fuel returns a bucket, and the guarded client verifies inputs, progress and output collection. | [Cycle 057](cycle-057.md) |
 
 ## Shared state and presentation
 

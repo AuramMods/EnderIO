@@ -16,6 +16,7 @@ import com.enderio.enderio.content.filters.redstone.RedstoneTimerFilterMenu;
 import com.enderio.enderio.content.filters.soul.EnderSoulFilterItem;
 import com.enderio.enderio.content.filters.soul.EnderSoulFilterMenu;
 import com.enderio.enderio.content.machines.alloy.AlloySmelterMenu;
+import com.enderio.enderio.content.machines.alloy.PrimitiveAlloySmelterMenu;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankMenu;
 import com.enderio.enderio.content.machines.drain.DrainMenu;
 import com.enderio.enderio.content.machines.farming_station.FarmingStationMenu;
@@ -87,6 +88,8 @@ public class EIOMenus {
     // region Machines
 
     public static final RegistryObject<MenuType<AlloySmelterMenu>> ALLOY_SMELTER = MENUS.register("alloy_smelter", AlloySmelterMenu::new);
+    public static final RegistryObject<MenuType<PrimitiveAlloySmelterMenu>> PRIMITIVE_ALLOY_SMELTER = MENUS.register("primitive_alloy_smelter",
+        PrimitiveAlloySmelterMenu::new);
 
     public static final RegistryObject<MenuType<SagMillMenu>> SAG_MILL = MENUS.register("sag_mill", SagMillMenu::new);
 

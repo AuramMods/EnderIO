@@ -1,0 +1,19 @@
+{
+  "type": "enderio:primitive_alloy_smelting",
+  "energy": 1600,
+  "experience": 0.3,
+  "inputs": [
+    {
+      "count": 1,
+      "item": "enderio:clear_glass"
+    },
+    {
+      "count": 4,
+      "tag": "forge:gems/amethyst"
+    }
+  ],
+  "output": {
+    "id": "enderio:clear_glass_d",
+    "count": 1
+  }
+}
