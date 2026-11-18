@@ -46,7 +46,8 @@ public class FluidConduitTicker extends ConduitTickerBase<FluidConduit> {
                 }
 
                 final var extractConduit = extractConnection.node().conduit(conduitType());
-                final int fluidRate = extractConduit.value().transferRatePerTick() * conduitType().getTickRate(extractConduit);
+                final int fluidRate = com.google.common.math.IntMath.saturatedMultiply(
+                    Math.max(0, extractConduit.value().transferRatePerTick()), conduitType().getTickRate(extractConduit));
 
                 int remaining = fluidRate;
 
@@ -89,10 +90,12 @@ public class FluidConduitTicker extends ConduitTickerBase<FluidConduit> {
         // Insert into any available blocks
         for (var insertPath : insertPaths) {
             var insertConnection = insertPath.end();
-            final int maxInsertSpeed = insertPath.property(FluidConduit.PATH_MAX_TRANSFER_RATE);
+            final int maxInsertSpeed = com.google.common.math.IntMath.saturatedMultiply(
+                Math.max(0, insertPath.property(FluidConduit.PATH_MAX_TRANSFER_RATE)),
+                conduitType().getTickRate(extractConnection.node().conduit(conduitType())));
 
             // Calculate remaining 'speed' for this path
-            int remaining = maxInsertSpeed - insertedPerPath.getOrDefault(insertPath, 0);
+            int remaining = Math.min(maxTransfer, maxInsertSpeed - insertedPerPath.getOrDefault(insertPath, 0));
             if (remaining <= 0) {
                 continue;
             }
@@ -127,11 +130,12 @@ public class FluidConduitTicker extends ConduitTickerBase<FluidConduit> {
 
             // Deduct the transferred fluid from our maximum transfer.
             maxTransfer -= transferredFluid.getAmount();
+            extractedFluid.shrink(transferredFluid.getAmount());
 
             // Store the amount transferred in this path
             insertedPerPath.compute(insertPath, (k, v) -> v == null ? transferredFluid.getAmount() : v + transferredFluid.getAmount());
 
-            if (maxTransfer <= 0) {
+            if (maxTransfer <= 0 || extractedFluid.isEmpty()) {
                 break;
             }
         }

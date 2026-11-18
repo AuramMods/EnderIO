@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 036 exercises a clean packaged Forge dedicated server, fixes bucket/container fluid duplication and adds five transfer scenarios covering both tank variants. The full check passes 78 ordinary JUnit and 374 native GameTests. The packaged harness verifies 16 tank-processing and disk-backed persistence assertions across three server sessions. Complete feature parity, clean packaged client operation, visuals and real dedicated multiplayer remain unverified. No client has been launched.
+Prepared on 2026-11-17. Status: implementation in progress. Cycle 037 fixes fluid-conduit tick/path budgets, branch accounting and integer overflow; nine new native scenarios cover tiers, mixed paths, branching, live filters and channel/redstone changes. The full build passes with 78 ordinary JUnit and 383 native GameTest results. The separate packaged harness verifies tank processing and disk-backed persistence across three server sessions. Complete feature parity, clean packaged client operation, visuals and real dedicated multiplayer remain unverified. No client has been launched.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -76,7 +76,7 @@ Prefer Forge-native adapters and shared utilities in this project's namespaces. 
 | Core content | Port every implemented block/item/entity, machine, conduit, filter, tool, soul and travel feature | Pending |
 | Assets and client | Data generation, recipes/tags, models, textures, rendering, screens, particles, input, mixins | In progress: native models, quad/preview buffers, cropped GUI sprites, screen/HUD/extension registration and input/culling hooks. Thirteen CPU render-helper tests pass; native Forge/Embeddium facade section rendering is implemented, with all visual/client runtime checks pending |
 | Integrations | Adapt each supported integration and modded conduit; test with dependencies present and absent | Pending |
-| Verification | Port existing tests, add meaningful regressions, exercise gameplay, multiplayer, persistence and packaged artifacts | 78 unit/374 native executions pass; 16 packaged tank assertions span three server sessions. Client/multiplayer and complete feature parity remain pending |
+| Verification | Port existing tests, add meaningful regressions, exercise gameplay, multiplayer, persistence and packaged artifacts | 78 unit/383 native results pass; 16 packaged tank assertions span three server sessions. Client/multiplayer and complete feature parity remain pending |
 | Delivery | Clean build, complete evidence matrix, usage/migration notes and final committed artifact record | Pending |
 
 These are work areas, not a requirement to put a huge phase into one commit. Each bounded implementation/verification cycle gets its own commit. Early commits may have documented build failures while dependent systems are being converted. Do not describe them as working until verified.
@@ -88,7 +88,7 @@ The [concrete feature matrix](porting/1.20.1/features.md) contains 257 declarati
 | Feature group | Required verification | Status |
 | --- | --- | --- |
 | Registration and resources | All baseline registrations accounted for; creative inventory, crafting progression, loot, tags, configs and resource reload work | Unverified |
-| Conduits and filters | Energy/item/fluid/redstone transfer, bundled connections, modes/channels/priorities, all filter types, facades, wrench/probe, split/merge and chunk boundaries | Unverified |
+| Conduits and filters | Energy/item/fluid/redstone transfer, bundled connections, modes/channels/priorities, all filter types, facades, wrench/probe, split/merge and chunk boundaries | Partial: baseline routing tests plus tier/path budgets, branch accounting, live fluid filters and channel/redstone changes pass; full topology/lifecycle, execution-remainder conservation and client behavior remain pending ([cycle 037](porting/1.20.1/cycle-037.md)) |
 | Machines | Every registered machine's recipe/behavior, sided I/O, redstone controls, capacitors, menus, automation, break/place and saved state | Unverified |
 | Generation and storage | Stirling/soul generation, solar panels, capacitor-bank multiblocks, tanks, charging and resource accounting | Unverified |
 | Souls and spawning | Vials, broken/powered spawners, soul binding, soul-specific bonuses, entity capture/release and persistence | Unverified |
@@ -181,7 +181,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 035: native gameplay tests and tank reloads | Restore 58 baseline gameplay cases, add four tank lifecycle regressions, fix pre-level load and recipe resumption, reconcile actual execution and wire CI | Full build and final CI check command pass: 78 ordinary JUnit/369 native GameTests. Filtering probe and tank failures reproduced before fixes. Full parity, packaged installs and client/multiplayer remain incomplete. [Evidence](porting/1.20.1/cycle-035.md) | `5898f389b` |
 
-| 036: packaged server and tank conservation | Clean Forge installation/restarts, native bucket/partial-container transfer fix, five regression scenarios and deterministic fire fixtures | Full check passes 78 ordinary JUnit/374 native GameTests; packaged harness passes 16 assertions over three server sessions without optional mods. Full parity, client/multiplayer and broader persistence remain incomplete. [Evidence](porting/1.20.1/cycle-036.md) | Commit containing cycle 036 |
+| 036: packaged server and tank conservation | Clean Forge installation/restarts, native bucket/partial-container transfer fix, five regression scenarios and deterministic fire fixtures | Full check passes 78 ordinary JUnit/374 native GameTests; packaged harness passes 16 assertions over three server sessions without optional mods. Full parity, client/multiplayer and broader persistence remain incomplete. [Evidence](porting/1.20.1/cycle-036.md) | `9cdd47d46` |
+
+| 037: fluid conduit rates and live filters | Match extraction/path tick intervals, bound branches and large integer budgets; exercise real filters and routing changes | Full build passes with 78 unit/383 native results; nine new gameplay scenarios. Complete feature parity, client/multiplayer and execution-remainder conservation remain incomplete. [Evidence](porting/1.20.1/cycle-037.md) | Commit containing cycle 037 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

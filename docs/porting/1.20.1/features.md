@@ -229,7 +229,7 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | `ADVANCED_ITEM_FILTER` | [EIOItems:254](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `BIG_ADVANCED_ITEM_FILTER` | [EIOItems:256](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `LIMITED_ITEM_FILTER` | [EIOItems:258](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `BASIC_FLUID_FILTER` | [EIOItems:260](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `BASIC_FLUID_FILTER` | [EIOItems:256](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial: actual extraction/insertion filter items obey live allow/deny edits; existing saved NBT-match settings reject mismatches and preserve transferred fluid NBT. GUI and multiplayer editing remain pending ([cycle 037](cycle-037.md)) |
 | `BASIC_SOUL_FILTER` | [EIOItems:262](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `REDSTONE_FILTER_BASE` | [EIOItems:264](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `NOT_FILTER` | [EIOItems:266](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
@@ -255,9 +255,9 @@ Connect, transfer, configure/filter, split/merge and unload/reload without loss 
 | `ENERGETIC_ENERGY` | [EIOConduits:13](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
 | `VIBRANT_ENERGY` | [EIOConduits:15](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
 | `REDSTONE` | [EIOConduits:17](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
-| `FLUID` | [EIOConduits:19](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
-| `ENERGETIC_FLUID` | [EIOConduits:21](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
-| `VIBRANT_FLUID` | [EIOConduits:23](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
+| `FLUID` | [EIOConduits:19](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Partial: actual native tanks transfer 1,000 mB per five-tick update; partial destinations share that source budget. Mixed paths, filters and channel/redstone changes pass. Full lifecycle/client/conservation remain pending ([cycle 037](cycle-037.md)) |
+| `ENERGETIC_FLUID` | [EIOConduits:21](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Partial: pressurized tier transfers 5,000 mB per five-tick native update with exact source/destination accounting. Complete feature/lifecycle/client evidence remains pending ([cycle 037](cycle-037.md)) |
+| `VIBRANT_FLUID` | [EIOConduits:23](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Partial: ender tier transfers all 32,000 mB available in the actual test tank (below its 40,000 mB update limit); mixed basic-tier path limits transfer to 1,000 mB. Complete feature/lifecycle/client evidence remains pending ([cycle 037](cycle-037.md)) |
 | `ITEM` | [EIOConduits:25](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
 | `ENERGETIC_ITEM` | [EIOConduits:27](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
 | `VIBRANT_ITEM` | [EIOConduits:29](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |

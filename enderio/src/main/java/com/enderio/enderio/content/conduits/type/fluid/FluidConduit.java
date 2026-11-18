@@ -145,8 +145,8 @@ public record FluidConduit(ResourceLocation texture, Component description, int 
                 .accept(TooltipUtil.styledWithArgs(ConduitLang.FLUID_EFFECTIVE_RATE_TOOLTIP, transferLimitFormatted));
 
         if (TooltipUtil.hasShiftDown()) {
-            String rawRateFormatted = String.format("%,d",
-                    (int) Math.ceil(transferRatePerTick() * type().getTickRate(this)));
+            String rawRateFormatted = String.format("%,d", com.google.common.math.IntMath.saturatedMultiply(
+                Math.max(0, transferRatePerTick()), type().getTickRate(this)));
             tooltipAdder.accept(TooltipUtil.styledWithArgs(ConduitLang.FLUID_RAW_RATE_TOOLTIP, rawRateFormatted));
         }
     }
