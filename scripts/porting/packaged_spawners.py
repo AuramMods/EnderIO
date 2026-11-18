@@ -214,10 +214,10 @@ def prepare_profile(args, directory, jar):
         "online-mode=false\nenforce-secure-profile=false\n")
 
 
-def run_stage(args, directory, report, name, scenario):
+def run_stage(args, directory, report, name, scenario, *, startup_timeout=150):
     server = Server(directory, args.java, name)
     try:
-        server.wait('For help, type "help"', timeout=150)
+        server.wait('For help, type "help"', timeout=startup_timeout)
         scenario(server, report["assertions"])
         server.command("save-all flush")
     finally:

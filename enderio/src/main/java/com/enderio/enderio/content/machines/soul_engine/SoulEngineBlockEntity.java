@@ -20,13 +20,13 @@ import com.enderio.enderio.foundation.io.fluid.MachineFluidHandler;
 import com.enderio.enderio.foundation.io.fluid.MachineFluidTank;
 import com.enderio.enderio.foundation.io.fluid.MachineTankLayout;
 import com.enderio.enderio.foundation.io.fluid.TankAccess;
+import com.enderio.enderio.foundation.soul.Forge6SoulData;
 import com.enderio.enderio.foundation.souldata.EngineSoul;
 import com.enderio.enderio.foundation.state.MachineState;
 import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -40,20 +40,12 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.client.event.RecipesUpdatedEvent;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
-import java.util.function.Predicate;
 
 public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements FluidTankUser, SoulBindable {
 
@@ -69,11 +61,7 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
     public static final int FLUID_CAPACITY = 2 * FluidType.BUCKET_VOLUME;
     private final MachineFluidHandler fluidHandler;
     private static final TankAccess TANK = new TankAccess();
-    @Nullable
-    private EngineSoul.SoulData soulData;
     private int burnedTicks = 0;
-    private static boolean reload = false;
-    private boolean reloadCache = !reload;
 
     public SoulEngineBlockEntity(BlockPos worldPosition, BlockState blockState) {
         super(EIOBlockEntities.SOUL_ENGINE.get(), worldPosition, blockState, true, CapacitorSupport.REQUIRED,
@@ -88,24 +76,25 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
 
     @Override
     public void serverTick() {
-        if (reloadCache != reload && boundSoul.hasEntity()) {
-            Optional<EngineSoul.SoulData> op = EngineSoul.ENGINE.matches(boundSoul.entityType());
-            op.ifPresent(data -> soulData = data);
-            reloadCache = reload;
+        var rule = getSoulData();
+        if (rule != null) {
+            int energy = energyPerMillibucket(rule);
+            if (canBurn(rule, energy)) producePower(rule, energy);
         }
-
-        if (soulData != null && isActive()) {
-            producePower();
-        }
-
-        if (canAct(20)) {
-            updateMachineState(MachineState.FULL_POWER,
-                    (getEnergyStorage().getEnergyStored() >= getEnergyStorage().getMaxEnergyStored())
-                            && isCapacitorInstalled());
-        }
-
-        updateMachineState(MachineState.NOT_SOULBOUND, soulData == null || boundSoul.entityType() != null);
         super.serverTick();
+        updateStatus(MachineState.NOT_SOULBOUND, rule == null);
+        updateStatus(MachineState.EMPTY_TANK, TANK.isEmpty(this));
+        updateStatus(MachineState.FULL_POWER, rule != null && isCapacitorInstalled()
+                && !hasRoomFor(energyPerMillibucket(rule)));
+    }
+
+    private void updateStatus(MachineState state, boolean active) {
+        if (getMachineStates().contains(state) != active) updateMachineState(state, active);
+    }
+
+    @Override
+    protected void updatePowerState() {
+        updateMachineState(MachineState.NO_POWER, false);
     }
 
     @Override
@@ -149,25 +138,45 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
 
     @Override
     public void bindSoul(Soul newSoul) {
+        if (!isSoulValid(newSoul)) throw new IllegalArgumentException("No Soul Engine recipe for " + newSoul.entityTypeId());
+        if (boundSoul.equals(newSoul)) return;
+        if (boundSoul.entityType() != newSoul.entityType()) burnedTicks = 0;
         this.boundSoul = newSoul;
-        this.soulData = EngineSoul.ENGINE.matches(newSoul.entityTypeId()).get();
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        }
     }
 
     @Override
     public boolean isActive() {
-        return canAct() && TANK.getFluidAmount(this) > 0;
+        var rule = getSoulData();
+        return rule != null && canBurn(rule, energyPerMillibucket(rule));
     }
 
-    public void producePower() {
-        if (burnedTicks >= soulData.tickpermb()) {
-            int energy = (int) (soulData.powerpermb() * getGenerationRate());
-            if (!TANK.getFluid(this).isEmpty() && getEnergyStorage().addEnergy(energy, true) == energy) {
-                TANK.drain(this, 1, IFluidHandler.FluidAction.EXECUTE);
-                getEnergyStorage().addEnergy(energy);
-                burnedTicks -= soulData.tickpermb();
-            }
-        } else {
-            burnedTicks += getBurnRate();
+    private @Nullable EngineSoul.SoulData getSoulData() {
+        return boundSoul.hasEntity() ? EngineSoul.ENGINE.matches(boundSoul.entityTypeId()).orElse(null) : null;
+    }
+
+    private boolean hasRoomFor(int energy) {
+        return getEnergyStorage().addEnergy(energy, true) == energy;
+    }
+
+    private boolean canBurn(EngineSoul.SoulData rule, int energy) {
+        return canAct() && isCapacitorInstalled() && matchesFuel(rule, TANK.getFluid(this)) && hasRoomFor(energy);
+    }
+
+    private void producePower(EngineSoul.SoulData rule, int energy) {
+        if (burnedTicks < rule.tickpermb()) {
+            burnedTicks = (int) Math.min(Integer.MAX_VALUE, (long) burnedTicks + getBurnRate());
+        }
+        if (burnedTicks >= rule.tickpermb()) {
+            burnedTicks -= rule.tickpermb();
+            TANK.drain(this, 1, IFluidHandler.FluidAction.EXECUTE);
+            getEnergyStorage().addEnergy(energy);
+        } else if (level != null) {
+            // A partially paid burn changes the save without changing any comparator output.
+            level.blockEntityChanged(worldPosition);
         }
     }
 
@@ -176,13 +185,21 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
     }
 
     public float getGenerationRate() {
-        // TODO return GENERATION_SPEED.scaleF(this::getCapacitorData).get();
-        return MachinesConfig.COMMON.ENERGY.SOUL_ENGINE_BURN_SPEED.get();
+        return MachinesConfig.COMMON.ENERGY.SOUL_ENGINE_GENERATION.get().floatValue();
+    }
+
+    public int getEnergyPerMillibucket() {
+        var rule = getSoulData();
+        return rule == null ? 0 : energyPerMillibucket(rule);
+    }
+
+    private int energyPerMillibucket(EngineSoul.SoulData rule) {
+        return (int) (rule.powerpermb() * getGenerationRate());
     }
 
     @Override
     public MachineTankLayout getTankLayout() {
-        return MachineTankLayout.builder().tank(TANK, FLUID_CAPACITY, isFluidValid()).build();
+        return MachineTankLayout.builder().tank(TANK, FLUID_CAPACITY, this::isFluidValid).build();
     }
 
     public MachineFluidHandler createFluidHandler() {
@@ -190,7 +207,7 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
             @Override
             protected void onContentsChanged(int slot) {
                 super.onContentsChanged(slot);
-                updateMachineState(MachineState.EMPTY_TANK, TANK.getFluidAmount(this) <= 0);
+                updateStatus(MachineState.EMPTY_TANK, TANK.isEmpty(SoulEngineBlockEntity.this));
                 setChanged();
             }
 
@@ -221,25 +238,20 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
         return fluidHandler;
     }
 
-    private Predicate<FluidStack> isFluidValid() {
-        return fluidStack -> {
-            if (soulData == null) {
-                return false;
-            }
-            String fluid = soulData.fluid();
-            if (fluid.startsWith("#")) { // We have a fluid tag instead
-                TagKey<Fluid> tag = TagKey.create(Registries.FLUID, ResourceLocation.parse(fluid.substring(1)));
-                return fluidStack.getFluid().is(tag);
-            } else {
-                Optional<Holder.Reference<Fluid>> delegate = BuiltInRegistries.FLUID
-                        .getHolder(ResourceKey.create(Registries.FLUID, ResourceLocation.parse(fluid)));
-                if (delegate.isPresent()) {
-                    return fluidStack.getFluid().isSame(delegate.get().value());
-                }
-            }
-            return false;
-        };
+    private boolean isFluidValid(FluidStack fuel) {
+        var rule = getSoulData();
+        return rule != null && matchesFuel(rule, fuel);
+    }
 
+    private static boolean matchesFuel(EngineSoul.SoulData rule, FluidStack fuel) {
+        if (fuel.isEmpty()) return false;
+        String fluid = rule.fluid();
+        boolean isTag = fluid.startsWith("#");
+        var id = ResourceLocation.tryParse(isTag ? fluid.substring(1) : fluid);
+        if (id == null) return false;
+        if (isTag) return fuel.getFluid().is(TagKey.create(Registries.FLUID, id));
+        return BuiltInRegistries.FLUID.getHolder(ResourceKey.create(Registries.FLUID, id))
+                .filter(entry -> fuel.getFluid().isSame(entry.value())).isPresent();
     }
 
     @Nullable
@@ -267,13 +279,9 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
     public void load(CompoundTag tag) {
         var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         super.load(tag);
-        burnedTicks = tag.getInt(BURNED_TICKS);
-        boundSoul = Soul.parseOptional(lookupProvider, tag.getCompound(MachineNBTKeys.ENTITY_STORAGE));
-
-        updateMachineState(MachineState.NO_POWER, false);
-        updateMachineState(MachineState.FULL_POWER,
-                (getEnergyStorage().getEnergyStored() >= getEnergyStorage().getMaxEnergyStored())
-                        && isCapacitorInstalled());
+        burnedTicks = Math.max(0, tag.getInt(BURNED_TICKS));
+        var storage = tag.getCompound(MachineNBTKeys.ENTITY_STORAGE);
+        boundSoul = Forge6SoulData.isLegacyStorage(storage) ? Forge6SoulData.read(storage) : Soul.parseOptional(lookupProvider, storage);
         loadTank(lookupProvider, tag);
     }
 
@@ -304,20 +312,8 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
     }
 
     @Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-
-        updateMachineState(MachineState.NO_POWER, false);
-        updateMachineState(MachineState.FULL_POWER,
-                (getEnergyStorage().getEnergyStored() >= getEnergyStorage().getMaxEnergyStored())
-                        && isCapacitorInstalled());
-    }
-
-    @EventBusSubscriber(modid = "enderio", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
-    public static class ClientEvents {
-        @SubscribeEvent
-        public static void onReload(RecipesUpdatedEvent event) {
-            reload = !reload;
-        }
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
+        tag.remove(MachineNBTKeys.ENTITY_STORAGE);
     }
 }

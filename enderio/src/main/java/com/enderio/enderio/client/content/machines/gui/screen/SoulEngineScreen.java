@@ -60,13 +60,14 @@ public class SoulEngineScreen extends MachineScreen<SoulEngineMenu> {
             guiGraphics.drawString(font, name, imageWidth / 2f - font.width(name) / 2f, 10, 4210752, false);
 
             EngineSoul.ENGINE.matches(entityType).ifPresent(data -> {
-                double burnRate = menu.getBlockEntity().getBurnRate();
-                float genRate = menu.getBlockEntity().getGenerationRate();
-                guiGraphics.drawString(font, FORMAT.format((int) (data.powerpermb() * genRate) * burnRate / data.tickpermb()) + " µI/t", imageWidth / 2f + 12, 40, 4210752,
+                double burnRate = menu.getBurnRate();
+                if (burnRate <= 0 || data.tickpermb() <= 0) return;
+                int energy = menu.getEnergyPerMillibucket();
+                guiGraphics.drawString(font, FORMAT.format(energy * burnRate / data.tickpermb()) + " µI/t", imageWidth / 2f + 12, 40, 4210752,
                     false);
                 guiGraphics.drawString(font, FORMAT.format(data.tickpermb() / burnRate) + " t/mb", imageWidth / 2f + 12, 50, 4210752,
                         false);
-                guiGraphics.drawString(font, (int) (data.powerpermb() * genRate) + " µI/mb", imageWidth / 2f + 12, 60,
+                guiGraphics.drawString(font, energy + " µI/mb", imageWidth / 2f + 12, 60,
                         4210752, false);
             });
         }

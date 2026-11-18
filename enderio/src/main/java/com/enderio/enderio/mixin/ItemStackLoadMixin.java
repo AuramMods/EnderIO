@@ -21,9 +21,9 @@ public abstract class ItemStackLoadMixin {
         if (stack.isEmpty()) return;
         var id = saved.getString("id");
         if (!id.startsWith("enderio:")) return;
-        boolean poweredSpawner = id.equals("enderio:powered_spawner");
-        if (poweredSpawner || stack.getItem() instanceof SoulVialItem || stack.getItem() instanceof BrokenSpawnerItem) {
-            Forge6SoulData.restoreItem(stack, poweredSpawner);
+        boolean soulMachine = id.equals("enderio:powered_spawner") || id.equals("enderio:soul_engine");
+        if (soulMachine || stack.getItem() instanceof SoulVialItem || stack.getItem() instanceof BrokenSpawnerItem) {
+            Forge6SoulData.restoreItem(stack, soulMachine);
             return;
         }
         var type = Forge6ConduitData.itemConduitId(id);

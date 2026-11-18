@@ -19,6 +19,7 @@ com.enderio.enderio.gametests.machines.CapacitorBankTests
 com.enderio.enderio.gametests.machines.SagMillTests
 com.enderio.enderio.gametests.machines.SlicerTests
 com.enderio.enderio.gametests.machines.SoulBinderTests
+com.enderio.enderio.gametests.machines.SoulEngineTests
 com.enderio.enderio.gametests.regressions.issues.Issue1033
 com.enderio.enderio.gametests.regressions.issues.Issue1171
 com.enderio.enderio.gametests.regressions.issues.Issue1190
