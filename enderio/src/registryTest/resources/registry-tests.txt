@@ -18,3 +18,4 @@ com.enderio.enderio.tests.foundation.io.TransferUtilTests
 com.enderio.enderio.tests.foundation.menu.GhostMachineSlotTests
 com.enderio.enderio.tests.foundation.util.EntityCaptureUtilityTests
 com.enderio.enderio.tests.recipes.ShapedEntityStorageRecipeTests
+com.enderio.enderio.tests.recipes.RecipeNetworkTests

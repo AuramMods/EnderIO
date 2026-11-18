@@ -11,8 +11,10 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--output", required=True, type=Path)
 parser.add_argument("--timeout", default=180, type=int)
 parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-harness/client-smoke-launch.json")
-parser.add_argument("--scenario", choices=("title", "singleplayer"), default="title")
+parser.add_argument("--scenario", choices=("title", "singleplayer", "multiplayer"), default="title")
 parser.add_argument("--tank", choices=("standard", "pressurized"), default="standard")
+parser.add_argument("--server", default="127.0.0.1:25641")
+parser.add_argument("--multiplayer-phase", choices=("exercise", "verify"), default="exercise")
 args = parser.parse_args()
 output = args.output.resolve()
 output.mkdir(parents=True, exist_ok=False)
@@ -23,6 +25,8 @@ arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.output=" + str(outp
 arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.scenario=" + args.scenario)
 arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.worldName=" + output.name)
 arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.pressurized=" + str(args.tank == "pressurized").lower())
+arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.server=" + args.server)
+arguments.insert(arguments.index("-cp"), "-Denderio.clientqa.multiplayerPhase=" + args.multiplayer_phase)
 environment = os.environ.copy()
 environment.update(launch["environment"])
 command = [harness["watch"], str(output / "focus.json"), str(args.timeout),
@@ -37,5 +41,6 @@ passed = process.returncode == 0 and focus["status"] == "pass" and result["passe
 report = {"event": "client_smoke_result", "status": "pass" if passed else "fail",
           "focus": focus, "client": result, "errors": errors}
 (output / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
-print("QA_EVT " + json.dumps(report))
+print("QA_EVT " + json.dumps({"event": report["event"], "status": report["status"],
+                             "summary": str(output / "summary.json")}))
 raise SystemExit(0 if passed else 1)

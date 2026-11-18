@@ -8,7 +8,7 @@ Fully port the entire implemented Ender IO feature set in this repository to Min
 - Read `docs/PORTING_1.20.1.md`, applicable `AGENTS.md` instructions and the existing cycle history before continuing. Keep that tracker current.
 - Preserve the implemented features of the 1.21.1 NeoForge source at `4c482da69e76f2b46bfeeac64ef0ac277c318eaa`, including `endercore`, `enderio` and `enderio-modded-conduits`.
 - Use the historical Forge implementation at `18ee1b17bf6879298e911fff751204b07f2e4228` as a reference and source of reusable code. Reverting to that older release does not satisfy the goal.
-- The remote `origin/1.20.1` is the historical branch, and its history differs from this local branch. Preserve it; do not force-push or overwrite it. Do not publish releases without a separate request.
+- Updated by the user after cycle 041: publish the port work to `origin/1.20.1`, replacing the historical remote tip with the local port branch. The previous tip is retained locally at `refs/port-recovery/pre-port-publish-1.20.1` (`18ee1b17bf6879298e911fff751204b07f2e4228`). Use an explicit expected-tip lease for that initial authorized replacement; thereafter use normal pushes. This supersedes the original remote-preservation clause. Do not publish releases without a separate request.
 - EnderCore is already included here. Inspect or clone other Team-EnderIO repositories only when a concrete dependency requires it. Stay within this port's scope.
 
 ## Implementation requirements

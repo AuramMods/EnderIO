@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status: implementation in progress. Cycle 040 verifies packaged single-player gameplay for both tank variants: real menu/inventory/widget packets, exact bucket processing, fluid rendering and saved-state synchronization after native world reopen. Both final scenarios pass 15 checks with sound/narration off, no native activation/visibility events and no ERROR/FATAL entries. The full build passes 78 ordinary JUnit and 383 native GameTest results. Dedicated multiplayer, full feature parity and the recorded transfer-conservation risks remain incomplete.
+Prepared on 2026-11-17. Status: implementation incomplete; goal paused at the user’s request after cycle 041. Cycle 041 fixes a soul-binding recipe decoder that disconnected real dedicated-server clients during login. Packaged TCP tank interactions, synchronization, reconnect and disk-backed server restart pass 19 client checks and five server assertions under hidden, silent observation. The full build passes 78 ordinary JUnit and 386 native GameTest results. Full feature parity, integration coverage, transfer-conservation risks and byte-for-byte packaging reproducibility remain incomplete.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -15,13 +15,13 @@ Port the complete implemented feature set of this checkout to Minecraft 1.20.1 o
 | Feature baseline | `4c482da69e76f2b46bfeeac64ef0ac277c318eaa` |
 | Baseline release series | 8.2 |
 | Baseline platform | Minecraft 1.21.1, NeoForge 21.1.216, Java 21 |
-| Historical Forge reference | `origin/1.20.1` at `18ee1b17bf6879298e911fff751204b07f2e4228` |
+| Historical Forge reference | `18ee1b17bf6879298e911fff751204b07f2e4228`, retained locally at `refs/port-recovery/pre-port-publish-1.20.1` |
 | Historical platform | Minecraft 1.20.1, Forge 47.1.1, Java 17, release series 6.2 |
 | Target platform | Minecraft 1.20.1, Forge 47.4.28 (pinned; limited packaged dedicated-server verification in cycle 036), Java 17 |
 
 The two upstream branch tips were checked with `git ls-remote` against `https://github.com/Team-EnderIO/EnderIO.git` and match the fork's fetched remote references. The historical Forge branch already implements an older version of this mod; merely checking it out would not preserve the current feature set. The branches have diverged: at preparation, 154 commits are unique to the historical branch and 951 to the current source baseline.
 
-The new local `1.20.1` branch intentionally has no upstream. The existing remote `origin/1.20.1` has not been changed. Do not force-push over it. Local commit history is sufficient for the requested port cycles; decide remote integration explicitly if publishing the branch is later requested.
+After cycle 041, the user explicitly requested publishing all port progress to the fork’s remote `1.20.1` branch and replacing its historical tip. The previous remote commit `18ee1b17bf6879298e911fff751204b07f2e4228` is retained locally at `refs/port-recovery/pre-port-publish-1.20.1`. Use an explicit expected-tip lease for this authorized initial replacement, then track `origin/1.20.1` normally. This supersedes the original instruction to leave that remote branch untouched; it does not authorize future unrelated history rewrites or releases. Port implementation is paused at the user’s request.
 
 No `.codegraph/`, applicable on-disk `AGENTS.md`, or `docs/MANUAL_CHANGE_PROTOCOL.md` was found during preparation. The instructions supplied in chat still apply. Recheck applicable instructions when resuming; if the manual change protocol appears, follow its PR/worktree/automerge workflow.
 
@@ -189,7 +189,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 039: packaged client and bundled modules | Official Forge client installation, standalone remapped QA mod, metadata-based launcher and module presence observations | Full build passes 78 unit/383 native results; packaged title screen and twelve model states pass with all three shipped mod IDs, no ERROR/FATAL lines and zero native activation/visibility events. Gameplay/multiplayer remain pending. [Evidence](porting/1.20.1/cycle-039.md) | `581963e23` |
 
-| 040: packaged single-player tanks | Native world creation/reopen, block/inventory/widget packets, exact container counts, menu/renderer sync and both tank sizes | Full build passes 78 unit/383 native results; 15 packaged client checks per variant pass, with visible fluid, disk persistence, quiet audio and zero native focus/visibility events. Dedicated multiplayer/full parity remain pending. [Evidence](porting/1.20.1/cycle-040.md) | Commit containing cycle 040 |
+| 040: packaged single-player tanks | Native world creation/reopen, block/inventory/widget packets, exact container counts, menu/renderer sync and both tank sizes | Full build passes 78 unit/383 native results; 15 packaged client checks per variant pass, with visible fluid, disk persistence, quiet audio and zero native focus/visibility events. Dedicated multiplayer/full parity remain pending. [Evidence](porting/1.20.1/cycle-040.md) | `c3d60fb22` |
+
+| 041: packaged TCP multiplayer and recipe sync | Fix Forge mob-category packet decoding; add native recipe regressions, real dedicated client interactions, reconnect and server restart | Full build passes 78 unit/386 native results; 19 client checks and five server assertions pass with zero native activation/visibility events. Full parity and recorded risks remain incomplete. [Evidence](porting/1.20.1/cycle-041.md) | Commit containing cycle 041 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

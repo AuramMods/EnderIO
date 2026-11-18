@@ -10,7 +10,7 @@ This test-only harness runs an actual Forge 1.20.1 client on the current macOS h
 
 The `clientSmoke` source set loads a separate QA mod. After the actual title screen finishes fading in, it checks narrator, all ten volume categories, native window/input state and all twelve enchanter/spawner baked block states. It captures `title-screen.png`, writes `result.json`, and stops the client. `run_smoke.py` combines that result with the native observer and ERROR/FATAL log lines. Inspect the image as well as the JSON.
 
-The development smoke profile loads Ender IO and EnderCore without optional integrations. The separate packaged profile below loads the shipped main jar, its nested EnderCore/addon/GraphLib dependencies and a standalone remapped QA mod. The single-player tank scenarios below provide limited integrated-server interaction/persistence evidence; other interactions, resource reload and dedicated multiplayer still need scenarios. The agent, QA mod, Swift observer and tests are excluded from distributable jars.
+The development smoke profile loads Ender IO and EnderCore without optional integrations. The separate packaged profile below loads the shipped main jar, its nested EnderCore/addon/GraphLib dependencies and a standalone remapped QA mod. The single-player and dedicated multiplayer tank scenarios below provide limited interaction/persistence evidence; other interactions and resource reload still need scenarios. The agent, QA mod, Swift observer and tests are excluded from distributable jars.
 
 ## Commands
 
@@ -111,3 +111,30 @@ Use unique output names; the output basename also names the owned world inside t
 Expected capacities are 16,000/32,000 mB. The bucket operation produces exactly one empty bucket and 1,000 mB, with no remaining water bucket. The later fixture addition produces 1,500 mB, visible to both the menu and renderer; `ACTIVE_WITH_SIGNAL`, that fluid amount and the single output bucket survive reopen. Fifteen checks and six actual framebuffer captures per variant are recorded in `result.json`, with independent native observation in `focus.json`.
 
 [Cycle 040](cycle-040.md) verifies both variants. This is limited packaged gameplay and integrated-server persistence evidence. It does not test a dedicated TCP server, all tank operations, all machines, all rendering backends or full feature parity.
+
+## Packaged dedicated multiplayer
+
+`run_multiplayer.py` installs a fresh official Forge server, copies only the bundled Ender IO distributable into its `mods` directory, and starts it headlessly on loopback. It uses an isolated flat world and an offline local QA identity. The server has no QA mod or development classes. The separately installed, guarded client connects through native `ConnectScreen` and verifies that its connection is a real TCP socket with no integrated server.
+
+After building the distributable and QA jar and preparing a quiet client installation, run:
+
+```sh
+python3 scripts/porting/client/run_multiplayer.py \
+  --name cycle-041-multiplayer-fixed \
+  --java /Users/cyberpwn/.jabba/jdk/temurin@17.0.18/Contents/Home/bin/java \
+  --installer build/port-runtime/forge-47.4.28-installer.jar \
+  --jar enderio/build/libs/enderio-8.2.14.40-1.20.1+c3d60fb222.jar \
+  --launch build/port-runtime/cycle-041-client/launch.json
+```
+
+Use a fresh `--name` for each run, current artifact paths, and an unused `--port` if the default 25641 is occupied. The runner performs the actual server launch rather than guessing whether a port is available. Do not run multiple clients against the same isolated installation concurrently.
+
+The expected sequence is:
+
+1. Connect to the real server. Console fixtures place a standard tank, pressurized tank and enchanter, seed one player water bucket and teleport the player into range.
+2. Open the standard tank through the native block-use packet, shift-click the bucket and verify 1,000 mB, one empty output bucket and no remaining water bucket.
+3. Scroll the real redstone widget. Independent server-console NBT assertions verify `active_with_signal`, fluid and inventory. A console fixture adds 500 mB; the client must receive both the menu and rendered block-entity state.
+4. Disconnect and reconnect to the same server. A fresh menu must restore 1,500 mB, the selected redstone mode and exactly one empty bucket.
+5. Stop/save the server, start a new server process on the same disk world and assert its saved NBT. Launch a new guarded client and verify the same state again through TCP and a fresh menu.
+
+No OS input is injected. Each client run records native focus/visibility observations, quiet settings, actual framebuffer PNGs, checks and logs beneath `build/port-evidence/<name>-exercise` or `-verify`. The server's `multiplayer-results.json` combines client summaries, native-console assertions, exit statuses and client/server artifact hashes. A native disconnect screen is captured immediately as a failed scenario, including its actual reason in `failure.png`. Console setup and direct fixture updates are not player placement or complete machine gameplay coverage.

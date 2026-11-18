@@ -29,10 +29,10 @@ public final class ClientSmoke {
     private boolean finished;
 
     public ClientSmoke() {
-        if (System.getProperty("enderio.clientqa.scenario", "title").equals("singleplayer")) {
-            new ClientWorldSmoke();
-        } else {
-            MinecraftForge.EVENT_BUS.addListener(this::render);
+        switch (System.getProperty("enderio.clientqa.scenario", "title")) {
+            case "singleplayer" -> new ClientWorldSmoke();
+            case "multiplayer" -> new ClientMultiplayerSmoke();
+            default -> MinecraftForge.EVENT_BUS.addListener(this::render);
         }
         System.out.println("QA_EVT {\"event\":\"client_qa_loaded\",\"status\":\"info\"}");
     }

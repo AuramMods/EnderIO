@@ -19,7 +19,7 @@ import net.minecraft.core.RegistryAccess;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.StringRepresentable;
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -199,9 +199,13 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
                         SoulBindingRecipe::input, PacketCodecs.INT, SoulBindingRecipe::energy, PacketCodecs.INT,
                         SoulBindingRecipe::experience, PacketCodecs.RESOURCE_LOCATION.optional(),
                         SoulBindingRecipe::entityType,
-                        // TODO: 1.21: This is a very gross, could do better.
+                        // Forge's extensible enum codec is not a vanilla EnumCodec.
                         PacketCodecs.STRING_UTF8.map(
-                                name -> ((StringRepresentable.EnumCodec<MobCategory>) MobCategory.CODEC).byName(name),
+                                name -> {
+                                    var category = MobCategory.byName(name);
+                                    if (category == null) throw new DecoderException("Unknown mob category: " + name);
+                                    return category;
+                                },
                                 MobCategory::getName).optional(),
                         SoulBindingRecipe::mobCategory, PacketCodecs.STRING_UTF8.optional(),
                         SoulBindingRecipe::soulData, PacketCodecs.BOOL, SoulBindingRecipe::copyInputComponents,
