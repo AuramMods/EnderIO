@@ -1,6 +1,7 @@
 package com.enderio.enderio.content.travel;
 
 import com.enderio.enderio.api.travel.TravelTarget;
+import com.enderio.enderio.content.travel.travel_anchor.AnchorTravelTarget;
 import com.enderio.enderio.foundation.network.packets.ClientboundSyncTravelDataPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundTravelTargetRemovedPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundTravelTargetUpdatedPacket;
@@ -9,16 +10,20 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 import com.enderio.enderio.foundation.network.EIONetwork;
 
 import java.util.Collection;
@@ -40,6 +45,7 @@ public class TravelTargetSavedData extends SavedData {
 
     public static final String TARGETS = "targets";
     private final Map<BlockPos, TravelTarget> travelTargets = new HashMap<>();
+    private ListTag untranslatedTargets = new ListTag();
 
     public TravelTargetSavedData(HolderLookup.Provider registries) {
         this.registries = Objects.requireNonNull(registries);
@@ -96,32 +102,65 @@ public class TravelTargetSavedData extends SavedData {
 
     @Override
     public CompoundTag save(CompoundTag nbt) {
-        ListTag tag = new ListTag();
-        tag.addAll(travelTargets.values().stream().map(target -> saveTarget(registries, target)).toList());
-        nbt.put(TARGETS, tag);
+        var targets = serializeTargets();
+        untranslatedTargets.forEach(target -> targets.add(target.copy()));
+        nbt.put(TARGETS, targets);
         return nbt;
     }
 
-    private <T extends TravelTarget> Tag saveTarget(HolderLookup.Provider lookupProvider, T target) {
-        return TravelTarget.CODEC.encodeStart(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), target)
-                .getOrThrow(false, message -> {});
+    private ListTag serializeTargets() {
+        var ops = RegistryOps.create(NbtOps.INSTANCE, registries);
+        var targets = new ListTag();
+        for (var target : travelTargets.values()) {
+            targets.add(TravelTarget.CODEC.encodeStart(ops, target).getOrThrow(false, message -> {}));
+        }
+        return targets;
+    }
+
+    private void sendTravelData(ServerPlayer player) {
+        var snapshot = new CompoundTag();
+        snapshot.put(TARGETS, serializeTargets());
+        EIONetwork.sendToPlayer(player, new ClientboundSyncTravelDataPacket(snapshot));
     }
 
     public void loadNBT(HolderLookup.Provider lookupProvider, CompoundTag nbt) {
         Map<BlockPos, TravelTarget> loaded = new HashMap<>();
+        ListTag untranslated = new ListTag();
+        var ops = RegistryOps.create(NbtOps.INSTANCE, lookupProvider);
         ListTag targets = nbt.getList(TARGETS, Tag.TAG_COMPOUND);
-        targets.stream()
-                .map(anchorData -> (CompoundTag) anchorData)
-                .map(tag -> loadTarget(lookupProvider, tag))
-                .forEach(target -> loaded.put(target.pos(), target));
+        for (var raw : targets) {
+            var record = (CompoundTag) raw;
+            if (!record.contains("type") && record.contains("name", Tag.TAG_STRING) && record.contains("data", Tag.TAG_COMPOUND)) {
+                var target = loadForge6Anchor(record);
+                if (target.isPresent()) {
+                    loaded.putIfAbsent(target.get().pos(), target.get());
+                } else {
+                    // Preserve unsupported addon records and malformed old anchors through a save.
+                    untranslated.add(record.copy());
+                }
+            } else {
+                var target = TravelTarget.CODEC.parse(ops, record).getOrThrow(false, message -> {});
+                loaded.put(target.pos(), target);
+            }
+        }
         travelTargets.clear();
         travelTargets.putAll(loaded);
+        untranslatedTargets = untranslated;
     }
 
-    private TravelTarget loadTarget(HolderLookup.Provider lookupProvider, Tag tag) {
-        return TravelTarget.CODEC.decode(RegistryOps.create(NbtOps.INSTANCE, lookupProvider), tag)
-                .getOrThrow(false, message -> {})
-                .getFirst();
+    private static Optional<AnchorTravelTarget> loadForge6Anchor(CompoundTag record) {
+        if (!record.getString("name").equals("enderio:travel_anchor")) return Optional.empty();
+        var data = record.getCompound("data");
+        var pos = data.getCompound("BlockPos");
+        if (!pos.contains("X", Tag.TAG_INT) || !pos.contains("Y", Tag.TAG_INT) || !pos.contains("Z", Tag.TAG_INT)) {
+            return Optional.empty();
+        }
+
+        // Forge's saved registry aliases are applied before the dimension reads this file.
+        var id = ResourceLocation.tryParse(data.getString("AnchorIcon"));
+        var icon = id == null ? null : ForgeRegistries.ITEMS.getValue(id);
+        return Optional.of(new AnchorTravelTarget(NbtUtils.readBlockPos(pos), data.getString("AnchorName"),
+            icon == null ? Items.AIR : icon, data.getBoolean("AnchorVisibility")));
     }
 
     @Override
@@ -138,9 +177,7 @@ public class TravelTargetSavedData extends SavedData {
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         Player player = event.getEntity();
         if (player instanceof ServerPlayer serverPlayer) {
-            var savedData = TravelTargetSavedData.getTravelData(serverPlayer.level());
-            var serializedData = savedData.save(new CompoundTag());
-            EIONetwork.sendToPlayer(serverPlayer, new ClientboundSyncTravelDataPacket(serializedData));
+            getTravelData(serverPlayer.level()).sendTravelData(serverPlayer);
         }
     }
 
@@ -148,9 +185,7 @@ public class TravelTargetSavedData extends SavedData {
     public static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
         Player player = event.getEntity();
         if (player instanceof ServerPlayer serverPlayer) {
-            var savedData = TravelTargetSavedData.getTravelData(serverPlayer.level());
-            var serializedData = savedData.save(new CompoundTag());
-            EIONetwork.sendToPlayer(serverPlayer, new ClientboundSyncTravelDataPacket(serializedData));
+            getTravelData(serverPlayer.level()).sendTravelData(serverPlayer);
         }
     }
 }

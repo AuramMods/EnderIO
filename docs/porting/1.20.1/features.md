@@ -98,8 +98,8 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `MIND_KILLER` | [EIOBlocks:416](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `VACUUM_CHEST` | [EIOBlocks:423](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `XP_VACUUM` | [EIOBlocks:427](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `TRAVEL_ANCHOR` | [EIOBlocks:432](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending. An actual 6.2 save exposes a saved-target codec failure on the converted server ([cycle 048](cycle-048.md)). |
-| `PAINTED_TRAVEL_ANCHOR` | [EIOBlocks:436](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `TRAVEL_ANCHOR` | [EIOBlocks:432](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial. Authentic 6.2 names, icons and visibility survive conversion and restart. A dedicated client reaches a hidden elevator and receives the correct separate Nether targets ([cycle 049](cycle-049.md)). |
+| `PAINTED_TRAVEL_ANCHOR` | [EIOBlocks:436](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial. The migrated purpur anchor retains its paint and renamed copper alloy icon. Its menu and actual horizontal arrival pass over dedicated TCP before and after server restart ([cycle 049](cycle-049.md)). |
 | `SOLAR_PANELS` | [EIOBlocks:442](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `CAPACITOR_BANKS` | [EIOBlocks:452](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Partial: basic-bank capacity/split/merge and conduit energy scenarios pass; all tier/render/restart coverage remains pending ([cycle 035](cycle-035.md)) |
 | `SOUL_ENGINE` | [EIOBlocks:462](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |

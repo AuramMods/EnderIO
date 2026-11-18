@@ -7,6 +7,7 @@ import com.enderio.conduits.common.conduit.connection.DynamicConnectionState;
 import com.enderio.conduits.common.conduit.connection.StaticConnectionStates;
 import com.enderio.conduits.common.init.EIOConduitTypes;
 import com.enderio.core.common.capability.ItemFilterCapability;
+import com.enderio.machines.common.blockentity.TravelAnchorBlockEntity;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -15,10 +16,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
@@ -40,6 +43,32 @@ public class Fixture {
                 context.getSource().sendSuccess(() -> Component.literal("Legacy conduit fixture created"), false);
                 return 1;
             }));
+        event.getDispatcher().register(Commands.literal("port_legacy_travel").requires(source -> source.hasPermission(4))
+            .executes(context -> {
+                var level = context.getSource().getLevel();
+                anchor(level, new BlockPos(32, 80, 0), "travel_anchor", "Overworld Hub", Items.COMPASS, true);
+                anchor(level, new BlockPos(40, 80, 0), "painted_travel_anchor", "Painted Workshop",
+                    stack("copper_alloy_ingot").getItem(), true);
+                anchor(level, new BlockPos(32, 88, 0), "travel_anchor", "Hidden Lift", Items.ENDER_PEARL, false);
+                anchor(level.getServer().getLevel(Level.NETHER), new BlockPos(32, 80, 0), "travel_anchor",
+                    "Nether Relay", Items.BLAZE_ROD, true);
+                context.getSource().sendSuccess(() -> Component.literal("Legacy travel fixture created"), false);
+                return 1;
+            }));
+    }
+
+    private static void anchor(ServerLevel level, BlockPos pos, String blockId, String name, Item icon, boolean visible) {
+        var block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.fromNamespaceAndPath("enderio", blockId));
+        level.setBlockAndUpdate(pos, block.defaultBlockState());
+        var anchor = (TravelAnchorBlockEntity) level.getBlockEntity(pos);
+        anchor.getInventory().setStackInSlot(0, new ItemStack(icon));
+        anchor.setName(name);
+        anchor.setIcon(icon);
+        anchor.setVisibility(visible);
+        anchor.setChanged();
+        if (!name.equals(anchor.getName()) || anchor.getIcon() != icon || anchor.getVisibility() != visible) {
+            throw new IllegalStateException("The historical anchor did not retain its settings at " + pos);
+        }
     }
 
     private static void build(ServerLevel level) {

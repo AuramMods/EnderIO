@@ -57,8 +57,12 @@ public class TravelAnchorBlockEntity extends MachineBlockEntity {
     @Override
     protected void onInventoryContentsChanged(int slot) {
         super.onInventoryContentsChanged(slot);
-        ItemStack stack = GHOST.getItemStack(getInventory());
-        setIcon(stack.getItem());
+        // Chunk loading restores the ghost slot before the block entity has a level.
+        // Client inventory sync must also leave the server's saved icon in charge.
+        if (level != null && !level.isClientSide()) {
+            ItemStack stack = GHOST.getItemStack(getInventory());
+            setIcon(stack.getItem());
+        }
     }
 
     @Nullable

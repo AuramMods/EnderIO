@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Prepared on 2026-11-17. Status remains in progress. Cycle 045 reproduced all six distributable jars, and cycle 046 verified live data-map updates and reconnects. Cycle 048 passed 78 ordinary JUnit tests, 411 native GameTests and 48 packaged assertions. A copied Ender IO 6.2.18-beta world retains the tested machine state and routes filtered items across a migrated conduit network after chunk reload and restart. Historical travel saved data, other legacy conduit details, an intermittent login timeout and full gameplay and integration parity remain open.
+Prepared on 2026-11-17. Status remains in progress. Cycle 045 reproduced all six distributable jars, and cycle 046 verified live data-map updates and reconnects. Cycle 048 verified migrated machine state and cross-chunk item routing. Cycle 049 passed 78 ordinary JUnit tests, 413 native GameTests, 30 TCP client checks and 22 packaged server assertions. The copied Ender IO 6.2.18-beta world retains its named travel anchors across conversion and restart, including horizontal travel, the hidden elevator and dimension-specific target sync. Other historical conversion gaps, an intermittent login timeout and full gameplay and integration parity remain open.
 
 The executable goal prompt is in [PORTING_1.20.1_GOAL.md](PORTING_1.20.1_GOAL.md). Keep this tracker current during implementation; source inspection is not runtime verification.
 
@@ -205,7 +205,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 047: historical machine tanks and registry remapping | Audit an official 6.2.18-beta world, migrate Forge tank layouts and restore equivalent registry IDs | Full build passes 78 ordinary unit and 411 native tests. Packaged upgrade and restart pass 18 assertions. A separate actual 6.x conduit fixture reproduces a chunk-load crash. [Evidence and commands](porting/1.20.1/cycle-047.md) | `859e1b483` |
 
-| 048: historical conduit bundles and graphs | Read authentic Forge 6.2 bundle, endpoint and graph data. Verify the old filter, facade and cross-chunk item route after conversion | Full build passes 78 ordinary unit and 411 native tests. Packaged fixture passes 48 assertions across conversion, chunk eviction and restart. The old conduit crash is resolved. Historical travel saved data fails decoding in a separate fixture. [Evidence and commands](porting/1.20.1/cycle-048.md) | Commit containing cycle 048 |
+| 048: historical conduit bundles and graphs | Read authentic Forge 6.2 bundle, endpoint and graph data. Verify the old filter, facade and cross-chunk item route after conversion | Full build passes 78 ordinary unit and 411 native tests. Packaged fixture passes 48 assertions across conversion, chunk eviction and restart. The old conduit crash is resolved. Historical travel saved data fails decoding in a separate fixture. [Evidence and commands](porting/1.20.1/cycle-048.md) | `b3c464fbb` |
+
+| 049: historical travel anchors and dedicated travel | Migrate named, painted and hidden Forge 6.2 targets. Correct native ghost-slot loading. Exercise travel and dimension sync on an actual TCP connection | Full build passes 78 ordinary unit and 413 native tests. Packaged conversion and restart pass 30 client checks and 22 server assertions with no focus events. Staff and broader legacy migration remain open. [Evidence and commands](porting/1.20.1/cycle-049.md) | Commit containing cycle 049 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
