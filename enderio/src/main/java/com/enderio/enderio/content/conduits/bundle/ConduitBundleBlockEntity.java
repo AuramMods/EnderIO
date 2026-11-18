@@ -117,6 +117,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
     private final Map<Holder<Conduit<?, ?>>, ConduitNodeImpl> lazyNodes = new HashMap<>();
     private ListTag lazyNodeNBT = null;
     private Map<Holder<Conduit<?, ?>>, NodeData> lazyNodeData = null;
+    private boolean assigningLevel;
 
     // Client-side extra render data
     @UseOnly(LogicalSide.CLIENT)
@@ -216,14 +217,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
                 }
             }
 
-            // Attempt to make connections for recovered nodes.
-            for (var entry : lazyNodes.entrySet()) {
-                Holder<Conduit<?, ?>> conduit = entry.getKey();
-
-                for (Direction dir : Direction.values()) {
-                    tryConnectTo(conduit, dir, false);
-                }
-            }
+            connectRecoveredNodes();
         }
 
         // Update lighting engine now that the bundle is loaded
@@ -1216,15 +1210,25 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
 
     @Override
     public void setLevel(Level level) {
-        super.setLevel(level);
-
-        // TODO: Do this in clear removed instead?
-        if (!level.isClientSide()) {
-            boolean wasLoading = isLoading;
-            isLoading = true;
-            try { loadFromSavedData(); }
-            finally { isLoading = wasLoading; }
+        assigningLevel = true;
+        try {
+            super.setLevel(level);
+            if (!level.isClientSide()) {
+                boolean wasLoading = isLoading;
+                isLoading = true;
+                try { loadFromSavedData(); }
+                finally { isLoading = wasLoading; }
+            }
+        } finally {
+            assigningLevel = false;
         }
+    }
+
+    private void connectRecoveredNodes() {
+        for (var conduit : List.copyOf(lazyNodes.keySet())) {
+            for (Direction side : Direction.values()) tryConnectTo(conduit, side, false);
+        }
+        lazyNodes.clear();
     }
 
     @UseOnly(LogicalSide.SERVER)
@@ -1432,8 +1436,9 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
         var oldNodeData = lazyNodeData;
         var oldNodeNbt = lazyNodeNBT;
         var oldClientData = new HashMap<>(clientConduitExtraWorldData);
+        boolean liveLoad = level instanceof ServerLevel && !assigningLevel;
         try {
-            readBundle(tag, registries);
+            readBundle(tag, registries, liveLoad);
         } catch (RuntimeException error) {
             conduits = oldConduits;
             conduitConnections = oldConnections;
@@ -1446,12 +1451,83 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
         } finally {
             isLoading = wasLoading;
         }
+        if (liveLoad) {
+            isLoading = true;
+            try {
+                reconcileLiveNodes((ServerLevel) level, oldConnections, registries);
+            } finally {
+                isLoading = wasLoading;
+            }
+            bundleChanged();
+        }
         CapabilityUtil.refresh(this);
         updateShape();
         ensureModelsAreCorrect();
     }
 
-    private void readBundle(CompoundTag tag, RegistryAccess registries) {
+    /** Native commands can load NBT after the block entity has already joined its level. */
+    private void reconcileLiveNodes(ServerLevel server, Map<Holder<Conduit<?, ?>>, ConnectionContainer> oldConnections,
+            RegistryAccess registries) {
+        for (var conduit : List.copyOf(conduitNodes.keySet())) {
+            if (hasConduitStrict(conduit)) continue;
+            var node = conduitNodes.remove(conduit);
+            lazyNodes.remove(conduit);
+            conduit.value().onRemoved(node, server, getBlockPos());
+            node.detach();
+            if (node.isValid()) node.getNetwork().remove(node, split -> ConduitNetworkSavedData.onNetworkCreated(server, split));
+            removeCapabilityCache(conduit);
+            var previous = oldConnections.get(conduit);
+            if (previous != null) {
+                for (Direction side : Direction.values()) {
+                    if (previous.getConnectionStatus(side) == ConnectionStatus.CONNECTED_CONDUIT) {
+                        removeNeighborConnection(conduit, side);
+                    }
+                }
+            }
+        }
+
+        // Apply explicit node snapshots to existing nodes and retain their graph identity.
+        var ops = RegistryOps.create(NbtOps.INSTANCE, registries);
+        if (lazyNodeData != null) {
+            for (var entry : lazyNodeData.entrySet()) {
+                var conduit = entry.getKey();
+                var node = conduitNodes.get(conduit);
+                if (node == null || !hasConduitStrict(conduit)) continue;
+                var current = node.getNodeData();
+                if (current != null) {
+                    var serialized = NodeData.GENERIC_CODEC.encodeStart(ops, current).result();
+                    if (serialized.isPresent() && serialized.equals(
+                            NodeData.GENERIC_CODEC.encodeStart(ops, entry.getValue()).result())) continue;
+                }
+                conduit.value().onRemoved(node, server, getBlockPos());
+                node.setNodeData(entry.getValue());
+                conduit.value().onCreated(node, server, getBlockPos(), null);
+            }
+        }
+
+        // Missing nodes can be initialized from the same recovery snapshots as a chunk load.
+        loadFromSavedData();
+        for (var conduit : List.copyOf(lazyNodes.keySet())) {
+            conduit.value().onCreated(conduitNodes.get(conduit), server, getBlockPos(), null);
+        }
+        connectRecoveredNodes();
+
+        for (var conduit : conduits) {
+            var previous = oldConnections.get(conduit);
+            for (Direction side : Direction.values()) {
+                var status = getConnectionStatus(conduit, side);
+                if (previous != null && previous.getConnectionStatus(side) == ConnectionStatus.CONNECTED_CONDUIT
+                        && status == ConnectionStatus.DISABLED) {
+                    disableNeighborConnection(Pair.of(side, conduit));
+                } else if (status == ConnectionStatus.CONNECTED_CONDUIT && !tryConnectTo(conduit, side, false)) {
+                    disconnect(conduit, side);
+                }
+            }
+            onConnectionsUpdated(conduit);
+        }
+    }
+
+    private void readBundle(CompoundTag tag, RegistryAccess registries, boolean liveLoad) {
         lazyNodeData = null;
         lazyNodeNBT = null;
 
@@ -1543,11 +1619,13 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
                 var nodeTag = list.getCompound(i);
                 var conduitParseResult = Conduit.CODEC.parse(serializationContext, nodeTag.get("Conduit"));
                 if (conduitParseResult.error().isPresent()) {
+                    if (liveLoad) throw new IllegalArgumentException(conduitParseResult.error().orElseThrow().message());
                     continue;
                 }
 
                 var dataParseResult = NodeData.GENERIC_CODEC.parse(serializationContext, nodeTag.get("Data"));
                 if (dataParseResult.error().isPresent()) {
+                    if (liveLoad) throw new IllegalArgumentException(dataParseResult.error().orElseThrow().message());
                     continue;
                 }
 

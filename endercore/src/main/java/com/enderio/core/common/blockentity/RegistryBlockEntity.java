@@ -19,9 +19,14 @@ public abstract class RegistryBlockEntity extends EnderBlockEntity {
     @Override
     public final void load(CompoundTag tag) {
         super.load(tag);
-        // loadStatic runs before setLevel. Own the input until it can be decoded, and retain it on failure.
-        pendingLoad = tag.copy();
-        applyPendingLoad();
+        // Only an unattached entity needs a deferred payload. A rejected live load must
+        // leave future saves reading the live state instead of writing the rejected payload.
+        if (level == null) {
+            pendingLoad = tag.copy();
+        } else {
+            loadWithRegistries(tag.copy(), level.registryAccess());
+            pendingLoad = null;
+        }
     }
 
     @Override
