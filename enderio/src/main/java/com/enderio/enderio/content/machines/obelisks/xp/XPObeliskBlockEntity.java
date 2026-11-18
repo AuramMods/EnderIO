@@ -20,8 +20,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
@@ -68,9 +66,6 @@ public class XPObeliskBlockEntity extends MachineBlockEntity implements FluidTan
 
             @Override
             public int fill(FluidStack resource, FluidAction action) {
-                // TODO: Avoid filling beyond 2,147,483,640 (INT_MAX - 7) to avoid having 7mb
-                // that cannot be extracted?
-
                 // Convert into XP Juice
                 if (TANK.isFluidValid(this, resource)) {
                     FluidStack currentFluid = TANK.getFluid(this);
@@ -124,21 +119,14 @@ public class XPObeliskBlockEntity extends MachineBlockEntity implements FluidTan
             throw new IllegalArgumentException("experience cannot be negative");
         }
 
-        // Convert to volume
-        long volume = experience * ExperienceUtil.EXP_TO_FLUID;
-
-        // Reduce to int safely, and remove any fluid that will not make the conversion
-        int cappedVolume = (int) Math.min(Integer.MAX_VALUE, volume);
-        cappedVolume = cappedVolume - cappedVolume % ExperienceUtil.EXP_TO_FLUID;
-
-        // Drain the fluid
-        FluidStack drained = TANK.drain(this, cappedVolume, IFluidHandler.FluidAction.EXECUTE);
+        // Clamp against the available whole points before draining any fluid.
+        int xpToAdd = (int) Math.min(experience, TANK.getFluidAmount(this) / ExperienceUtil.EXP_TO_FLUID);
+        TANK.drain(this, xpToAdd * ExperienceUtil.EXP_TO_FLUID, IFluidHandler.FluidAction.EXECUTE);
 
         // Add the XP to the player
         // Workaround some floating point problems when adding all the exp at once.
         // If we add it all at once, the experienceProgress gets messed up and then the
         // next extract is wonky.
-        int xpToAdd = drained.getAmount() / ExperienceUtil.EXP_TO_FLUID;
         while (xpToAdd > 0) {
             int xp = Mth.clamp((int) Math.floor(
                     (1 - player.experienceProgress) * ExperienceUtil.getXpNeededForNextLevel(player.experienceLevel)),
@@ -165,24 +153,15 @@ public class XPObeliskBlockEntity extends MachineBlockEntity implements FluidTan
             throw new IllegalArgumentException("experience cannot be negative");
         }
 
-        // Convert to volume
-        long volume = experience * ExperienceUtil.EXP_TO_FLUID;
-
-        // Reduce to int safely, and remove any fluid that will not make the conversion
-        int cappedVolume = (int) Math.min(Integer.MAX_VALUE, volume);
-        cappedVolume = cappedVolume - cappedVolume % ExperienceUtil.EXP_TO_FLUID;
-
-        // Determine the fluid to fill with
-        Fluid fillFluid = EIOFluids.XP_JUICE.source().get();
-        var currentFluid = TANK.getFluid(this);
-
-        if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(fillFluid)) {
-            fillFluid = currentFluid.getFluid();
-        }
-
-        // Add the fluid
-        int filled = TANK.fill(this, new FluidStack(fillFluid, cappedVolume),
-                IFluidHandler.FluidAction.EXECUTE);
+        var tank = getFluidTank();
+        int space = Math.max(0, tank.getCapacity() - tank.getFluidAmount());
+        int pointsThatFit = (int) Math.min(experience, space / ExperienceUtil.EXP_TO_FLUID);
+        if (pointsThatFit == 0) return;
+        int volume = pointsThatFit * ExperienceUtil.EXP_TO_FLUID;
+        var currentFluid = tank.getFluid();
+        var deposit = currentFluid.isEmpty() ? new FluidStack(EIOFluids.XP_JUICE.source().get(), volume)
+                : EnderFluidUtil.copyWithAmount(currentFluid, volume);
+        int filled = tank.fill(deposit, IFluidHandler.FluidAction.EXECUTE);
 
         // Remove the XP from the player
         // Workaround some floating point problems when adding all the exp at once.

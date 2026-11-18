@@ -1,14 +1,10 @@
 package com.enderio.enderio.foundation.soul;
 
-import com.enderio.core.CoreNBTKeys;
-import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.foundation.MachineNBTKeys;
 import com.enderio.enderio.foundation.energy.PoweredMachineEnergyStorage;
-import com.enderio.enderio.foundation.io.IOConfig;
-import com.enderio.enderio.foundation.io.fluid.MachineFluidHandler;
-import com.enderio.enderio.init.EIODataComponents;
+import com.enderio.enderio.foundation.io.Forge6MachineItemData;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -65,12 +61,7 @@ public final class Forge6SoulData {
     }
 
     private static void restoreMachineProperties(ItemStack stack, CompoundTag remaining) {
-        if (remaining.contains(CoreNBTKeys.FLUID, Tag.TAG_COMPOUND) && !EIODataComponents.ITEM_FLUID_CONTENT.has(stack)) {
-            // Native placement merges a canonical empty tank with the old BlockEntityTag.
-            // Install the old fuel as item state so the placement applies it after that merge.
-            var fuel = MachineFluidHandler.readSavedTank(remaining.getCompound(CoreNBTKeys.FLUID), 0);
-            if (!fuel.isEmpty()) EIODataComponents.ITEM_FLUID_CONTENT.set(stack, fuel);
-        }
+        Forge6MachineItemData.restoreCarriedProperties(stack, remaining);
         var legacyEnergy = remaining.getCompound(MachineNBTKeys.ENERGY);
         if (legacyEnergy.contains(MachineNBTKeys.ENERGY_STORED, Tag.TAG_INT)) {
             if (!PoweredMachineEnergyStorage.ITEM_DATA.has(stack)) {
@@ -78,18 +69,6 @@ public final class Forge6SoulData {
             }
             legacyEnergy.remove(MachineNBTKeys.ENERGY_STORED);
             if (legacyEnergy.isEmpty()) remaining.remove(MachineNBTKeys.ENERGY);
-        }
-        if (remaining.contains("IoConfig", Tag.TAG_COMPOUND)) {
-            if (!IOConfig.ITEM_DATA.has(stack)) {
-                IOConfig.ITEM_DATA.set(stack, IOConfig.parseOptional(remaining.getCompound("IoConfig")));
-            }
-            remaining.remove("IoConfig");
-        }
-        if (remaining.contains(MachineNBTKeys.REDSTONE_CONTROL, Tag.TAG_ANY_NUMERIC)) {
-            int mode = remaining.getInt(MachineNBTKeys.REDSTONE_CONTROL);
-            if (mode < 0 || mode >= RedstoneControl.values().length) return;
-            if (!RedstoneControl.ITEM_DATA.has(stack)) RedstoneControl.ITEM_DATA.set(stack, RedstoneControl.BY_ID.apply(mode));
-            remaining.remove(MachineNBTKeys.REDSTONE_CONTROL);
         }
     }
 }

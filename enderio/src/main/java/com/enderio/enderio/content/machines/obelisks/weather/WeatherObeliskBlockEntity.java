@@ -87,7 +87,9 @@ public class WeatherObeliskBlockEntity extends MachineBlockEntity implements Flu
                 case LIGHTNING -> !level.isThundering();
                 };
                 boolean sky = level.canSeeSky(getBlockPos().above());
-                return hasRocket && weatherDifferent && sky ? 1 : 0;
+                if (!hasRocket || !weatherDifferent || !sky) return 0;
+                level.blockEntityChanged(worldPosition);
+                return 1;
             }
 
             @Override
@@ -161,10 +163,12 @@ public class WeatherObeliskBlockEntity extends MachineBlockEntity implements Flu
         return new MachineFluidHandler(this, getTankLayout()) {
             @Override
             protected void onContentsChanged(int slot) {
-                setChanged();
                 super.onContentsChanged(slot);
-                updateMachineState(MachineState.EMPTY_TANK, TANK.getFluidAmount(this) <= 0);
                 craftingTaskHost.newTaskAvailable();
+                // Forge can deserialize the tank before assigning the level.
+                if (level == null || level.isClientSide) return;
+                setChanged();
+                updateMachineState(MachineState.EMPTY_TANK, TANK.isEmpty(this));
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
             }
         };
@@ -188,6 +192,9 @@ public class WeatherObeliskBlockEntity extends MachineBlockEntity implements Flu
     public void onLoad() {
         super.onLoad();
         craftingTaskHost.onLevelReady();
+        if (level != null && !level.isClientSide) {
+            updateMachineState(MachineState.EMPTY_TANK, TANK.isEmpty(this));
+        }
     }
 
     @Override

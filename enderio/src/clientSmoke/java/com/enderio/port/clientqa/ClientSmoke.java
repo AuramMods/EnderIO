@@ -44,6 +44,7 @@ public final class ClientSmoke {
             case "soul-engine-fuels" -> new ClientSoulEngineFuelsSmoke();
             case "powered-spawner" -> new ClientPoweredSpawnerSmoke();
             case "spawner-rules" -> new ClientSpawnerRulesSmoke();
+            case "obelisks" -> new ClientObeliskSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();
             case "curios" -> new ClientCuriosSmoke();
             case "solar-wired" -> new ClientSolarWiredSmoke();

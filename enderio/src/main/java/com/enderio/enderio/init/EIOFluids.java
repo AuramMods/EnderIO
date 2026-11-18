@@ -10,6 +10,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.MissingMappingsEvent;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
@@ -105,14 +106,16 @@ public class EIOFluids {
 
     private static void remapLegacyFluids(MissingMappingsEvent event) {
         for (var missing : event.getMappings(Registries.FLUID, EnderIO.MOD_ID)) {
-            ResourceLocation id = missing.getKey();
-            String path = id.getPath();
-            boolean flowing = path.startsWith("flowing_");
-            var fluid = LEGACY_FLUIDS.get(flowing ? path.substring("flowing_".length()) : path);
-            if (fluid != null) {
-                var target = flowing ? fluid.flowing() : fluid.source();
-                missing.remap(ForgeRegistries.FLUIDS.getValue(target.getId()));
-            }
+            var target = legacyFluidId(missing.getKey());
+            if (target != null) missing.remap(ForgeRegistries.FLUIDS.getValue(target));
         }
+    }
+
+    public static @Nullable ResourceLocation legacyFluidId(ResourceLocation id) {
+        if (!EnderIO.MOD_ID.equals(id.getNamespace())) return null;
+        String path = id.getPath();
+        boolean flowing = path.startsWith("flowing_");
+        var fluid = LEGACY_FLUIDS.get(flowing ? path.substring("flowing_".length()) : path);
+        return fluid == null ? null : (flowing ? fluid.flowing() : fluid.source()).getId();
     }
 }

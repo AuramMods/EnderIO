@@ -262,11 +262,15 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
     }
 
     public static FluidStack readSavedTank(CompoundTag storage, int index) {
+        return StackDataCodecs.loadFluid(savedTankData(storage, index));
+    }
+
+    public static CompoundTag savedTankData(CompoundTag storage, int index) {
         for (var saved : savedEntries(storage)) {
             var entry = (CompoundTag) saved;
-            if (entry.getInt(TANK_INDEX) == index) return readEntry(entry);
+            if (entry.getInt(TANK_INDEX) == index) return getStackData(entry);
         }
-        return FluidStack.EMPTY;
+        return new CompoundTag();
     }
 
     private static ListTag savedEntries(CompoundTag tag) {
@@ -283,9 +287,13 @@ public class MachineFluidHandler implements IFluidHandler, INBTSerializable<Comp
     }
 
     private static FluidStack readEntry(CompoundTag entry) {
+        return StackDataCodecs.loadFluid(getStackData(entry));
+    }
+
+    private static CompoundTag getStackData(CompoundTag entry) {
         // Forge 6.x saved the stack next to Index and Capacity in the tank list.
         boolean flatStack = !entry.contains(TANK_CONTENTS) && entry.contains("FluidName", Tag.TAG_STRING);
-        return StackDataCodecs.loadFluid(flatStack ? entry : entry.getCompound(TANK_CONTENTS));
+        return flatStack ? entry : entry.getCompound(TANK_CONTENTS);
     }
 
     // Sided capability access

@@ -4,6 +4,7 @@ import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.content.broken_spawner.BrokenSpawnerItem;
 import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
+import com.enderio.enderio.foundation.io.Forge6MachineItemData;
 import com.enderio.enderio.foundation.soul.Forge6SoulData;
 import com.enderio.enderio.init.EIOItems;
 import net.minecraft.nbt.CompoundTag;
@@ -24,6 +25,10 @@ public abstract class ItemStackLoadMixin {
         boolean soulMachine = id.equals("enderio:powered_spawner") || id.equals("enderio:soul_engine");
         if (soulMachine || stack.getItem() instanceof SoulVialItem || stack.getItem() instanceof BrokenSpawnerItem) {
             Forge6SoulData.restoreItem(stack, soulMachine);
+            return;
+        }
+        if (id.equals("enderio:xp_obelisk")) {
+            Forge6MachineItemData.restoreFluidMachineItem(stack);
             return;
         }
         var type = Forge6ConduitData.itemConduitId(id);
