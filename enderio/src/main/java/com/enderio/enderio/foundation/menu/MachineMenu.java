@@ -120,12 +120,13 @@ public abstract class MachineMenu<T extends MachineBlockEntity> extends BaseBloc
         if (slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
             itemstack = itemstack1.copy();
-            if (index < this.slots.size() - PLAYER_INVENTORY_SIZE) {
-                if (!this.moveItemStackTo(itemstack1, this.slots.size() - PLAYER_INVENTORY_SIZE, this.slots.size(),
-                        true)) {
+            int playerStorageEnd = getPlayerStorageEnd();
+            int playerStorageStart = playerStorageEnd - PLAYER_INVENTORY_SIZE;
+            if (index < playerStorageStart) {
+                if (!this.moveItemStackTo(itemstack1, playerStorageStart, playerStorageEnd, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!this.moveItemStackTo(itemstack1, 0, this.slots.size() - PLAYER_INVENTORY_SIZE, false)) {
+            } else if (!this.moveItemStackTo(itemstack1, 0, playerStorageStart, false)) {
                 return ItemStack.EMPTY;
             }
 
@@ -139,6 +140,11 @@ public abstract class MachineMenu<T extends MachineBlockEntity> extends BaseBloc
         }
 
         return itemstack;
+    }
+
+    /** Exclusive end of the player's main inventory and hotbar slots. */
+    protected int getPlayerStorageEnd() {
+        return slots.size();
     }
 
     // Sorry, but this is the best way I could think of for ignoring ghost slots

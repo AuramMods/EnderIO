@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.Slot;
 public class WiredChargerMenu extends PoweredMachineMenu<WiredChargerBlockEntity> {
 
     private final FloatSyncSlot chargeProgressSlot;
+    private int playerStorageEnd;
 
     public WiredChargerMenu(int containerId, Inventory inventory, WiredChargerBlockEntity blockEntity) {
         super(EIOMenus.WIRED_CHARGER.get(), containerId, inventory, blockEntity);
@@ -35,11 +36,17 @@ public class WiredChargerMenu extends PoweredMachineMenu<WiredChargerBlockEntity
         addSlot(new MachineSlot(getMachineInventory(), WiredChargerBlockEntity.ITEM_CHARGED, 126, 28));
 
         addPlayerInventorySlots(29, 84);
+        playerStorageEnd = slots.size();
         addArmorSlots(6, 12);
 
         // Add offhand slot
         addSlot(new Slot(getPlayerInventory(), 40, 6, 84).setBackground(InventoryMenu.BLOCK_ATLAS,
                 InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD));
+    }
+
+    @Override
+    protected int getPlayerStorageEnd() {
+        return playerStorageEnd;
     }
 
     public float getChargeProgress() {

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import time
 
@@ -36,6 +37,11 @@ LIGHTS = {
     "powered_light_wireless": (1041, 95, 1030, "floor", "south"),
     "powered_light_inverted_wireless": (1048, 95, 1030, "wall", "north"),
 }
+SOLAR_PANELS = ((1183, "energetic", 3000), (1184, "energetic", 3500),
+                (1185, "pulsating", 12000), (1188, "vibrant", 50000))
+WIRED_BLOCKED = "1190 80 8"
+WIRED_COMPLETION = "1194 80 8"
+SOLAR_CHUNKS = "1168 0 1199 15"
 
 
 def tank_state(x, legacy):
@@ -49,7 +55,7 @@ def tank_state(x, legacy):
 
 
 def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_storage_conduits,
-             placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon, stirling_generator):
+             placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon, stirling_generator, solar_charging):
     server.wait('For help, type "help"')
     server.command("forceload add 0 0 15 15")
     legacy = stage == "legacy"
@@ -92,6 +98,8 @@ def exercise(server, stage, results, conduit_fixture, loose_conduits, placed_sto
         exercise_primitive_smelter(server, stage, results, primitive_silicon)
     if stirling_generator:
         exercise_stirling_generator(server, stage, results)
+    if solar_charging:
+        exercise_solar_charging(server, stage, results)
     server.command("save-all flush")
 
 
@@ -534,12 +542,135 @@ def exercise_stirling_generator(server, stage, results):
     server.command(f"data get block {machine}")
 
 
-def run_server(directory, java, stage, report, conduit_fixture, loose_conduits, placed_storage_conduits,
-               placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon, stirling_generator):
-    server = Server(directory, java, stage)
+def assert_panels(server, stage, results):
+    energy_path = "Energy" if stage == "legacy" else "EnergyStored"
+    for x, tier, energy in SOLAR_PANELS:
+        tag = f"{{Energy:{{EnergyStored:{energy}}}}}" if stage == "legacy" else f"{{EnergyStored:{energy}}}"
+        pos = f"{x} 80 8"
+        server.command(f"data get block {pos} {energy_path}")
+        server.assert_state(f"solar_{x}_{stage}",
+                            f'if block {pos} enderio:{tier}_photovoltaic_module '
+                            f'if data block {pos} {{id:"enderio:{tier}_photovoltaic_cell"}} if data block {pos} {tag}', results)
+
+
+def saved_staff(slot, charge, label, legacy_stack, legacy_energy=True):
+    count = "1b" if legacy_stack else "1"
+    energy = (f"Energy:{{EnergyStored:{charge}}}" if legacy_energy
+              else f'"enderio:data":{{"enderio:energy":{charge}}}')
+    return f'{{Slot:{slot},id:"enderio:staff_of_travelling",Count:{count},tag:{{PortWired:{label},{energy}}}}}'
+
+
+def assert_wired_completion(server, stage, results):
+    charged = saved_staff(2, 100000, 2, False, legacy_energy=False)
+    server.assert_state(f"wired_finishes_from_saved_balance_{stage}",
+                        f'if data block {WIRED_COMPLETION} {{EnergyStored:0}} '
+                        f'if data block {WIRED_COMPLETION} Items.Items[{charged}] '
+                        f'unless data block {WIRED_COMPLETION} Items.Items[{{Slot:1}}]', results)
+
+
+def exercise_solar_charging(server, stage, results):
+    legacy = stage == "legacy"
+    server.command(f"forceload add {SOLAR_CHUNKS}")
+    server.assert_state(f"power_fixture_loaded_{stage}", "if loaded 1183 80 8 if loaded 1194 80 8", results)
+    server.command("gamerule doDaylightCycle false")
+    server.command("time set midnight")
+    legacy_capacitor = '{Slot:0,id:"enderio:basic_capacitor",Count:1b,tag:{PortCapacitor:61}}'
+    if legacy:
+        for x, tier, energy in SOLAR_PANELS:
+            server.command(f"setblock {x} 80 8 enderio:{tier}_photovoltaic_module")
+            server.command(f"data merge block {x} 80 8 {{Energy:{{EnergyStored:{energy}}}}}")
+        for pos, energy, items in (
+            (WIRED_BLOCKED, 12345, [saved_staff(1, 40000, 1, True), saved_staff(2, 100000, 3, True)]),
+            (WIRED_COMPLETION, 180, [saved_staff(1, 99820, 2, True)]),
+        ):
+            server.command(f"setblock {pos} enderio:wired_charger[facing=south]")
+            server.command(f'data merge block {pos} {{Energy:{{EnergyStored:{energy}}},RedstoneControl:1,'
+                           f'IoConfig:{{"1":2b,"2":1b,"5":4b}},Items:{{Size:3,Items:[{legacy_capacitor},{",".join(items)}]}}}}')
+
+    assert_panels(server, stage, results)
+    cap = legacy_capacitor if legacy else legacy_capacitor.replace("1b", "1")
+    # For a south-facing machine the persisted east entry controls the world-west face.
+    config = ('RedstoneControl:1,IoConfig:{"1":2b,"2":1b,"5":4b}' if legacy
+              else 'RedstoneControl:"active_with_signal",IOConfig:{Modes:{up:"pull",north:"push",east:"disable"}}')
+    for pos, energy, tag, stacks in (
+        (WIRED_BLOCKED, 12345, "blocked", [saved_staff(1, 40000, 1, legacy), saved_staff(2, 100000, 3, legacy)]),
+        (WIRED_COMPLETION, 180, "pending", [saved_staff(1, 99820, 2, legacy)]),
+    ):
+        if stage == "restart" and tag == "pending":
+            assert_wired_completion(server, stage, results)
+            continue
+        energy_tag = f"Energy:{{EnergyStored:{energy}}}" if legacy else f"EnergyStored:{energy}"
+        server.command(f"data get block {pos}")
+        server.assert_state(f"wired_{tag}_{stage}", f'if block {pos} enderio:wired_charger[facing=south] '
+                            f'if data block {pos} {{{config},{energy_tag},'
+                            f'Items:{{Size:3,Items:[{cap},{",".join(stacks)}]}}}}', results)
+
+    if stage == "converted":
+        server.command("setblock 1195 80 8 minecraft:redstone_block")
+        assert_wired_completion(server, stage, results)
+        server.command(f"forceload remove {SOLAR_CHUNKS}")
+        server.assert_state("power_fixture_evicted", "unless loaded 1183 80 8 unless loaded 1194 80 8", results, timeout=40)
+        server.command(f"forceload add {SOLAR_CHUNKS}")
+        server.assert_state("power_fixture_reloaded", "if loaded 1183 80 8 if loaded 1194 80 8", results)
+        assert_panels(server, "reloaded", results)
+        assert_wired_completion(server, "reloaded", results)
+    elif stage == "restart":
+        sink = "1182 80 8"
+        server.command(f"setblock {sink} enderio:wired_charger")
+        server.command(f'data merge block {sink} {{IOConfig:{{Modes:{{east:"pull"}}}},'
+                       'Items:{Size:3,Items:[{Slot:0,id:"enderio:basic_capacitor",Count:1}]}}')
+        drained = " ".join(f"if data block {x} 80 8 {{EnergyStored:0}}" for x, _, _ in SOLAR_PANELS[:3])
+        server.assert_state("migrated_array_routes_all_saved_energy_on_restart",
+                            f"if data block {sink} {{EnergyStored:18500}} {drained} "
+                            "if data block 1188 80 8 {EnergyStored:50000}", results)
+
+
+def solar_client(args, server, report):
+    from client.run_multiplayer import stop_client
+
+    server.command("fill 1187 79 6 1193 79 13 minecraft:stone")
+    server.command("setblock 1187 80 11 minecraft:torch")
+    server.command("setblock 1193 80 11 minecraft:torch")
+    server.command("gamerule doMobSpawning false")
+    output = ROOT / "build/port-evidence" / f"{args.name}-tcp"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
+               "--launch", str(args.solar_client.resolve()), "--scenario", "solar-wired",
+               "--server", f"127.0.0.1:{args.port}", "--output", str(output), "--timeout", "195"]
+    with (server.directory / "solar-client.log").open("w") as log:
+        client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        try:
+            server.wait("EnderIOQA joined the game", timeout=150)
+            server.command("item replace entity EnderIOQA hotbar.0 with enderio:vibrant_photovoltaic_module")
+            server.command("tp EnderIOQA 1190.5 80 11.5 158 25")
+            if client.wait(timeout=200) != 0:
+                raise AssertionError(f"Solar and wired client failed; see {output}")
+            report["client"] = json.loads((output / "summary.json").read_text())
+        finally:
+            stop_client(client)
+    client_jar = report["client"]["client"]["captures"]["wired-migrated"]["loadedMods"]["enderio"]["file"]
+    if digest(Path(client_jar)) != report["portSha256"]:
+        raise AssertionError("Client and server used different packaged Ender IO jars")
+    results = report["assertions"]
+    server.assert_state("client_placement_updates_both_solar_states",
+                        "if block 1188 80 8 enderio:vibrant_photovoltaic_module[east=false] "
+                        "if block 1189 80 8 enderio:vibrant_photovoltaic_module[west=false] "
+                        "if data block 1188 80 8 {EnergyStored:50000} "
+                        "if data block 1189 80 8 {EnergyStored:0}", results)
+    charged = saved_staff(1, 52345, 1, False, legacy_energy=False)
+    server.assert_state("client_redstone_change_debits_only_saved_balance",
+                        f'if data block {WIRED_BLOCKED} {{EnergyStored:0,RedstoneControl:"always_active"}} '
+                        f'if data block {WIRED_BLOCKED} Items.Items[{charged}] '
+                        f'unless data block {WIRED_BLOCKED} Items.Items[{{Slot:2}}]', results)
+    server.command("save-all flush")
+
+
+def run_server(directory, args, stage, report, *fixtures):
+    server = Server(directory, args.java, stage)
     try:
-        exercise(server, stage, report["assertions"], conduit_fixture, loose_conduits,
-                 placed_storage_conduits, placed_mekanism_conduits, extraction_upgrades, legacy_lights, primitive_silicon, stirling_generator)
+        exercise(server, stage, report["assertions"], *fixtures)
+        if stage == "restart" and args.solar_client:
+            solar_client(args, server, report)
     finally:
         exit_status = server.stop()
         errors = [line.strip() for line in server.lines if "/ERROR]" in line or "/FATAL]" in line]
@@ -572,6 +703,8 @@ def main():
     parser.add_argument("--primitive-smelter", nargs="?", const="enderio:silicon", choices=("enderio:silicon", "ae2:silicon"),
                         help="Migrate a saved primitive alloy smelter job using the selected silicon item")
     parser.add_argument("--stirling-generator", action="store_true", help="Migrate a burning Stirling generator")
+    parser.add_argument("--solar-charging", action="store_true", help="Migrate photovoltaic arrays and wired charger state")
+    parser.add_argument("--solar-client", type=Path, help="Run the migration and check its solar models and charger GUI over TCP")
     parser.add_argument("--mod", action="append", type=Path, default=[], help="Install a Forge dependency in both profiles")
     parser.add_argument("--port", type=int, default=25647)
     args = parser.parse_args()
@@ -600,20 +733,21 @@ def main():
             for mod in args.mod:
                 shutil.copyfile(mod, profile / "mods" / mod.name)
             (profile / "eula.txt").write_text("eula=true\n")
+            connection = "online-mode=false\nenforce-secure-profile=false\n" if args.solar_client and profile == converted else ""
             (profile / "server.properties").write_text(
                 f"server-ip=127.0.0.1\nserver-port={args.port}\nlevel-name={WORLD}\n"
                 f"level-type=minecraft:flat\ngenerator-settings={flat}\n"
-                "generate-structures=false\nview-distance=3\nsimulation-distance=3\n")
+                "generate-structures=false\nview-distance=3\nsimulation-distance=3\n" + connection)
         if args.conduit_fixture:
             shutil.copyfile(args.conduit_fixture, legacy / "mods" / "port-legacy-fixture.jar")
             report["fixtureSha256"] = digest(args.conduit_fixture)
         fixtures = (args.conduit_fixture, loose_conduits, args.placed_storage_conduits,
                     args.placed_mekanism_conduits, args.extraction_upgrades, args.legacy_lights, args.primitive_smelter,
-                    args.stirling_generator)
-        run_server(legacy, args.java, "legacy", report, *fixtures)
+                    args.stirling_generator, bool(args.solar_charging or args.solar_client))
+        run_server(legacy, args, "legacy", report, *fixtures)
         shutil.copytree(legacy / WORLD, converted / WORLD)
-        run_server(converted, args.java, "converted", report, *fixtures)
-        run_server(converted, args.java, "restart", report, *fixtures)
+        run_server(converted, args, "converted", report, *fixtures)
+        run_server(converted, args, "restart", report, *fixtures)
         report["passed"] = True
     finally:
         output = directory / "legacy-migration-results.json"

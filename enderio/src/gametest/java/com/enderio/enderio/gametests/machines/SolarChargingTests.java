@@ -15,14 +15,17 @@ import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOFluids;
 import com.enderio.enderio.init.EIOItems;
+import com.mojang.authlib.GameProfile;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayer;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 public class SolarChargingTests {
     @GameTest
@@ -165,6 +168,41 @@ public class SolarChargingTests {
                 .thenWaitUntil(() -> helper.assertTrue(!output.getItemStack(inventory).isEmpty(), "already-full item passes with an empty buffer"))
                 .thenSucceed();
         });
+    }
+
+    @GameTest
+    public static void wiredQuickMoveSeparatesEquipmentFromStorage(GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
+            .set(0, 0, 0, EIOBlocks.WIRED_CHARGER.get().defaultBlockState()));
+        test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
+            .thenExecute(() -> {
+                var charger = helper.getBlockEntity(0, 1, 0, WiredChargerBlockEntity.class);
+                var player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "WiredChargerTest"));
+                var inventory = player.getInventory();
+                var menu = charger.createMenu(1, inventory, player);
+                var machine = charger.getInventory();
+                var input = WiredChargerBlockEntity.ITEM_TO_CHARGE;
+                var output = WiredChargerBlockEntity.ITEM_CHARGED;
+                inventory.setItem(9, new ItemStack(EIOItems.TRAVEL_STAFF.get()));
+                var firstMainSlot = menu.slots.stream()
+                    .filter(slot -> slot.container == inventory && slot.getContainerSlot() == 9)
+                    .findFirst().orElseThrow();
+                menu.quickMoveStack(player, firstMainSlot.index);
+                helper.assertTrue(inventory.getItem(9).isEmpty() && input.getItemStack(machine).is(EIOItems.TRAVEL_STAFF.get()),
+                    "first main inventory slot quick-moves into the charger input");
+
+                input.setStackInSlot(machine, ItemStack.EMPTY);
+                var staff = new ItemStack(EIOItems.TRAVEL_STAFF.get());
+                ItemStackEnergy.setFull(staff);
+                output.setStackInSlot(machine, staff);
+                menu.quickMoveStack(player, 2);
+                helper.assertTrue(output.getItemStack(machine).isEmpty() && player.getOffhandItem().isEmpty(),
+                    "collecting a charged item leaves equipment unchanged");
+                helper.assertValueEqual(inventory.items.stream().mapToInt(ItemStackEnergy::getEnergyStored).sum(),
+                    ItemStackEnergy.getMaxEnergyStored(new ItemStack(EIOItems.TRAVEL_STAFF.get())),
+                    "one full staff reaches normal storage");
+            })
+            .thenSucceed());
     }
 
     private static void setEnergy(SolarPanelBlockEntity solar, int amount) {
