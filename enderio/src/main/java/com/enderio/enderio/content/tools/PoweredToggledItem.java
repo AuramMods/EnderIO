@@ -27,7 +27,8 @@ import java.util.List;
 public abstract class PoweredToggledItem extends Item implements AdvancedTooltipProvider, ICustomCreativeTabEntries {
 
     public static final BiFunction<ItemStack, Direction, IEnergyStorage> ENERGY_STORAGE_PROVIDER =
-        (stack, v) -> new NbtEnergyStorage(stack, EIODataComponents.ENERGY, ((PoweredToggledItem)stack.getItem()).getMaxEnergy());
+        (stack, v) -> NbtEnergyStorage.withForge6Charge(stack, EIODataComponents.ENERGY,
+            ((PoweredToggledItem) stack.getItem()).getMaxEnergy());
 
     public PoweredToggledItem(Properties properties) {
         super(properties.stacksTo(1));

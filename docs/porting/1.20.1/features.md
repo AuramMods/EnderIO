@@ -214,7 +214,7 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | `COORDINATE_SELECTOR` | [EIOItems:216](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `LOCATION_PRINTOUT` | [EIOItems:217](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `LEVITATION_STAFF` | [EIOItems:218](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `TRAVEL_STAFF` | [EIOItems:219](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `TRAVEL_STAFF` | [EIOItems:219](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. A genuine 6.2 charged staff retains its balance on conversion. Survival anchor travel, cooldown, crouch blink, exact energy accounting and actual dedicated restart all pass ([cycle 050](cycle-050.md)). |
 | `ELECTROMAGNET` | [EIOItems:220](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `COLD_FIRE_IGNITER` | [EIOItems:221](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `CONDUIT_PROBE` | [EIOItems:222](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |

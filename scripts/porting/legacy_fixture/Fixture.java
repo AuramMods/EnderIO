@@ -21,10 +21,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -52,6 +54,12 @@ public class Fixture {
                 anchor(level, new BlockPos(32, 88, 0), "travel_anchor", "Hidden Lift", Items.ENDER_PEARL, false);
                 anchor(level.getServer().getLevel(Level.NETHER), new BlockPos(32, 80, 0), "travel_anchor",
                     "Nether Relay", Items.BLAZE_ROD, true);
+                var barrelPos = new BlockPos(43, 79, 1);
+                level.setBlockAndUpdate(barrelPos, Blocks.BARREL.defaultBlockState());
+                var staff = stack("staff_of_travelling");
+                var energy = staff.getCapability(ForgeCapabilities.ENERGY).orElseThrow(IllegalStateException::new);
+                if (energy.receiveEnergy(6000, false) != 6000) throw new IllegalStateException("Could not charge the historical staff");
+                ((BarrelBlockEntity) level.getBlockEntity(barrelPos)).setItem(0, staff);
                 context.getSource().sendSuccess(() -> Component.literal("Legacy travel fixture created"), false);
                 return 1;
             }));

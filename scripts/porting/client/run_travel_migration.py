@@ -19,13 +19,13 @@ NETHER = "execute in minecraft:the_nether run "
 
 def load_fixture_chunks(server, results, stage):
     for prefix in ("", NETHER):
-        server.command(prefix + "forceload add 32 -4 47 4")
+        server.command(prefix + "forceload add 32 -4 63 4")
     server.assert_state(f"overworld_fixture_loaded_{stage}", "if loaded 32 80 0 if loaded 40 80 0", results)
     server.assert_state(f"nether_fixture_loaded_{stage}", "in minecraft:the_nether if loaded 32 80 0", results)
 
 
 def create_anchors(server):
-    for command in ("fill 31 79 -2 44 79 2 minecraft:stone", "gamerule spawnRadius 0", "setworldspawn 43 80 0",
+    for command in ("fill 31 79 -2 61 79 2 minecraft:stone", "gamerule spawnRadius 0", "setworldspawn 43 80 0",
                     "gamerule doMobSpawning false", "gamerule doDaylightCycle false", "time set noon",
                     NETHER + "fill 31 79 -2 36 79 2 minecraft:stone",
                     NETHER + "fill 31 80 -2 36 84 2 minecraft:air"):
@@ -53,7 +53,8 @@ def run_client(args, server, stage, report):
     output = ROOT / "build/port-evidence" / (args.name + "-" + stage)
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
                "--launch", str(args.launch.resolve()), "--scenario", "travel", "--timeout", "245",
-               "--server", f"127.0.0.1:{args.port}", "--output", str(output)]
+               "--server", f"127.0.0.1:{args.port}", "--output", str(output),
+               "--multiplayer-phase", "verify" if stage == "restart" else "exercise"]
     with (output.parent / (output.name + "-run.log")).open("w") as log:
         client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         summary_path = output / "summary.json"
@@ -71,6 +72,24 @@ def run_client(args, server, stage, report):
             server.assert_state(f"real_elevator_travel_{stage}",
                                 f"in minecraft:overworld positioned 32.5 89 0.5 if entity @a[name={PLAYER},distance=..0.4]",
                                 report["assertions"])
+            if stage == "converted":
+                server.command(f"item replace entity {PLAYER} hotbar.0 from block 43 79 1 container.0")
+                server.command("item replace block 43 79 1 container.0 with minecraft:air")
+                server.assert_state("staff_removed_from_source_barrel", "unless data block 43 79 1 Items[0]", report["assertions"])
+            else:
+                server.assert_state("staff_charge_restored_from_player_save", staff_charge(4000), report["assertions"])
+            server.command(f"tp {PLAYER} 48.5 80 0.5 90 8")
+            wait_signal(client, output, "staff_workshop")
+            charge = 5000 if stage == "converted" else 3000
+            server.assert_state(f"staff_workshop_{stage}",
+                                f"positioned 40.5 81 0.5 if entity @a[name={PLAYER},distance=..0.4] " + staff_charge(charge),
+                                report["assertions"])
+            # The ray reaches the same floor block at standing and crouching eye heights.
+            server.command(f"tp {PLAYER} 52.9 80 0.5 -90 22")
+            wait_signal(client, output, "staff_blink")
+            server.assert_state(f"staff_blink_{stage}",
+                                f"positioned 56.5 80 0.5 if entity @a[name={PLAYER},distance=..0.4] " + staff_charge(charge - 1000),
+                                report["assertions"])
             server.command(NETHER + f"tp {PLAYER} 34.5 80 0.5 90 0")
             client.wait(timeout=60)
             if client.returncode or json.loads(summary_path.read_text())["status"] != "pass":
@@ -81,6 +100,11 @@ def run_client(args, server, stage, report):
                                       "summary": json.loads(summary_path.read_text()) if summary_path.exists() else None})
 
 
+def staff_charge(amount):
+    tag = '{Slot:0b,id:"enderio:staff_of_travelling",tag:{"enderio:data":{"enderio:energy":' + str(amount) + '}}}'
+    return f"if data entity {PLAYER} Inventory[{tag}]"
+
+
 def run_stage(args, profile, stage, report):
     server = Server(profile, args.java, stage)
     try:
@@ -88,6 +112,9 @@ def run_stage(args, profile, stage, report):
         load_fixture_chunks(server, report["assertions"], stage)
         if stage == "legacy":
             create_anchors(server)
+            server.assert_state("source_staff_charge", 'if data block 43 79 1 '
+                                '{Items:[{Slot:0b,id:"enderio:staff_of_travelling",tag:{Energy:{EnergyStored:6000}}}]}',
+                                report["assertions"])
         assert_anchors(server, stage, report["assertions"])
         if stage != "legacy":
             run_client(args, server, stage, report)

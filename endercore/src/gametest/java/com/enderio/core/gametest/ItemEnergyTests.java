@@ -7,6 +7,7 @@ import com.mojang.serialization.Codec;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -86,6 +87,38 @@ public class ItemEnergyTests {
         var energy = new NbtEnergyStorage(stack, CHARGE, 100);
         helper.assertTrue(energy.receiveEnergy(1, false) == 0 && energy.getEnergyStored() == 200, "Lower capacity erased existing charge");
         helper.assertTrue(energy.extractEnergy(100, false) == 100 && energy.getEnergyStored() == 100, "Existing excess charge could not be recovered");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 20)
+    public static void forge6ChargeMigratesWithoutRefillingOrMutatingSimulations(GameTestHelper helper) {
+        var stack = BUILDER_ITEM.toStack();
+        var old = stack.getOrCreateTagElement("Energy");
+        old.putInt("EnergyStored", 150);
+        old.putInt("MaxEnergyStored", 200);
+        old.putInt("MaxEnergyUse", 200);
+        old.putString("Unrelated", "preserved");
+        var before = stack.save(new CompoundTag());
+        var energy = NbtEnergyStorage.withForge6Charge(stack, CHARGE, 100);
+        helper.assertTrue(energy.getEnergyStored() == 150 && energy.receiveEnergy(100, true) == 0
+            && energy.extractEnergy(200, true) == 100 && before.equals(stack.save(new CompoundTag())),
+            "Legacy balance was clamped or simulation rewrote old NBT");
+        helper.assertTrue(new NbtEnergyStorage(stack, CHARGE, 100).getEnergyStored() == 0,
+            "An item without legacy support used the old balance");
+
+        var current = stack.copy();
+        CHARGE.set(current, 0);
+        helper.assertTrue(NbtEnergyStorage.withForge6Charge(current, CHARGE, 100).getEnergyStored() == 0,
+            "The legacy balance replaced an explicitly empty current balance");
+
+        helper.assertTrue(energy.extractEnergy(200, false) == 100 && CHARGE.getOrDefault(stack, -1) == 50
+            && energy.extractEnergy(200, false) == 50 && CHARGE.getOrDefault(stack, -1) == 0,
+            "Execution failed to account for historical charge exactly once");
+        var restored = ItemStack.of(stack.save(new CompoundTag()));
+        var remainder = restored.getTagElement("Energy");
+        helper.assertTrue(remainder != null && remainder.getString("Unrelated").equals("preserved")
+            && !remainder.contains("EnergyStored", Tag.TAG_INT) && NbtEnergyStorage.withForge6Charge(restored, CHARGE, 100).getEnergyStored() == 0,
+            "Draining or reloading resurrected old charge or lost unrelated NBT");
         helper.succeed();
     }
 }
