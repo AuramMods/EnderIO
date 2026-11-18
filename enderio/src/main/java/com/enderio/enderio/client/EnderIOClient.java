@@ -32,6 +32,7 @@ import com.enderio.enderio.client.content.filters.redstone.RedstoneDoubleChannel
 import com.enderio.enderio.client.content.filters.redstone.RedstoneTimerFilterScreen;
 import com.enderio.enderio.client.content.filters.soul.ClientEnderSoulFilterTooltip;
 import com.enderio.enderio.client.content.glass.GlassIconDecorator;
+import com.enderio.enderio.client.content.machines.AthenaCapacitorBankModel;
 import com.enderio.enderio.client.content.machines.IOOverlayBakedModel;
 import com.enderio.enderio.client.content.machines.gui.screen.AlloySmelterScreen;
 import com.enderio.enderio.client.content.machines.gui.screen.PrimitiveAlloySmelterScreen;
@@ -112,6 +113,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -387,6 +389,13 @@ public class EnderIOClient {
         String namespace = rl.getNamespace();
         String path = rl.getPath().substring("models/enderio_glider/".length(), rl.getPath().length() - 5);
         return Optional.of(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(namespace, path)));
+    }
+
+    @SubscribeEvent
+    public static void addAthenaBankOverlays(ModelEvent.ModifyBakingResult event) {
+        if (ModList.get().isLoaded("athena")) {
+            AthenaCapacitorBankModel.addOverlays(event.getModels());
+        }
     }
 
     @SubscribeEvent

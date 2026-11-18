@@ -21,6 +21,10 @@ BANKS = {1039: ("basic", 500000), 1040: ("basic", 500000),
          1041: ("advanced", 2000000), 1042: ("vibrant", 4000000)}
 TOTAL = sum(capacity for _, capacity in BANKS.values())
 BRIDGE = "1040 80 8"
+BRIDGE_BLOCK = "enderio:basic_capacitor_bank"
+BRIDGE_IO = '{Modes:{north:"disable",south:"pull"}}'
+BRIDGE_ITEM = (f'id:"{BRIDGE_BLOCK}",Count:1b,tag:{{"enderio:data":'
+               f'{{"enderio:energy":{BANKS[1040][1]},"enderio:io_config":{BRIDGE_IO}}}}}')
 RECEIVER = "1041 80 9"
 
 
@@ -75,7 +79,8 @@ def observe(server, stage, results, *networks):
     check(stage, sorted(expected), sorted(observed), results)
 
 
-def first_run(server, results):
+def first_run(args, server, report):
+    results = report["assertions"]
     server.command(f"forceload add {CHUNKS}")
     server.assert_state("array_chunks_loaded", "if loaded 1039 80 8 if loaded 1042 80 8", results)
     for x, (tier, _) in BANKS.items():
@@ -91,6 +96,9 @@ def first_run(server, results):
     server.assert_state("both_array_chunks_reload", "if loaded 1039 80 8 if loaded 1042 80 8", results)
     observe(server, "reload_keeps_unique_positions_and_capacity", results, (list(BANKS), TOTAL))
 
+    if args.carry_launch:
+        test_carry(args, server, report)
+        return
     server.command(f"setblock {BRIDGE} minecraft:air destroy")
     output = server.command('data get entity @e[type=minecraft:item,x=1040,y=80,z=8,distance=..3,limit=1] Item')
     check("bridge_drop_keeps_its_charge", True, '"enderio:energy": 500000' in output, results)
@@ -99,15 +107,66 @@ def first_run(server, results):
     observe(server, "replacement_rejoins_each_fragment_once", results, (list(BANKS), TOTAL - 500000))
 
 
-def restart(server, results):
+def restart(server, results, carry):
     server.assert_state("restarted_array_chunks_loaded", "if loaded 1039 80 8 if loaded 1042 80 8", results)
-    observe(server, "restarted_array_retains_exact_state", results, (list(BANKS), TOTAL - 500000))
+    remaining = TOTAL if carry else TOTAL - BANKS[1040][1]
+    observe(server, "restarted_array_retains_exact_state", results, (list(BANKS), remaining))
+    if carry:
+        assert_bridge(server, results, "restart_retains_survival_bank_and_side_configuration")
     server.command(f"setblock {RECEIVER} enderio:wired_charger")
     server.command(f'data merge block {RECEIVER} {{Items:{{Size:3,Items:[{{Slot:0,id:"enderio:basic_capacitor",Count:1}}]}}}}')
     server.command('data merge block 1041 80 8 {IOConfig:{Modes:{south:"push"}}}')
     server.assert_state("bank_powers_a_real_neighbor_after_restart",
                         f"if data block {RECEIVER} {{EnergyStored:128000}}", results)
-    observe(server, "bank_and_receiver_account_for_every_fe", results, (list(BANKS), TOTAL - 500000 - 128000))
+    observe(server, "bank_and_receiver_account_for_every_fe", results, (list(BANKS), remaining - 128000))
+
+
+def assert_bridge(server, results, name):
+    server.assert_state(name, f"if block {BRIDGE} {BRIDGE_BLOCK} if data block {BRIDGE} {{IOConfig:{BRIDGE_IO}}}", results)
+
+
+def test_carry(args, server, report):
+    results = report["assertions"]
+    server.command("fill 1037 79 6 1045 79 13 minecraft:stone")
+    server.command("gamerule doMobSpawning false")
+    server.command(f"data merge block {BRIDGE} {{IOConfig:{BRIDGE_IO}}}")
+    assert_bridge(server, results, "survival_source_has_two_custom_sides")
+    output = ROOT / "build/port-evidence" / (args.name + "-carry")
+    command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
+               "--launch", str(args.carry_launch.resolve()), "--scenario", "capacitor-bank-carry",
+               "--output", str(output), "--server", f"127.0.0.1:{args.port}", "--timeout", "190"]
+    drop = '@e[type=minecraft:item,x=1040.5,y=80,z=8.5,distance=..3]'
+    nearest = drop[:-1] + ',sort=nearest,limit=1]'
+    with (server.directory / "carry-client.log").open("w") as log:
+        client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        try:
+            server.wait("EnderIOQA joined the game", timeout=150)
+            server.command('item replace entity EnderIOQA hotbar.0 with minecraft:diamond_pickaxe'
+                           '{Enchantments:[{id:"minecraft:efficiency",lvl:10s}]}')
+            server.command("tp EnderIOQA 1040.5 80 11.5 180 28")
+            wait_signal(client, output, "mined")
+            server.command(f"data get entity {nearest} Item")
+            server.assert_state("survival_drop_keeps_charge_and_both_sides",
+                                f"if block {BRIDGE} minecraft:air if data entity {nearest} {{Item:{{{BRIDGE_ITEM}}}}}", results)
+            observe(server, "survival_split_conserves_6500000_fe_in_the_fragments", results,
+                    ([1039], 500000), ([1041, 1042], 6000000))
+            server.command(f"execute at {nearest} run tp EnderIOQA ~ ~ ~")
+            server.assert_state("normal_pickup_moves_the_drop_into_inventory",
+                                f"unless entity {drop} if data entity EnderIOQA Inventory[{{{BRIDGE_ITEM}}}]", results)
+            server.command("tp EnderIOQA 1040.5 80 10.5 180 30")
+            wait_signal(client, output, "placement")
+            assert_bridge(server, results, "normal_placement_restores_both_sides")
+            server.assert_state("survival_placement_consumes_the_item",
+                                f'unless entity {drop} unless data entity EnderIOQA Inventory[{{id:"{BRIDGE_BLOCK}"}}]', results)
+            observe(server, "survival_replant_rejoins_at_exactly_7000000_fe", results, (list(BANKS), TOTAL))
+            (output / "server-verified").touch()
+            if client.wait(timeout=35) != 0:
+                raise AssertionError(f"Capacitor bank carry client failed; see {output}")
+            report["carryClient"] = json.loads((output / "summary.json").read_text())
+            capture = report["carryClient"]["client"]["captures"]["capacitor-bank-replaced"]
+            check("capacitor_carry_client_and_server_match", report["jarSha256"], digest(Path(capture["loadedMods"]["enderio"]["file"])), results)
+        finally:
+            stop_client(client)
 
 
 def test_menu(args, server, report):
@@ -140,11 +199,14 @@ def test_menu(args, server, report):
             stop_client(client)
 
 
-def run_stage(args, directory, report, name, scenario):
+def run_stage(args, directory, report, name):
     server = Server(directory, args.java, name)
     try:
         server.wait('For help, type "help"', timeout=150)
-        scenario(server, report["assertions"])
+        if name == "exercise":
+            first_run(args, server, report)
+        else:
+            restart(server, report["assertions"], bool(args.carry_launch))
         if name == "restart" and args.launch:
             test_menu(args, server, report)
     finally:
@@ -161,7 +223,9 @@ def main():
     parser.add_argument("--java", required=True)
     parser.add_argument("--forge-server", required=True, type=Path)
     parser.add_argument("--jar", required=True, type=Path)
-    parser.add_argument("--launch", type=Path, help="Prepared quiet client profile for the capacitor bank menu")
+    client = parser.add_mutually_exclusive_group()
+    client.add_argument("--launch", type=Path, help="Prepared quiet client profile for the capacitor bank menu")
+    client.add_argument("--carry-launch", type=Path, help="Prepared quiet client profile for survival pickup and replant")
     parser.add_argument("--port", type=int, default=25707)
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
@@ -174,15 +238,15 @@ def main():
     shutil.copyfile(args.jar, artifact)
     (directory / "eula.txt").write_text("eula=true\n")
     flat = '{"layers":[{"block":"minecraft:bedrock","height":1}],"biome":"minecraft:plains"}'
-    connection = "online-mode=false\nenforce-secure-profile=false\n" if args.launch else ""
+    connection = "online-mode=false\nenforce-secure-profile=false\n" if args.launch or args.carry_launch else ""
     (directory / "server.properties").write_text(
         f"server-ip=127.0.0.1\nserver-port={args.port}\nlevel-name={WORLD}\n"
         f"level-type=minecraft:flat\ngenerator-settings={flat}\n"
         "generate-structures=false\nview-distance=3\nsimulation-distance=3\n" + connection)
     report = {"passed": False, "jarSha256": digest(artifact), "assertions": [], "servers": []}
     try:
-        run_stage(args, directory, report, "exercise", first_run)
-        run_stage(args, directory, report, "restart", restart)
+        run_stage(args, directory, report, "exercise")
+        run_stage(args, directory, report, "restart")
         report["passed"] = all(result["passed"] for result in report["assertions"])
     finally:
         path = directory / "capacitor-bank-results.json"

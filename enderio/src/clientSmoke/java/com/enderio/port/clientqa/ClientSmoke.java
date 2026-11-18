@@ -41,7 +41,8 @@ public final class ClientSmoke {
             case "wireless-charge" -> new ClientWirelessChargeSmoke();
             case "curios" -> new ClientCuriosSmoke();
             case "solar-wired" -> new ClientSolarWiredSmoke();
-            case "solar-carry" -> new ClientSolarCarrySmoke();
+            case "solar-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.SOLAR);
+            case "capacitor-bank-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.CAPACITOR_BANK);
             case "capacitor-bank" -> new ClientCapacitorBankSmoke();
             default -> MinecraftForge.EVENT_BUS.addListener(this::render);
         }

@@ -14,7 +14,7 @@ parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-har
 parser.add_argument("--scenario",
                     choices=("title", "singleplayer", "multiplayer", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
                              "primitive-smelter", "stirling", "wireless-charge", "curios", "solar-wired", "solar-carry",
-                             "capacitor-bank"),
+                             "capacitor-bank", "capacitor-bank-carry"),
                     default="title")
 parser.add_argument("--tank", choices=("standard", "pressurized"), default="standard")
 parser.add_argument("--server", default="127.0.0.1:25641")

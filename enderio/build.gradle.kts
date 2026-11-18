@@ -141,7 +141,8 @@ dependencies {
     modCompileOnly(libs.jade)
     "modLocalRuntime"(libs.jade)
 
-    //Athena ctm
+    // Athena connected textures
+    modCompileOnly(libs.athena)
     "modLocalRuntime"(libs.athena)
 
     // AE2

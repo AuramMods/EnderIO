@@ -8,7 +8,7 @@ Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions
 | JEI | 15.56.0.205 | Modrinth `jei:9jqubC9n` | Pending |
 | CC:Tweaked | 1.121.0 | Modrinth `cc-tweaked:Qm9iIIEY` | Pending |
 | Jade | 11.13.3+forge | Modrinth `jade:xJQHCmWJ` | Pending |
-| Athena | 3.1.2 | Modrinth `athena-ctm:DULOQFj7` | Pending |
+| Athena | 3.1.2 | Modrinth `athena-ctm:DULOQFj7` | Packaged Forge multiplayer loads the built-in pack on the client. The basic bank's same-tier seam updates across break and replant, and the disabled and pull markers share the model in its cutout layer. The core profile uses the vanilla bank face. Other CTM layouts and renderer combinations remain pending ([cycle 065](cycle-065.md)). |
 | AE2 | 15.4.12 | Modrinth `ae2:QRpVsqDI` | Native grid split/merge, bundle reload and powering an AE2 drive pass. Packaged migration verifies powered normal, dense and mixed routes and their owners. Detailed channel limits, storage operations and the client remain pending ([cycle 053](cycle-053.md)) |
 | GuideME (AE2 dependency) | 20.1.15 | Modrinth `guideme:i7Tp1AHw` | Loads alongside the pinned AE2 jar in both packaged migration releases. Guide UI remains pending ([cycle 053](cycle-053.md)) |
 | Mekanism | 10.4.16.80 | Modrinth `mekanism:uxe1WQp4` | Native four-family transfer, budgets and filters pass. Packaged legacy upgrades preserve placed chemical tiers, a gas lock and a working directional heat route across chunk reload and restart. Broader gameplay and the client remain pending ([cycle 054](cycle-054.md)) |
