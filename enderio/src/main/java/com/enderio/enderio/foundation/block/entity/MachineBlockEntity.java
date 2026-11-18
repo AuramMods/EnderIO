@@ -577,7 +577,7 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
         if (supportsRedstoneControl()) {
             var redstoneControl = RedstoneControl.ITEM_DATA.get(componentInput);
             if (redstoneControl != null) {
-                this.redstoneControl = redstoneControl;
+                setRedstoneControl(redstoneControl);
             }
         }
     }

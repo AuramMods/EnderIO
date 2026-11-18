@@ -1,9 +1,10 @@
 package com.enderio.enderio.mixin;
 
 import com.enderio.enderio.api.EnderIODataComponents;
+import com.enderio.enderio.content.broken_spawner.BrokenSpawnerItem;
 import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
-import com.enderio.enderio.content.tools.vials.Forge6SoulVialData;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
+import com.enderio.enderio.foundation.soul.Forge6SoulData;
 import com.enderio.enderio.init.EIOItems;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
@@ -20,8 +21,9 @@ public abstract class ItemStackLoadMixin {
         if (stack.isEmpty()) return;
         var id = saved.getString("id");
         if (!id.startsWith("enderio:")) return;
-        if (stack.getItem() instanceof SoulVialItem) {
-            Forge6SoulVialData.restore(stack);
+        boolean poweredSpawner = id.equals("enderio:powered_spawner");
+        if (poweredSpawner || stack.getItem() instanceof SoulVialItem || stack.getItem() instanceof BrokenSpawnerItem) {
+            Forge6SoulData.restoreItem(stack, poweredSpawner);
             return;
         }
         var type = Forge6ConduitData.itemConduitId(id);

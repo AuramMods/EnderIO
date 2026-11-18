@@ -5,6 +5,7 @@ import com.enderio.enderio.foundation.task.PoweredMachineTask;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 
@@ -90,6 +91,10 @@ public abstract class PoweredSpawnerTask implements PoweredMachineTask {
     @Override
     public float getProgress() {
         return energyConsumed / (float) energyCost;
+    }
+
+    void restoreLegacyProgress(int consumed) {
+        energyConsumed = Mth.clamp(consumed, 0, energyCost);
     }
 
     // Serialization functions are final to prevent adding extra data in subclasses

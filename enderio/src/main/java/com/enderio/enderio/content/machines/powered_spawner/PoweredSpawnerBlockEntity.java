@@ -44,6 +44,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.LogicalSide;
 import com.enderio.enderio.foundation.util.BlockEntitySpawner;
+import com.enderio.enderio.foundation.soul.Forge6SoulData;
+import net.minecraft.nbt.Tag;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -83,6 +85,12 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
 
             @Override
             protected @Nullable MachineTask loadTask(HolderLookup.Provider lookupProvider, CompoundTag nbt) {
+                if (mode == PoweredSpawnerMode.SPAWN && !nbt.contains("EnergyCost") && nbt.contains("EnergyConsumed", Tag.TAG_INT)) {
+                    // The 6.x task only stored its progress. Its owner supplies the entity and recipe.
+                    var legacyTask = createNewTask();
+                    if (legacyTask != null) legacyTask.restoreLegacyProgress(nbt.getInt("EnergyConsumed"));
+                    return legacyTask;
+                }
                 var task = switch (mode) {
                 case SPAWN -> new MobSpawnTask(PoweredSpawnerBlockEntity.this);
                 case CAPTURE -> new MobCaptureTask(PoweredSpawnerBlockEntity.this);
@@ -355,7 +363,8 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
         tag = com.enderio.enderio.foundation.io.LegacyMachineData.withNativeFields(tag);
         var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         super.load(tag);
-        boundSoul = Soul.parseOptional(lookupProvider, tag.getCompound(MachineNBTKeys.ENTITY_STORAGE));
+        var storage = tag.getCompound(MachineNBTKeys.ENTITY_STORAGE);
+        boundSoul = Forge6SoulData.isLegacyStorage(storage) ? Forge6SoulData.read(storage) : Soul.parseOptional(lookupProvider, storage);
 
         if (tag.contains(MachineNBTKeys.MACHINE_MODE)) {
             this.mode = PoweredSpawnerMode.parse(lookupProvider,
@@ -374,7 +383,7 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
     @Override
     protected void readItemData(ItemStack components) {
         super.readItemData(components);
-        boundSoul = EIODataComponents.SOUL.getOrDefault(components, Soul.EMPTY);
+        bindSoul(EIODataComponents.SOUL.getOrDefault(components, Soul.EMPTY));
 
         // TODO: Ender IO 8 - remove.
         var actionRange = EIODataComponents.ACTION_RANGE.get(components);
