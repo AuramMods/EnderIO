@@ -200,12 +200,12 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | `NUTRITIOUS_STICK` | [EIOItems:169](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `PLANT_MATTER_GREEN` | [EIOItems:170](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `PLANT_MATTER_BROWN` | [EIOItems:171](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `GLIDER_WING` | [EIOItems:172](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `GLIDER_WING` | [EIOItems:185](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java#L185) | The packaged survival crafting screen produces two wings for six dark steel ingots and six leather. The Glider recipe consumes both wings and two more ingots. [Cycle 113](cycle-113.md) |
 | `ANIMAL_TOKEN` | [EIOItems:173](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `MONSTER_TOKEN` | [EIOItems:174](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `PLAYER_TOKEN` | [EIOItems:175](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `BROKEN_SPAWNER` | [EIOItems:186](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Packaged native vanilla spawner loot produces the cow-bound item. A genuine 6.2 drop converts to typed soul data and binds the output of the native Powered Spawner recipe. [Cycle 068](cycle-068.md) |
-| `GLIDER` | [EIOItems:194](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `GLIDER` | [EIOItems:207](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java#L207) | Partial. Packaged TCP verifies crafting, native chest equip, third-person canopy rendering, forward movement and safe landing with `allow-flight=false`. Crouching prevents the glide, and the equipped item flies again after restart. Remote-player renders, integrated-server flight and additional movement controls remain open. [Cycle 113](cycle-113.md) |
 | `ENDERIOS` | [EIOItems:205](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `SOUL_VIAL` | [EIOItems:221](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. Survival capture and release retain a named cow and librarian, including their health and trades. Client state, filled model and glint synchronize. Dispenser capture and release pass, including a converted 6.2 vial. Server tags enforce the sheep blacklist and pig whitelist. The default setting releases the mob and preserves the vanilla spawner. The opt-in setting replaces its weighted mob pool and preserves the new type through two spawn cycles and restart. [Cycle 067](cycle-067.md), [cycle 069](cycle-069.md) |
 | `VOID_VIAL` | [EIOItems:213](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |

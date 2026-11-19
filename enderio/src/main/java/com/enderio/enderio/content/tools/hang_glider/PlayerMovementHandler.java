@@ -10,19 +10,19 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.event.TickEvent;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.WeakHashMap;
@@ -36,11 +36,12 @@ public class PlayerMovementHandler {
     private static final double AIR_FRICTION_COEFFICIENT = 1 / 0.91D;
 
     private static final double MOVEMENT_CHANGE_EFFECT = 0.05d;
+    private static final int DEPLOYMENT_DELAY = 12;
 
     @UseOnly(LogicalSide.CLIENT)
-    private static final Map<Player, Integer> TICKS_FALLING_CLIENT = new WeakHashMap<>();
+    private static final Map<Player, FallState> CLIENT_FALLS = new WeakHashMap<>();
     @UseOnly(LogicalSide.SERVER)
-    private static final Map<Player, Integer> TICKS_FALLING_SERVER = new WeakHashMap<>();
+    private static final Map<Player, FallState> SERVER_FALLS = new WeakHashMap<>();
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent playerTickEvent) {
@@ -48,22 +49,29 @@ public class PlayerMovementHandler {
             return;
         }
         Player player = playerTickEvent.player;
-        Map<Player, Integer> ticksFallingMap = player instanceof ServerPlayer ? TICKS_FALLING_SERVER
-                : TICKS_FALLING_CLIENT;
+        FallState fall = falls(player).computeIfAbsent(player, ignored -> new FallState());
+        fall.sample(player);
 
-        int ticksFalling = ticksFallingMap.getOrDefault(player, 0);
-        if (player.onGround() != player.getDeltaMovement().y() < 0) {
-            ticksFallingMap.put(player, ticksFalling + 1);
-        } else {
-            ticksFallingMap.put(player, 0);
+        if (player.level().isClientSide() && !player.isLocalPlayer()) {
+            return;
         }
-
-        Optional<GliderMovementInfo> gliderMovementInfoOpt = calculateGliderMovementInfo(player, true, ticksFallingMap);
+        Optional<GliderMovementInfo> gliderMovementInfoOpt = calculateGliderMovementInfo(player, true, fall);
         if (gliderMovementInfoOpt.isEmpty()) {
             return;
         }
 
         GliderMovementInfo gliderMovementInfo = gliderMovementInfoOpt.get();
+        player.resetFallDistance();
+        if (player instanceof ServerPlayer serverPlayer) {
+            EIOCriterions.USE_GLIDER.get().trigger(serverPlayer);
+        } else {
+            steer(player, gliderMovementInfo);
+            ClientClassLoadingProtection.playSound(player);
+        }
+        gliderMovementInfo.cause().onHangGliderTick(player);
+    }
+
+    private static void steer(Player player, GliderMovementInfo gliderMovementInfo) {
         double verticalSpeed = gliderMovementInfo.fallSpeed();
         if (player.isSprinting()) {
             verticalSpeed *= 3;
@@ -84,52 +92,54 @@ public class PlayerMovementHandler {
 
         newDeltaMovement = newDeltaMovement.scale(AIR_FRICTION_COEFFICIENT);
         player.setDeltaMovement(newDeltaMovement);
-        player.fallDistance = 0f;
-        if (player instanceof ServerPlayer serverPlayer) {
-            EIOCriterions.USE_GLIDER.get().trigger(serverPlayer);
-            player.hurtMarked = true;
-        } else if (player.level().isClientSide()) {
-            ClientClassLoadingProtection.playSound(player);
-        }
-
-        gliderMovementInfo.cause().onHangGliderTick(player);
     }
 
-    public static Optional<GliderMovementInfo> calculateGliderMovementInfo(Player player,
-            boolean displayDisabledMessage, Map<Player, Integer> ticksFallingMap) {
-        if (areGlideConditionsMet(player, ticksFallingMap)) {
+    private static Optional<GliderMovementInfo> calculateGliderMovementInfo(Player player,
+            boolean displayDisabledMessage, FallState fall) {
+        if (fall == null || fall.ticks <= DEPLOYMENT_DELAY || !canGlide(player)) {
+            return Optional.empty();
+        }
 
-            List<GliderMovementInfo> infos = new ArrayList<>();
-            IntegrationManager.forAll(integration -> integration.getGliderMovementInfo(player).ifPresent(infos::add));
-
-            Optional<Component> disabledReason = Optional.empty();
-            Optional<GliderMovementInfo> gliderMovementInfo = Optional.empty();
-            if (!infos.isEmpty()) {
-                disabledReason = infos.get(0).cause().hangGliderDisabledReason(player);
-                // Don't enable flight if a disabled reason is present
-                if (disabledReason.isEmpty()) {
-                    gliderMovementInfo = Optional.of(infos.get(0));
-                }
-            }
+        return IntegrationManager.getFirst(integration -> integration.getGliderMovementInfo(player)).filter(info -> {
+            Optional<Component> disabledReason = info.cause().hangGliderDisabledReason(player);
             if (displayDisabledMessage && disabledReason.isPresent()) {
                 player.displayClientMessage(ToolsLang.GLIDER_DISABLED.copy().append(disabledReason.get()), true);
             }
-            return gliderMovementInfo;
-        }
-
-        return Optional.empty();
+            return disabledReason.isEmpty();
+        });
     }
 
     public static boolean isGliding(Player player) {
-        Map<Player, Integer> ticksFallingMap = player instanceof ServerPlayer ? TICKS_FALLING_SERVER
-                : TICKS_FALLING_CLIENT;
-        return calculateGliderMovementInfo(player, false, ticksFallingMap).isPresent();
+        return calculateGliderMovementInfo(player, false, falls(player).get(player)).isPresent();
     }
 
-    private static boolean areGlideConditionsMet(Player player, Map<Player, Integer> ticksFallingMap) {
-        return !player.isSpectator() && !player.onGround() && player.getDeltaMovement().y() < 0
-                && !player.isShiftKeyDown() && !player.isInWater() && !player.isPassenger()
-                && ticksFallingMap.getOrDefault(player, 0) > 12;
+    private static Map<Player, FallState> falls(Player player) {
+        return player.level().isClientSide() ? CLIENT_FALLS : SERVER_FALLS;
+    }
+
+    private static boolean canGlide(Player player) {
+        return !player.isSpectator() && !player.onGround() && !player.getAbilities().flying
+                && !player.isShiftKeyDown() && !player.isInWater() && !player.isPassenger();
+    }
+
+    private static final class FallState {
+        private ResourceKey<Level> dimension;
+        private double y;
+        private int ticks;
+
+        void sample(Player player) {
+            double nextY = player.getY();
+            var nextDimension = player.level().dimension();
+            // The server and remote clients receive positions for player input, while the local player simulates velocity.
+            double dy = player.isLocalPlayer() ? player.getDeltaMovement().y() : nextY - y;
+            if (!canGlide(player) || dimension != nextDimension || dy > 0 || dy < -8) {
+                ticks = 0;
+            } else if (dy < 0 && ticks <= DEPLOYMENT_DELAY) {
+                ticks++;
+            }
+            dimension = nextDimension;
+            y = nextY;
+        }
     }
 
     private static class ClientClassLoadingProtection {
@@ -167,9 +177,7 @@ public class PlayerMovementHandler {
         public void tick() {
 
             ++this.time;
-            if (!this.player.isRemoved() && (this.time <= 20
-                    || PlayerMovementHandler.calculateGliderMovementInfo(player, false, TICKS_FALLING_CLIENT)
-                            .isPresent())) {
+            if (!this.player.isRemoved() && (this.time <= 20 || isGliding(player))) {
                 this.x = this.player.getX();
                 this.y = this.player.getY();
                 this.z = this.player.getZ();

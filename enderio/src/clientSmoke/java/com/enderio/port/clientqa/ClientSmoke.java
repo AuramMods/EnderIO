@@ -74,6 +74,7 @@ public final class ClientSmoke {
             case "legacy-auto-smelt" -> new ClientAutoSmeltSmoke();
             case "legacy-combat" -> new ClientLegacyCombatSmoke();
             case "legacy-experience" -> new ClientLegacyExperienceSmoke();
+            case "hang-glider" -> new ClientHangGliderSmoke();
             case "legacy-soulbound" -> new ClientSoulboundSmoke();
             case "enchanter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.ENCHANTER);
             case "enchanter-reload" -> new ClientEnchanterReloadSmoke();

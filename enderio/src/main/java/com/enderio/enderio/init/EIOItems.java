@@ -207,8 +207,7 @@ public class EIOItems {
     public static final ItemDeferredHolder<HangGliderItem> GLIDER = gliderItem("glider");
 
     private static ItemDeferredHolder<HangGliderItem> gliderItem(String name) {
-        return ITEMS.registerItem(name, HangGliderItem::new);
-        /* .setModelProvider((prov, ctx) -> GliderItemModel.create(ctx.get(), prov)) */
+        return ITEMS.registerItem(name, HangGliderItem::new, new Item.Properties().stacksTo(1));
     }
 
     // endregion
