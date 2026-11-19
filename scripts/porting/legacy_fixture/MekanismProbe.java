@@ -13,9 +13,12 @@ import mekanism.api.chemical.pigment.PigmentStack;
 import mekanism.api.chemical.slurry.SlurryStack;
 import mekanism.api.heat.IHeatHandler;
 import mekanism.common.capabilities.Capabilities;
+import mekanism.common.capabilities.heat.BasicHeatCapacitor;
+import mekanism.common.capabilities.heat.ITileHeatHandler;
 import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.tile.TileEntityChemicalTank;
 import mekanism.common.tile.component.config.DataType;
+import mekanism.common.tile.transmitter.TileEntityThermodynamicConductor;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -23,8 +26,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -41,10 +51,14 @@ public class MekanismProbe {
         new Route(6, TransmissionType.PIGMENT, "red"), new Route(9, TransmissionType.SLURRY, "dirty_iron"));
     private static final Route LOCKED = new Route(15, TransmissionType.GAS, "oxygen");
     private static final Route HYDROGEN = new Route(15, TransmissionType.GAS, "hydrogen");
+    private static final double HEATER_TEMPERATURE = 650;
+    private static final int HEAT_SAMPLE_TICKS = 20;
     private double destinationTemperature;
+    private HeatObservation observation;
 
     public MekanismProbe() {
         MinecraftForge.EVENT_BUS.addListener(this::register);
+        MinecraftForge.EVENT_BUS.addListener(this::observeHeat);
     }
 
     private void register(RegisterCommandsEvent event) {
@@ -61,6 +75,10 @@ public class MekanismProbe {
             .then(Commands.literal("heat_pulse").executes(context -> pulse(context.getSource())))
             .then(Commands.literal("heat_blocked").executes(context -> checkHeat(context.getSource(), false)))
             .then(Commands.literal("heat_delivered").executes(context -> checkHeat(context.getSource(), true)))
+            .then(Commands.literal("start_unequal_heat").executes(context -> startUnequalHeat(context.getSource())))
+            .then(Commands.literal("unequal_heat_connected").executes(context -> checkUnequalHeat(context.getSource(), true)))
+            .then(Commands.literal("unequal_heat_split").executes(context -> checkUnequalHeat(context.getSource(), false)))
+            .then(Commands.literal("place_heat_bridge").executes(context -> placeHeatBridge(context.getSource())))
             .then(Commands.literal("seed_hydrogen").executes(context -> {
                 seed(context.getSource().getLevel(), HYDROGEN);
                 return success(context.getSource(), "Hydrogen batch seeded");
@@ -136,6 +154,69 @@ public class MekanismProbe {
         var change = heat(source.getLevel(), 1153, Direction.WEST).getTotalTemperature() - destinationTemperature;
         if (delivered ? change <= 1 : change > 0.1) return failure(source, "Unexpected destination heat change " + change + " K");
         return success(source, "Native heat destination matched the selected control");
+    }
+
+    private int startUnequalHeat(CommandSourceStack source) {
+        var level = source.getLevel();
+        var heater = (ITileHeatHandler) level.getBlockEntity(new BlockPos(1150, 80, 12));
+        var upstream = (BasicHeatCapacitor) heater.getHeatCapacitor(0, Direction.EAST);
+        var target = ((TileEntityThermodynamicConductor) level.getBlockEntity(new BlockPos(1153, 80, 12))).getTransmitter();
+        var downstream = target.buffer;
+        if (upstream.getHeatCapacity() <= downstream.getHeatCapacity()) {
+            return failure(source, "Fixture requires unequal native heat capacities");
+        }
+        upstream.update();
+        upstream.setHeat(upstream.getHeatCapacity() * HEATER_TEMPERATURE);
+        downstream.update();
+        double ambient = target.getAmbientTemperature(Direction.WEST);
+        downstream.setHeat(downstream.getHeatCapacity() * ambient);
+        observation = new HeatObservation(downstream, ambient);
+        return success(source, "Native unequal heat pulse started with capacities " + upstream.getHeatCapacity() + "/"
+            + downstream.getHeatCapacity());
+    }
+
+    private void observeHeat(TickEvent.ServerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && observation != null && observation.samples < HEAT_SAMPLE_TICKS) {
+            observation.peak = Math.max(observation.peak, observation.destination.getTemperature());
+            observation.samples++;
+        }
+    }
+
+    private int checkUnequalHeat(CommandSourceStack source, boolean connected) {
+        if (observation == null || observation.samples < HEAT_SAMPLE_TICKS) return failure(source, "Still observing heat");
+        double ambient = observation.ambient;
+        double peak = observation.peak;
+        if (connected ? !(peak > ambient + 1 && peak <= HEATER_TEMPERATURE + 0.01) : !(peak <= ambient + 0.1)) {
+            return failure(source, "Unexpected peak " + peak + " K from ambient " + ambient + " K");
+        }
+        return success(source, "Native unequal heat matched the route, peak " + peak + " K from ambient " + ambient + " K");
+    }
+
+    private static int placeHeatBridge(CommandSourceStack source) {
+        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse("enderio:conduit"));
+        if (!(item instanceof BlockItem conduit)) return failure(source, "Missing port conduit item");
+        var stack = new ItemStack(conduit);
+        stack.getOrCreateTagElement("enderio:data").putString("enderio:conduit", "enderio:heat");
+        var level = source.getLevel();
+        var player = FakePlayerFactory.getMinecraft(level);
+        var pos = new BlockPos(1152, 80, 12);
+        var hit = new BlockHitResult(Vec3.atBottomCenterOf(pos), Direction.UP, pos.below(), false);
+        var context = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND, stack, hit);
+        if (!conduit.place(context).consumesAction()) return failure(source, "Heat conduit item placement failed");
+        return success(source, "Native heat bridge placed");
+    }
+
+    private static final class HeatObservation {
+        private final BasicHeatCapacitor destination;
+        private final double ambient;
+        private double peak;
+        private int samples;
+
+        private HeatObservation(BasicHeatCapacitor destination, double ambient) {
+            this.destination = destination;
+            this.ambient = ambient;
+            peak = ambient;
+        }
     }
 
     private int configure(CommandSourceStack source) {
