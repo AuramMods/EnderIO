@@ -64,7 +64,7 @@ def player_count(server, item):
     raise AssertionError(response)
 
 
-def collect_grains(server):
+def collect_grains(server, minimum=16):
     if player_count(server, GRAINS):
         raise AssertionError("The survival player already has grains before collection")
     bedrock_drops = drop_selector(1)[:-1] + ",sort=arbitrary,limit=1]"
@@ -72,9 +72,9 @@ def collect_grains(server):
         server.command(f"tp {PLAYER} {bedrock_drops}")
         time.sleep(0.3)
         count = player_count(server, GRAINS)
-        if count >= 16:
+        if count >= minimum:
             return count
-    raise AssertionError("The player did not gather the 16 stock bedrock fire drops needed for starter recipes")
+    raise AssertionError(f"The player did not gather the {minimum} stock bedrock fire drops needed for crafting")
 
 
 def send_to_block(server, item, dest):

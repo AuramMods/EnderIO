@@ -44,8 +44,9 @@ class Route:
 
 
 ENTICING = Route(3495, "villager", "enticing_crystal", "minecraft:emerald", 51200, 800, f",{VILLAGER}")
+PRESCIENT = Route(3489, "shulker", "prescient_crystal", VIBRANT, 100000, 2240, ",Color:11b", "prescient_powder", "precient_crystal")
 ROUTES = (
-    Route(3489, "shulker", "prescient_crystal", VIBRANT, 100000, 2240, ",Color:11b", "prescient_powder", "precient_crystal"),
+    PRESCIENT,
     ENTICING,
     Route(3501, "enderman", "ender_crystal", VIBRANT, 76800, 1440, powder="ender_crystal_powder", grind_recipe="ender_crystal"),
 )

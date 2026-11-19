@@ -93,6 +93,7 @@ public final class ClientSmoke {
             case "legacy-printout" -> new ClientCoordinatePrintoutSmoke(true);
             case "levitation-staff" -> new ClientLevitationStaffSmoke();
             case "levitation-progression" -> new ClientLevitationProgressionSmoke();
+            case "infinity-rod-progression" -> new ClientInfinityRodProgressionSmoke();
             case "vat-controls" -> new ClientVatControlsSmoke();
             case "redstone-filters" -> new ClientRedstoneFiltersSmoke();
             case "conduit-filters" -> new ClientConduitFiltersSmoke();
