@@ -73,21 +73,22 @@ public class WeatherObeliskBlockEntity extends MachineBlockEntity implements Flu
 
             @Override
             protected void consumeInputs(WeatherChangeRecipe recipe) {
-                MachineFluidHandler handler = getFluidHandler();
-                TANK.drain(handler, recipe.fluid(), IFluidHandler.FluidAction.EXECUTE);
+                // Weather recipes match the fluid type regardless of the stored stack's tag.
+                TANK.drain(WeatherObeliskBlockEntity.this, recipe.fluid().getAmount(), IFluidHandler.FluidAction.EXECUTE);
                 ROCKET.getItemStack(getInventory()).shrink(1);
+                if (level instanceof ServerLevel server) applyWeather(server, recipe.mode());
             }
 
             @Override
             protected int makeProgress(int remainingProgress) {
-                boolean hasRocket = !ROCKET.getItemStack(getInventory()).isEmpty();
-                boolean weatherDifferent = switch (getRecipe().mode()) {
+                var recipe = getRecipe();
+                if (!hasInputs(recipe) || !level.canSeeSky(getBlockPos().above())) return 0;
+                boolean weatherDifferent = switch (recipe.mode()) {
                 case RAIN -> !level.isRaining();
                 case CLEAR -> level.isRaining() || level.isThundering();
                 case LIGHTNING -> !level.isThundering();
                 };
-                boolean sky = level.canSeeSky(getBlockPos().above());
-                if (!hasRocket || !weatherDifferent || !sky) return 0;
+                if (!weatherDifferent) return 0;
                 level.blockEntityChanged(worldPosition);
                 return 1;
             }
@@ -99,30 +100,32 @@ public class WeatherObeliskBlockEntity extends MachineBlockEntity implements Flu
 
             @Override
             protected boolean placeOutputs(List<OutputStack> outputs, boolean simulate) {
-                if (!simulate && level instanceof ServerLevel server) {
-                    switch (getRecipe().mode()) {
-                    case RAIN -> server.setWeatherParameters(0, ServerLevel.RAIN_DURATION.sample(server.getRandom()),
-                            true, false);
-                    case CLEAR ->
-                        server.setWeatherParameters(ServerLevel.RAIN_DELAY.sample(server.getRandom()), 0, false, false);
-                    case LIGHTNING -> server.setWeatherParameters(0,
-                            ServerLevel.THUNDER_DURATION.sample(server.getRandom()), true, true);
-                    }
-                    Calendar calendar = Calendar.getInstance();
-                    int month = calendar.get(Calendar.MONTH);
-                    if (month == Calendar.JUNE) {
-                        FIREWORK.getOrCreateTag().put("Fireworks", WeatherChangeRecipe.WeatherMode.SURPRISE.copy());
-                    } else if (month == Calendar.MARCH && calendar.get(Calendar.DAY_OF_MONTH) == 31) {
-                        FIREWORK.getOrCreateTag().put("Fireworks", WeatherChangeRecipe.WeatherMode.SURPRISE_2.copy());
-                    } else {
-                        FIREWORK.getOrCreateTag().put("Fireworks", getRecipe().mode().getFireworks());
-                    }
-                    server.addFreshEntity(new FireworkRocketEntity(server, null, getBlockPos().getX() + 0.5,
-                            getBlockPos().getY() + 1.1, getBlockPos().getZ() + 0.5, FIREWORK));
-                }
-                return true;
+                return level instanceof ServerLevel && hasInputs(getRecipe());
             }
         };
+    }
+
+    private boolean hasInputs(@Nullable WeatherChangeRecipe recipe) {
+        return recipe != null && !ROCKET.getItemStack(getInventory()).isEmpty() && recipe.matches(createRecipeInput(), level);
+    }
+
+    private void applyWeather(ServerLevel server, WeatherChangeRecipe.WeatherMode mode) {
+        switch (mode) {
+        case RAIN -> server.setWeatherParameters(0, ServerLevel.RAIN_DURATION.sample(server.getRandom()), true, false);
+        case CLEAR -> server.setWeatherParameters(ServerLevel.RAIN_DELAY.sample(server.getRandom()), 0, false, false);
+        case LIGHTNING -> server.setWeatherParameters(0, ServerLevel.THUNDER_DURATION.sample(server.getRandom()), true, true);
+        }
+        Calendar calendar = Calendar.getInstance();
+        int month = calendar.get(Calendar.MONTH);
+        if (month == Calendar.JUNE) {
+            FIREWORK.getOrCreateTag().put("Fireworks", WeatherChangeRecipe.WeatherMode.SURPRISE.copy());
+        } else if (month == Calendar.MARCH && calendar.get(Calendar.DAY_OF_MONTH) == 31) {
+            FIREWORK.getOrCreateTag().put("Fireworks", WeatherChangeRecipe.WeatherMode.SURPRISE_2.copy());
+        } else {
+            FIREWORK.getOrCreateTag().put("Fireworks", mode.getFireworks());
+        }
+        server.addFreshEntity(new FireworkRocketEntity(server, null, getBlockPos().getX() + 0.5,
+                getBlockPos().getY() + 1.1, getBlockPos().getZ() + 0.5, FIREWORK));
     }
 
     private Boolean canAcceptTask() {
