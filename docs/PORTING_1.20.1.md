@@ -293,7 +293,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 091: active Oculus shader pack | Check the four stained-glass facades and the wrench view through a real Oculus shader pass | The build passes 79 unit and 482 native tests. Packaged tests verify the shader output pixel, full-color normal glass, exposed conduits in wrench view, restoration and resource reload. [Evidence and commands](porting/1.20.1/cycle-091.md) | `8884fa72c` |
 
-| 092: facade rendering across dimensions | Travel between Overworld and Nether fixtures at the same coordinates with the Yeta Wrench selected | The build passes 79 unit and 482 native tests. Forge and Embeddium each pass 26 server assertions and 60 client checks for dimension-specific paint, facade index cleanup, wrench visibility, resource reload and restart. [Evidence and commands](porting/1.20.1/cycle-092.md) | Commit containing cycle 092 |
+| 092: facade rendering across dimensions | Travel between Overworld and Nether fixtures at the same coordinates with the Yeta Wrench selected | The build passes 79 unit and 482 native tests. Forge and Embeddium each pass 26 server assertions and 60 client checks for dimension-specific paint, facade index cleanup, wrench visibility, resource reload and restart. [Evidence and commands](porting/1.20.1/cycle-092.md) | `7473d5cb3` |
+
+| 093: Jade tooltips and covered conduits | Supply Jade with the painted state while a facade covers a conduit and restore native inspection when the wrench is selected | The build passes 79 unit and 482 native tests. Packaged TCP verifies live soul changes, the unbound overlay, facade tool hints, optional loading and server restart. [Evidence and commands](porting/1.20.1/cycle-093.md) | Commit containing cycle 093 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

@@ -4,8 +4,10 @@ import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.conduits.bundle.ConduitBundle;
 import com.enderio.enderio.client.content.conduits.model.facades.FacadeUtil;
 import com.enderio.enderio.init.EIOBlocks;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
@@ -22,15 +24,18 @@ public class EIOJadePlugin implements IWailaPlugin {
         // Use clone item stack to work out which item to show.
         registration.usePickedResult(EIOBlocks.CONDUIT_BUNDLE.get());
 
-        // Completely replace the block accessor with the facade block if it exists.
-        // This prevents any special widgets (such as exposed capabilities like energy) from appearing when covered by a facade.
+        // Jade 11 keeps the original state and block entity when it changes only the displayed item.
         registration.addRayTraceCallback((hitResult, accessor, originalAccessor) -> {
             if (accessor instanceof BlockAccessor blockAccessor) {
                 if (blockAccessor.getBlockEntity() instanceof ConduitBundle conduitBundle && conduitBundle.hasFacade()
                     && FacadeUtil.areFacadesVisible(blockAccessor.getPlayer())) {
+                    var paint = conduitBundle.getFacadeBlock();
                     return registration.blockAccessor()
                         .from(blockAccessor)
-                        .fakeBlock(conduitBundle.getFacadeBlock().asItem().getDefaultInstance())
+                        .blockState(paint.defaultBlockState())
+                        .blockEntity(() -> null)
+                        .serverData(new CompoundTag())
+                        .fakeBlock(paint.asItem().getDefaultInstance())
                         .build();
                 }
             }
@@ -42,6 +47,6 @@ public class EIOJadePlugin implements IWailaPlugin {
 
     @Override
     public void register(IWailaCommonRegistration registration) {
-        registration.registerBlockDataProvider(SoulBoundComponentProvider.INSTANCE, net.minecraft.world.level.block.entity.BlockEntity.class);
+        registration.registerBlockDataProvider(SoulBoundComponentProvider.INSTANCE, BlockEntity.class);
     }
 }
