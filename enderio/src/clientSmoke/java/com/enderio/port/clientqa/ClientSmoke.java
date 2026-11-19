@@ -120,9 +120,12 @@ public final class ClientSmoke {
             case "facade-seams-embeddium" -> new ClientFacadeSeamSmoke(false, true);
             case "facade-seams-mixed" -> new ClientFacadeSeamSmoke(true, false);
             case "facade-seams-mixed-embeddium" -> new ClientFacadeSeamSmoke(true, true);
-            case "facade-ctm-core" -> new ClientFacadeCtmSmoke(false, false);
-            case "facade-ctm-athena" -> new ClientFacadeCtmSmoke(true, false);
-            case "facade-ctm-embeddium" -> new ClientFacadeCtmSmoke(true, true);
+            case "facade-ctm-core" -> new ClientFacadeCtmSmoke(ClientFacadeCtmSmoke.Renderer.CORE);
+            case "facade-ctm-athena" -> new ClientFacadeCtmSmoke(ClientFacadeCtmSmoke.Renderer.ATHENA);
+            case "facade-ctm-embeddium" -> new ClientFacadeCtmSmoke(ClientFacadeCtmSmoke.Renderer.EMBEDDIUM);
+            case "facade-ctm-oculus" -> new ClientFacadeCtmSmoke(ClientFacadeCtmSmoke.Renderer.OCULUS);
+            case "facade-ctm-oculus-shader" -> new ClientFacadeCtmSmoke(ClientFacadeCtmSmoke.Renderer.OCULUS_SHADER);
+            case "facade-ctm-oculus-terrain" -> new ClientFacadeCtmSmoke(ClientFacadeCtmSmoke.Renderer.OCULUS_TERRAIN);
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "natural-spawns" -> new ClientNaturalSpawnSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();

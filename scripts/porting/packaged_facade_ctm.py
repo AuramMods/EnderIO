@@ -69,6 +69,14 @@ def exercise_client(args, server, results, report):
             server.command(f"data merge block {CENTER} {{{cover(BLUE)}}}")
             server.assert_state("restoring_paint_preserves_both_energy_conduits", layout(BLUE), results)
             (output / "server-rematched").touch()
+            if args.renderer.startswith("oculus"):
+                wait_signal(client, output, "rematched")
+                server.command(f"item replace entity {PLAYER} hotbar.0 with enderio:yeta_wrench")
+                (output / "server-wrench").touch()
+                wait_signal(client, output, "wrench")
+                server.command(f"item replace entity {PLAYER} hotbar.0 with minecraft:air")
+                server.assert_state("wrench_visibility_does_not_modify_world_paint", layout(BLUE), results)
+                (output / "server-wrench-away").touch()
             if client.wait(timeout=65) != 0:
                 raise AssertionError(f"Connected texture client failed; see {output}")
             summary = json.loads(summary_path.read_text())
@@ -88,7 +96,8 @@ def main():
     parser.add_argument("--forge-server", required=True, type=Path)
     parser.add_argument("--jar", required=True, type=Path)
     parser.add_argument("--launch", required=True, type=Path)
-    parser.add_argument("--renderer", required=True, choices=("core", "athena", "embeddium"))
+    parser.add_argument("--renderer", required=True,
+                        choices=("core", "athena", "embeddium", "oculus", "oculus-shader", "oculus-terrain"))
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a directory name")

@@ -40,6 +40,7 @@ parser.add_argument("--scenario",
                              "mekanism-controls", "ae2-facade", "me-colors",
                              "facade-seams", "facade-seams-embeddium", "facade-seams-mixed", "facade-seams-mixed-embeddium",
                              "facade-ctm-core", "facade-ctm-athena", "facade-ctm-embeddium",
+                             "facade-ctm-oculus", "facade-ctm-oculus-shader", "facade-ctm-oculus-terrain",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")
@@ -79,9 +80,11 @@ log = (output / "focus.json.client.log").read_text()
 errors = [line for line in log.splitlines() if "/ERROR]" in line or "/FATAL]" in line]
 known_diagnostics = []
 checks = result.get("checks", {})
-shaders_disabled = (args.scenario == "stained-facades-oculus"
+shaders_disabled = (args.scenario in {"stained-facades-oculus", "facade-ctm-oculus"}
                     and " [Oculus/]: Shaders are disabled because enableShaders is set to false" in log)
-shader_drew_frame = args.scenario == "stained-facades-oculus-shader" and checks.get("shader_pack_drew_facades-visible")
+shader_drew_frame = ((args.scenario == "stained-facades-oculus-shader" and checks.get("shader_pack_drew_facades-visible"))
+                     or (args.scenario in {"facade-ctm-oculus-shader", "facade-ctm-oculus-terrain"}
+                         and checks.get("shader_pack_drew_connected-facades")))
 if checks.get("expected_oculus_installation") and (shaders_disabled or shader_drew_frame):
     # Embeddium emits this support-policy diagnostic when Oculus patches its renderer.
     notice = ("/ERROR] [Embeddium-MixinTaintDetector/]: Mod mixin into Embeddium internals detected. "

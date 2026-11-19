@@ -37,6 +37,10 @@ public final class ConduitFacadeRendering {
 
     private ConduitFacadeRendering() {}
 
+    public static boolean suppressesGhostFacades() {
+        return ModCompatHelper.hasIris() && ShaderBridge.isShaderPackInUse();
+    }
+
     /** Capture the compiler's model-data snapshot, never a mutable client-world facade index. */
     public static Facades capture(Map<BlockPos, ModelData> modelData, SectionPos section) {
         Map<BlockPos, Facade> facades = new HashMap<>();
@@ -68,7 +72,7 @@ public final class ConduitFacadeRendering {
         public void render(BlockAndTintGetter region, PoseStack poseStack,
                 Function<RenderType, VertexConsumer> buffers) {
             // Preserve GH-1062: only ghost facades are suppressed with an active shader pack.
-            if (!opaque && ModCompatHelper.hasIris() && ShaderBridge.isShaderPackInUse()) return;
+            if (!opaque && suppressesGhostFacades()) return;
 
             var dispatcher = Minecraft.getInstance().getBlockRenderer();
             var random = RANDOM.get();

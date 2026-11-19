@@ -1,6 +1,9 @@
 package com.enderio.port.clientqa;
 
+import com.enderio.enderio.client.content.conduits.model.facades.ClientFacadeVisibility;
 import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
+import com.enderio.enderio.init.EIOItems;
+import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.ConnectScreen;
@@ -21,9 +24,11 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.ModList;
 
 import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,7 +36,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 final class ClientFacadeCtmSmoke {
-    private enum Stage { TITLE, CONNECT, MATCHED, SPLIT, REMATCHED, RELOADED, DONE }
+    enum Renderer { CORE, ATHENA, EMBEDDIUM, OCULUS, OCULUS_SHADER, OCULUS_TERRAIN }
+
+    private enum Stage { TITLE, CONNECT, MATCHED, SPLIT, REMATCHED, WRENCH, RESTORED, RELOADED, DONE }
 
     private static final BlockPos WEST = new BlockPos(2735, 80, 9);
     private static final BlockPos CENTER = WEST.east();
@@ -49,15 +56,22 @@ final class ClientFacadeCtmSmoke {
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final boolean athena;
     private final boolean embeddium;
+    private final boolean oculus;
+    private final boolean shaders;
+    private final boolean terrainPrograms;
     private final long started = System.nanoTime();
     private Stage stage = Stage.TITLE;
     private int readyTick = -1;
     private CompletableFuture<Void> reload;
     private Map<String, List<String>> initial;
+    private int[][] initialJoins;
 
-    ClientFacadeCtmSmoke(boolean athena, boolean embeddium) {
-        this.athena = athena;
-        this.embeddium = embeddium;
+    ClientFacadeCtmSmoke(Renderer renderer) {
+        athena = renderer != Renderer.CORE;
+        terrainPrograms = renderer == Renderer.OCULUS_TERRAIN;
+        shaders = renderer == Renderer.OCULUS_SHADER || terrainPrograms;
+        oculus = renderer == Renderer.OCULUS || shaders;
+        embeddium = renderer == Renderer.EMBEDDIUM || oculus;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -84,6 +98,7 @@ final class ClientFacadeCtmSmoke {
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     check("expected_renderer_and_pack", ModList.get().isLoaded("athena") == athena
                         && ModList.get().isLoaded("embeddium") == embeddium && hasExpectedGlassBlockState());
+                    check("expected_oculus_installation", ModList.get().isLoaded("oculus") == oculus);
                     signal("connected");
                     stage = Stage.MATCHED;
                 }
@@ -111,8 +126,24 @@ final class ClientFacadeCtmSmoke {
                     if (!ready("server-rematched", blue, blue)) return;
                     check("restoring_matching_paint_reconnects_both_joins",
                         initial.equals(observe("reconnected-facades", blue, blue)));
-                    reload = minecraft.reloadResourcePacks();
-                    stage = Stage.RELOADED;
+                    if (oculus) {
+                        signal("rematched");
+                        stage = Stage.WRENCH;
+                    } else {
+                        startReload();
+                    }
+                }
+                case WRENCH -> {
+                    if (!readyWithWrench("server-wrench", blue, true)) return;
+                    observeWrench(blue);
+                    signal("wrench");
+                    stage = Stage.RESTORED;
+                }
+                case RESTORED -> {
+                    if (!readyWithWrench("server-wrench-away", blue, false)) return;
+                    check("putting_away_wrench_restores_both_join_faces",
+                        initial.equals(observe("after-wrench-facades", blue, blue)));
+                    startReload();
                 }
                 case RELOADED -> {
                     if (!reload.isDone() || minecraft.getOverlay() != null) return;
@@ -133,6 +164,16 @@ final class ClientFacadeCtmSmoke {
     private boolean hasExpectedGlassBlockState() {
         var file = ResourceLocation.fromNamespaceAndPath("enderio", "blockstates/clear_glass_blue.json");
         return PACK.equals(minecraft.getResourceManager().getResource(file).orElseThrow().sourcePackId()) == athena;
+    }
+
+    private void startReload() {
+        reload = minecraft.reloadResourcePacks();
+        stage = Stage.RELOADED;
+    }
+
+    private boolean readyWithWrench(String marker, Block blue, boolean held) {
+        return minecraft.player.getMainHandItem().is(EIOItems.YETA_WRENCH.get()) == held
+            && ClientFacadeVisibility.areFacadesVisible() != held && ready(marker, blue, blue);
     }
 
     private boolean ready(String marker, Block west, Block center) {
@@ -158,12 +199,78 @@ final class ClientFacadeCtmSmoke {
         check("silent_hidden_" + name, Boolean.TRUE.equals(frame.get("passed")));
         var faces = Map.of("west", face(WEST, west), "center", face(CENTER, center), "east", face(EAST, west));
         frame.put("southFaceSprites", faces);
-        verifyGlassPixels(name, frame, west != center);
+        var image = ImageIO.read(output.resolve(name + ".png").toFile());
+        verifyShaderFrame(name, frame, image, false);
+        verifyGlassPixels(name, frame, image, west != center, false);
+        verifyJoinPixels(name, frame, image, west != center);
         return faces;
     }
 
-    private void verifyGlassPixels(String name, Map<String, Object> frame, boolean split) throws IOException {
+    private void observeWrench(Block blue) throws IOException {
+        String name = "wrench-facades";
+        var frame = ClientSmoke.capture(name + ".png");
+        captures.put(name, frame);
+        check("silent_hidden_" + name, Boolean.TRUE.equals(frame.get("passed")));
         var image = ImageIO.read(output.resolve(name + ".png").toFile());
+        verifyShaderFrame(name, frame, image, true);
+        verifyGlassPixels(name, frame, image, false, true);
+        int border = ordinaryGlassBorderPixels(image);
+        var eastFace = face(EAST, blue);
+        frame.put("ordinaryGlassWestBorderPixels", border);
+        frame.put("ordinaryGlassSouthSprites", eastFace);
+        check("ordinary_connected_glass_follows_actual_ghost_visibility", shaders
+            ? border > 100 && eastFace.equals(Collections.nCopies(4, CTM + "particle"))
+            : border < 35 && eastFace.equals(initial.get("east")));
+        check("wrench_exposes_both_energy_conduit_models", List.of(WEST, CENTER).stream().allMatch(pos -> {
+            var bundle = (ConduitBundleBlockEntity) minecraft.level.getBlockEntity(pos);
+            var state = bundle.getBlockState();
+            var model = minecraft.getBlockRenderer().getBlockModel(state);
+            return !model.getQuads(state, null, RandomSource.create(42), bundle.getModelData(), RenderType.cutout()).isEmpty()
+                || Arrays.stream(Direction.values()).anyMatch(side ->
+                    !model.getQuads(state, side, RandomSource.create(42), bundle.getModelData(), RenderType.cutout()).isEmpty());
+        }));
+    }
+
+    private static int ordinaryGlassBorderPixels(BufferedImage image) {
+        int count = 0;
+        int width = image.getWidth();
+        int height = image.getHeight();
+        for (int y = height * 51 / 100; y < height * 60 / 100; y++) {
+            for (int x = width * 539 / 1000; x < width * 550 / 1000; x++) {
+                int rgb = image.getRGB(x, y);
+                int blue = rgb & 255;
+                if (blue - (rgb >> 16 & 255) > 12 && blue - (rgb >> 8 & 255) > 12) count++;
+            }
+        }
+        return count;
+    }
+
+    private void verifyShaderFrame(String name, Map<String, Object> frame, BufferedImage image, boolean wrench) {
+        if (!oculus) return;
+        boolean active = IrisApi.getInstance().isShaderPackInUse();
+        int marker = image.getRGB(16, image.getHeight() - 16) & 0xFFFFFF;
+        frame.put("shaderPackInUse", active);
+        frame.put("shaderSignature", String.format("%06x", marker));
+        check(shaders ? "shader_pack_drew_" + name : "shaders_disabled_" + name,
+            active == shaders && (marker == 0xFF00FF) == shaders);
+        if (terrainPrograms) {
+            int width = image.getWidth();
+            int height = image.getHeight();
+            int stone = image.getRGB(width / 4, height * 3 / 4) & 0xFFFFFF;
+            int cutout = 0;
+            for (int y = height * 48 / 100; y < height * 52 / 100; y++) {
+                for (int x = width * 365 / 1000; x < width * 375 / 1000; x++) {
+                    if ((image.getRGB(x, y) & 0xFFFFFF) == 0xFFFF00) cutout++;
+                }
+            }
+            frame.put("terrainSignature", String.format("%06x", stone));
+            frame.put("cutoutSignaturePixels", cutout);
+            check("custom_solid_terrain_drew_" + name, stone == 0x00FFFF);
+            check("custom_cutout_terrain_drew_" + name, wrench ? cutout == 0 : cutout > 10);
+        }
+    }
+
+    private void verifyGlassPixels(String name, Map<String, Object> frame, BufferedImage image, boolean split, boolean wrench) {
         int[] tinted = new int[3];
         int[] background = new int[3];
         int width = image.getWidth();
@@ -171,24 +278,54 @@ final class ClientFacadeCtmSmoke {
         int halfSample = width * 40 / 1000;
         for (int i = 0; i < 3; i++) {
             int xCenter = width * (414 + 86 * i) / 1000;
+            // The ordinary glass's exposed west face projects into the middle sample.
+            int right = wrench && shaders && i == 1 ? width * 530 / 1000 : xCenter + halfSample;
             for (int y = height * 52 / 100; y < height * 62 / 100; y++) {
-                for (int x = xCenter - halfSample; x < xCenter + halfSample; x++) {
+                for (int x = xCenter - halfSample; x < right; x++) {
                     int pixel = image.getRGB(x, y);
                     int red = pixel >> 16 & 255;
                     int green = pixel >> 8 & 255;
                     int blue = pixel & 255;
                     int hue = split && i == 1 ? red : blue;
                     int other = split && i == 1 ? blue : red;
-                    if (hue - other > 12 && hue - green > 12) tinted[i]++;
+                    int contrast = wrench && !shaders && i < 2 ? 5 : 12;
+                    if (hue - other > contrast && hue - green > contrast) tinted[i]++;
                     if (red == green && green == blue && red >= 64) background[i]++;
                 }
             }
         }
         frame.put("glassTintPixels", tinted);
         frame.put("visibleStonePixels", background);
-        check("paint_color_and_transparency_" + name,
-            java.util.Arrays.stream(tinted).allMatch(count -> count > 35)
-                && java.util.Arrays.stream(background).allMatch(count -> count > 400));
+        if (wrench && shaders) {
+            check("active_shaders_hide_only_the_ghost_facades",
+                tinted[0] < 35 && tinted[1] < 35 && tinted[2] > 35 && Arrays.stream(background).allMatch(count -> count > 400));
+        } else {
+            check("paint_color_and_transparency_" + name,
+                Arrays.stream(tinted).allMatch(count -> count > 35) && Arrays.stream(background).allMatch(count -> count > 400));
+        }
+    }
+
+    private void verifyJoinPixels(String name, Map<String, Object> frame, BufferedImage image, boolean split) {
+        int[][] joins = new int[2][];
+        int width = image.getWidth();
+        int height = image.getHeight();
+        int halfWidth = width / 80;
+        for (int i = 0; i < joins.length; i++) {
+            int x = width * (457 + 86 * i) / 1000 - halfWidth;
+            joins[i] = image.getRGB(x, height * 52 / 100, halfWidth * 2, height / 10, null, 0, halfWidth * 2);
+        }
+        if (initialJoins == null) {
+            initialJoins = joins;
+            return;
+        }
+        int[] differences = new int[2];
+        for (int i = 0; i < differences.length; i++) {
+            for (int pixel = 0; pixel < joins[i].length; pixel++) {
+                if (joins[i][pixel] != initialJoins[i][pixel]) differences[i]++;
+            }
+        }
+        frame.put("changedJoinPixels", differences);
+        check("rendered_joins_" + name, Arrays.stream(differences).allMatch(count -> split ? count > 100 : count == 0));
     }
 
     private List<String> face(BlockPos pos, Block paint) {

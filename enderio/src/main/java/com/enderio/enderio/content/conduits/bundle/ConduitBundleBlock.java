@@ -9,6 +9,7 @@ import com.enderio.enderio.api.conduits.bundle.AddConduitResult;
 import com.enderio.enderio.api.conduits.connection.ConnectionStatus;
 import com.enderio.enderio.client.content.conduits.ConduitBreakParticle;
 import com.enderio.enderio.client.content.conduits.ConduitBundleExtension;
+import com.enderio.enderio.client.content.conduits.ConduitFacadeRendering;
 import com.enderio.enderio.client.content.conduits.model.facades.FacadeUtil;
 import com.enderio.enderio.client.content.conduits.model.facades.ClientFacadeVisibility;
 import com.enderio.enderio.content.conduits.ConduitBlockItem;
@@ -697,6 +698,12 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
     @Override
     public BlockState getAppearance(BlockState state, BlockAndTintGetter level, BlockPos pos, Direction side,
             @Nullable BlockState queryState, @Nullable BlockPos queryPos) {
+        // Match connected textures to the facade geometry drawn by the client.
+        if (FMLEnvironment.dist.isClient() && !ClientFacadeVisibility.areFacadesVisible()
+            && (!(level instanceof LevelReader reader) || reader.isClientSide())
+            && ConduitFacadeRendering.suppressesGhostFacades()) {
+            return state;
+        }
         Optional<Block> facade = getFacadeBlock(level, pos);
         return facade.map(Block::defaultBlockState).orElseGet(() -> super.getAppearance(state, level, pos, side, queryState, queryPos));
     }
