@@ -49,8 +49,11 @@ public final class ClientSmoke {
             case "painting-machine" -> new ClientPaintingMachineSmoke();
             case "legacy-painting" -> new ClientLegacyPaintingSmoke();
             case "painted-slabs" -> new ClientPaintedSlabSmoke();
-            case "facades" -> new ClientFacadeSmoke(false);
-            case "facades-embeddium" -> new ClientFacadeSmoke(true);
+            case "facades" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.FORGE, false);
+            case "facades-embeddium" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.EMBEDDIUM, false);
+            case "stained-facades" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.FORGE, true);
+            case "stained-facades-embeddium" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.EMBEDDIUM, true);
+            case "stained-facades-oculus" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.OCULUS, true);
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "natural-spawns" -> new ClientNaturalSpawnSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();

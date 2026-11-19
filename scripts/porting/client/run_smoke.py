@@ -16,7 +16,7 @@ parser.add_argument("--scenario",
                              "primitive-smelter", "stirling", "soul-binder", "soul-vials", "soul-engine", "soul-engine-fuels",
                              "powered-spawner", "spawner-rules", "obelisks", "entity-obelisks", "obelisk-carry", "farming-station",
                              "painting-machine", "legacy-painting", "painted-slabs", "legacy-aversion", "natural-spawns",
-                             "facades", "facades-embeddium",
+                             "facades", "facades-embeddium", "stained-facades", "stained-facades-embeddium", "stained-facades-oculus",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")
@@ -48,9 +48,18 @@ result_path = output / "result.json"
 result = json.loads(result_path.read_text()) if result_path.exists() else {"passed": False, "missingResult": True}
 log = (output / "focus.json.client.log").read_text()
 errors = [line for line in log.splitlines() if "/ERROR]" in line or "/FATAL]" in line]
+known_diagnostics = []
+if (args.scenario == "stained-facades-oculus" and result.get("checks", {}).get("expected_oculus_installation")
+        and " [Oculus/]: Shaders are disabled because enableShaders is set to false" in log):
+    # Embeddium emits this support-policy diagnostic when Oculus patches its renderer.
+    notice = ("/ERROR] [Embeddium-MixinTaintDetector/]: Mod mixin into Embeddium internals detected. "
+              "This instance is now tainted. The Embeddium team does not provide any guarantee of support "
+              "for issues encountered while such mods are installed.")
+    known_diagnostics = [line for line in errors if line.endswith(notice)]
+    errors = [line for line in errors if not line.endswith(notice)]
 passed = process.returncode == 0 and focus["status"] == "pass" and result["passed"] and not errors
 report = {"event": "client_smoke_result", "status": "pass" if passed else "fail",
-          "focus": focus, "client": result, "errors": errors}
+          "focus": focus, "client": result, "errors": errors, "knownDiagnostics": known_diagnostics}
 (output / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
 print("QA_EVT " + json.dumps({"event": report["event"], "status": report["status"],
                              "summary": str(output / "summary.json")}))
