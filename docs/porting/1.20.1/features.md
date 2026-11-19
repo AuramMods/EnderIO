@@ -213,7 +213,7 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | `YETA_WRENCH` | [EIOItems:215](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `COORDINATE_SELECTOR` | [EIOItems:216](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `LOCATION_PRINTOUT` | [EIOItems:217](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `LEVITATION_STAFF` | [EIOItems:218](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `LEVITATION_STAFF` | [EIOItems:230](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java#L230) | Partial. Packaged Forge restores historical toggle state, charge and tagged fuel, verifies native tank refuelling, and exercises survival activation, flight and both resource limits. Standalone crafting, manual mid-flight cancellation and single-player remain open. [Cycle 114](cycle-114.md) |
 | `TRAVEL_STAFF` | [EIOItems:219](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. A genuine 6.2 charged staff retains its balance on conversion. Survival anchor travel, cooldown, crouch blink, exact energy accounting and dedicated restart pass. In dedicated multiplayer, the travel key uses an eligible equipped staff first and supports ordinary inventory without Curios. [Cycle 050](cycle-050.md), [cycle 060](cycle-060.md) |
 | `ELECTROMAGNET` | [EIOItems:220](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. The magnet key prioritizes equipped Curios, syncs the toggle and saves it across restart. It toggles the inventory magnet without Curios. Attraction, collection and active energy consumption still need gameplay coverage. [Cycle 060](cycle-060.md) |
 | `COLD_FIRE_IGNITER` | [EIOItems:221](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
@@ -271,7 +271,7 @@ Register, render, fill/drain, world behavior where applicable, recipes and persi
 | `FLUIDS` | [EIOFluids:14](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `NUTRIENT_DISTILLATION` | [EIOFluids:16](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `DEW_OF_THE_VOID` | [EIOFluids:22](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
-| `VAPOR_OF_LEVITY` | [EIOFluids:29](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
+| `VAPOR_OF_LEVITY` | [EIOFluids:37](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java#L37) | Partial. Packaged Forge remaps the saved fluid ID, preserves tagged Vapor while moving it from a fluid tank into a Staff, and consumes one mB per active tick. VAT production and bucket placement remain open. [Cycle 114](cycle-114.md) |
 | `HOOTCH` | [EIOFluids:35](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `ROCKET_FUEL` | [EIOFluids:41](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Pending |
 | `FIRE_WATER` | [EIOFluids:47](../../../enderio/src/main/java/com/enderio/enderio/init/EIOFluids.java) | Partial: fire-crafting drops and block conversion pass with test recipes; full fluid/visual/lifecycle behavior remains pending ([cycle 035](cycle-035.md)) |
@@ -330,6 +330,7 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | Auto Smelt | A Forge 6 pickaxe retains the enchantment and smelts ancient debris during survival mining before and after a dedicated restart. Native commands confirm the Silk Touch conflict and Fortune compatibility. Tagged furnace results keep exact quantities and stack limits across a live reload and restart. | [Cycle 110](cycle-110.md) |
 | Withering and Repellent | A Forge 6 sword applies Wither I on a native melee hit, and the original bow supplies Withering on a player-owned arrow impact while held. An offhand-only sword leaves the target unwithered. The original Repellent IV chestplate teleports a zombie after a melee hit within the established configuration bounds. The saved gear and both effects survive restart. | [Cycle 111](cycle-111.md) |
 | Shimmer and XP Boost | The migrated chestplate renders with glint and resolves the native Shimmer tooltip. The original hoe yields two XP from sculk, the combined Silk Touch control yields the block and zero XP, and the original sword yields eight XP from a zombie. An arrow fired by the original bow retains its launch rank across restart and awards eleven XP with an ordinary sword held. The sampled 6.2.18-beta world converts with zero registry errors. | [Cycle 112](cycle-112.md) |
+| Staff of Levity | Two Forge 6 Staff stacks keep their exact charge, tagged Vapor and toggle state in the copied world. The active Staff resumes from inventory. The disabled Staff can levitate after crouch-use and retains the remaining tagged fuel when its charge falls below the server cost. | [Cycle 114](cycle-114.md) |
 
 ## Shared state and presentation
 

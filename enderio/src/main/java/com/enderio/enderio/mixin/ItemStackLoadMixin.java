@@ -6,6 +6,7 @@ import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
 import com.enderio.enderio.content.filters.soul.EnderSoulFilterItem;
 import com.enderio.enderio.content.paint.PaintUtils;
 import com.enderio.enderio.content.paint.item.PaintedBlockItem;
+import com.enderio.enderio.content.tools.LevitationStaffItem;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.foundation.io.Forge6MachineItemData;
 import com.enderio.enderio.foundation.soul.Forge6SoulData;
@@ -36,6 +37,10 @@ public abstract class ItemStackLoadMixin {
         }
         if (id.equals("enderio:aversion_obelisk")) {
             Forge6MachineItemData.restoreAversionItem(stack);
+            return;
+        }
+        if (stack.getItem() instanceof LevitationStaffItem) {
+            LevitationStaffItem.restoreForge6State(stack);
             return;
         }
         if (stack.getItem() instanceof EnderSoulFilterItem) {

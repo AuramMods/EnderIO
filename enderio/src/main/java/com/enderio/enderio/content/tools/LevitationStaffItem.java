@@ -1,11 +1,18 @@
 package com.enderio.enderio.content.tools;
 
-import net.minecraft.core.Direction;
+import com.enderio.core.CoreNBTKeys;
 import com.enderio.core.common.capability.StrictFluidHandlerItemStack;
+import com.enderio.core.common.energy.ItemStackEnergy;
 import com.enderio.enderio.config.base.BaseConfig;
 import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOFluids;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -13,12 +20,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import java.util.function.BiFunction;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
+import java.util.function.BiFunction;
+
 public class LevitationStaffItem extends PoweredToggledItem {
+    private static final String LEGACY_TOGGLE = "ToggleState";
 
     public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack,
             v) -> new StrictFluidHandlerItemStack(EIODataComponents.ITEM_FLUID_CONTENT, stack, 1000,
@@ -26,6 +35,28 @@ public class LevitationStaffItem extends PoweredToggledItem {
 
     public LevitationStaffItem(Properties properties) {
         super(properties);
+    }
+
+    public static void restoreForge6State(ItemStack stack) {
+        var saved = stack.getTag();
+        if (saved == null) return;
+        if (saved.contains(LEGACY_TOGGLE, Tag.TAG_BYTE)) {
+            if (saved.getBoolean(LEGACY_TOGGLE)) EIODataComponents.TOGGLED.set(stack, true);
+            stack.removeTagKey(LEGACY_TOGGLE);
+        }
+        if (!saved.contains(CoreNBTKeys.FLUID, Tag.TAG_COMPOUND)) return;
+        if (EIODataComponents.ITEM_FLUID_CONTENT.has(stack)) {
+            stack.removeTagKey(CoreNBTKeys.FLUID);
+            return;
+        }
+        var fuel = saved.getCompound(CoreNBTKeys.FLUID).copy();
+        var legacyId = ResourceLocation.tryParse(fuel.getString("FluidName"));
+        var currentId = legacyId == null ? null : EIOFluids.legacyFluidId(legacyId);
+        if (currentId != null) fuel.putString("FluidName", currentId.toString());
+        FluidStack.CODEC.parse(NbtOps.INSTANCE, fuel).result().filter(fluid -> !fluid.isEmpty()).ifPresent(fluid -> {
+            EIODataComponents.ITEM_FLUID_CONTENT.set(stack, fluid);
+            stack.removeTagKey(CoreNBTKeys.FLUID);
+        });
     }
 
     @Override
@@ -40,7 +71,7 @@ public class LevitationStaffItem extends PoweredToggledItem {
 
     @Override
     protected boolean hasCharge(ItemStack stack) {
-        if (!super.hasCharge(stack)) {
+        if (!ItemStackEnergy.hasEnergy(stack, getEnergyUse())) {
             return false;
         }
 
@@ -81,6 +112,17 @@ public class LevitationStaffItem extends PoweredToggledItem {
     protected void onTickWhenActive(Player player, ItemStack stack, Level level, Entity entity, int slotId,
             boolean isSelected) {
         player.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 1));
+    }
+
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        return level.isClientSide() ? InteractionResultHolder.pass(player.getItemInHand(hand)) : super.use(level, player, hand);
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        // The dedicated server owns charge and flight. The client receives the normal item and effect packets.
+        if (!level.isClientSide()) super.inventoryTick(stack, level, entity, slotId, isSelected);
     }
 
     @Override
