@@ -1,10 +1,8 @@
 package com.enderio.enderio.content.filters.item.limited;
 
-import com.enderio.enderio.content.filters.FilterSlot;
 import com.enderio.enderio.content.filters.item.ItemFilterSlot;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -16,6 +14,18 @@ public class LimitedItemFilterSlot extends ItemFilterSlot {
 
     public LimitedItemFilterSlot(Supplier<ItemStack> getter, Consumer<ItemStack> setter, int slot, int x, int y) {
         super(getter, setter, slot, x, y);
+    }
+
+    @Override
+    public ItemStack getItem() {
+        // Vanilla writes an inventory slot's quantity as a signed byte.
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public void set(ItemStack stack) {
+        // The empty vanilla placeholder must not clear the separately synchronized sample.
+        if (!stack.isEmpty()) super.set(stack);
     }
 
     @Override

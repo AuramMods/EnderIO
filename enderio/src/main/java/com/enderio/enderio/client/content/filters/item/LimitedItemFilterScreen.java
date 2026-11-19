@@ -7,10 +7,12 @@ import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.filters.AbstractFilterMenu;
 import com.enderio.enderio.content.filters.FiltersLang;
 import com.enderio.enderio.content.filters.item.limited.LimitedItemFilterMenu;
+import com.enderio.enderio.content.filters.item.limited.LimitedItemFilterSlot;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 
 public class LimitedItemFilterScreen extends EnderContainerScreen<LimitedItemFilterMenu> {
 
@@ -64,5 +66,27 @@ public class LimitedItemFilterScreen extends EnderContainerScreen<LimitedItemFil
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float v, int i, int i1) {
         guiGraphics.blit(BG, getGuiLeft(), getGuiTop(), 0, 0, imageWidth, imageHeight);
+    }
+
+    @Override
+    public void renderSlot(GuiGraphics guiGraphics, Slot slot) {
+        if (slot instanceof LimitedItemFilterSlot filterSlot) {
+            var sample = filterSlot.getResource();
+            if (!sample.isEmpty()) renderSlotContents(guiGraphics, sample, slot, null);
+            return;
+        }
+        super.renderSlot(guiGraphics, slot);
+    }
+
+    @Override
+    protected boolean renderCustomTooltip(GuiGraphics guiGraphics, int x, int y) {
+        if (getMenu().getCarried().isEmpty() && hoveredSlot instanceof LimitedItemFilterSlot filterSlot) {
+            var sample = filterSlot.getResource();
+            if (!sample.isEmpty()) {
+                guiGraphics.renderTooltip(font, sample, x, y);
+                return true;
+            }
+        }
+        return false;
     }
 }

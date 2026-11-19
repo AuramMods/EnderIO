@@ -47,4 +47,4 @@ run_transfer_filter_client cycle-124-verified 25955 enderio/build/libs/enderio-8
 
 ## Remaining verification
 
-Exercise the large and limited item filter menus, damage thresholds, stock limits, and the other fluid editor entry points. This cycle validates the edited routes after restart over the server console. Reopening the offhand editor from the player's saved inventory after reconnect remains open.
+The large and limited item filter editors, damage thresholds and stock limits are exercised in [cycle 125](cycle-125.md). Other fluid editor entry points remain open. This cycle validates the edited routes after restart over the server console. Reopening the offhand editor from the player's saved inventory after reconnect remains open.
