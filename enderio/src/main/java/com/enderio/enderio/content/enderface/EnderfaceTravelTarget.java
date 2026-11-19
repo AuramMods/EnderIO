@@ -5,6 +5,8 @@ import com.enderio.core.common.network.NetworkDataSlot;
 import com.enderio.enderio.api.travel.TravelTarget;
 import com.enderio.enderio.api.travel.TravelTargetSerializer;
 import com.enderio.enderio.api.travel.TravelTargetType;
+import com.enderio.enderio.client.content.machines.gui.screen.EnderfaceScreen;
+import com.enderio.enderio.init.EIOFeatureFlags;
 import com.enderio.enderio.init.EIOTravelTargets;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -12,6 +14,9 @@ import net.minecraft.core.BlockPos;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
 
 public record EnderfaceTravelTarget(BlockPos pos) implements TravelTarget {
     public static NetworkDataSlot.CodecType<EnderfaceTravelTarget> DATA_SLOT_TYPE = new NetworkDataSlot.CodecType<>(
@@ -59,11 +64,28 @@ public record EnderfaceTravelTarget(BlockPos pos) implements TravelTarget {
 
     @Override
     public boolean interact(Level level, Player player) {
+        if (player.isSpectator() || !level.enabledFeatures().contains(EIOFeatureFlags.ENDERFACE)
+            || !level.hasChunkAt(pos) || !(level.getBlockEntity(pos) instanceof EnderfaceBlockEntity enderface)
+            || !enderface.canBeUsedByPlayer(player)) {
+            return false;
+        }
+
         if (level.isClientSide) {
-            // TODO: Causes classload errors on dedicated servers.
-//            Minecraft.getInstance().setScreen(new EnderfaceScreen(pos.immutable(), Minecraft.getInstance().level));
+            return Boolean.TRUE.equals(DistExecutor.unsafeCallWhenOn(Dist.CLIENT, () -> () -> ClientAccess.open(level, player, pos)));
         }
         return true;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static final class ClientAccess {
+        private static boolean open(Level level, Player player, BlockPos pos) {
+            var minecraft = net.minecraft.client.Minecraft.getInstance();
+            if (minecraft.level == null || minecraft.level != level || minecraft.player != player) {
+                return false;
+            }
+            minecraft.setScreen(new EnderfaceScreen(pos.immutable(), minecraft.level));
+            return true;
+        }
     }
 
     public static class Serializer implements TravelTargetSerializer<EnderfaceTravelTarget> {

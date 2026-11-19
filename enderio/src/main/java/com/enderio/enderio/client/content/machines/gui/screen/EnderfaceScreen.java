@@ -57,12 +57,12 @@ public class EnderfaceScreen extends Screen {
     private static final List<RenderType> LAYERS_AFTER_BLOCK_ENTITIES = List.of(RenderType.translucent());
     private static final boolean DEBUG_SELECTION_POSITION = false;
     private static final Vec3 RAY_ORIGIN = new Vec3(1.5, 1.5, 1.5);
-    private static final Vec3 RAY_START = new Vec3(1.5, 1.5, -1);
-    private static final Vec3 RAY_END = new Vec3(1.5, 1.5, 3);
     private static final BlockPos POS = new BlockPos(1, 1, 1);
 
     private final BlockPos enderfacePos;
     private final ClientLevel world;
+    private final Vec3 rayStart;
+    private final Vec3 rayEnd;
 
     private float pitch = -45;
     private float yaw = 45;
@@ -105,6 +105,10 @@ public class EnderfaceScreen extends Screen {
         this.world = world;
 
         range = MachinesConfig.COMMON.ENDERFACE_RANGE.get();
+        // Cover the entire preview cube at any camera rotation.
+        double rayDepth = Math.sqrt(3) * (range + 0.5);
+        rayStart = RAY_ORIGIN.add(0, 0, -rayDepth);
+        rayEnd = RAY_ORIGIN.add(0, 0, rayDepth);
         distance = 20;
 
         BlockEntity blockEntity = world.getBlockEntity(enderfacePos);
@@ -380,7 +384,7 @@ public class EnderfaceScreen extends Screen {
     }
 
     @Nullable
-    private BlockHitResult raycast(BlockPos pos, float diffX, float diffY, Matrix4f transform) {
+    private BlockHitResult raycast(BlockPos pos, Vec3 start, Vec3 end) {
         var state = world.getBlockState(pos);
         // Get block's shape and cast a ray through it
         VoxelShape shape = state.getShape(world, pos);
@@ -388,20 +392,17 @@ public class EnderfaceScreen extends Screen {
             return null;
         }
 
-        // Add mouse offset to start and end vectors
-        Vec3 start = RAY_START.add(diffX, diffY, 0);
-        Vec3 end = RAY_END.add(diffX, diffY, 0);
-
-        // Rotate start and end vectors around the block
-        start = transform(start, transform);
-        end = transform(end, transform);
-
         Vector3f centerPos = new Vector3f(pos.getX() + 0.5f, pos.getY() + 0.5f, pos.getZ() + 0.5f).sub(origin);
         shape = shape.move(centerPos.x(), centerPos.y(), centerPos.z());
         return shape.clip(start, end, POS);
     }
 
-    private record HitCandidate(BlockHitResult hitResult, BlockPos realHitPos, Vec3 locationOffset) {
+    private record HitCandidate(BlockHitResult hitResult, BlockPos realHitPos, Vec3 worldLocation) {
+    }
+
+    private Vec3 toWorldLocation(Vec3 localLocation) {
+        return localLocation.add(enderfacePos.getX() - POS.getX(), enderfacePos.getY() - POS.getY(),
+            enderfacePos.getZ() - POS.getZ());
     }
 
     private void updateCamera(int mouseX, int mouseY) {
@@ -422,28 +423,30 @@ public class EnderfaceScreen extends Screen {
 
         float diffX = (mouseX - centerX) / distance;
         float diffY = (mouseY - centerY) / distance;
+        Vec3 start = transform(rayStart.add(diffX, diffY, 0), rayTransform);
+        Vec3 end = transform(rayEnd.add(diffX, diffY, 0), rayTransform);
 
         List<HitCandidate> candidates = new ArrayList<>();
 
         getShownPositions().forEach(pos -> {
-            var hitResult = raycast(pos, diffX, diffY, rayTransform);
+            var hitResult = raycast(pos, start, end);
 
             if (hitResult != null && hitResult.getType() != HitResult.Type.MISS) {
                 candidates.add(new HitCandidate(hitResult, pos.immutable(),
-                        hitResult.getLocation().subtract(POS.getX(), POS.getY(), POS.getZ())));
+                        toWorldLocation(hitResult.getLocation())));
             }
         });
 
-        eyePosition = transform(RAY_START, rayTransform).add(origin.x, origin.y, origin.z);
+        eyePosition = toWorldLocation(transform(rayStart, rayTransform));
 
         var candidate = candidates.stream()
-                .min(Comparator.comparingDouble(entry -> entry.realHitPos().distToCenterSqr(eyePosition)))
+                .min(Comparator.comparingDouble(entry -> entry.worldLocation().distanceToSqr(eyePosition)))
                 .orElse(null);
 
-        if (candidate != null) {
+        if (candidate != null && candidate.realHitPos().distSqr(enderfacePos) <= range * range) {
             selectedPos = candidate.realHitPos();
             selectedSide = candidate.hitResult.getDirection();
-            selectedLocation = candidate.locationOffset();
+            selectedLocation = candidate.worldLocation();
         } else {
             selectedLocation = null;
             selectedPos = null;
