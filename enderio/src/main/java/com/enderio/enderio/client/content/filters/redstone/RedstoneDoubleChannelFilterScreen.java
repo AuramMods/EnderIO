@@ -24,9 +24,9 @@ public class RedstoneDoubleChannelFilterScreen extends EIOScreen<RedstoneDoubleC
     protected void init() {
         super.init();
         addRenderableWidget(new DyeColorPickerWidget(this.leftPos + 15, this.topPos + 30,
-                getMenu().getChannels()::getFirstChannel, getMenu()::setFirstChannel, ConduitLang.REDSTONE_CHANNEL));
+                () -> getMenu().getChannels().getFirstChannel(), getMenu()::setFirstChannel, ConduitLang.REDSTONE_CHANNEL));
         addRenderableWidget(new DyeColorPickerWidget(this.leftPos + 15 + 60, this.topPos + 30,
-                getMenu().getChannels()::getSecondChannel, getMenu()::setSecondChannel, ConduitLang.REDSTONE_CHANNEL));
+                () -> getMenu().getChannels().getSecondChannel(), getMenu()::setSecondChannel, ConduitLang.REDSTONE_CHANNEL));
     }
 
     @Override

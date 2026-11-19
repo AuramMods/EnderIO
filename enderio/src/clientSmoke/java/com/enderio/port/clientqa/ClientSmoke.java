@@ -78,6 +78,7 @@ public final class ClientSmoke {
             case "levitation-staff" -> new ClientLevitationStaffSmoke();
             case "levitation-progression" -> new ClientLevitationProgressionSmoke();
             case "vat-controls" -> new ClientVatControlsSmoke();
+            case "redstone-filters" -> new ClientRedstoneFiltersSmoke();
             case "legacy-soulbound" -> new ClientSoulboundSmoke();
             case "enchanter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.ENCHANTER);
             case "enchanter-reload" -> new ClientEnchanterReloadSmoke();

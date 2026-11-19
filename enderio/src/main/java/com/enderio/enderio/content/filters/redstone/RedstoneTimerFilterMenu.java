@@ -1,82 +1,36 @@
 package com.enderio.enderio.content.filters.redstone;
 
 import com.enderio.enderio.api.EnderIOCapabilities;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import com.enderio.enderio.foundation.network.packets.ServerboundTimerFilterPacket;
 import com.enderio.enderio.init.EIOMenus;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
-import com.enderio.enderio.foundation.network.EIONetwork;
-import org.jetbrains.annotations.Nullable;
 
-public class RedstoneTimerFilterMenu extends AbstractContainerMenu {
-
-    private final ItemStack stack;
-    private final RedstoneTimerFilter filter;
-
-    protected RedstoneTimerFilterMenu(@Nullable MenuType<?> menuType, int containerId, Inventory inventory, ItemStack stack) {
-        super(menuType, containerId);
-        this.stack = stack;
-        var resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER).orElse(null);
-        if (!(resourceFilter instanceof RedstoneTimerFilter filter)) {
-            throw new IllegalArgumentException();
-        }
-        this.filter = filter;
-        addInventorySlots(14,119, inventory);
+public class RedstoneTimerFilterMenu extends HandheldRedstoneFilterMenu {
+    RedstoneTimerFilterMenu(int containerId, Inventory inventory, InteractionHand hand) {
+        super(EIOMenus.REDSTONE_TIMER_FILTER.get(), containerId, inventory, hand);
     }
 
-    protected RedstoneTimerFilterMenu(int containerId, Inventory inventory, ItemStack stack) {
-        this(EIOMenus.REDSTONE_TIMER_FILTER.get(), containerId, inventory, stack);
-    }
-
-
-    public static RedstoneTimerFilterMenu factory(int i, Inventory inventory, FriendlyByteBuf registryFriendlyByteBuf) {
-        return new RedstoneTimerFilterMenu(i, inventory, inventory.player.getMainHandItem());
+    public static RedstoneTimerFilterMenu factory(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
+        return new RedstoneTimerFilterMenu(containerId, inventory, buffer.readEnum(InteractionHand.class));
     }
 
     public RedstoneTimerFilter getFilter() {
-        return filter;
+        return (RedstoneTimerFilter) filterStack().getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER)
+            .orElseThrow(IllegalStateException::new);
     }
 
     public void setTimer(String timer) {
         try {
-            filter.setMaxTicks(Integer.parseInt(timer));
-            EIONetwork.sendToServer(new ServerboundTimerFilterPacket(filter.getTicks(), filter.getMaxTicks()));
-        } catch (Exception e) {
-
-        }
-    }
-
-    @Override
-    public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
-    }
-
-    @Override
-    public boolean stillValid(Player player) {
-        return player.getItemInHand(InteractionHand.MAIN_HAND).equals(stack);
-    }
-
-    public void addInventorySlots(int xPos, int yPos, Inventory inventory) {
-
-        // Hotbar
-        for (int x = 0; x < 9; x++) {
-            Slot ref = new Slot(inventory, x, xPos + x * 18, yPos + 58);
-            this.addSlot(ref);
-        }
-
-        // Inventory
-        for (int y = 0; y < 3; y++) {
-            for (int x = 0; x < 9; x++) {
-                Slot ref = new Slot(inventory, x + y * 9 + 9, xPos + x * 18, yPos + y * 18);
-                this.addSlot(ref);
+            int maxTicks = Integer.parseInt(timer);
+            if (maxTicks > 0) {
+                getFilter().setMaxTicks(maxTicks);
+                EIONetwork.sendToServer(new ServerboundTimerFilterPacket(containerId, maxTicks));
             }
+        } catch (NumberFormatException ignored) {
+            // An empty field or out-of-range number leaves the current period in place.
         }
-
     }
 }

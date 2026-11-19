@@ -347,7 +347,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 118: VAT multiplayer controls | Display actual reagent multipliers and synchronize the paid queue and redstone backpressure | Datagen, 79 unit cases and 484 Forge executions pass. Packaged Forge passes seven server assertions and 17 guarded client checks across reversed reagent rendering, pause, external extraction, a physical redstone signal and restart. [Evidence and commands](porting/1.20.1/cycle-118.md) | `ab6455e0a` |
 
-| 119: Redstone conduit filter state | Restore timer periods, toggle and counting edges, and Forge 6.2 filter configuration | The build passes 79 unit cases and 486 native runs. The packaged migrated world passes 27 assertions covering four saved filters, two cross-chunk routes and restart. Twenty-one bundled redstone assertions also pass with CC:Tweaked. [Evidence and commands](porting/1.20.1/cycle-119.md) | Commit containing cycle 119 |
+| 119: Redstone conduit filter state | Restore timer periods, toggle and counting edges, and Forge 6.2 filter configuration | The build passes 79 unit cases and 486 native runs. The packaged migrated world passes 27 assertions covering four saved filters, two cross-chunk routes and restart. Twenty-one bundled redstone assertions also pass with CC:Tweaked. [Evidence and commands](porting/1.20.1/cycle-119.md) | `7d78d144a` |
+
+| 120: Redstone filter menus | Bind handheld filter edits to the item that opened the menu | The build passes 79 unit cases and 486 native runs. Packaged multiplayer passes 16 client checks and 18 server assertions across the timer, offhand counter, AND gate and dedicated restart. [Evidence and commands](porting/1.20.1/cycle-120.md) | Commit containing cycle 120 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

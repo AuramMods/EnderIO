@@ -6,19 +6,17 @@ import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 
-public record ServerboundCountFilterPacket(DyeColor channel1, int maxCount, int count, boolean active) {
+public record ServerboundCountFilterPacket(int containerId, DyeColor channel, int maxCount) {
 
     public static final ResourceLocation ID = EnderIOAPI.rl("count_filter_packet");
 
     public static final PacketCodec<ServerboundCountFilterPacket> STREAM_CODEC = PacketCodec.composite(
+        PacketCodecs.VAR_INT,
+        ServerboundCountFilterPacket::containerId,
         PacketCodecs.DYE_COLOR,
-        ServerboundCountFilterPacket::channel1,
+        ServerboundCountFilterPacket::channel,
         PacketCodecs.VAR_INT,
         ServerboundCountFilterPacket::maxCount,
-        PacketCodecs.VAR_INT,
-        ServerboundCountFilterPacket::count,
-        PacketCodecs.BOOL,
-        ServerboundCountFilterPacket::active,
         ServerboundCountFilterPacket::new
     );
 

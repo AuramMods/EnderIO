@@ -2,98 +2,41 @@ package com.enderio.enderio.content.filters.redstone;
 
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.filter.RedstoneOutputFilter;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import com.enderio.enderio.foundation.network.packets.ServerboundDoubleChannelPacket;
 import com.enderio.enderio.init.EIOMenus;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.ItemStack;
-import com.enderio.enderio.foundation.network.EIONetwork;
-import org.jetbrains.annotations.Nullable;
 
-public class RedstoneDoubleChannelFilterMenu extends AbstractContainerMenu {
-
-    private final ItemStack stack;
-    private final RedstoneOutputFilter filter;
-    private final DoubleRedstoneChannel channels;
-
-    protected RedstoneDoubleChannelFilterMenu(@Nullable MenuType<?> menuType, int containerId, Inventory inventory, ItemStack stack) {
-        super(menuType, containerId);
-        this.stack = stack;
-
-        // TODO: Gross workaround, I think these menus should be rewritten sometime.
-        Object resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER).orElse(null);
-        if (resourceFilter == null) {
-            resourceFilter = stack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER).orElse(null);
-        }
-        if (!(resourceFilter instanceof RedstoneOutputFilter filter)) {
-            throw new IllegalArgumentException();
-        }
-        this.filter = filter;
-        if (!(resourceFilter instanceof DoubleRedstoneChannel channels)) {
-            throw new IllegalArgumentException();
-        }
-        this.channels = channels;
-        addInventorySlots(14,119, inventory);
+public class RedstoneDoubleChannelFilterMenu extends HandheldRedstoneFilterMenu {
+    RedstoneDoubleChannelFilterMenu(int containerId, Inventory inventory, InteractionHand hand) {
+        super(EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER.get(), containerId, inventory, hand);
     }
 
-    protected RedstoneDoubleChannelFilterMenu(int containerId, Inventory inventory, ItemStack stack) {
-        this(EIOMenus.REDSTONE_DOUBLE_CHANNEL_FILTER.get(), containerId, inventory, stack);
-    }
-
-
-    public static RedstoneDoubleChannelFilterMenu factory(int i, Inventory inventory, FriendlyByteBuf registryFriendlyByteBuf) {
-        return new RedstoneDoubleChannelFilterMenu(i, inventory, inventory.player.getMainHandItem());
+    public static RedstoneDoubleChannelFilterMenu factory(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
+        return new RedstoneDoubleChannelFilterMenu(containerId, inventory, buffer.readEnum(InteractionHand.class));
     }
 
     public RedstoneOutputFilter getFilter() {
-        return filter;
+        return filterStack().getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER).orElseThrow(IllegalStateException::new);
     }
 
     public DoubleRedstoneChannel getChannels() {
-        return channels;
+        return (DoubleRedstoneChannel) getFilter();
     }
 
-    @Override
-    public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
+    public void setFirstChannel(DyeColor channel) {
+        setChannels(channel, getChannels().getSecondChannel());
     }
 
-    @Override
-    public boolean stillValid(Player player) {
-        return player.getItemInHand(InteractionHand.MAIN_HAND).equals(stack);
+    public void setSecondChannel(DyeColor channel) {
+        setChannels(getChannels().getFirstChannel(), channel);
     }
 
-    public void setFirstChannel(DyeColor colorControl) {
-        channels.setFirstChannel(colorControl);
-        EIONetwork.sendToServer(new ServerboundDoubleChannelPacket(channels.getFirstChannel(), channels.getSecondChannel()));
-    }
-
-    public void setSecondChannel(DyeColor colorControl) {
-        channels.setSecondChannel(colorControl);
-        EIONetwork.sendToServer(new ServerboundDoubleChannelPacket(channels.getFirstChannel(), channels.getSecondChannel()));
-    }
-
-    public void addInventorySlots(int xPos, int yPos, Inventory inventory) {
-
-        // Hotbar
-        for (int x = 0; x < 9; x++) {
-            Slot ref = new Slot(inventory, x, xPos + x * 18, yPos + 58);
-            this.addSlot(ref);
-        }
-
-        // Inventory
-        for (int y = 0; y < 3; y++) {
-            for (int x = 0; x < 9; x++) {
-                Slot ref = new Slot(inventory, x + y * 9 + 9, xPos + x * 18, yPos + y * 18);
-                this.addSlot(ref);
-            }
-        }
-
+    private void setChannels(DyeColor first, DyeColor second) {
+        getChannels().setChannels(first, second);
+        EIONetwork.sendToServer(new ServerboundDoubleChannelPacket(containerId, first, second));
     }
 }

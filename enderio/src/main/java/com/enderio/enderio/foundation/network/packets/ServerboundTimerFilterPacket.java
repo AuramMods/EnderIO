@@ -5,13 +5,13 @@ import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
 
-public record ServerboundTimerFilterPacket(int ticks, int maxTicks) {
+public record ServerboundTimerFilterPacket(int containerId, int maxTicks) {
 
     public static final ResourceLocation ID = EnderIOAPI.rl("timer_filter_packet");
 
     public static final PacketCodec<ServerboundTimerFilterPacket> STREAM_CODEC = PacketCodec.composite(
         PacketCodecs.VAR_INT,
-        ServerboundTimerFilterPacket::ticks,
+        ServerboundTimerFilterPacket::containerId,
         PacketCodecs.VAR_INT,
         ServerboundTimerFilterPacket::maxTicks,
         ServerboundTimerFilterPacket::new

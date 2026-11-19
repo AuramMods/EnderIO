@@ -25,7 +25,7 @@ public class RedstoneCountFilterScreen extends EIOScreen<RedstoneCountFilterMenu
     protected void init() {
         super.init();
         addRenderableWidget(new DyeColorPickerWidget(this.leftPos + 15, this.topPos + 30,
-                getMenu().getFilter()::getChannel, getMenu()::setChannel, ConduitLang.REDSTONE_CHANNEL));
+                () -> getMenu().getFilter().getChannel(), getMenu()::setChannel, ConduitLang.REDSTONE_CHANNEL));
 
         EditBox widget = new EditBox(this.font, this.leftPos + 60, this.topPos + 20, 60, 20,
                 Component.literal("" + getMenu().getFilter().getMaxCount())) {

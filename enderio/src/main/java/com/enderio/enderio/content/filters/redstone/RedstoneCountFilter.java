@@ -2,7 +2,6 @@ package com.enderio.enderio.content.filters.redstone;
 
 import com.enderio.enderio.api.filter.RedstoneOutputFilter;
 import com.enderio.enderio.api.filter.RedstoneOutputFilterContext;
-import com.enderio.enderio.foundation.network.packets.ServerboundCountFilterPacket;
 import com.enderio.enderio.init.EIODataComponents;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -78,9 +77,10 @@ public class RedstoneCountFilter implements RedstoneOutputFilter {
                 new Component(component.channel1, component.maxCount, component.count, lastActive));
     }
 
-    public void setState(ServerboundCountFilterPacket packet) {
+    public void setConfiguration(DyeColor channel, int maxCount) {
+        var state = EIODataComponents.REDSTONE_COUNT_FILTER.get(stack);
         EIODataComponents.REDSTONE_COUNT_FILTER.set(stack,
-                new Component(packet.channel1(), packet.maxCount(), packet.count(), packet.active()));
+                new Component(channel, maxCount, state.count(), state.deactivated()));
     }
 
     public void setChannel(DyeColor channel) {

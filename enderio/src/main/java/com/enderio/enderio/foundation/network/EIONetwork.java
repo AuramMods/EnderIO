@@ -44,7 +44,7 @@ import net.minecraftforge.network.NetworkDirection;
 
 @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.MOD)
 public final class EIONetwork {
-    private static final RegistryNetworkChannel CHANNEL = new RegistryNetworkChannel(EnderIOAPI.rl("main"), "forge-1");
+    private static final RegistryNetworkChannel CHANNEL = new RegistryNetworkChannel(EnderIOAPI.rl("main"), "forge-2");
 
     private EIONetwork() {}
 
