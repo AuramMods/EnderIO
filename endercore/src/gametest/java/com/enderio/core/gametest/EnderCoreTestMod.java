@@ -25,6 +25,7 @@ public class EnderCoreTestMod {
         DataMapTests.register();
         LootTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
         VialTestContent.register(FMLJavaModLoadingContext.get().getModEventBus());
+        com.enderio.enderio.init.EIOEnchantments.register(FMLJavaModLoadingContext.get().getModEventBus());
         com.enderio.enderio.init.EIOLootModifiers.register(FMLJavaModLoadingContext.get().getModEventBus());
         com.enderio.enderio.init.EIOCriterions.register(FMLJavaModLoadingContext.get().getModEventBus());
         net.minecraftforge.fml.ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON,

@@ -543,6 +543,7 @@ public class EIOLanguageProvider extends LanguageProvider {
         }
 
         add(EIOItems.DARK_STEEL_SWORD.get(), "The Ender");
+        add("enchantment.enderio.auto_smelt", "Auto Smelt");
         add("enchantment.enderio.soulbound", "Soulbound");
 
         // Filters

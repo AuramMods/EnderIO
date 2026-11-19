@@ -327,6 +327,7 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | Enchanter | The copied world restores a placed machine without a saved preview and a native `BlockEntityTag` drop. Both preserve a writable book page and the exact ingredient counts. Survival placement and native menu collection spend 11 levels and the correct ingredients per book. Both paid states and the copied datapack's original-format Mending preview survive restart. | [Cycle 107](cycle-107.md) |
 | Materials and creative tab icons | Black paper, wooden and stone compound gears, powdered cobalt, and seven distinct Enderface icons retain their original IDs, counts and tags in converted inventories and after restarts. Native predicates verify both namespaces for gears and cobalt. A vanilla hopper moves a saved cobalt stack without losing its tag. | [Cycle 108](cycle-108.md) |
 | Soulbound | A Forge 6 pickaxe, chestplate and shield retain the original enchantment, damage, other enchantments and tags through death, respawn, disconnect and a dedicated restart before respawn. Ordinary items and a book with the stored enchantment drop normally. | [Cycle 109](cycle-109.md) |
+| Auto Smelt | A Forge 6 pickaxe retains the enchantment and smelts ancient debris during survival mining before and after a dedicated restart. Native commands confirm the Silk Touch conflict and Fortune compatibility. Tagged furnace results keep exact quantities and stack limits across a live reload and restart. | [Cycle 110](cycle-110.md) |
 
 ## Shared state and presentation
 

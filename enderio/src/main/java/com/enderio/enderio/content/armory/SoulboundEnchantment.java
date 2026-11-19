@@ -1,6 +1,6 @@
 package com.enderio.enderio.content.armory;
 
-import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.enderio.init.EIOEnchantments;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -18,7 +18,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = EnderIO.MOD_ID)
+@Mod.EventBusSubscriber(modid = EnderIOAPI.MOD_ID)
 public final class SoulboundEnchantment extends Enchantment {
     private static final String RETAINED_ITEMS = "enderio:soulbound_items";
 

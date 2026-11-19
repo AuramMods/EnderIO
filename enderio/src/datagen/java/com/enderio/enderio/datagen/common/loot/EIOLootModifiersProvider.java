@@ -1,7 +1,12 @@
 package com.enderio.enderio.datagen.common.loot;
 
 import com.enderio.enderio.api.EnderIOAPI;
+import com.enderio.enderio.content.armory.AutoSmeltLootModifier;
 import com.enderio.enderio.content.broken_spawner.BrokenSpawnerLootModifier;
+import com.enderio.enderio.init.EIOEnchantments;
+import net.minecraft.advancements.critereon.EnchantmentPredicate;
+import net.minecraft.advancements.critereon.ItemPredicate;
+import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -9,6 +14,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.loot.predicates.AnyOfCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
+import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraftforge.common.data.GlobalLootModifierProvider;
 import com.enderio.core.common.loot.AddTableLootModifier;
 import net.minecraftforge.common.loot.LootTableIdCondition;
@@ -26,6 +32,10 @@ public class EIOLootModifiersProvider extends GlobalLootModifierProvider {
     protected void start() {
         add("broken_spawner", new BrokenSpawnerLootModifier(new LootItemCondition[] {
                 LootItemBlockStatePropertyCondition.hasBlockStateProperties(Blocks.SPAWNER).build() }));
+        add("auto_smelt", new AutoSmeltLootModifier(new LootItemCondition[] {
+            MatchTool.toolMatches(ItemPredicate.Builder.item().hasEnchantment(
+                new EnchantmentPredicate(EIOEnchantments.AUTO_SMELT.get(), MinMaxBounds.Ints.atLeast(1)))).build()
+        }));
 
         // TODO: Rarer loot, like nether and ancient city.
         // Can wait until a further balance pass, maybe once we have tools and armor in.

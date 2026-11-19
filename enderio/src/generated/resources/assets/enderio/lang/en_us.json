@@ -238,6 +238,7 @@
   "conduit.enderio.pressurized_fluid": "Energetic Fluid Conduit",
   "conduit.enderio.redstone": "Redstone Conduit",
   "config.jade.plugin_enderio.soul_bound": "Soul Bound",
+  "enchantment.enderio.auto_smelt": "Auto Smelt",
   "enchantment.enderio.soulbound": "Soulbound",
   "enderio.alloy_smelter_mode.all": "Alloying and Smelting",
   "enderio.alloy_smelter_mode.alloys": "Alloying Only",

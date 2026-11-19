@@ -265,11 +265,10 @@ public class LootAndAdvancementTests {
             var entries = json(java.nio.file.Files.readString(output.resolve("data/forge/loot_modifiers/global_loot_modifiers.json")));
             var names = new java.util.HashSet<String>();
             entries.getAsJsonArray("entries").forEach(entry -> names.add(entry.getAsString()));
-            // Forge's provider stores entries in a HashMap. These three modifiers target disjoint tables.
-            helper.assertTrue(!entries.get("replace").getAsBoolean() && entries.getAsJsonArray("entries").size() == 3
-                && names.equals(java.util.Set.of("enderio:broken_spawner", "enderio:common_loot", "enderio:alloy_loot")),
+            helper.assertTrue(!entries.get("replace").getAsBoolean() && entries.getAsJsonArray("entries").size() == 4
+                && names.equals(java.util.Set.of("enderio:broken_spawner", "enderio:common_loot", "enderio:alloy_loot", "enderio:auto_smelt")),
                 "Native global modifier list changed IDs or replace semantics");
-            for (String name : new String[] { "broken_spawner", "common_loot", "alloy_loot" }) {
+            for (String name : new String[] { "broken_spawner", "common_loot", "alloy_loot", "auto_smelt" }) {
                 var generated = json(java.nio.file.Files.readString(output.resolve("data/enderio/loot_modifiers/" + name + ".json")));
                 try (var reader = helper.getLevel().getServer().getResourceManager()
                         .getResourceOrThrow(EnderIOAPI.rl("loot_modifiers/" + name + ".json")).openAsReader()) {

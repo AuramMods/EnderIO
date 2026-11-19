@@ -1,6 +1,7 @@
 package com.enderio.enderio.init;
 
 import com.enderio.enderio.api.EnderIOAPI;
+import com.enderio.enderio.content.armory.AutoSmeltLootModifier;
 import com.enderio.enderio.content.broken_spawner.BrokenSpawnerLootModifier;
 import com.enderio.enderio.content.capacitors.SetLootCapacitorFunction;
 import com.enderio.enderio.content.paint.CopyPaintFunction;
@@ -24,8 +25,8 @@ public class EIOLootModifiers {
     private static final DeferredRegister<LootItemFunctionType> FUNCTIONS = DeferredRegister
             .create(Registries.LOOT_FUNCTION_TYPE, EnderIOAPI.MOD_ID);
 
-    // public static RegistryObject<Codec<AutoSmeltModifier>> AUTO_SMELT =
-    // SERIALIZERS.register("auto_smelt", () -> AutoSmeltModifier.CODEC);
+    public static final RegistryObject<Codec<AutoSmeltLootModifier>> AUTO_SMELT =
+            SERIALIZERS.register("auto_smelt", () -> AutoSmeltLootModifier.CODEC);
 
     public static RegistryObject<Codec<BrokenSpawnerLootModifier>> BROKEN_SPAWNER_SERIALIZER = SERIALIZERS
             .register("broken_spawner", () -> BrokenSpawnerLootModifier.CODEC);
