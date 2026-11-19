@@ -1,15 +1,19 @@
 package com.enderio.enderio.gametests.content;
 
+import com.enderio.core.CoreNBTKeys;
 import com.enderio.enderio.config.base.BaseConfig;
 import com.enderio.enderio.content.cold_fire.ColdFireBlock;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
+import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOFluids;
 import com.enderio.enderio.init.EIOItems;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
@@ -113,6 +117,47 @@ public class FireCraftingTests {
             helper.assertTrue(!use.apply(secondBase, Direction.UP).consumesAction() && tank.getFluidInTank(0).getAmount() == 9,
                 "insufficient fuel keeps the remainder intact");
             helper.assertBlockPresent(Blocks.AIR, secondBase.above());
+            helper.startSequence().thenSucceed();
+        });
+    }
+
+    @GameTest
+    public static void forge6IgniterRetainsTaggedFuel(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var fixture = new ItemStack(EIOItems.COLD_FIRE_IGNITER.get());
+            fixture.setHoverName(Component.literal("Archive Igniter"));
+            fixture.getOrCreateTag().putInt("Marker", 181);
+            var oldFuel = new CompoundTag();
+            oldFuel.putString("FluidName", "enderio:vapor_of_levity");
+            oldFuel.putInt("Amount", 25);
+            var marker = new CompoundTag();
+            marker.putInt("Batch", 27);
+            oldFuel.put("Tag", marker);
+            fixture.addTagElement(CoreNBTKeys.FLUID, oldFuel);
+
+            var converted = ItemStack.of(fixture.save(new CompoundTag()));
+            var vapor = EIOFluids.VAPOR_OF_LEVITY.source().get();
+            var contents = converted.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
+                .orElseThrow(IllegalStateException::new).getFluidInTank(0);
+            helper.assertTrue(contents.getFluid() == vapor && contents.getAmount() == 25 && marker.equals(contents.getTag()),
+                "Forge load keeps the exact original fuel and its tag");
+            helper.assertTrue(!converted.getTag().contains(CoreNBTKeys.FLUID) && converted.getTag().getInt("Marker") == 181
+                && converted.getHoverName().getString().equals("Archive Igniter"), "only the migrated tag should change");
+
+            EIODataComponents.ITEM_FLUID_CONTENT.set(converted, new FluidStack(vapor, 11, marker));
+            converted.addTagElement(CoreNBTKeys.FLUID, oldFuel.copy());
+            var reopened = ItemStack.of(converted.save(new CompoundTag()));
+            helper.assertTrue(EIODataComponents.ITEM_FLUID_CONTENT.get(reopened).getAmount() == 11
+                && !reopened.getTag().contains(CoreNBTKeys.FLUID), "current item data takes precedence over leftover legacy data");
+
+            var unavailable = oldFuel.copy();
+            unavailable.putString("FluidName", "example:removed_vapor");
+            fixture.addTagElement(CoreNBTKeys.FLUID, unavailable);
+            var preserved = ItemStack.of(fixture.save(new CompoundTag()));
+            helper.assertTrue(!EIODataComponents.ITEM_FLUID_CONTENT.has(preserved)
+                && unavailable.equals(preserved.getTagElement(CoreNBTKeys.FLUID)),
+                "unavailable fluid data stays on the item for a later load");
             helper.startSequence().thenSucceed();
         });
     }

@@ -1,16 +1,14 @@
 package com.enderio.enderio.content.tools;
 
-import com.enderio.core.CoreNBTKeys;
 import com.enderio.core.common.capability.StrictFluidHandlerItemStack;
 import com.enderio.core.common.energy.ItemStackEnergy;
 import com.enderio.enderio.config.base.BaseConfig;
+import com.enderio.enderio.foundation.io.fluid.Forge6ItemFluidData;
 import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOFluids;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -44,19 +42,7 @@ public class LevitationStaffItem extends PoweredToggledItem {
             if (saved.getBoolean(LEGACY_TOGGLE)) EIODataComponents.TOGGLED.set(stack, true);
             stack.removeTagKey(LEGACY_TOGGLE);
         }
-        if (!saved.contains(CoreNBTKeys.FLUID, Tag.TAG_COMPOUND)) return;
-        if (EIODataComponents.ITEM_FLUID_CONTENT.has(stack)) {
-            stack.removeTagKey(CoreNBTKeys.FLUID);
-            return;
-        }
-        var fuel = saved.getCompound(CoreNBTKeys.FLUID).copy();
-        var legacyId = ResourceLocation.tryParse(fuel.getString("FluidName"));
-        var currentId = legacyId == null ? null : EIOFluids.legacyFluidId(legacyId);
-        if (currentId != null) fuel.putString("FluidName", currentId.toString());
-        FluidStack.CODEC.parse(NbtOps.INSTANCE, fuel).result().filter(fluid -> !fluid.isEmpty()).ifPresent(fluid -> {
-            EIODataComponents.ITEM_FLUID_CONTENT.set(stack, fluid);
-            stack.removeTagKey(CoreNBTKeys.FLUID);
-        });
+        Forge6ItemFluidData.restore(stack);
     }
 
     @Override

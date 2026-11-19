@@ -2,6 +2,7 @@ package com.enderio.enderio.mixin;
 
 import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.content.broken_spawner.BrokenSpawnerItem;
+import com.enderio.enderio.content.cold_fire.ColdFireIgniter;
 import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
 import com.enderio.enderio.content.filters.Forge6TransferFilterData;
 import com.enderio.enderio.content.filters.fluid.EnderFluidFilterItem;
@@ -14,6 +15,7 @@ import com.enderio.enderio.content.tools.LevitationStaffItem;
 import com.enderio.enderio.content.tools.coordinate_selector.LocationPrintoutItem;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.foundation.io.Forge6MachineItemData;
+import com.enderio.enderio.foundation.io.fluid.Forge6ItemFluidData;
 import com.enderio.enderio.foundation.soul.Forge6SoulData;
 import com.enderio.enderio.init.EIOItems;
 import net.minecraft.nbt.CompoundTag;
@@ -49,6 +51,10 @@ public abstract class ItemStackLoadMixin {
         }
         if (stack.getItem() instanceof LevitationStaffItem) {
             LevitationStaffItem.restoreForge6State(stack);
+            return;
+        }
+        if (stack.getItem() instanceof ColdFireIgniter) {
+            Forge6ItemFluidData.restore(stack);
             return;
         }
         if (stack.getItem() instanceof LocationPrintoutItem) {

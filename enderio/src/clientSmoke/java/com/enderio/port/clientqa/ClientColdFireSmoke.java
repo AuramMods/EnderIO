@@ -57,6 +57,7 @@ final class ClientColdFireSmoke {
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final boolean restarted = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase"));
+    private final boolean legacy;
     private final List<Attempt> attempts = restarted ? SECOND_ATTEMPTS : FIRST_ATTEMPTS;
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
@@ -66,7 +67,8 @@ final class ClientColdFireSmoke {
     private int attemptIndex;
     private int observeAfter;
 
-    ClientColdFireSmoke() {
+    ClientColdFireSmoke(boolean legacy) {
+        this.legacy = legacy;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -89,7 +91,7 @@ final class ClientColdFireSmoke {
                     check("dedicated_survival_tcp", !player.isCreative() && !player.isSpectator()
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     signal("connected");
-                    stage = restarted ? Stage.TRY : Stage.TABLE;
+                    stage = restarted || legacy ? Stage.TRY : Stage.TABLE;
                 }
                 case TABLE -> {
                     if (!marker("craft") || player.distanceToSqr(3190.5, 80, 11.5) > 0.1
@@ -137,7 +139,7 @@ final class ClientColdFireSmoke {
                 }
                 case TRY -> {
                     var attempt = attempts.get(attemptIndex);
-                    if (!marker(attempt.name()) || !selectIgniter(player)
+                    if (!marker(attempt.name()) || player.distanceToSqr(3190.5, 80, 11.5) > 0.1 || !selectIgniter(player)
                         || fuel(player.getMainHandItem()).getAmount() != attempt.before()) return;
                     verifyFuel(player, attempt.name() + "_before", attempt.before());
                     boolean succeeds = attempt.before() != attempt.after();
@@ -217,6 +219,11 @@ final class ClientColdFireSmoke {
             && fluid.getAmount() == amount && fluid.getTag() != null && fluid.getTag().getInt("PortBatch") == 180);
         check(name + "_client_tooltip_matches", stack.getTooltipLines(player, TooltipFlag.NORMAL).stream().map(Component::getString)
             .anyMatch(line -> line.equals(amount + " / 1000 Vapor of Levity")));
+        if (legacy) {
+            var tag = stack.getTag();
+            check(name + "_legacy_tool_identity_matches", tag != null && tag.getInt("PortLegacy") == 181
+                && !tag.contains("Fluid") && stack.getHoverName().getString().equals("Archive Igniter"));
+        }
     }
 
     private void capture(String name) throws IOException {

@@ -85,7 +85,8 @@ public final class ClientSmoke {
             case "legacy-experience" -> new ClientLegacyExperienceSmoke();
             case "hang-glider" -> new ClientHangGliderSmoke();
             case "coordinate-printout" -> new ClientCoordinatePrintoutSmoke(false);
-            case "cold-fire" -> new ClientColdFireSmoke();
+            case "cold-fire" -> new ClientColdFireSmoke(false);
+            case "legacy-cold-fire" -> new ClientColdFireSmoke(true);
             case "legacy-printout" -> new ClientCoordinatePrintoutSmoke(true);
             case "levitation-staff" -> new ClientLevitationStaffSmoke();
             case "levitation-progression" -> new ClientLevitationProgressionSmoke();
