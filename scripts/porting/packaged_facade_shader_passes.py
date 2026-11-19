@@ -42,30 +42,45 @@ def setup(server, results):
     server.assert_state("blue_facade_and_ordinary_red_glass_across_chunks", layout(BLUE), results)
 
 
-def exercise(server, client, output, results):
-    def observe(phase):
-        (output / f"server-{phase}").touch()
-        wait_signal(client, output, phase)
+def observe(client, output, phase):
+    (output / f"server-{phase}").touch()
+    wait_signal(client, output, phase)
 
-    observe("visible")
+
+def exercise(server, client, output, results):
+    observe(client, output, "visible")
     repaint(server, LIME)
     server.assert_state("lime_repaint_changes_only_the_facade", layout(LIME), results)
-    observe("repainted")
+    observe(client, output, "repainted")
     repaint(server, BLUE)
-    observe("restored")
+    observe(client, output, "restored")
     server.command(f"item replace entity {PLAYER} hotbar.0 with enderio:yeta_wrench")
     server.assert_state("hidden_blue_facade_retains_its_world_paint_and_conduit", layout(BLUE), results)
-    observe("wrench")
+    observe(client, output, "wrench")
     server.command(f"item replace entity {PLAYER} hotbar.0 with minecraft:air")
-    observe("revealed")
-    observe("reloaded")
+    observe(client, output, "revealed")
+    observe(client, output, "reloaded")
+
+
+def exercise_toggle(server, client, output, results):
+    observe(client, output, "visible")
+    server.command(f"item replace entity {PLAYER} hotbar.0 with enderio:yeta_wrench")
+    for name in ("wrench", "disabled-wrench", "enabled-wrench"):
+        observe(client, output, name)
+    server.assert_state("shader_toggles_keep_the_wrench_and_loaded_facade",
+                        f'{layout(BLUE)} if data entity {PLAYER} {{SelectedItem:{{id:"enderio:yeta_wrench"}}}}', results)
+    server.command(f"item replace entity {PLAYER} hotbar.0 with minecraft:air")
+    for name in ("revealed", "disabled-visible", "enabled-visible"):
+        observe(client, output, name)
+    server.assert_state("both_shader_round_trips_keep_the_same_world_paint_and_conduit", layout(BLUE), results)
 
 
 def run_client(args, server, results, report, phase):
     output = ROOT / "build/port-evidence" / f"{args.name}-{phase}-client"
     summary = output / "summary.json"
+    scenario = "facade-shader-toggle" if args.live_toggle else "facade-shader-passes"
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
-               "--launch", str(args.launch.resolve()), "--scenario", "facade-shader-passes",
+               "--launch", str(args.launch.resolve()), "--scenario", scenario,
                "--output", str(output), "--server", f"127.0.0.1:{args.port}",
                "--multiplayer-phase", phase, "--timeout", "155"]
     with (server.directory / f"shader-passes-{phase}-client.log").open("w") as log:
@@ -75,8 +90,9 @@ def run_client(args, server, results, report, phase):
             server.command(f"tp {PLAYER} 2752.5 80 15.5 180 11")
             if phase == "verify":
                 server.assert_state("saved_facade_and_control_reopen_exactly", layout(BLUE), results)
-                (output / "server-visible").touch()
-                wait_signal(client, output, "visible")
+                observe(client, output, "visible")
+            elif args.live_toggle:
+                exercise_toggle(server, client, output, results)
             else:
                 exercise(server, client, output, results)
             if client.wait(timeout=30) != 0:
@@ -94,6 +110,7 @@ def main():
     parser.add_argument("--name", required=True)
     parser.add_argument("--port", type=int, default=26124)
     parser.add_argument("--java", required=True)
+    parser.add_argument("--live-toggle", action="store_true")
     for key in ("forge-server", "jar", "launch"):
         parser.add_argument(f"--{key}", type=Path, required=True)
     args = parser.parse_args()

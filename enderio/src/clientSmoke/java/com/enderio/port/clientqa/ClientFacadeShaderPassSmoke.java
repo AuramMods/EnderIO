@@ -9,6 +9,7 @@ import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.renderer.RenderType;
@@ -34,7 +35,11 @@ import java.util.concurrent.CompletableFuture;
 
 /** Reads authored translucent terrain and the shadow map from the same rendered frame. */
 final class ClientFacadeShaderPassSmoke {
-    private record Phase(String name, Block paint, boolean wrench) {}
+    private record Phase(String name, Block paint, boolean wrench, boolean shaders) {
+        Phase(String name, Block paint, boolean wrench) {
+            this(name, paint, wrench, true);
+        }
+    }
     private record Markers(int red, int blue, int lime) {
         boolean matches(Phase phase) {
             return red > 8 && (!phase.wrench() && phase.paint() == Blocks.BLUE_STAINED_GLASS ? blue > 8 : blue == 0)
@@ -48,6 +53,12 @@ final class ClientFacadeShaderPassSmoke {
         new Phase("visible", Blocks.BLUE_STAINED_GLASS, false), new Phase("repainted", Blocks.LIME_STAINED_GLASS, false),
         new Phase("restored", Blocks.BLUE_STAINED_GLASS, false), new Phase("wrench", Blocks.BLUE_STAINED_GLASS, true),
         new Phase("revealed", Blocks.BLUE_STAINED_GLASS, false), new Phase("reloaded", Blocks.BLUE_STAINED_GLASS, false));
+    private static final List<Phase> TOGGLE_PHASES = List.of(
+        new Phase("visible", Blocks.BLUE_STAINED_GLASS, false), new Phase("wrench", Blocks.BLUE_STAINED_GLASS, true),
+        new Phase("disabled-wrench", Blocks.BLUE_STAINED_GLASS, true, false),
+        new Phase("enabled-wrench", Blocks.BLUE_STAINED_GLASS, true), new Phase("revealed", Blocks.BLUE_STAINED_GLASS, false),
+        new Phase("disabled-visible", Blocks.BLUE_STAINED_GLASS, false, false),
+        new Phase("enabled-visible", Blocks.BLUE_STAINED_GLASS, false));
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
@@ -55,6 +66,8 @@ final class ClientFacadeShaderPassSmoke {
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
     private final boolean reopened = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase"));
+    private final boolean liveToggle;
+    private final List<Phase> phases;
     private boolean connecting;
     private boolean joined;
     private boolean done;
@@ -65,15 +78,21 @@ final class ClientFacadeShaderPassSmoke {
     private Markers initialTerrain;
     private Markers initialShadow;
     private int[] initialBackdrop;
+    private ClientLevel liveLevel;
+    private ConduitBundleBlockEntity liveFacade;
+    private int[] hiddenBackdrop;
+    private int ghostTint;
 
-    ClientFacadeShaderPassSmoke() {
+    ClientFacadeShaderPassSmoke(boolean liveToggle) {
+        this.liveToggle = liveToggle;
+        phases = liveToggle ? TOGGLE_PHASES : PHASES;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || done) return;
         try {
-            var phase = PHASES.get(phaseIndex);
+            var phase = phases.get(phaseIndex);
             if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > 145_000_000_000L) {
                 throw new AssertionError("Shader pass capture stopped at " + phase.name());
             }
@@ -111,7 +130,7 @@ final class ClientFacadeShaderPassSmoke {
             observe(phase);
             signal(phase.name());
             readyTick = -1;
-            if (reopened || ++phaseIndex == PHASES.size()) finish(null);
+            if (reopened || ++phaseIndex == phases.size()) finish(null);
         } catch (Throwable failure) {
             failure.printStackTrace();
             finish(failure);
@@ -126,12 +145,24 @@ final class ClientFacadeShaderPassSmoke {
             || !minecraft.level.getBlockState(CONTROL).is(Blocks.RED_STAINED_GLASS)
             || !(minecraft.level.getBlockEntity(FACADE) instanceof ConduitBundleBlockEntity bundle)
             || !bundle.hasFacade() || bundle.getFacadeBlock() != phase.paint()) return false;
-        if (readyTick == -1) readyTick = player.tickCount;
+        if (readyTick == -1) {
+            if (liveToggle) {
+                var config = IrisApi.getInstance().getConfig();
+                if (config.areShadersEnabled() != phase.shaders()) config.setShadersEnabledAndApply(phase.shaders());
+                if (liveLevel == null) {
+                    liveLevel = minecraft.level;
+                    liveFacade = bundle;
+                }
+            }
+            readyTick = player.tickCount;
+        }
         return player.tickCount - readyTick >= 30;
     }
 
     private void observe(Phase phase) throws IOException {
         String name = phase.name();
+        if (liveToggle) check("same_loaded_world_and_facade_" + name,
+            minecraft.level == liveLevel && minecraft.level.getBlockEntity(FACADE) == liveFacade);
         var frame = ClientSmoke.capture(name + ".png", 50);
         captures.put(name, frame);
         check("hidden_muted_" + name, Boolean.TRUE.equals(frame.get("passed")));
@@ -140,7 +171,11 @@ final class ClientFacadeShaderPassSmoke {
         int height = image.getHeight();
         int marker = image.getRGB(16, height - 16) & 0xFFFFFF;
         frame.put("finalPassMarker", String.format("%06x", marker));
-        check("active_shader_final_pass_" + name, IrisApi.getInstance().isShaderPackInUse() && marker == 0xFF00FF);
+        if (phase.shaders()) {
+            check("active_shader_final_pass_" + name, IrisApi.getInstance().isShaderPackInUse() && marker == 0xFF00FF);
+        } else {
+            check("disabled_shader_final_pass_" + name, !IrisApi.getInstance().isShaderPackInUse() && marker != 0xFF00FF);
+        }
 
         var terrain = markers(image, width / 5, height * 53 / 100, width * 4 / 5, height * 56 / 100 + 1);
         var shadow = markers(image, width - 256, 0, width, 256);
@@ -152,6 +187,10 @@ final class ClientFacadeShaderPassSmoke {
         int[] backdrop = image.getRGB(backdropX, backdropY, backdropWidth, backdropHeight, null, 0, backdropWidth);
         frame.put("translucentStainedGlassMarkers", terrain);
         frame.put("shadowMapStainedGlassMarkers", shadow);
+        if (!phase.shaders()) {
+            verifyNativeGlass(phase, frame, backdrop, terrain, shadow);
+            return;
+        }
         check("authored_translucent_terrain_has_exact_paints_" + name, terrain.matches(phase));
         check("authored_shadow_pass_has_exact_paints_" + name, shadow.matches(phase));
         var painted = phase.paint().defaultBlockState();
@@ -170,7 +209,28 @@ final class ClientFacadeShaderPassSmoke {
                     terrain.equals(initialTerrain) && shadow.equals(initialShadow));
                 check("restored_paint_matches_initial_blended_pixels_" + name, Arrays.equals(initialBackdrop, backdrop));
             }
-            if (phase.wrench()) verifyBlendedBackdrop(frame, backdrop, backdropWidth);
+            if (phase.wrench()) {
+                verifyBlendedBackdrop(frame, backdrop, backdropWidth);
+                if (name.equals("wrench")) hiddenBackdrop = backdrop;
+                if (name.equals("enabled-wrench")) {
+                    check("reactivation_hides_the_same_ghost_pixels", Arrays.equals(hiddenBackdrop, backdrop));
+                }
+            }
+        }
+    }
+
+    private void verifyNativeGlass(Phase phase, Map<String, Object> frame, int[] backdrop, Markers terrain, Markers shadow) {
+        var absent = new Markers(0, 0, 0);
+        check("authored_translucent_and_shadow_markers_are_absent_" + phase.name(), terrain.equals(absent) && shadow.equals(absent));
+        long tintedPixels = Arrays.stream(backdrop).filter(ClientFacadeShaderPassSmoke::hasBlueTint).count();
+        int tint = Arrays.stream(backdrop).map(ClientFacadeShaderPassSmoke::blueTint).sum();
+        frame.put("nativeBlueTintedPixels", tintedPixels);
+        frame.put("nativeBlueTintSum", tint);
+        check("native_facade_draws_blue_glass_" + phase.name(), tintedPixels > 100);
+        if (phase.wrench()) {
+            ghostTint = tint;
+        } else {
+            check("native_wrench_ghost_is_fainter_than_visible_glass", ghostTint > 0 && tint > ghostTint);
         }
     }
 
@@ -197,7 +257,11 @@ final class ClientFacadeShaderPassSmoke {
     }
 
     private static boolean hasBlueTint(int color) {
-        return (color & 255) - Math.max(color >> 16 & 255, color >> 8 & 255) > 5;
+        return blueTint(color) > 5;
+    }
+
+    private static int blueTint(int color) {
+        return (color & 255) - Math.max(color >> 16 & 255, color >> 8 & 255);
     }
 
     private static int brightness(int color) {

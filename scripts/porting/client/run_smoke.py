@@ -42,7 +42,7 @@ parser.add_argument("--scenario",
                              "facade-ctm-core", "facade-ctm-athena", "facade-ctm-embeddium",
                              "facade-ctm-oculus", "facade-ctm-oculus-shader", "facade-ctm-oculus-terrain",
                              "facade-corners-core", "facade-corners-athena", "facade-corners-shader",
-                             "facade-shader-passes",
+                             "facade-shader-passes", "facade-shader-toggle",
                              "glass-progression",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
@@ -89,7 +89,8 @@ shader_drew_frame = ((args.scenario == "stained-facades-oculus-shader" and check
                      or (args.scenario in {"facade-ctm-oculus-shader", "facade-ctm-oculus-terrain"}
                          and checks.get("shader_pack_drew_connected-facades"))
                      or (args.scenario == "facade-corners-shader" and checks.get("shader_drew_matching-south"))
-                     or (args.scenario == "facade-shader-passes" and checks.get("active_shader_final_pass_visible")))
+                     or (args.scenario in {"facade-shader-passes", "facade-shader-toggle"}
+                         and checks.get("active_shader_final_pass_visible")))
 if checks.get("expected_oculus_installation") and (shaders_disabled or shader_drew_frame):
     # Embeddium emits this support-policy diagnostic when Oculus patches its renderer.
     notice = ("/ERROR] [Embeddium-MixinTaintDetector/]: Mod mixin into Embeddium internals detected. "
