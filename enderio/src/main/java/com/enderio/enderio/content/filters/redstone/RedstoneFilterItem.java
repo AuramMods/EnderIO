@@ -101,8 +101,11 @@ public class RedstoneFilterItem extends Item {
                 if (!saved.contains("Ticks", Tag.TAG_INT) && !saved.contains("MaxTicks", Tag.TAG_INT)) return;
                 int maxTicks = saved.getInt("MaxTicks");
                 if (maxTicks <= 0) maxTicks = RedstoneTimerFilter.INSTANCE.maxTicks();
+                // Forge 6 could shorten the period without resetting the elapsed ticks.
+                // Keep an already-due timer ready to pulse on its next sample.
+                int ticks = Math.min(maxTicks - 1, Math.max(0, saved.getInt("Ticks")));
                 EIODataComponents.REDSTONE_TIMER_FILTER.set(stack,
-                    new RedstoneTimerFilter.Component(Math.max(0, saved.getInt("Ticks")), maxTicks));
+                    new RedstoneTimerFilter.Component(ticks, maxTicks));
                 stack.removeTagKey("Ticks");
                 stack.removeTagKey("MaxTicks");
             }

@@ -35,6 +35,23 @@ public class RedstoneFilterStateTests {
     }
 
     @GameTest
+    public static void legacyTimerAlreadyDuePulsesOnItsFirstSample(GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
+        test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence().thenExecute(() -> {
+            for (int elapsed : new int[] {30, 36}) {
+                var stack = new ItemStack(EIOItems.TIMER_FILTER.get());
+                var tag = stack.getOrCreateTag();
+                tag.putInt("Ticks", elapsed);
+                tag.putInt("MaxTicks", 30);
+                var restored = timer(reopen(reopen(stack)));
+                helper.assertTrue(restored.getMaxTicks() == 30, "Migrated timer lost its configured period");
+                helper.assertTrue(readTimer(helper, restored) == 15, "Migrated timer missed its already-due pulse");
+                helper.assertTrue(readTimer(helper, restored) == 0, "Migrated timer did not start a new period");
+            }
+        }).thenSucceed());
+    }
+
+    @GameTest
     public static void savedLatchKeepsOutputAndWaitsForNextEdge(GameplayTest test) {
         test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
         test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence().thenExecute(() -> {

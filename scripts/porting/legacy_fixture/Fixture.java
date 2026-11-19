@@ -7,6 +7,9 @@ import com.enderio.conduits.common.conduit.block.ConduitBlockEntity;
 import com.enderio.conduits.common.conduit.connection.DynamicConnectionState;
 import com.enderio.conduits.common.conduit.connection.StaticConnectionStates;
 import com.enderio.conduits.common.init.EIOConduitTypes;
+import com.enderio.conduits.common.redstone.DoubleRedstoneChannel;
+import com.enderio.conduits.common.redstone.RedstoneCountFilter;
+import com.enderio.conduits.common.redstone.RedstoneTimerFilter;
 import com.enderio.core.common.capability.ItemFilterCapability;
 import com.enderio.machines.common.blockentity.TravelAnchorBlockEntity;
 import com.enderio.machines.common.blockentity.FluidTankBlockEntity;
@@ -81,6 +84,12 @@ public class Fixture {
             .executes(context -> {
                 buildExtractionRoutes(context.getSource().getLevel());
                 context.getSource().sendSuccess(() -> Component.literal("Legacy extraction upgrade routes created"), false);
+                return 1;
+            }));
+        event.getDispatcher().register(Commands.literal("port_legacy_redstone_filters").requires(source -> source.hasPermission(4))
+            .executes(context -> {
+                buildRedstoneFilterRoutes(context.getSource().getLevel());
+                context.getSource().sendSuccess(() -> Component.literal("Legacy redstone filter routes created"), false);
                 return 1;
             }));
         event.getDispatcher().register(Commands.literal("port_legacy_travel").requires(source -> source.hasPermission(4))
@@ -229,6 +238,70 @@ public class Fixture {
             source.setChanged();
             destination.setChanged();
         }
+    }
+
+    private static void buildRedstoneFilterRoutes(ServerLevel level) {
+        var dueTimer = taggedFilter("redstone_timer_filter", "due-timer");
+        var dueFilter = new RedstoneTimerFilter(dueTimer);
+        dueFilter.setTimer(30, 80);
+        // The historical timer editor changed the period without resetting the elapsed ticks.
+        dueFilter.setMaxTicks(30);
+        redstoneFilterRoute(level, 1, ColorControl.LIME, false, dueTimer,
+            taggedCounter("due-counter", ColorControl.LIME, 2, 3));
+
+        var gate = taggedFilter("redstone_xor_filter", "gate");
+        new DoubleRedstoneChannel(gate).setChannels(ColorControl.RED, ColorControl.BLUE);
+        var gateSource = redstoneFilterRoute(level, 4, ColorControl.RED, true, ItemStack.EMPTY, gate);
+        gateSource.handleConnectionStateUpdate(Direction.NORTH, EIOConduitTypes.REDSTONE.get(),
+            new DynamicConnectionState(false, ColorControl.WHITE, true, ColorControl.BLUE,
+                RedstoneControl.ALWAYS_ACTIVE, ColorControl.GREEN, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY));
+        gateSource.setChanged();
+
+        redstoneFilterRoute(level, 8, ColorControl.YELLOW, true, ItemStack.EMPTY,
+            taggedFilter("redstone_toggle_filter", "latch"));
+
+        var timer = taggedFilter("redstone_timer_filter", "timer");
+        new RedstoneTimerFilter(timer).setTimer(30, 80);
+        redstoneFilterRoute(level, 12, ColorControl.PURPLE, false, timer,
+            taggedCounter("counter", ColorControl.PURPLE, 7, 8));
+
+        redstoneFilterRoute(level, 15, ColorControl.CYAN, true,
+            taggedFilter("redstone_sensor_filter", "sensor"), taggedFilter("redstone_not_filter", "inverter"));
+    }
+
+    private static ConduitBlockEntity redstoneFilterRoute(ServerLevel level, int z, ColorControl color, boolean enabled,
+            ItemStack extract, ItemStack insert) {
+        var source = place(level, new BlockPos(4527, 79, z), "redstone_conduit");
+        var destination = place(level, new BlockPos(4528, 79, z), "redstone_conduit");
+        var type = EIOConduitTypes.REDSTONE.get();
+        if (level.getBlockState(source.getBlockPos().west()).is(Blocks.CHEST)) {
+            source.tryConnectTo(Direction.WEST, type, false, false, true);
+        }
+        source.handleConnectionStateUpdate(Direction.WEST, type,
+            new DynamicConnectionState(false, ColorControl.WHITE, enabled, color,
+                RedstoneControl.ALWAYS_ACTIVE, ColorControl.GREEN, ItemStack.EMPTY, extract, ItemStack.EMPTY));
+        destination.handleConnectionStateUpdate(Direction.EAST, type,
+            new DynamicConnectionState(enabled, color, false, ColorControl.WHITE,
+                RedstoneControl.ALWAYS_ACTIVE, ColorControl.GREEN, insert, ItemStack.EMPTY, ItemStack.EMPTY));
+        source.setChanged();
+        destination.setChanged();
+        return source;
+    }
+
+    private static ItemStack taggedFilter(String item, String marker) {
+        var stack = stack(item);
+        stack.getOrCreateTag().putString("PortFilter", marker);
+        return stack;
+    }
+
+    private static ItemStack taggedCounter(String marker, ColorControl color, int count, int limit) {
+        var stack = taggedFilter("redstone_counting_filter", marker);
+        var filter = new RedstoneCountFilter(stack);
+        filter.setChannel(color);
+        filter.setMaxCount(limit);
+        filter.setCount(count);
+        filter.setDeactivated(true);
+        return stack;
     }
 
     private static ConduitBlockEntity place(ServerLevel level, BlockPos support, String item) {
