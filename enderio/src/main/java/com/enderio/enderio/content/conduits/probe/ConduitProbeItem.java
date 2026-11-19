@@ -2,6 +2,8 @@ package com.enderio.enderio.content.conduits.probe;
 
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.EnderIO;
+import com.enderio.enderio.api.EnderIORegistries;
+import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.connection.config.ConnectionConfig;
 import com.enderio.enderio.content.conduits.ConduitLang;
 import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
@@ -11,9 +13,11 @@ import com.enderio.enderio.init.EIOItems;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
@@ -25,8 +29,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import com.enderio.enderio.foundation.network.EIONetwork;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -108,8 +114,8 @@ public class ConduitProbeItem extends Item {
         if (!configData.conduitData().isEmpty()) {
             MutableComponent message = Component.empty();
             configData.conduitData().forEach((conduitKey, connectionConfig) -> {
-                String conduitName = conduitKeyToDisplayName(conduitKey);
-                message.append(Component.literal("\n" + conduitName + ":\n").withStyle(ChatFormatting.UNDERLINE));
+                var heading = Component.literal("\n").append(conduitName(conduitBlock.getLevel(), conduitKey)).append(":\n");
+                message.append(heading.withStyle(ChatFormatting.UNDERLINE));
 
                 for (Field field : connectionConfig.getClass().getDeclaredFields()) {
                     if (SKIP_FIELDS.contains(field.getName())) continue;
@@ -126,38 +132,46 @@ public class ConduitProbeItem extends Item {
             return;
         }
 
-        List<String> pastedConduits = new ArrayList<String>();
+        List<Component> pastedConduits = new ArrayList<>();
         var conduits = conduitBlock.getConduits();
         conduits.forEach(conduit -> {
             ResourceLocation conduitKey = conduit.unwrapKey().orElseThrow().location();
             ConnectionConfig storedConfig = configData.conduitData().get(conduitKey);
             if (storedConfig != null) {
                 conduitBlock.setConnectionConfig(conduit, face, storedConfig);
-                pastedConduits.add(conduitKeyToDisplayName(conduitKey));
+                pastedConduits.add(conduit.value().description());
             }
         });
 
         if (!pastedConduits.isEmpty()) {
-            String pastedConduitsString = String.join(", ", pastedConduits);
-            player.sendSystemMessage(TooltipUtil.withArgs(ConduitLang.CONDUIT_PROBE_MESSAGE_PASTED, pastedConduitsString));
+            var names = ComponentUtils.formatList(pastedConduits, Component.literal(", "));
+            player.sendSystemMessage(TooltipUtil.withArgs(ConduitLang.CONDUIT_PROBE_MESSAGE_PASTED, names));
         }
         conduitBlock.setChanged();
         conduitBlock.updateShape();
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, @Nullable Level context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 
         tooltipComponents.add(TooltipUtil.styledWithArgs(ConduitLang.CONDUIT_PROBE_MODE_TOOLTIP, getState(stack).getStateText()));
         ProbeConfigData configData = EIODataComponents.PROBE_CONFIG.get(stack);
         if (configData != null && !configData.conduitData().isEmpty()) {
-            
-            tooltipComponents.add(ConduitLang.CONDUIT_PROBE_CONTAINS_COPIED.withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(ConduitLang.CONDUIT_PROBE_CONTAINS_COPIED.copy().withStyle(ChatFormatting.GRAY));
             configData.conduitData().keySet().forEach(conduitKey -> {
-                tooltipComponents.add(Component.literal("- " + conduitKeyToDisplayName(conduitKey)).withStyle(ChatFormatting.DARK_GRAY));
+                tooltipComponents.add(Component.literal("- ").append(conduitName(context, conduitKey)).withStyle(ChatFormatting.DARK_GRAY));
             });
         }
+    }
+
+    private static Component conduitName(@Nullable Level level, ResourceLocation id) {
+        if (level != null) {
+            var description = level.registryAccess().registry(EnderIORegistries.Keys.CONDUIT)
+                .flatMap(registry -> registry.getOptional(id)).map(Conduit::description);
+            if (description.isPresent()) return description.get();
+        }
+        return Component.translatableWithFallback(Util.makeDescriptionId("conduit", id), id.toString());
     }
 
     public static State getState(ItemStack stack) {
@@ -186,11 +200,6 @@ public class ConduitProbeItem extends Item {
 
         setState(player, stack, newState);
         player.displayClientMessage(TooltipUtil.withArgs(ConduitLang.CONDUIT_PROBE_MESSAGE_SWITCHED_MODE, newState.getStateText()), true);
-    }
-
-    private String conduitKeyToDisplayName(ResourceLocation conduitKey) {
-        String translationKey = "item." + conduitKey.getNamespace() + ".conduit." + conduitKey.getPath();
-        return Component.translatable(translationKey).getString();
     }
 
     private Component createFieldTextComponent(Field field, ConnectionConfig connectionConfig) {

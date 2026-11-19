@@ -233,9 +233,9 @@ public class EIOLanguageProvider extends LanguageProvider {
         add(ConduitLang.BLAST_RESIST_FACADE_TOOLTIP, "Hardened: Resists breaking and explosions");
 
         add(ConduitLang.CONDUIT_PROBE_MODE_TOOLTIP, "Mode %s");
-        add(ConduitLang.CONDUIT_PROBE_STATE_PROBE, "Contains copied conduit data:");
-        add(ConduitLang.CONDUIT_PROBE_STATE_COPY_PASTE, "Probe");
-        add(ConduitLang.CONDUIT_PROBE_CONTAINS_COPIED, "Copy/Paste");
+        add(ConduitLang.CONDUIT_PROBE_STATE_PROBE, "Probe");
+        add(ConduitLang.CONDUIT_PROBE_STATE_COPY_PASTE, "Copy/Paste");
+        add(ConduitLang.CONDUIT_PROBE_CONTAINS_COPIED, "Contains copied conduit data:");
         add(ConduitLang.CONDUIT_PROBE_MESSAGE_SWITCHED_MODE, "Switched conduit probe mode to %s");
         add(ConduitLang.CONDUIT_PROBE_MESSAGE_COPIED, "Copied data: %s");
         add(ConduitLang.CONDUIT_PROBE_MESSAGE_PASTED, "Pasted data: %s");

@@ -13,7 +13,7 @@ parser.add_argument("--output", required=True, type=Path)
 parser.add_argument("--timeout", default=180, type=int)
 parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-harness/client-smoke-launch.json")
 parser.add_argument("--scenario",
-                    choices=("title", "singleplayer", "multiplayer", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
+                    choices=("title", "model-inventory", "singleplayer", "multiplayer", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
                              "primitive-smelter", "stirling", "soul-binder", "soul-vials", "soul-engine", "soul-engine-fuels",
                              "powered-spawner", "spawner-rules", "obelisks", "entity-obelisks", "obelisk-carry", "farming-station",
                              "painting-machine", "painted-sand", "painted-redstone", "painted-building", "painted-building-wet",
@@ -88,9 +88,13 @@ if checks.get("expected_oculus_installation") and (shaders_disabled or shader_dr
               "for issues encountered while such mods are installed.")
     known_diagnostics = [line for line in errors if line.endswith(notice)]
     errors = [line for line in errors if not line.endswith(notice)]
-passed = process.returncode == 0 and focus["status"] == "pass" and result["passed"] and not errors
+model_warnings = [line for line in log.splitlines() if "/WARN] [minecraft/Model" in line and "enderio:" in line]
+passed = (process.returncode == 0 and focus["status"] == "pass" and result["passed"] and not errors
+          and (args.scenario != "model-inventory" or not model_warnings))
 report = {"event": "client_smoke_result", "status": "pass" if passed else "fail",
           "focus": focus, "client": result, "errors": errors, "knownDiagnostics": known_diagnostics}
+if args.scenario == "model-inventory":
+    report["modelWarnings"] = model_warnings
 (output / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
 print("QA_EVT " + json.dumps({"event": report["event"], "status": report["status"],
                              "summary": str(output / "summary.json")}))
