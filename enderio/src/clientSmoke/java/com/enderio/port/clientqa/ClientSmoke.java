@@ -90,6 +90,7 @@ public final class ClientSmoke {
             case "filter-progression" -> new ClientFilterProgressionSmoke();
             case "starter-progression" -> new ClientStarterProgressionSmoke();
             case "energy-progression" -> new ClientEnergyProgressionSmoke();
+            case "sag-progression" -> new ClientSagProgressionSmoke();
             case "filter-recovery" -> new ClientFilterRecoverySmoke();
             case "filter-wrench-editor" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_EDITOR);
             case "filter-wrench-operator" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_OPERATOR);

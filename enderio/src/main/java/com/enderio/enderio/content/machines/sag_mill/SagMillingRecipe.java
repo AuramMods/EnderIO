@@ -76,22 +76,25 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
                         // Collect the output
                         ItemStack outputStack = output.getItemStack();
 
-                        // Attempt to add to an existing originalStack.
+                        // Merge only compatible stacks, leaving any overflow as a separate output.
                         for (OutputStack stack : outputs) {
-                            if (outputStack.getCount() <= 0) {
+                            if (outputStack.isEmpty()) {
                                 break;
                             }
 
                             ItemStack itemStack = stack.getItem();
-                            if (itemStack.is(outputStack.getItem())) {
-                                int growth = Math.min(outputStack.getCount(), itemStack.getMaxStackSize());
+                            if (ItemStack.isSameItemSameTags(itemStack, outputStack)) {
+                                int space = itemStack.getMaxStackSize() - itemStack.getCount();
+                                int growth = Math.min(outputStack.getCount(), space);
+                                if (growth <= 0) {
+                                    continue;
+                                }
                                 itemStack.grow(growth);
                                 outputStack.shrink(growth);
                             }
                         }
 
-                        // Add new originalStack.
-                        if (outputStack.getCount() >= 0) {
+                        if (!outputStack.isEmpty()) {
                             outputs.add(OutputStack.of(outputStack));
                         }
                     }
