@@ -279,7 +279,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 084: painted slab halves | Stack both colors in either order. Carry Forge 6 slab loot into the port and read both original tags | The build passes 79 unit and 481 native tests. A copied Forge 6 world passes ten packaged server assertions and 11 guarded client checks for mixed slab placement, synchronized paint, loot and restart. [Evidence and commands](porting/1.20.1/cycle-084.md) | `f6a9cebb0` |
 
-| 085: Painting Machine migration | Import legacy paint into stackable item data and preserve the carried machine's charge and settings | The build passes 79 unit and 482 native tests. A copied Forge 6 world passes 15 packaged server assertions and eight guarded client checks for exact job resumption, survival replanting, menu transfer, hopper extraction and restart. [Evidence and commands](porting/1.20.1/cycle-085.md) | Commit containing cycle 085 |
+| 085: Painting Machine migration | Import legacy paint into stackable item data and preserve the carried machine's charge and settings | The build passes 79 unit and 482 native tests. A copied Forge 6 world passes 15 packaged server assertions and eight guarded client checks for exact job resumption, survival replanting, menu transfer, hopper extraction and restart. [Evidence and commands](porting/1.20.1/cycle-085.md) | `3451f3cdb` |
+
+| 086: conduit facade recipes and rendering | Paint and install all four variants, toggle visibility with the Yeta Wrench, and verify loot and restart | The build passes 79 unit and 482 native tests. Standard Forge and Embeddium each pass 18 server assertions and 24 guarded client checks. [Evidence and commands](porting/1.20.1/cycle-086.md) | Commit containing cycle 086 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

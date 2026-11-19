@@ -220,10 +220,10 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | `CONDUIT_PROBE` | [EIOItems:222](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `DARK_STEEL_SWORD` | [EIOItems:224](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `CONDUIT` | [EIOItems:233](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. Six core and seven integration types from 6.2.18-beta retain their exact type, quantity and custom NBT in a vanilla inventory across upgrade and restart. The item type also migrates in an alloy smelter inventory. Native placement passes for all six core types. [Cycle 052](cycle-052.md) |
-| `CONDUIT_FACADE` | [EIOItems:236](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `TRANSPARENT_CONDUIT_FACADE` | [EIOItems:239](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `HARDENED_CONDUIT_FACADE` | [EIOItems:242](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `TRANSPARENT_HARDENED_CONDUIT_FACADE` | [EIOItems:245](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `CONDUIT_FACADE` | [EIOItems:245](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java#L245) | The gold-painted variant passes machine production, hopper recovery, survival installation over an energy conduit, synchronized item and block rendering, wrench visibility, loot and restart on Forge and Embeddium. [Cycle 086](cycle-086.md) |
+| `TRANSPARENT_CONDUIT_FACADE` | [EIOItems:247](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java#L247) | The redstone-painted variant passes the same lifecycle and retains its conduit-hiding model flag. A translucent paint source still needs packaged verification. [Cycle 086](cycle-086.md) |
+| `HARDENED_CONDUIT_FACADE` | [EIOItems:249](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java#L249) | The diamond-painted variant passes the same lifecycle and retains the hardened type. The baseline declares the flag and tooltip, while bundle blast resistance has no baseline consumer for that flag. [Cycle 086](cycle-086.md) |
+| `TRANSPARENT_HARDENED_CONDUIT_FACADE` | [EIOItems:251](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java#L251) | The emerald-painted variant passes the same lifecycle and retains both type flags. A translucent paint source still needs packaged verification. [Cycle 086](cycle-086.md) |
 | `BASIC_ITEM_FILTER` | [EIOItems:252](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `BIG_ITEM_FILTER` | [EIOItems:253](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `ADVANCED_ITEM_FILTER` | [EIOItems:254](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
@@ -303,7 +303,7 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | `SLICING` | [EIORecipes:47](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java) | Pending |
 | `SOUL_BINDING` | [EIORecipes:49](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java) | Partial: loaded native recipe packet and all mob-category values round-trip; malformed categories reject correctly. Packaged dedicated login/reconnect passes after the codec fix. Full recipe gameplay remains pending ([cycle 041](cycle-041.md)) |
 | `TANK` | [EIORecipes:51](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java) | Pending |
-| `PAINTING` | [EIORecipes:56](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java#L56) | Partial. Packaged Forge runs the fence and wooden slab recipes and verifies template consumption, reusable paint, output transfer, advancement and job persistence. Other recipe families remain to be exercised. [Cycle 083](cycle-083.md), [cycle 085](cycle-085.md) |
+| `PAINTING` | [EIORecipes:56](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java#L56) | Partial. Packaged Forge runs the fence, wooden slab and four facade recipes and verifies template consumption, reusable paint and output transfer. Fence and slab profiles verify advancement and job persistence. Other recipe families remain to be exercised. [Cycle 083](cycle-083.md), [cycle 085](cycle-085.md), [cycle 086](cycle-086.md) |
 | `VAT_FERMENTING` | [EIORecipes:55](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java) | Pending |
 | `WEATHER_CHANGE` | [EIORecipes:57](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java) | Pending |
 

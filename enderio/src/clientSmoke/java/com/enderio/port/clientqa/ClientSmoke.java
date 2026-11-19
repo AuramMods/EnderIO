@@ -49,6 +49,8 @@ public final class ClientSmoke {
             case "painting-machine" -> new ClientPaintingMachineSmoke();
             case "legacy-painting" -> new ClientLegacyPaintingSmoke();
             case "painted-slabs" -> new ClientPaintedSlabSmoke();
+            case "facades" -> new ClientFacadeSmoke(false);
+            case "facades-embeddium" -> new ClientFacadeSmoke(true);
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "natural-spawns" -> new ClientNaturalSpawnSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();

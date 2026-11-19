@@ -16,6 +16,7 @@ parser.add_argument("--scenario",
                              "primitive-smelter", "stirling", "soul-binder", "soul-vials", "soul-engine", "soul-engine-fuels",
                              "powered-spawner", "spawner-rules", "obelisks", "entity-obelisks", "obelisk-carry", "farming-station",
                              "painting-machine", "legacy-painting", "painted-slabs", "legacy-aversion", "natural-spawns",
+                             "facades", "facades-embeddium",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")
