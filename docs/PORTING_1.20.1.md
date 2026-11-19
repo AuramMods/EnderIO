@@ -263,7 +263,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 076: specialized Attractor mobs | Restore temporary mob targets and Wither goal control. Verify collisions, overlapping fields and the boss opt-in | The full build passes 79 unit and 452 native tests. The packaged run passes nine assertions, including flying movement, decoy release and the Wither after a configuration change and restart. [Evidence and commands](porting/1.20.1/cycle-076.md) | `408c8540b` |
 
-| 077: obelisk survival carriage | Preserve exact drops, pickup and placement state for all six obelisks. Debit tagged Weather inputs before applying a recipe | The build passes 79 unit and 453 native tests. Packaged Forge passes 35 carriage and restart assertions, 27 client checks, and 15 separate weather assertions. The replanted rain job consumes one tagged bucket and one tagged rocket. [Evidence and commands](porting/1.20.1/cycle-077.md) | Commit containing cycle 077 |
+| 077: obelisk survival carriage | Preserve exact drops, pickup and placement state for all six obelisks. Debit tagged Weather inputs before applying a recipe | The build passes 79 unit and 453 native tests. Packaged Forge passes 35 carriage and restart assertions, 27 client checks, and 15 separate weather assertions. The replanted rain job consumes one tagged bucket and one tagged rocket. [Evidence and commands](porting/1.20.1/cycle-077.md) | `dfcf56c15` |
+
+| 078: Farming Station output conservation | Yield occupied wheat plots to harvesting. Stage seed and output slots together and retry a blocked crop | The build passes 79 unit and 457 native tests. Eight packaged assertions verify full-output retries, wheat replanting, two server restarts and extraction by a vanilla hopper. [Evidence and commands](porting/1.20.1/cycle-078.md) | Commit containing cycle 078 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

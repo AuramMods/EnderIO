@@ -236,58 +236,42 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
         return collectDrops(drops, soil);
     }
 
-    // TODO handle inv full
     public boolean collectDrops(List<ItemStack> drops, @Nullable BlockPos soil) {
-        ArrayList<ItemStack> list = new ArrayList<>();
+        var inventory = getInventory();
+        var staged = inventory.snapshot(OUTPUT);
+        List<SingleSlotAccess> changedSlots = new ArrayList<>(OUTPUT.getAccesses());
+        var seedSlot = soil == null ? null : getSeedForPos(soil);
+        if (seedSlot != null) {
+            seedSlot.setStackInSlot(staged, seedSlot.getItemStack(inventory).copy());
+            changedSlots.add(seedSlot);
+        }
+
         for (ItemStack drop : drops) {
-            if (soil != null) {
-                ItemStack seeds = getSeedForPos(soil).getItemStack(this);
-                if (seeds.isEmpty()) {
-                    if (drop.getItem() instanceof BlockItem || drop.getItem() instanceof IPlantable) {
-                        // Collect potential seeds
-                        getSeedForPos(soil).setStackInSlot(this, drop);
-                        continue;
-                    }
-                } else if (ItemStack.isSameItem(drop, seeds)) {
-                    int leftOver = seeds.getMaxStackSize() - seeds.getCount();
-                    if (drop.getCount() > leftOver) {
-                        seeds.setCount(seeds.getMaxStackSize());
-                        drop.shrink(leftOver);
-                    } else {
-                        seeds.setCount(seeds.getCount() + drop.getCount());
-                        drop.setCount(0);
-                        continue;
-                    }
-                }
+            ItemStack remainder = drop.copy();
+            if (seedSlot != null && (!seedSlot.getItemStack(staged).isEmpty()
+                || drop.getItem() instanceof BlockItem || drop.getItem() instanceof IPlantable)) {
+                remainder = seedSlot.insertItem(staged, remainder, false);
             }
-            ItemStack temp = drop.copy();
-            list.add(temp);
-            for (int i = 0; i < 6; i++) {
-                ItemStack leftOver = OUTPUT.get(i).insertItem(this, temp, true);
-                if (leftOver.isEmpty()) {
-                    temp.setCount(0);
+            for (var outputSlot : OUTPUT.getAccesses()) {
+                if (remainder.isEmpty()) {
                     break;
-                } else {
-                    temp.setCount(leftOver.getCount());
                 }
+                remainder = outputSlot.insertItem(staged, remainder, false);
+            }
+            if (!remainder.isEmpty()) {
+                updateMachineState(MachineState.FULL_OUTPUT, true);
+                return false;
             }
         }
-        boolean empty = list.stream().filter(d -> !d.isEmpty()).findAny().isEmpty();
-        if (empty) {
-            for (ItemStack drop : drops) {
-                for (int i = 0; i < 6; i++) {
-                    ItemStack leftOver = OUTPUT.get(i).insertItem(this, drop.copy(), false);
-                    if (leftOver.isEmpty()) {
-                        drop.setCount(0);
-                        break;
-                    } else {
-                        drop.setCount(leftOver.getCount());
-                    }
-                }
+
+        for (var slot : changedSlots) {
+            var collected = slot.getItemStack(staged);
+            if (!ItemStack.matches(slot.getItemStack(inventory), collected)) {
+                slot.setStackInSlot(inventory, collected);
             }
         }
-        updateMachineState(MachineState.FULL_OUTPUT, !empty);
-        return empty;
+        updateMachineState(MachineState.FULL_OUTPUT, false);
+        return true;
     }
 
     public boolean consumeBonemeal() {

@@ -21,7 +21,9 @@ public class PlantCropFarmTask implements FarmTask {
     @Override
     public <T extends BlockEntity & FarmingMachine> FarmInteraction process(BlockPos targetBlock, T blockEntity) {
         ItemStack seeds = blockEntity.getSeedsForPos(targetBlock);
-        if (seeds.isEmpty() || blockEntity.getLevel().getBlockState(targetBlock).isAir()) {
+        var level = blockEntity.getLevel();
+        if (seeds.isEmpty() || level.getBlockState(targetBlock).isAir()
+            || !level.getBlockState(targetBlock.above()).canBeReplaced()) {
             return FarmInteraction.IGNORED;
         }
 
