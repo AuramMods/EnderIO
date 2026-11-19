@@ -15,6 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.block.Block;
@@ -54,6 +55,7 @@ final class ClientPaintedRedstoneSmoke {
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final String address = System.getProperty("enderio.clientqa.server");
+    private final boolean wet = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase"));
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
@@ -102,6 +104,9 @@ final class ClientPaintedRedstoneSmoke {
                             && BlockPaintData.of(sample.paint()).equals(BlockPaintData.ITEM_DATA.get(item)));
                     minecraft.player.getInventory().selected = slot;
                     var pos = sample.pos();
+                    if (wetTrapdoor()) {
+                        check("trapdoor_is_placed_into_an_existing_water_source", hasWaterSource(pos));
+                    }
                     var click = new BlockHitResult(Vec3.atBottomCenterOf(pos), Direction.UP, pos.below(), false);
                     check(sample.name() + "_survival_placement_consumes_action", use(click));
                     signal("placed-" + slot);
@@ -139,6 +144,7 @@ final class ClientPaintedRedstoneSmoke {
                 }
                 case CLOSED -> {
                     if (!state.is(sample.block()) || state.getValue(BlockStateProperties.OPEN)) return;
+                    verifyWaterlogged(sample, state, "closed");
                     signal("closed-" + slot);
                     if (slot == SAMPLES.length - 1) stage = Stage.FINISH;
                     else advance();
@@ -183,7 +189,24 @@ final class ClientPaintedRedstoneSmoke {
         var paint = ResourceLocation.parse("minecraft:block/" + BuiltInRegistries.BLOCK.getKey(sample.paint()).getPath());
         check(sample.name() + "_" + phase + "_bakes_only_the_correct_paint",
             !quads.isEmpty() && quads.stream().allMatch(quad -> quad.getSprite().contents().name().equals(paint)));
+        verifyWaterlogged(sample, state, phase);
         return quads.stream().map(quad -> Arrays.hashCode(quad.getVertices())).sorted().toList();
+    }
+
+    private void verifyWaterlogged(Sample sample, BlockState state, String phase) {
+        if (wetTrapdoor()) {
+            check("trapdoor_" + phase + "_retains_its_water_source",
+                state.getValue(BlockStateProperties.WATERLOGGED) && hasWaterSource(sample.pos()));
+        }
+    }
+
+    private boolean wetTrapdoor() {
+        return wet && slot == SAMPLES.length - 1;
+    }
+
+    private boolean hasWaterSource(BlockPos pos) {
+        var fluid = minecraft.level.getFluidState(pos);
+        return fluid.isSource() && fluid.is(FluidTags.WATER);
     }
 
     private void advance() {

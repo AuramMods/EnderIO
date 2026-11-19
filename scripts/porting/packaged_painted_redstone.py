@@ -28,14 +28,14 @@ def item(kind, paint):
     return f'id:"enderio:painted_{kind}",{paint_tag(paint)}'
 
 
-def block(sample, state=""):
+def block(sample, state="", z=8):
     x, kind, _, paint = sample
-    pos = f"{x} 80 8"
+    pos = f"{x} 80 {z}"
     return f'if block {pos} enderio:painted_{kind}{state} if data block {pos} {{Paint:"minecraft:{paint}"}}'
 
 
-def lamp(sample, lit):
-    return f"if block {sample[0] + 1} 80 8 minecraft:redstone_lamp[lit={lit}]"
+def lamp(sample, lit, z=8):
+    return f"if block {sample[0] + 1} 80 {z} minecraft:redstone_lamp[lit={lit}]"
 
 
 def load(server, results, name):
@@ -43,8 +43,7 @@ def load(server, results, name):
     server.assert_state(name, "if loaded 2200 80 8 if loaded 2221 80 8", results)
 
 
-def setup(server, results):
-    load(server, results, "fixture_chunks_loaded")
+def build_scene(server):
     server.command("gamerule doMobSpawning false")
     server.command("gamerule doDaylightCycle false")
     server.command("gamerule spawnRadius 0")
@@ -52,6 +51,19 @@ def setup(server, results):
     server.command("fill 2197 79 2 2225 79 14 minecraft:stone_bricks")
     server.command("setworldspawn 2200 80 12")
     server.command(f"setblock {BARREL} minecraft:barrel")
+
+
+def place_receivers(server, z=8):
+    for sample in SAMPLES[:2]:
+        server.command(f"setblock {sample[0] + 1} 80 {z} minecraft:redstone_lamp")
+    server.command(f"setblock 2199 80 {z} minecraft:redstone_wire")
+    for x in (2213, 2215):
+        server.command(f"setblock {x} 80 {z} minecraft:cobblestone_wall")
+
+
+def setup(server, results):
+    load(server, results, "fixture_chunks_loaded")
+    build_scene(server)
     for x, kind, template, paint in SAMPLES:
         machine = f"{x} 80 3"
         hopper = f"{x} 79 3"
@@ -66,23 +78,19 @@ def setup(server, results):
         server.assert_state(f"native_hopper_extracts_only_the_painted_{kind}",
                             f'if data block {hopper} Items[{{Slot:0b,Count:1b,{output}}}] '
                             f"{inventory(machine, [palette(paint)], 0)} unless data block {machine} Items.Items[{{Slot:3}}]", results)
-    for sample in SAMPLES[:2]:
-        server.command(f"setblock {sample[0] + 1} 80 8 minecraft:redstone_lamp")
-    server.command("setblock 2199 80 8 minecraft:redstone_wire")
-    for x in (2213, 2215):
-        server.command(f"setblock {x} 80 8 minecraft:cobblestone_wall")
+    place_receivers(server)
 
 
-def placed_state(sample, open_=False, powered=False):
+def placed_state(sample, open_=False, powered=False, waterlogged=False, z=8):
     _, kind, _, _ = sample
     if kind == "redstone_block":
-        return f"{block(sample)} {lamp(sample, 'true')} if block 2199 80 8 minecraft:redstone_wire[power=15]"
+        return f"{block(sample, z=z)} {lamp(sample, 'true', z)} if block 2199 80 {z} minecraft:redstone_wire[power=15]"
     if kind == "wooden_pressure_plate":
         lit = str(powered).lower()
-        return f"{block(sample, f'[powered={lit}]')} {lamp(sample, lit)}"
+        return f"{block(sample, f'[powered={lit}]', z)} {lamp(sample, lit, z)}"
     properties = [f"open={str(open_).lower()}", f"powered={str(powered).lower()}"]
-    properties.append("in_wall=true" if kind == "fence_gate" else "waterlogged=false")
-    return block(sample, f"[{','.join(properties)}]")
+    properties.append("in_wall=true" if kind == "fence_gate" else f"waterlogged={str(waterlogged).lower()}")
+    return block(sample, f"[{','.join(properties)}]", z)
 
 
 def loot_state():
@@ -91,25 +99,32 @@ def loot_state():
 
 
 def exercise(args, server, report):
+    setup(server, report["assertions"])
+    exercise_client(args, server, report)
+
+
+def exercise_client(args, server, report, legacy_loot=None):
     results = report["assertions"]
-    setup(server, results)
+    wet = legacy_loot is not None
     output = ROOT / "build/port-evidence" / f"{args.name}-client"
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"), "--launch", str(args.launch.resolve()),
                "--scenario", "painted-redstone", "--output", str(output), "--server", f"127.0.0.1:{args.port}",
-               "--timeout", "185"]
+               "--multiplayer-phase", "verify" if wet else "exercise", "--timeout", "185"]
     with (server.directory / "painted-redstone-client.log").open("w") as log:
         client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         try:
             wait_signal(client, output, "connected")
             for slot, sample in enumerate(SAMPLES):
                 x, kind, _, _ = sample
-                server.command(f"item replace entity {PLAYER} hotbar.{slot} from block {x} 79 3 container.0")
-                server.command(f"item replace block {x} 79 3 container.0 with minecraft:air")
+                source = f"{legacy_loot} container.{slot}" if wet else f"{x} 79 3 container.0"
+                server.command(f"item replace entity {PLAYER} hotbar.{slot} from block {source}")
+                server.command(f"item replace block {source} with minecraft:air")
                 server.command(f"tp {PLAYER} {x + 0.5} 80 11.5 180 {31 if slot == 1 else 24}")
                 (output / f"server-place-{slot}").touch()
                 wait_signal(client, output, f"placed-{slot}")
                 server.assert_state(f"survival_{kind}_places_with_expected_paint_and_state",
-                                    f"{placed_state(sample)} unless data entity {PLAYER} Inventory[{{Slot:{slot}b}}]", results)
+                                    f"{placed_state(sample, waterlogged=wet)} "
+                                    f"unless data entity {PLAYER} Inventory[{{Slot:{slot}b}}]", results)
                 (output / f"server-view-{slot}").touch()
                 wait_signal(client, output, f"viewed-{slot}")
                 if slot == 1:
@@ -122,12 +137,13 @@ def exercise(args, server, report):
                 if slot >= 2:
                     (output / f"server-active-{slot}").touch()
                     wait_signal(client, output, f"active-{slot}")
-                    server.assert_state(f"hand_use_opens_unpowered_{kind}", placed_state(sample, open_=True), results)
+                    server.assert_state(f"hand_use_opens_unpowered_{kind}", placed_state(sample, open_=True, waterlogged=wet), results)
                     (output / f"server-close-{slot}").touch()
                     wait_signal(client, output, f"closed-{slot}")
-                    server.assert_state(f"second_hand_use_closes_{kind}", placed_state(sample), results)
+                    server.assert_state(f"second_hand_use_closes_{kind}", placed_state(sample, waterlogged=wet), results)
                     server.command(f"setblock {x} 80 7 minecraft:redstone_block")
-                    server.assert_state(f"redstone_power_opens_{kind}", placed_state(sample, open_=True, powered=True), results)
+                    server.assert_state(f"redstone_power_opens_{kind}",
+                                        placed_state(sample, open_=True, powered=True, waterlogged=wet), results)
                 tool = "pickaxe" if slot == 0 else "axe"
                 server.command(f"loot replace block {BARREL} container.{slot} mine {x} 80 8 minecraft:diamond_{tool}")
             server.assert_state("native_loot_preserves_all_four_paint_materials", loot_state(), results)
@@ -144,15 +160,17 @@ def exercise(args, server, report):
             report["client"] = json.loads(summary.read_text()) if summary.exists() else None
 
 
-def reopen(server, results):
+def reopen(server, results, *, wet=False):
     load(server, results, "painted_redstone_chunks_loaded_after_restart")
-    active = [placed_state(sample, open_=slot >= 2, powered=slot >= 1) for slot, sample in enumerate(SAMPLES)]
+    active = [placed_state(sample, open_=slot >= 2, powered=slot >= 1, waterlogged=wet) for slot, sample in enumerate(SAMPLES)]
     server.assert_state("all_paints_outputs_and_powered_states_survive_restart", f'{" ".join(active)} {loot_state()}', results)
     server.command(f"kill {TRIGGER}")
     for x, _, _, _ in SAMPLES[2:]:
-        server.command(f"setblock {x} 80 7 minecraft:air")
+        replacement = "minecraft:stone_bricks" if wet and x == SAMPLES[-1][0] else "minecraft:air"
+        server.command(f"setblock {x} 80 7 {replacement}")
     for sample in SAMPLES[1:]:
-        server.assert_state(f"releasing_power_restores_the_original_{sample[1]}_state", placed_state(sample), results)
+        server.assert_state(f"releasing_power_restores_the_original_{sample[1]}_state",
+                            placed_state(sample, waterlogged=wet), results)
     server.command("setblock 2200 80 8 minecraft:air")
     server.assert_state("removing_the_painted_redstone_block_clears_its_full_output",
                         f"{lamp(SAMPLES[0], 'false')} if block 2199 80 8 minecraft:redstone_wire[power=0]", results)
