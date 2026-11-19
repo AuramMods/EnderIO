@@ -65,9 +65,15 @@ final class ClientAlloyProgressionSmoke {
 
         boolean matchesGrid(List<Slot> grid) {
             if (layout.isEmpty()) {
-                Item input = item(inputs.keySet().iterator().next());
-                return grid.stream().filter(Slot::hasItem)
-                    .allMatch(slot -> slot.getItem().is(input) && slot.getItem().getCount() == 1);
+                var actual = new LinkedHashMap<Item, Integer>();
+                for (Slot slot : grid) {
+                    if (!slot.hasItem()) continue;
+                    var stack = slot.getItem();
+                    if (stack.getCount() != 1) return false;
+                    actual.merge(stack.getItem(), 1, Integer::sum);
+                }
+                return actual.size() == inputs.size() && inputs.entrySet().stream().allMatch(entry ->
+                    entry.getValue().equals(actual.get(item(entry.getKey()))));
             }
             for (int index = 0; index < layout.size(); index++) {
                 String input = layout.get(index);

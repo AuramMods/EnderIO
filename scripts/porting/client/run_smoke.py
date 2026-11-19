@@ -47,7 +47,7 @@ parser.add_argument("--scenario",
                              "facade-shader-passes", "facade-shader-toggle",
                              "glass-progression", "alloy-progression", "crystal-progression", "advanced-components",
                              "antenna-progression", "ender-skull", "legacy-ender-skull",
-                             "wireless-charge", "curios", "solar-wired", "solar-carry",
+                             "wireless-charge", "curios", "solar-wired", "photovoltaic-progression", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")
 parser.add_argument("--tank", choices=("standard", "pressurized"), default="standard")
