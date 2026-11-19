@@ -15,7 +15,7 @@ parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-har
 parser.add_argument("--scenario",
                     choices=("title", "model-inventory", "xp-tools", "xp-tool-crafting", "special-enderios",
                              "singleplayer", "multiplayer", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
-                             "primitive-smelter", "stirling", "soul-binder", "soul-vials", "soul-engine", "soul-engine-fuels",
+                             "primitive-smelter", "stirling", "soul-binder", "soul-components", "soul-vials", "soul-engine", "soul-engine-fuels",
                              "powered-spawner", "spawner-rules", "obelisks", "entity-obelisks", "obelisk-carry", "farming-station",
                              "painting-machine", "painted-sand", "painted-redstone", "painted-building", "painted-building-wet",
                              "painted-travel", "legacy-painting", "painted-slabs",

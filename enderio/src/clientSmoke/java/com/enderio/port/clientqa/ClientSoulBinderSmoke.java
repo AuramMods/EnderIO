@@ -142,7 +142,7 @@ final class ClientSoulBinderSmoke {
         }
     }
 
-    private static boolean fluidIs(SoulBinderMenu menu, int amount) {
+    static boolean fluidIs(SoulBinderMenu menu, int amount) {
         var tank = menu.getFluidTank();
         return tank.capacity() == 10000 && tank.contents().getFluid() == EIOFluids.XP_JUICE.source().get()
             && tank.contents().getAmount() == amount;
