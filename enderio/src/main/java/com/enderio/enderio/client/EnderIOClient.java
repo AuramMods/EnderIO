@@ -31,6 +31,7 @@ import com.enderio.enderio.client.content.filters.redstone.RedstoneCountFilterSc
 import com.enderio.enderio.client.content.filters.redstone.RedstoneDoubleChannelFilterScreen;
 import com.enderio.enderio.client.content.filters.redstone.RedstoneTimerFilterScreen;
 import com.enderio.enderio.client.content.filters.soul.ClientEnderSoulFilterTooltip;
+import com.enderio.enderio.client.content.glass.AthenaGlassModel;
 import com.enderio.enderio.client.content.glass.GlassIconDecorator;
 import com.enderio.enderio.client.content.machines.AthenaCapacitorBankModel;
 import com.enderio.enderio.client.content.machines.IOOverlayBakedModel;
@@ -392,9 +393,10 @@ public class EnderIOClient {
     }
 
     @SubscribeEvent
-    public static void addAthenaBankOverlays(ModelEvent.ModifyBakingResult event) {
+    public static void adaptAthenaModels(ModelEvent.ModifyBakingResult event) {
         if (ModList.get().isLoaded("athena")) {
             AthenaCapacitorBankModel.addOverlays(event.getModels());
+            AthenaGlassModel.applyGlassRendering(event.getModels());
         }
     }
 

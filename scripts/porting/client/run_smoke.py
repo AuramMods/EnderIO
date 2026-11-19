@@ -18,6 +18,7 @@ parser.add_argument("--scenario",
                              "painting-machine", "legacy-painting", "painted-slabs", "legacy-aversion", "natural-spawns",
                              "facades", "facades-embeddium", "stained-facades", "stained-facades-embeddium", "stained-facades-oculus",
                              "facade-seams", "facade-seams-embeddium", "facade-seams-mixed", "facade-seams-mixed-embeddium",
+                             "facade-ctm-core", "facade-ctm-athena", "facade-ctm-embeddium",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")

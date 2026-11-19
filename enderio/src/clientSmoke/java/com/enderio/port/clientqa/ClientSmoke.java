@@ -58,6 +58,9 @@ public final class ClientSmoke {
             case "facade-seams-embeddium" -> new ClientFacadeSeamSmoke(false, true);
             case "facade-seams-mixed" -> new ClientFacadeSeamSmoke(true, false);
             case "facade-seams-mixed-embeddium" -> new ClientFacadeSeamSmoke(true, true);
+            case "facade-ctm-core" -> new ClientFacadeCtmSmoke(false, false);
+            case "facade-ctm-athena" -> new ClientFacadeCtmSmoke(true, false);
+            case "facade-ctm-embeddium" -> new ClientFacadeCtmSmoke(true, true);
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "natural-spawns" -> new ClientNaturalSpawnSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();

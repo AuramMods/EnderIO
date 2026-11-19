@@ -287,7 +287,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 088: matching facade face culling | Use the neighboring bundle's paint to hide shared faces across a chunk boundary | The build passes 79 unit and 482 native tests. Forge and Embeddium each pass six packaged server assertions and 13 guarded client checks covering exact vertex counts, live repaint, wrench view and restart. [Evidence and commands](porting/1.20.1/cycle-088.md) | `0a2cec40a` |
 
-| 089: facade and vanilla glass joins | Cull the ordinary glass face next to a matching facade and refresh both sections when wrench visibility changes | The build passes 79 unit and 482 native tests. The mixed join passes six packaged server assertions and 20 Forge or 25 Embeddium client checks. [Evidence and commands](porting/1.20.1/cycle-089.md) | Commit containing cycle 089 |
+| 089: facade and vanilla glass joins | Cull the ordinary glass face next to a matching facade and refresh both sections when wrench visibility changes | The build passes 79 unit and 482 native tests. The mixed join passes six packaged server assertions and 20 Forge or 25 Embeddium client checks. [Evidence and commands](porting/1.20.1/cycle-089.md) | `af6cced13` |
+
+| 090: Athena glass and facade rendering | Generate Forge blockstates for the optional glass pack and apply the cutout layer and tint to Athena's baked model | Both datagens and the build pass with 79 unit and 482 native tests. Packaged client/server tests cover a matching facade across a chunk edge, a matching ordinary glass neighbor, live repaint, resource reload and server restart. [Evidence and commands](porting/1.20.1/cycle-090.md) | Commit containing cycle 090 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
