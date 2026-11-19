@@ -29,6 +29,7 @@ public final class ClientSmoke {
     public ClientSmoke() {
         switch (System.getProperty("enderio.clientqa.scenario", "title")) {
             case "model-inventory" -> new ClientModelInventorySmoke();
+            case "xp-tools" -> new ClientXpToolsSmoke();
             case "singleplayer" -> new ClientWorldSmoke();
             case "multiplayer" -> new ClientMultiplayerSmoke();
             case "travel" -> new ClientTravelSmoke();

@@ -1,13 +1,14 @@
 package com.enderio.enderio.content.tools;
 
 import com.enderio.core.common.capability.CapabilityUtil;
+import com.enderio.core.common.capability.EnderFluidUtil;
 import com.enderio.core.common.network.EmitParticlePacket;
-import com.enderio.enderio.foundation.lang.EIOCommonLang;
+import com.enderio.core.common.network.CoreNetwork;
+import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.foundation.util.ExperienceUtil;
 import com.enderio.enderio.init.EIOFluids;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -21,7 +22,6 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import com.enderio.core.common.network.CoreNetwork;
 
 public class ExperienceRodItem extends Item {
     public ExperienceRodItem(Properties properties) {
@@ -65,57 +65,48 @@ public class ExperienceRodItem extends Item {
     }
 
     private static boolean transferFromBlockToPlayer(Player player, Level level, BlockPos pos, Direction side) {
-        try {
-            var fluidHandler = CapabilityUtil.get(level, pos, ForgeCapabilities.FLUID_HANDLER, side);
-            if (fluidHandler != null) {
-                FluidStack availableFluid = fluidHandler.getFluidInTank(0);
-                if (availableFluid.getFluid().is(com.enderio.enderio.foundation.tag.EIOTags.Fluids.EXPERIENCE) && availableFluid.getAmount() > 0) {
-                    int requiredXp = player.getXpNeededForNextLevel();
-                    int fluidVolume = requiredXp * ExperienceUtil.EXP_TO_FLUID;
-
-                    // See if we can drain the amount we need,
-                    FluidStack availableToDrain = fluidHandler.drain(fluidVolume, IFluidHandler.FluidAction.EXECUTE);
-                    int volumeToDrain = availableToDrain.getAmount() - (availableToDrain.getAmount() % ExperienceUtil.EXP_TO_FLUID);
-
-                    FluidStack drained = fluidHandler.drain(volumeToDrain, IFluidHandler.FluidAction.SIMULATE);
-                    if (!drained.isEmpty()) {
-                        player.giveExperiencePoints(drained.getAmount() / ExperienceUtil.EXP_TO_FLUID);
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        } catch (ArithmeticException ex) {
-            player.displayClientMessage(EIOCommonLang.TOO_MANY_LEVELS, true);
+        var handler = CapabilityUtil.get(level, pos, ForgeCapabilities.FLUID_HANDLER, side);
+        if (handler == null) {
+            return false;
         }
-
-        return false;
+        FluidStack stored = handler.getFluidInTank(0);
+        int pointVolume = ExperienceUtil.EXP_TO_FLUID;
+        int budget = Math.min(player.getXpNeededForNextLevel(), stored.getAmount() / pointVolume);
+        if (budget <= 0 || !stored.getFluid().is(EIOTags.Fluids.EXPERIENCE)) {
+            return false;
+        }
+        FluidStack requested = EnderFluidUtil.copyWithAmount(stored, budget * pointVolume);
+        int availablePoints = handler.drain(requested, IFluidHandler.FluidAction.SIMULATE).getAmount() / pointVolume;
+        if (availablePoints <= 0) {
+            return false;
+        }
+        requested.setAmount(availablePoints * pointVolume);
+        int points = handler.drain(requested, IFluidHandler.FluidAction.EXECUTE).getAmount() / pointVolume;
+        if (points <= 0) {
+            return false;
+        }
+        player.giveExperiencePoints(points);
+        return true;
     }
 
     private static boolean transferFromPlayerToBlock(Player player, Level level, BlockPos pos, Direction direction) {
-        try {
-            if (player.experienceLevel <= 0 && player.experienceProgress <= 0.0f) {
-                return false;
-            }
-
-            var fluidHandler = CapabilityUtil.get(level, pos, ForgeCapabilities.FLUID_HANDLER, direction);
-            if (fluidHandler != null) {
-                long fluidVolume = ExperienceUtil.getPlayerTotalXp(player) * ExperienceUtil.EXP_TO_FLUID;
-                int cappedVolume = (int) Math.min(Integer.MAX_VALUE, fluidVolume);
-                FluidStack fs = new FluidStack(EIOFluids.XP_JUICE.source().get(), cappedVolume);
-                int takenVolume = fluidHandler.fill(fs, IFluidHandler.FluidAction.EXECUTE);
-                if (takenVolume > 0) {
-                    player.giveExperiencePoints(-takenVolume / ExperienceUtil.EXP_TO_FLUID);
-                    return true;
-                }
-
-                return false;
-            }
-        } catch (ArithmeticException ex) {
-            player.displayClientMessage(EIOCommonLang.TOO_MANY_LEVELS, true);
+        var handler = CapabilityUtil.get(level, pos, ForgeCapabilities.FLUID_HANDLER, direction);
+        int pointVolume = ExperienceUtil.EXP_TO_FLUID;
+        int budget = (int) Math.min(ExperienceUtil.getPlayerTotalXp(player), Integer.MAX_VALUE / pointVolume);
+        if (handler == null || budget <= 0) {
+            return false;
         }
-
-        return false;
+        var offered = new FluidStack(EIOFluids.XP_JUICE.source().get(), budget * pointVolume);
+        int availablePoints = handler.fill(offered, IFluidHandler.FluidAction.SIMULATE) / pointVolume;
+        if (availablePoints <= 0) {
+            return false;
+        }
+        offered.setAmount(availablePoints * pointVolume);
+        int points = handler.fill(offered, IFluidHandler.FluidAction.EXECUTE) / pointVolume;
+        if (points <= 0) {
+            return false;
+        }
+        player.giveExperiencePoints(-points);
+        return true;
     }
 }

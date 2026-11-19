@@ -6,6 +6,7 @@
         "FeatureFlagsMixin",
         "FeatureFlagRegistryAccessor",
         "PlayerMixin",
+        "ExperienceOrbMixin",
         "ServerPlayerGliderMixin",
         "RecipeManagerMixin",
         "ContainerMenuMixin",

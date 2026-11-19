@@ -1,16 +1,17 @@
 package com.enderio.enderio.content.tools.vials;
 
-import net.minecraft.core.Direction;
 import com.enderio.core.common.capability.StrictFluidHandlerItemStack;
 import com.enderio.core.common.item.ICustomCreativeTabEntries;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.content.tools.ToolsLang;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
+import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.foundation.util.ExperienceUtil;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOFluids;
 import com.google.common.primitives.Ints;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
@@ -23,24 +24,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import java.util.function.BiFunction;
-import net.minecraftforge.event.entity.player.PlayerXpEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 import java.util.List;
+import java.util.function.BiFunction;
 
-@EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
 
     public static final ResourceLocation FILLED_MODEL_PROPERTY = EnderIO.rl("void_vial_filled");
 
     public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER = (stack, v) -> new StrictFluidHandlerItemStack(
-        EIODataComponents.ITEM_FLUID_CONTENT, stack, Ints.saturatedCast(ExperienceUtil.getFluidFromLevel(10)), com.enderio.enderio.foundation.tag.EIOTags.Fluids.EXPERIENCE);
+        EIODataComponents.ITEM_FLUID_CONTENT, stack, Ints.saturatedCast(ExperienceUtil.getFluidFromLevel(10)), EIOTags.Fluids.EXPERIENCE);
 
     public VoidVialItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -73,8 +70,11 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
 
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
+        if (level.isClientSide || !(livingEntity instanceof Player player)) {
+            return stack;
+        }
         IFluidHandlerItem capability = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
-        if (!(livingEntity instanceof Player player) || capability == null) {
+        if (capability == null) {
             return stack;
         }
 
@@ -145,33 +145,26 @@ public class VoidVialItem extends Item implements ICustomCreativeTabEntries {
         return (int) (1.6F * 20.0F); // default food time
     }
 
-    @SubscribeEvent
-    public static void collectEXP(PlayerXpEvent.PickupXp event) {
-        Player player = event.getEntity();
-
+    /** Stores whole points from one accepted pickup and leaves the rest for vanilla Mending and XP. */
+    public static int captureExperience(Player player, int points) {
         ItemStack stack = player.getOffhandItem();
         if (!(stack.getItem() instanceof VoidVialItem)) {
             stack = player.getMainHandItem();
         }
-
-        if (stack.getItem() instanceof VoidVialItem) {
-            IFluidHandler cap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
-            if (cap != null && event.getOrb().getValue() > 0 && cap.getFluidInTank(0).getAmount() < cap.getTankCapacity(0)) {
-                int orbFluidVolume = event.getOrb().getValue() * ExperienceUtil.EXP_TO_FLUID;
-
-                int simulatedFilled = cap.fill(new FluidStack(EIOFluids.XP_JUICE.source().get(), orbFluidVolume), IFluidHandler.FluidAction.SIMULATE);
-
-                // Ensure we're aligning to the EXP_TO_FLUID boundary
-                int amountToFill = simulatedFilled - (simulatedFilled % ExperienceUtil.EXP_TO_FLUID);
-                if (amountToFill <= 0) {
-                    return;
-                }
-
-                cap.fill(new FluidStack(EIOFluids.XP_JUICE.source().get(), amountToFill), IFluidHandler.FluidAction.EXECUTE);
-
-                int newOrbVolume = (orbFluidVolume - amountToFill);
-                event.getOrb().value = newOrbVolume / ExperienceUtil.EXP_TO_FLUID;
-            }
+        if (!(stack.getItem() instanceof VoidVialItem)) {
+            return points;
         }
+        var vial = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
+        if (vial == null) {
+            return points;
+        }
+        int pointVolume = ExperienceUtil.EXP_TO_FLUID;
+        int space = vial.getTankCapacity(0) - vial.getFluidInTank(0).getAmount();
+        int offeredPoints = Math.min(points, space / pointVolume);
+        if (offeredPoints <= 0) {
+            return points;
+        }
+        var fluid = new FluidStack(EIOFluids.XP_JUICE.source().get(), offeredPoints * pointVolume);
+        return points - vial.fill(fluid, IFluidHandler.FluidAction.EXECUTE) / pointVolume;
     }
 }
