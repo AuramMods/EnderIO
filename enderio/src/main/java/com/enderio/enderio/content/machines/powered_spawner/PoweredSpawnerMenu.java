@@ -75,8 +75,8 @@ public class PoweredSpawnerMenu extends PoweredMachineMenu<PoweredSpawnerBlockEn
         updateSlot(modeSlot);
     }
 
-    private class SpawnerSlot extends MachineSlot {
-        public SpawnerSlot(MachineInventory itemHandler, SingleSlotAccess access, int xPosition, int yPosition) {
+    public final class SpawnerSlot extends MachineSlot {
+        private SpawnerSlot(MachineInventory itemHandler, SingleSlotAccess access, int xPosition, int yPosition) {
             super(itemHandler, access, xPosition, yPosition);
         }
 

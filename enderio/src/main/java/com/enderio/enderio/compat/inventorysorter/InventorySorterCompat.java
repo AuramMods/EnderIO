@@ -3,6 +3,7 @@ package com.enderio.enderio.compat.inventorysorter;
 import com.enderio.enderio.content.enchanter.EnchanterMenu;
 import com.enderio.enderio.content.filters.fluid.FluidFilterSlot;
 import com.enderio.enderio.content.filters.item.ItemFilterSlot;
+import com.enderio.enderio.content.machines.powered_spawner.PoweredSpawnerMenu;
 import com.enderio.enderio.foundation.menu.GhostMachineSlot;
 import com.enderio.enderio.foundation.menu.MachineSlot;
 import com.enderio.enderio.foundation.menu.PreviewMachineSlot;
@@ -23,5 +24,7 @@ public class InventorySorterCompat {
         InterModComms.sendTo("inventorysorter", "slotblacklist", PreviewMachineSlot.class::getName);
         InterModComms.sendTo("inventorysorter", "slotblacklist",
             EnchanterMenu.EnchanterOutputMachineSlot.class::getName);
+        // Inventory Sorter compares concrete class names, so MachineSlot does not cover its subclasses.
+        InterModComms.sendTo("inventorysorter", "slotblacklist", PoweredSpawnerMenu.SpawnerSlot.class::getName);
     }
 }

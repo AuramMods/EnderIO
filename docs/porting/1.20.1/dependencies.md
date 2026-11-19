@@ -1,6 +1,6 @@
 # Target dependency selection
 
-Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions.toml`. Version availability was checked against publisher Maven metadata or the project's Modrinth/CurseForge release record. Selection alone is not evidence of working integration; the runtime column records verified subsets and remaining work.
+Selection began on 2026-11-17. Build dependencies are pinned in `gradle/libs.versions.toml`. The Inventory Sorter test pin is recorded below. Version availability was checked against publisher Maven metadata or the project's Modrinth or CurseForge release record. The runtime column records verified behavior and remaining work.
 
 | Dependency | Target release | Artifact selection | Runtime evidence |
 | --- | --- | --- | --- |
@@ -15,6 +15,7 @@ Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions
 | Refined Storage | 1.12.4 | Modrinth `refined-storage:ZITLFjjf` | Native controller routing, split/reconnect, sides and bundle reload pass. Packaged migration keeps a controller-to-drive route and owners across chunk reload and restart. Storage operations and the client remain pending ([cycle 053](cycle-053.md)) |
 | LaserIO | 1.6.8 | Curse Maven `laserio-626839:5074767` | Packaged TCP installs and removes loose Basic Filters and filtered item and fluid cards in Ender IO conduits. Four routes verify NBT matching, allow and deny behavior, empty cards, exact transfer and restart. The same unfiltered routes pass with LaserIO absent. The native book recipe passes with Patchouli. [Cycle 033](cycle-033.md), [cycle 102](cycle-102.md) |
 | Patchouli (LaserIO book) | 1.20.1-84.1-forge | Modrinth `patchouli:8Qyw08ld` | Native LaserIO book matching/assembly passes; book UI pending |
+| Inventory Sorter | 23.0.11 | Curse Maven `inventory-sorter-240633:7188685` | Packaged TCP verifies normal barrel sorting and protected Ender IO machine, template, preview, enchanting output, spawner vial and held filter slots. The core control exercises the same screens with Inventory Sorter absent. Both profiles preserve their expected inventories across restart. [Cycle 103](cycle-103.md) |
 | Almost Unified | 1.20.1-0.10.1 | `com.almostreliable.mods:almostunified-forge` | A packaged Forge SAG Mill selects the configured Forge tin dust, respects a live output-tag restriction and preserves previous outputs after priority changes and restart. Optional loading and the Mekanism input work with Almost Unified absent. Other material and JEI combinations remain open. [Cycle 095](cycle-095.md) |
 | FTB Ultimine | 2001.1.8 | `dev.ftb.mods:ftb-ultimine-forge` | Packaged TCP verifies the registered key, default shapeless preview, selective facade and energy-conduit mining, tagged drops and restart. The control verifies ordinary mining with Ultimine absent. Other shapes, wrench ghosting and break-event cancellation remain open. [Cycle 096](cycle-096.md) |
 | FTB Library | 2001.2.13 | `dev.ftb.mods:ftb-library-forge` | Loads on both ends of the packaged FTB Ultimine mining session. [Cycle 096](cycle-096.md) |
@@ -24,7 +25,7 @@ Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions
 | Oculus | 1.20.1-1.8.0 | Modrinth `oculus:iQ1SwGc3`; shader compatibility profile | Packaged TCP on Embeddium verifies all four stained-glass facades, wrench visibility and resource reload with a test shader pack active and with shaders disabled. The active path hides the ghost glass while exposing all four conduits. Packs with custom geometry or shadow passes and the Athena combination remain open. [Cycle 087](cycle-087.md), [cycle 091](cycle-091.md) |
 | GraphLib3 | 3.0.5 | Existing `dev.gigaherz.graph:GraphLib3` bundled library | Pending |
 
-Inventory Sorter hooks still need a target-mod test profile. Optional dependency loading, metadata dependencies inside downloaded jars (including nested jars), default/minimal/all-integrations profiles and API changes still require validation. The standard Gradle dependency report resolves the dependency graph; it does not prove all remapped jar files have been downloaded or that the APIs compile.
+Optional dependency loading, metadata dependencies inside downloaded jars (including nested jars), default/minimal/all-integrations profiles and API changes still require validation. The standard Gradle dependency report resolves the dependency graph. The actual runtime profiles provide separate loading and compatibility evidence.
 
 ModDevGradle's `modCompileOnly`, `modRuntimeOnly`, and custom `modLocalRuntime` configurations remap Forge SRG artifacts to named mappings. These configurations do not pull transitive mod dependencies automatically, so required integration dependencies must be explicitly supplied. EnderCore, modded conduits and GraphLib remain bundled as in the source baseline; the final production jar nesting/remapping must be tested.
 
@@ -34,6 +35,7 @@ Sources:
 - [Forge 1.20.1 releases](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.20.1.html).
 - [Modrinth project version API](https://docs.modrinth.com/api/operations/getprojectversions/) queried with `game_versions=["1.20.1"]` and `loaders=["forge"]`; exact release IDs are recorded above.
 - [LaserIO 1.6.8](https://www.curseforge.com/minecraft/mc-mods/laserio/files/5074767).
+- [Inventory Sorter 23.0.11 for Forge 1.20.1](https://www.curseforge.com/minecraft/mc-mods/inventory-sorter/files/7188685).
 - [Almost Unified Maven metadata](https://maven.blamejared.com/com/almostreliable/mods/almostunified-forge/maven-metadata.xml).
 - [FTB Ultimine Maven metadata](https://maven.ftb.dev/releases/dev/ftb/mods/ftb-ultimine-forge/maven-metadata.xml).
 - [FTB Library Maven metadata](https://maven.ftb.dev/releases/dev/ftb/mods/ftb-library-forge/maven-metadata.xml).
