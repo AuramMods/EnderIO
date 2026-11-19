@@ -6,9 +6,18 @@ import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOItems;
 import com.enderio.enderio.init.EIORecipes;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
 
@@ -26,20 +35,12 @@ public class SlicerTests {
             var slicer = helper.getBlockEntity(0, 1, 0, SlicerBlockEntity.class);
             var axe = new ItemStack(Items.IRON_AXE);
             var shears = new ItemStack(Items.SHEARS);
-            var soularium = EIOItems.SOULARIUM_INGOT.get();
-            var silicon = EIOItems.SILICON.get();
-            var ingredients = List.of(soularium, Items.ZOMBIE_HEAD, soularium, silicon, Items.REDSTONE, silicon);
             int paid = 3600;
             int remaining = 16400;
             float progress = paid / 20000f;
             helper.startSequence()
                 .thenExecute(() -> {
-                    slicer.getInventory().setStackInSlot(slicer.getCapacitorSlotIndex(), new ItemStack(EIOItems.BASIC_CAPACITOR.get()));
-                    for (int i = 0; i < ingredients.size(); i++) {
-                        SlicerBlockEntity.INPUTS.get(i).setStackInSlot(slicer, new ItemStack(ingredients.get(i)));
-                    }
-                    SlicerBlockEntity.AXE.setStackInSlot(slicer, axe);
-                    SlicerBlockEntity.SHEARS.setStackInSlot(slicer, shears);
+                    loadZLogicIngredients(slicer, axe, shears);
                     helper.provideEnergyExact(0, 1, 0, paid);
                 })
                 .thenWaitUntil(() -> helper.assertValueEqual(slicer.getCraftingProgress(), progress, "paid progress"))
@@ -65,6 +66,62 @@ public class SlicerTests {
                 })
                 .thenSucceed();
         });
+    }
+
+    @GameTest(timeoutTicks = 900)
+    public static void nativeSlicerLootRetainsPaidTaskAfterPlacement(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(3, 2, 1)
+            .set(0, 0, 0, Blocks.STONE.defaultBlockState())
+            .set(0, 1, 0, EIOBlocks.SLICE_AND_SPLICE.get().defaultBlockState())
+            .set(2, 0, 0, Blocks.STONE.defaultBlockState()));
+
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var slicer = helper.getBlockEntity(0, 2, 0, SlicerBlockEntity.class);
+            var level = helper.getLevel();
+            int paid = 3600;
+            int remaining = 16400;
+            float progress = paid / 20000f;
+            helper.startSequence().thenExecute(() -> {
+                loadZLogicIngredients(slicer, new ItemStack(Items.IRON_AXE), new ItemStack(Items.SHEARS));
+                helper.provideEnergyExact(0, 2, 0, paid);
+            }).thenWaitUntil(() -> helper.assertValueEqual(slicer.getCraftingProgress(), progress, "original payment"))
+                .thenExecute(() -> {
+                    helper.provideEnergyExact(0, 2, 0, remaining);
+                    var oldPos = slicer.getBlockPos();
+                    var drops = Block.getDrops(slicer.getBlockState(), level, oldPos, slicer);
+                    helper.assertTrue(drops.size() == 1 && drops.get(0).is(EIOBlocks.SLICE_AND_SPLICE.asItem()),
+                        "native loot contains one saved slicer");
+                    var drop = drops.get(0);
+                    level.removeBlock(oldPos, false);
+                    var floor = helper.absolutePos(new BlockPos(2, 1, 0));
+                    var hit = new BlockHitResult(Vec3.atCenterOf(floor), Direction.UP, floor, false);
+                    var context = new BlockPlaceContext(level, null, InteractionHand.MAIN_HAND, drop, hit);
+                    var placed = ((BlockItem) drop.getItem()).place(context);
+                    helper.assertTrue(placed.consumesAction() && drop.isEmpty(), "native placement consumes the carried slicer");
+                    helper.assertEnergyStored(2, 2, 0, remaining);
+                }).thenExecuteAfter(4, () -> {
+                    var restored = helper.getBlockEntity(2, 2, 0, SlicerBlockEntity.class);
+                    helper.assertTrue(restored.getCraftingProgress() > progress, "the replanted slicer continues from its paid progress");
+                }).thenWaitUntil(() -> helper.assertContainerHasExactly(2, 2, 0, EIOItems.Z_LOGIC_CONTROLLER.get(), 1))
+                .thenExecute(() -> {
+                    var restored = helper.getBlockEntity(2, 2, 0, SlicerBlockEntity.class);
+                    helper.assertEnergyStored(2, 2, 0, 0);
+                    helper.assertValueEqual(SlicerBlockEntity.AXE.getItemStack(restored).getDamageValue(), 1, "replanted axe wear");
+                    helper.assertValueEqual(SlicerBlockEntity.SHEARS.getItemStack(restored).getDamageValue(), 1, "replanted shears wear");
+                }).thenSucceed();
+        });
+    }
+
+    private static void loadZLogicIngredients(SlicerBlockEntity slicer, ItemStack axe, ItemStack shears) {
+        var soularium = EIOItems.SOULARIUM_INGOT.get();
+        var silicon = EIOItems.SILICON.get();
+        var ingredients = List.of(soularium, Items.ZOMBIE_HEAD, soularium, silicon, Items.REDSTONE, silicon);
+        slicer.getInventory().setStackInSlot(slicer.getCapacitorSlotIndex(), new ItemStack(EIOItems.BASIC_CAPACITOR.get()));
+        for (int i = 0; i < ingredients.size(); i++) {
+            SlicerBlockEntity.INPUTS.get(i).setStackInSlot(slicer, new ItemStack(ingredients.get(i)));
+        }
+        SlicerBlockEntity.AXE.setStackInSlot(slicer, axe);
+        SlicerBlockEntity.SHEARS.setStackInSlot(slicer, shears);
     }
 
     @GameTest

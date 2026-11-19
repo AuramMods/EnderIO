@@ -23,6 +23,7 @@ import com.enderio.enderio.content.paint.BlockPaintData;
 import com.enderio.enderio.foundation.attachment.ActionRange;
 import com.enderio.enderio.foundation.io.IOConfig;
 import com.mojang.serialization.Codec;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.fluids.FluidStack;
 
 
@@ -94,6 +95,8 @@ public class EIODataComponents {
     // grinding ball :P
     public static final ItemDataKey<GrindingBallData> SAG_MILL_GRINDING_BALL = new ItemDataKey<>(EnderIO.rl("sag_mill_grinding_ball"), GrindingBallData.CODEC);
     public static final ItemDataKey<Integer> SAG_MILL_GRINDING_BALL_DAMAGE = new ItemDataKey<>(EnderIO.rl("sag_mill_grinding_ball_damage"), Codec.INT);
+
+    public static final ItemDataKey<CompoundTag> SLICER_TASK = new ItemDataKey<>(EnderIO.rl("slicer_task"), CompoundTag.CODEC);
 
     // endregion
 

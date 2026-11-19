@@ -17,6 +17,7 @@ import com.enderio.enderio.foundation.task.CraftingMachineTask;
 import com.enderio.enderio.foundation.task.PoweredCraftingMachineTask;
 import com.enderio.enderio.foundation.task.host.CraftingMachineTaskHost;
 import com.enderio.enderio.init.EIOBlockEntities;
+import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIORecipes;
 import com.enderio.enderio.init.EIOSounds;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -32,6 +33,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.item.Tiers;
@@ -224,6 +226,42 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
         var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         super.load(tag);
         craftingTaskHost.load(lookupProvider, tag);
+    }
+
+    @Override
+    protected void readItemData(ItemStack stack) {
+        super.readItemData(stack);
+        var carried = EIODataComponents.SLICER_TASK.get(stack);
+        if (carried == null) {
+            carried = BlockItem.getBlockEntityData(stack);
+        }
+        if (carried == null) {
+            craftingTaskHost.newTaskAvailable();
+            return;
+        }
+
+        // Bind the saved recipe to the restored inputs after the portable inventory has been applied.
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        craftingTaskHost.load(lookupProvider, carried);
+    }
+
+    @Override
+    protected void writeItemData(ItemStack stack) {
+        super.writeItemData(stack);
+        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        var carried = new CompoundTag();
+        craftingTaskHost.save(lookupProvider, carried);
+        if (carried.isEmpty()) {
+            EIODataComponents.SLICER_TASK.reset(stack);
+        } else {
+            EIODataComponents.SLICER_TASK.set(stack, carried);
+        }
+    }
+
+    @Override
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
+        tag.remove("Task");
     }
 
     // endregion

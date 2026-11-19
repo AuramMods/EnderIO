@@ -1,6 +1,6 @@
 # Ender IO: Forge 1.20.1 port tracker
 
-Status as of cycle 159. All shipped modules build for Forge 47.4.28 and Java 17. The latest full build passes 79 unit cases and 523 native runs, including 196 main gameplay cases. The packaged build runs in single-player and over TCP on a dedicated Forge server. Packaged tests cover starter crafting and power, higher power tiers, representative machines, other conduits, tools, world content, Forge 6.2 save upgrades and optional integrations. [Build and packaging evidence](porting/1.20.1/cycle-045.md), [feature inventory](porting/1.20.1/features.md), [dependency evidence](porting/1.20.1/dependencies.md).
+Status as of cycle 160. All shipped modules build for Forge 47.4.28 and Java 17. The latest full build passes 79 unit cases and 524 native runs, including 197 main gameplay cases. The packaged build runs in single-player and over TCP on a dedicated Forge server. Packaged tests cover starter crafting and power, higher power tiers, representative machines, other conduits, tools, world content, Forge 6.2 save upgrades and optional integrations. [Build and packaging evidence](porting/1.20.1/cycle-045.md), [feature inventory](porting/1.20.1/features.md), [dependency evidence](porting/1.20.1/dependencies.md).
 
 Full parity is in progress. Remaining work includes registry and recipe reconciliation, end-to-end crafting progression, untested feature variants and lifecycle paths, historical saves and additional combinations of optional mods and client renderers. The final artifacts still need a clean-profile verification pass.
 
@@ -429,7 +429,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 158: SAG Mill JEI recipes and transfer | Verify ore lookup, bonus tooltips, displayed grinding-ball costs, transfer and live reload | Both packaged profiles pass 22 client checks and five server assertions. Forge processes the ore supplied by the JEI button or by manual inventory clicks. The viewer lists both bonus outputs and updates its catalyst lookup and displayed cost on reload. [Evidence and commands](porting/1.20.1/cycle-158.md) | `189b681a2` |
 
-| 159: Stock Slice’N’Splice recipes and tool removal | Feed all five recipes with hoppers and preserve a saved task while a tool is absent | The build passes 79 unit cases and 523 native runs. Packaged Forge passes 33 server assertions and 10 client checks, including exact energy and tool wear across restart and native removal and return of the shears. [Evidence and commands](porting/1.20.1/cycle-159.md) | Commit containing cycle 159 |
+| 159: Stock Slice’N’Splice recipes and tool removal | Feed all five recipes with hoppers and preserve a saved task while a tool is absent | The build passes 79 unit cases and 523 native runs. Packaged Forge passes 33 server assertions and 10 client checks, including exact energy and tool wear across restart and native removal and return of the shears. [Evidence and commands](porting/1.20.1/cycle-159.md) | `dbbc92c08` |
+
+| 160: Slice’N’Splice carried job migration | Convert original Forge 6.2 slicers and retain the task in modern native loot | The build passes 79 unit cases and 524 native runs. Packaged Forge passes 24 server assertions, 18 client checks and an offline inventory check. The original block and both replanted jobs finish on their remaining 16,400 FE. [Evidence and commands](porting/1.20.1/cycle-160.md) | Commit containing cycle 160 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
