@@ -1,14 +1,10 @@
 package com.enderio.enderio.content.conduits.legacy;
 
-import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.common.registries.ItemDeferredRegister;
 import com.enderio.enderio.api.EnderIORegistries;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.api.conduits.network.node.NodeData;
-import com.enderio.enderio.content.filters.fluid.EnderFluidFilter;
-import com.enderio.enderio.content.filters.item.general.DamageFilterMode;
-import com.enderio.enderio.content.filters.item.general.EnderItemFilter;
 import com.enderio.enderio.content.paint.BlockPaintData;
 import com.enderio.enderio.init.EIOConduitTypes;
 import com.enderio.enderio.init.EIOConduits;
@@ -25,11 +21,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
@@ -96,40 +90,12 @@ public final class Forge6ConduitData {
         return new DynamicConnectionState(tag.getBoolean("IsInsert"), color(tag.getInt("Insert")),
             tag.getBoolean("IsExtract"), color(tag.getInt("Extract")),
             RedstoneControl.BY_ID.apply(tag.getInt("RedstoneControl")), color(tag.getInt("Channel")),
-            filter(tag.getCompound("InsertFilter")), filter(tag.getCompound("ExtractFilter")),
+            ItemStack.of(tag.getCompound("InsertFilter")), ItemStack.of(tag.getCompound("ExtractFilter")),
             ItemStack.of(tag.getCompound("ExtractUpgrade")));
     }
 
     private static DyeColor color(int index) {
         return index >= 0 && index < COLORS.length ? COLORS[index] : DyeColor.GREEN;
-    }
-
-    private static ItemStack filter(CompoundTag data) {
-        ItemStack stack = ItemStack.of(data);
-        if (stack.isEmpty() || stack.getTag() == null) return stack;
-        var tag = stack.getTag();
-        if (tag.contains("ItemEntries", Tag.TAG_LIST) && !EIODataComponents.ITEM_FILTER.has(stack)) {
-            var entries = new ArrayList<ItemStack>();
-            for (var entry : tag.getList("ItemEntries", Tag.TAG_COMPOUND)) {
-                entries.add(ItemStack.of((CompoundTag) entry));
-            }
-            var filter = new EnderItemFilter(entries, tag.getBoolean("IsInverted"), tag.getBoolean("IsNbt"), DamageFilterMode.IGNORE);
-            tag.remove("ItemEntries");
-            tag.remove("IsInverted");
-            tag.remove("IsNbt");
-            EIODataComponents.ITEM_FILTER.set(stack, filter);
-        } else if (tag.contains("FluidEntries", Tag.TAG_LIST) && !EIODataComponents.FLUID_FILTER.has(stack)) {
-            var entries = new ArrayList<FluidStack>();
-            for (var entry : tag.getList("FluidEntries", Tag.TAG_COMPOUND)) {
-                entries.add(StackDataCodecs.loadFluid((CompoundTag) entry));
-            }
-            var filter = new EnderFluidFilter(entries, tag.getBoolean("IsInverted"), tag.getBoolean("IsNbt"));
-            tag.remove("FluidEntries");
-            tag.remove("IsInverted");
-            tag.remove("IsNbt");
-            EIODataComponents.FLUID_FILTER.set(stack, filter);
-        }
-        return stack;
     }
 
     public static ItemStack facade(CompoundTag facades) {

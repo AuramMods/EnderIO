@@ -1,8 +1,9 @@
 package porting.fixture;
 
+import com.enderio.api.conduit.ConduitType;
+import com.enderio.api.io.IOMode;
 import com.enderio.api.misc.ColorControl;
 import com.enderio.api.misc.RedstoneControl;
-import com.enderio.api.io.IOMode;
 import com.enderio.conduits.common.conduit.block.ConduitBlockEntity;
 import com.enderio.conduits.common.conduit.connection.DynamicConnectionState;
 import com.enderio.conduits.common.conduit.connection.StaticConnectionStates;
@@ -10,6 +11,7 @@ import com.enderio.conduits.common.init.EIOConduitTypes;
 import com.enderio.conduits.common.redstone.DoubleRedstoneChannel;
 import com.enderio.conduits.common.redstone.RedstoneCountFilter;
 import com.enderio.conduits.common.redstone.RedstoneTimerFilter;
+import com.enderio.core.common.capability.FluidFilterCapability;
 import com.enderio.core.common.capability.ItemFilterCapability;
 import com.enderio.machines.common.blockentity.TravelAnchorBlockEntity;
 import com.enderio.machines.common.blockentity.FluidTankBlockEntity;
@@ -90,6 +92,12 @@ public class Fixture {
             .executes(context -> {
                 buildRedstoneFilterRoutes(context.getSource().getLevel());
                 context.getSource().sendSuccess(() -> Component.literal("Legacy redstone filter routes created"), false);
+                return 1;
+            }));
+        event.getDispatcher().register(Commands.literal("port_legacy_transfer_filters").requires(source -> source.hasPermission(4))
+            .executes(context -> {
+                buildTransferFilterRoutes(context.getSource().getLevel());
+                context.getSource().sendSuccess(() -> Component.literal("Legacy transfer filter routes created"), false);
                 return 1;
             }));
         event.getDispatcher().register(Commands.literal("port_legacy_travel").requires(source -> source.hasPermission(4))
@@ -267,6 +275,73 @@ public class Fixture {
 
         redstoneFilterRoute(level, 15, ColorControl.CYAN, true,
             taggedFilter("redstone_sensor_filter", "sensor"), taggedFilter("redstone_not_filter", "inverter"));
+    }
+
+    private static void buildTransferFilterRoutes(ServerLevel level) {
+        var basic = taggedFilter("basic_item_filter", "basic");
+        var allow = new ItemFilterCapability(basic, 5);
+        var paper = new ItemStack(Items.PAPER);
+        paper.getOrCreateTag().putInt("Sample", 41);
+        allow.setEntry(4, paper);
+        allow.setInverted(false);
+        allow.setNbt(false);
+
+        var advanced = taggedFilter("advanced_item_filter", "advanced");
+        var deny = new ItemFilterCapability(advanced, 10);
+        var pick = new ItemStack(Items.IRON_PICKAXE);
+        pick.setDamageValue(27);
+        pick.getOrCreateTag().putInt("Sample", 42);
+        deny.setEntry(2, stack("copper_alloy_ingot"));
+        deny.setEntry(9, pick);
+        deny.setInverted(true);
+        deny.setNbt(true);
+
+        var fluid = taggedFilter("basic_fluid_filter", "fluid");
+        var allowFluid = new FluidFilterCapability(fluid, 5);
+        var sample = new FluidStack(Fluids.WATER, 37);
+        sample.getOrCreateTag().putInt("Sample", 43);
+        allowFluid.setEntry(4, sample);
+        allowFluid.setInverted(false);
+        allowFluid.setNbt(true);
+
+        var invertedFluid = taggedFilter("basic_fluid_filter", "inverted-fluid");
+        var denyFluid = new FluidFilterCapability(invertedFluid, 5);
+        var xp = new FluidStack(ForgeRegistries.FLUIDS.getValue(ResourceLocation.fromNamespaceAndPath("enderio", "xp_juice")), 11);
+        xp.getOrCreateTag().putInt("Sample", 44);
+        var deniedWater = new FluidStack(Fluids.WATER, 19, xp.getTag().copy());
+        denyFluid.setEntry(1, xp);
+        denyFluid.setEntry(3, new FluidStack(Fluids.LAVA, 23));
+        denyFluid.setEntry(4, deniedWater);
+        denyFluid.setInverted(true);
+        denyFluid.setNbt(false);
+
+        var supplies = (BarrelBlockEntity) level.getBlockEntity(new BlockPos(4638, 80, 14));
+        supplies.setItem(0, basic.copy());
+        supplies.setItem(3, advanced.copy());
+        supplies.setItem(8, fluid.copy());
+        supplies.setItem(15, invertedFluid.copy());
+        supplies.setChanged();
+
+        var itemType = EIOConduitTypes.ITEM.get();
+        var fluidType = EIOConduitTypes.FLUID.get();
+        transferFilterRoute(level, 2, "item_conduit", itemType, basic, ItemStack.EMPTY);
+        transferFilterRoute(level, 5, "item_conduit", itemType, ItemStack.EMPTY, advanced);
+        transferFilterRoute(level, 8, "fluid_conduit", fluidType, fluid, ItemStack.EMPTY);
+        transferFilterRoute(level, 11, "fluid_conduit", fluidType, ItemStack.EMPTY, invertedFluid);
+    }
+
+    private static void transferFilterRoute(ServerLevel level, int z, String conduit,
+            ConduitType<?> type, ItemStack extract, ItemStack insert) {
+        var source = place(level, new BlockPos(4639, 79, z), conduit);
+        var destination = place(level, new BlockPos(4640, 79, z), conduit);
+        source.handleConnectionStateUpdate(Direction.WEST, type,
+            new DynamicConnectionState(false, ColorControl.WHITE, true, ColorControl.ORANGE,
+                RedstoneControl.ALWAYS_ACTIVE, ColorControl.GREEN, ItemStack.EMPTY, extract, ItemStack.EMPTY));
+        destination.handleConnectionStateUpdate(Direction.EAST, type,
+            new DynamicConnectionState(true, ColorControl.ORANGE, false, ColorControl.WHITE,
+                RedstoneControl.ALWAYS_ACTIVE, ColorControl.GREEN, insert, ItemStack.EMPTY, ItemStack.EMPTY));
+        source.setChanged();
+        destination.setChanged();
     }
 
     private static ConduitBlockEntity redstoneFilterRoute(ServerLevel level, int z, ColorControl color, boolean enabled,

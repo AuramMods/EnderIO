@@ -103,17 +103,19 @@ public class EnderFluidFilterMenu extends AbstractFilterMenu<EnderFluidFilter> {
             matches.set(slotIndex, stack);
 
             // Set the new filter
-            return new EnderFluidFilter(matches, filter.isDenyList(), filter.shouldCompareComponents());
+            return new EnderFluidFilter(matches, filter.isDenyList(), filter.shouldCompareComponents(), filter.legacyMatching());
         });
     }
 
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (id == IS_INVERTED_BUTTON_ID) {
-            modifyFilter(filter -> new EnderFluidFilter(filter.matches(), !filter.isDenyList(), filter.shouldCompareComponents()));
+            modifyFilter(filter -> new EnderFluidFilter(filter.matches(), !filter.isDenyList(),
+                filter.shouldCompareComponents(), filter.legacyMatching()));
             return true;
         } else if (id == SHOULD_COMPARE_COMPONENTS_BUTTON_ID && type.canMatchComponents()) {
-            modifyFilter(filter -> new EnderFluidFilter(filter.matches(), filter.isDenyList(), !filter.shouldCompareComponents()));
+            modifyFilter(filter -> new EnderFluidFilter(filter.matches(), filter.isDenyList(),
+                !filter.shouldCompareComponents(), filter.legacyMatching()));
             return true;
         }
 

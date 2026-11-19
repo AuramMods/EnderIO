@@ -47,7 +47,7 @@ public class EnderItemFilterMenu extends AbstractFilterMenu<EnderItemFilter> {
                     (mode) -> modifyFilterStack(stack -> {
                         var filter = EIODataComponents.ITEM_FILTER.getOrDefault(stack, EnderItemFilter.EMPTY);
                         EIODataComponents.ITEM_FILTER.set(stack, new EnderItemFilter(filter.matches(),
-                                filter.isDenyList(), filter.shouldCompareComponents(), mode));
+                                filter.isDenyList(), filter.shouldCompareComponents(), mode, filter.compareLegacyTags()));
                         return stack;
                     })));
         } else {
@@ -144,17 +144,20 @@ public class EnderItemFilterMenu extends AbstractFilterMenu<EnderItemFilter> {
             matches.set(slotIndex, stack);
 
             // Set the new filter
-            return new EnderItemFilter(matches, filter.isDenyList(), filter.shouldCompareComponents(), filter.damageFilterMode());
+            return new EnderItemFilter(matches, filter.isDenyList(), filter.shouldCompareComponents(),
+                filter.damageFilterMode(), filter.compareLegacyTags());
         });
     }
 
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (id == IS_INVERTED_BUTTON_ID) {
-            modifyFilter(filter -> new EnderItemFilter(filter.matches(), !filter.isDenyList(), filter.shouldCompareComponents(), filter.damageFilterMode()));
+            modifyFilter(filter -> new EnderItemFilter(filter.matches(), !filter.isDenyList(),
+                filter.shouldCompareComponents(), filter.damageFilterMode(), filter.compareLegacyTags()));
             return true;
         } else if (id == SHOULD_COMPARE_COMPONENTS_BUTTON_ID && type.canMatchComponents()) {
-            modifyFilter(filter -> new EnderItemFilter(filter.matches(), filter.isDenyList(), !filter.shouldCompareComponents(), filter.damageFilterMode()));
+            modifyFilter(filter -> new EnderItemFilter(filter.matches(), filter.isDenyList(),
+                !filter.shouldCompareComponents(), filter.damageFilterMode(), filter.compareLegacyTags()));
             return true;
         }
 

@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 public record EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList, boolean shouldCompareComponents,
-        DamageFilterMode damageFilterMode) implements ItemFilter, TooltipComponent {
+        DamageFilterMode damageFilterMode, boolean compareLegacyTags) implements ItemFilter, TooltipComponent {
 
     public static final EnderItemFilter EMPTY = new EnderItemFilter(0);
 
@@ -31,13 +31,15 @@ public record EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList
                     Codec.BOOL.optionalFieldOf("isInvert", false).forGetter(EnderItemFilter::isDenyList),
                     Codec.BOOL.optionalFieldOf("isNbt", false).forGetter(EnderItemFilter::shouldCompareComponents),
                     DamageFilterMode.CODEC.optionalFieldOf("damageMode", DamageFilterMode.IGNORE)
-                            .forGetter(EnderItemFilter::damageFilterMode))
+                            .forGetter(EnderItemFilter::damageFilterMode),
+                    Codec.BOOL.optionalFieldOf("compareLegacyTags", false).forGetter(EnderItemFilter::compareLegacyTags))
             .apply(componentInstance, EnderItemFilter::new));
 
     public static final PacketCodec<EnderItemFilter> STREAM_CODEC = PacketCodec.composite(
             PacketCodecs.ITEM_STACK_DATA.list(256), EnderItemFilter::matches,
             PacketCodecs.BOOL, EnderItemFilter::isDenyList, PacketCodecs.BOOL,
             EnderItemFilter::shouldCompareComponents, DamageFilterMode.STREAM_CODEC, EnderItemFilter::damageFilterMode,
+            PacketCodecs.BOOL, EnderItemFilter::compareLegacyTags,
             EnderItemFilter::new);
 
     public EnderItemFilter(int size) {
@@ -49,10 +51,20 @@ public record EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList
         this(NonNullList.withSize(size, ItemStack.EMPTY), isDenyList, shouldCompareComponents, damageFilterMode);
     }
 
+    public EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList, boolean shouldCompareComponents,
+            DamageFilterMode damageFilterMode) {
+        this(matches, isDenyList, shouldCompareComponents, damageFilterMode, false);
+    }
+
     public EnderItemFilter(List<ItemStack> matches, boolean isDenyList, boolean shouldCompareComponents,
             DamageFilterMode damageFilterMode) {
+        this(matches, isDenyList, shouldCompareComponents, damageFilterMode, false);
+    }
+
+    public EnderItemFilter(List<ItemStack> matches, boolean isDenyList, boolean shouldCompareComponents,
+            DamageFilterMode damageFilterMode, boolean compareLegacyTags) {
         this(NonNullList.withSize(matches.size(), ItemStack.EMPTY), isDenyList, shouldCompareComponents,
-                damageFilterMode);
+                damageFilterMode, compareLegacyTags);
 
         for (int i = 0; i < matches.size(); i++) {
             this.matches.set(i, matches.get(i));
@@ -70,14 +82,21 @@ public record EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList
                 continue;
             }
 
-            if (ItemStack.isSameItem(match, itemStack)) {
-                if (!shouldCompareComponents || ItemFilterUtils.doComponentsMatch(match, itemStack)) {
-                    return isDenyList ? ItemStack.EMPTY : itemStack;
-                }
+            if (matches(match, itemStack)) {
+                return isDenyList ? ItemStack.EMPTY : itemStack;
             }
         }
 
         return isDenyList ? itemStack : ItemStack.EMPTY;
+    }
+
+    private boolean matches(ItemStack sample, ItemStack stack) {
+        if (shouldCompareComponents && compareLegacyTags) {
+            // Forge 6 includes the raw damage tag in exact stack comparisons.
+            return ItemStack.isSameItemSameTags(sample, stack);
+        }
+        return ItemStack.isSameItem(sample, stack)
+            && (!shouldCompareComponents || ItemFilterUtils.doComponentsMatch(sample, stack));
     }
 
     @Override
@@ -94,11 +113,13 @@ public record EnderItemFilter(NonNullList<ItemStack> matches, boolean isDenyList
         return isDenyList == other.isDenyList &&
             shouldCompareComponents == other.shouldCompareComponents &&
             damageFilterMode == other.damageFilterMode &&
+            compareLegacyTags == other.compareLegacyTags &&
             EqualityUtil.areListsEqual(matches, other.matches, ItemStack::matches);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(EqualityUtil.hashListContents(matches, StackDataCodecs::hashItem), isDenyList, shouldCompareComponents, damageFilterMode);
+        return Objects.hash(EqualityUtil.hashListContents(matches, StackDataCodecs::hashItem), isDenyList,
+            shouldCompareComponents, damageFilterMode, compareLegacyTags);
     }
 }

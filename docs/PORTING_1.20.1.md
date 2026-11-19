@@ -353,7 +353,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 121: Conduit filter slots and redstone outputs | Restore shift-click and refresh strong redstone receivers when an installed filter changes | The build passes 79 unit cases and 486 native runs. Packaged Forge passes eight client checks and 41 server assertions, including all six gate truth tables, both NOT filter directions, analog sensing and restart. [Evidence and commands](porting/1.20.1/cycle-121.md) | `e480b9460` |
 
-| 122: Installed Forge 6.2 redstone filters | Preserve a pending pulse when converting a legacy timer whose period was shortened | The build passes 79 unit cases and 487 native runs. Packaged Forge passes 71 assertions across eight installed filters, a forced chest link, chunk eviction, dedicated restart and native filter recovery. [Evidence and commands](porting/1.20.1/cycle-122.md) | Commit containing cycle 122 |
+| 122: Installed Forge 6.2 redstone filters | Preserve a pending pulse when converting a legacy timer whose period was shortened | The build passes 79 unit cases and 487 native runs. Packaged Forge passes 71 assertions across eight installed filters, a forced chest link, chunk eviction, dedicated restart and native filter recovery. [Evidence and commands](porting/1.20.1/cycle-122.md) | `61eb0b415` |
+
+| 123: Forge 6.2 item and fluid filters | Restore loose and installed filters with their original samples and comparison rules | The build passes 79 unit cases and 489 native runs. Packaged Forge passes 61 assertions across four item and fluid routes, eight filter stacks, chunk eviction and dedicated restart. [Evidence and commands](porting/1.20.1/cycle-123.md) | Commit containing cycle 123 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
