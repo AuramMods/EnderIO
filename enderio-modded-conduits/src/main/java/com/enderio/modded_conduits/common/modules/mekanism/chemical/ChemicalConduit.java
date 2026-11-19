@@ -101,7 +101,7 @@ public record ChemicalConduit(ResourceLocation texture, Component description, l
 
     @Override
     public boolean canConnectToConduit(ChemicalConduit other) {
-        return ModdedConduitsConfig.COMMON.MEKANISM.CAN_MIX_CHEMICAL_CONDUIT_TIERS.get();
+        return this == other || ModdedConduitsConfig.COMMON.MEKANISM.CAN_MIX_CHEMICAL_CONDUIT_TIERS.get();
     }
 
     @Override

@@ -21,6 +21,8 @@ import mekanism.common.tile.component.config.DataType;
 import mekanism.common.tile.transmitter.TileEntityThermodynamicConductor;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -62,6 +64,11 @@ public class MekanismProbe {
     }
 
     private void register(RegisterCommandsEvent event) {
+        event.getDispatcher().register(Commands.literal("port_place_conduit").requires(source -> source.hasPermission(4))
+            .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                .then(Commands.argument("variant", ResourceLocationArgument.id())
+                    .executes(context -> placeConduit(context.getSource(), BlockPosArgument.getLoadedBlockPos(context, "pos"),
+                        ResourceLocationArgument.getId(context, "variant"))))));
         event.getDispatcher().register(Commands.literal("port_mekanism_native").requires(source -> source.hasPermission(4))
             .then(Commands.literal("configure").executes(context -> configure(context.getSource())))
             .then(Commands.literal("batch").executes(context -> batch(context.getSource())))
@@ -204,6 +211,34 @@ public class MekanismProbe {
         var context = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND, stack, hit);
         if (!conduit.place(context).consumesAction()) return failure(source, "Heat conduit item placement failed");
         return success(source, "Native heat bridge placed");
+    }
+
+    private static int placeConduit(CommandSourceStack source, BlockPos pos, ResourceLocation variant) {
+        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse("enderio:conduit"));
+        if (!(item instanceof BlockItem conduit)) return failure(source, "Missing port conduit item");
+        var level = source.getLevel();
+        var player = FakePlayerFactory.getMinecraft(level);
+        var stack = new ItemStack(conduit);
+        stack.getOrCreateTagElement("enderio:data").putString("enderio:conduit", variant.toString());
+        player.getInventory().clearContent();
+        player.getAbilities().instabuild = false;
+        player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+        var state = level.getBlockState(pos);
+        var result = state.isAir()
+            ? conduit.place(new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND, stack,
+                new BlockHitResult(Vec3.atBottomCenterOf(pos), Direction.UP, pos.below(), false)))
+            : state.use(level, player, InteractionHand.MAIN_HAND,
+                new BlockHitResult(Vec3.atCenterOf(pos).relative(Direction.UP, 0.5), Direction.UP, pos, false));
+        if (!result.consumesAction() || !stack.isEmpty()) return failure(source, "Native conduit placement failed");
+
+        var inventory = player.getInventory().items.stream().filter(held -> !held.isEmpty()).toList();
+        if (inventory.isEmpty()) return success(source, "Native conduit placed " + variant);
+        var refund = inventory.get(0);
+        var data = refund.getTagElement("enderio:data");
+        if (inventory.size() != 1 || !refund.is(item) || refund.getCount() != 1 || data == null) {
+            return failure(source, "Unexpected conduit replacement refund " + inventory);
+        }
+        return success(source, "Native conduit placed " + variant + " and returned " + data.getString("enderio:conduit"));
     }
 
     private static final class HeatObservation {

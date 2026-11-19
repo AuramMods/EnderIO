@@ -572,7 +572,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
             // Remove caches for the replaced conduit
             removeCapabilityCache(replacementCandidate.get());
 
-            if (!level.isClientSide()) {
+            if (level instanceof ServerLevel serverLevel) {
                 ConduitNodeImpl oldNode = conduitNodes.remove(replacementCandidate.get());
 
                 ConduitNodeImpl newNode;
@@ -580,7 +580,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
                     // Copy data into the node
                     newNode = new ConduitNodeImpl(conduit, getBlockPos(), oldNode.getNodeData());
                     conduit.value().onRemoved(oldNode, level, getBlockPos());
-                    oldNode.getNetwork().remove(oldNode);
+                    oldNode.getNetwork().remove(oldNode, split -> ConduitNetworkSavedData.onNetworkCreated(serverLevel, split));
                     oldNode.detach();
                 } else {
                     newNode = new ConduitNodeImpl(conduit, getBlockPos());

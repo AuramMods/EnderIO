@@ -93,7 +93,7 @@ public record FluidConduit(ResourceLocation texture, Component description, int 
 
     @Override
     public boolean canConnectToConduit(FluidConduit other) {
-        return ConduitsConfig.COMMON.CAN_MIX_FLUID_CONDUIT_TIERS.get();
+        return this == other || ConduitsConfig.COMMON.CAN_MIX_FLUID_CONDUIT_TIERS.get();
     }
 
     @Override
