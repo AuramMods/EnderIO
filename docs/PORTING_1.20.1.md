@@ -331,7 +331,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 110: Historical Auto Smelt mining | Restore the enchantment and preserve exact native furnace output quantities and tags | Datagen, 79 unit tests and 483 native runs pass. Packaged Forge passes 18 assertions and 10 guarded client checks across native mining, recipe reload and reconnect after restart. Four historical enchantment mappings remain unresolved. [Evidence and commands](porting/1.20.1/cycle-110.md) | `29b1329e3` |
 
-| 111: Historical Withering and Repellent | Restore the combat enchantments and read their historical config keys | Datagen, 79 unit tests and 483 native runs pass. Packaged Forge passes 26 assertions and six guarded client checks across native melee, projectile impact, armor controls and restart. Shimmer and XP Boost remain unresolved. [Evidence and commands](porting/1.20.1/cycle-111.md) | Commit containing cycle 111 |
+| 111: Historical Withering and Repellent | Restore the combat enchantments and read their historical config keys | Datagen, 79 unit tests and 483 native runs pass. Packaged Forge passes 26 assertions and six guarded client checks across native melee, projectile impact, armor controls and restart. Shimmer and XP Boost remain unresolved. [Evidence and commands](porting/1.20.1/cycle-111.md) | `2bfc75a90` |
+
+| 112: Historical Shimmer and XP Boost | Restore the last two missing enchantment IDs and preserve exact XP across projectile save and restart | Datagen, 79 unit tests and 483 native runs pass. Packaged Forge passes 13 assertions and 15 guarded client checks. The sampled Ender IO 6.2.18-beta world converts with zero registry errors. [Evidence and commands](porting/1.20.1/cycle-112.md) | Commit containing cycle 112 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

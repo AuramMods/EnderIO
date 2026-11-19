@@ -17,6 +17,14 @@ public final class EnchantmentsConfig {
     public final ForgeConfigSpec.ConfigValue<Integer> WITHERING_BLADE_MAX_COST;
     public final ForgeConfigSpec.ConfigValue<Integer> WITHERING_BLADE_MIN_COST;
 
+    public final ForgeConfigSpec.ConfigValue<Integer> SHIMMER_MAX_COST;
+    public final ForgeConfigSpec.ConfigValue<Integer> SHIMMER_MIN_COST;
+
+    public final ForgeConfigSpec.ConfigValue<Integer> XP_BOOST_MAX_COST_BASE;
+    public final ForgeConfigSpec.ConfigValue<Integer> XP_BOOST_MAX_COST_MULT;
+    public final ForgeConfigSpec.ConfigValue<Integer> XP_BOOST_MIN_COST_BASE;
+    public final ForgeConfigSpec.ConfigValue<Integer> XP_BOOST_MIN_COST_MULT;
+
     public EnchantmentsConfig(ForgeConfigSpec.Builder builder) {
         builder.push("enchantments");
 
@@ -36,6 +44,18 @@ public final class EnchantmentsConfig {
         builder.push("witheringBlade");
         WITHERING_BLADE_MAX_COST = builder.define("maxCost", 100);
         WITHERING_BLADE_MIN_COST = builder.define("minCost", 1);
+        builder.pop();
+
+        builder.push("shimmer");
+        SHIMMER_MAX_COST = builder.define("maxCost", 100);
+        SHIMMER_MIN_COST = builder.define("minCost", 1);
+        builder.pop();
+
+        builder.push("xpBoost");
+        XP_BOOST_MAX_COST_BASE = builder.define("maxCostBase", 30);
+        XP_BOOST_MAX_COST_MULT = builder.define("maxCostPerLevel", 10);
+        XP_BOOST_MIN_COST_BASE = builder.define("minCostBase", 1);
+        XP_BOOST_MIN_COST_MULT = builder.define("minCostPerLevel", 10);
         builder.pop();
 
         builder.pop();
