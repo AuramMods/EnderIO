@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 // TODO: A recipe interface that doesn't require power :)
@@ -95,6 +96,25 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
         return recipe == null ? null : recipe.getId();
     }
 
+    /** Rebind an unchanged recipe after reload while keeping its paid progress and queued outputs. */
+    public boolean rebindRecipe(@Nullable R replacement) {
+        if (recipe == null || replacement == null) {
+            return false;
+        }
+        if (recipe == replacement) {
+            return true;
+        }
+        if (!recipe.getId().equals(replacement.getId())) {
+            return false;
+        }
+        var registries = level.registryAccess();
+        if (!Arrays.equals(RecipeSnapshot.encode(recipe, registries), RecipeSnapshot.encode(replacement, registries))) {
+            return false;
+        }
+        recipe = replacement;
+        return true;
+    }
+
     // region Abstract Implementation
 
     protected abstract void consumeInputs(R recipe);
@@ -125,8 +145,8 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
             return;
         }
 
-        // If the recipe failed to load somehow, cancel
-        if (recipe == null || level.getRecipeManager().byKey(recipe.getId()).orElse(null) != recipe) {
+        // A reload creates new recipe instances. Retain the task only while its recipe is unchanged.
+        if (recipe == null || !rebindRecipe(loadRecipe(recipe.getId()))) {
             isComplete = true;
             return;
         }
@@ -280,7 +300,7 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
         hasDeterminedOutputs = nbt.getBoolean(KEY_HAS_DETERMINED_OUTPUTS);
         outputs = List.of();
         if (recipe == null || nbt.contains(KEY_RECIPE_DATA, Tag.TAG_BYTE_ARRAY)
-                && !java.util.Arrays.equals(nbt.getByteArray(KEY_RECIPE_DATA), RecipeSnapshot.encode(recipe, level.registryAccess()))) {
+                && !Arrays.equals(nbt.getByteArray(KEY_RECIPE_DATA), RecipeSnapshot.encode(recipe, level.registryAccess()))) {
             // Inputs are consumed only after outputs can be placed; cancelling leaves them in storage.
             isComplete = true;
             return;

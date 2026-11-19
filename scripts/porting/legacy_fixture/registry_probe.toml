@@ -5,3 +5,9 @@ license="MIT"
 modId="port_registry_probe"
 version="1"
 displayName="Ender IO packaged registry inventory probe"
+[[dependencies.port_registry_probe]]
+modId="enderio"
+mandatory=true
+versionRange="[8.2,)"
+ordering="AFTER"
+side="SERVER"

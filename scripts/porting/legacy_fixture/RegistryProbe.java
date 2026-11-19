@@ -1,6 +1,16 @@
 package porting.registryprobe;
 
+import com.enderio.core.common.datamap.DataMaps;
+import com.enderio.core.common.datamap.RegistryDataMap;
+import com.enderio.enderio.foundation.souldata.EngineSoul;
+import com.enderio.enderio.foundation.souldata.FarmSoul;
+import com.enderio.enderio.foundation.souldata.SolarSoul;
+import com.enderio.enderio.foundation.souldata.SpawnerSoul;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
@@ -10,10 +20,12 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.storage.loot.LootDataType;
 import net.minecraft.world.phys.BlockHitResult;
@@ -109,6 +121,15 @@ public class RegistryProbe {
         snapshot.put("registries", registries);
         snapshot.put("tags", tags);
         snapshot.put("tagRegistryIds", taggedRegistries);
+        var ops = RegistryOps.create(JsonOps.INSTANCE, server.registryAccess());
+        var dataMaps = new TreeMap<String, Map<String, JsonElement>>();
+        DataMaps.types().forEach(map -> collectDataMap(dataMaps, map, server.getRecipeManager(), ops));
+        snapshot.put("dataMaps", dataMaps);
+        snapshot.put("soulData", Map.of(
+            EngineSoul.NAME, encode(EngineSoul.ENGINE.map, EngineSoul.CODEC, ops),
+            FarmSoul.NAME, encode(FarmSoul.FARM.map, FarmSoul.CODEC, ops),
+            SolarSoul.NAME, encode(SolarSoul.SOLAR.map, SolarSoul.CODEC, ops),
+            SpawnerSoul.NAME, encode(SpawnerSoul.SPAWNER.map, SpawnerSoul.CODEC, ops)));
         snapshot.put("enabledBlocks", enderIOIds(ForgeRegistries.BLOCKS.getEntries().stream()
             .filter(entry -> entry.getValue().isEnabled(flags)).map(entry -> entry.getKey().location())));
         snapshot.put("enabledItems", enderIOIds(ForgeRegistries.ITEMS.getEntries().stream()
@@ -129,6 +150,18 @@ public class RegistryProbe {
     private static void collectForgeRegistry(Map<String, List<String>> registries, ResourceLocation key) {
         var registry = RegistryManager.ACTIVE.getRegistry(key);
         if (registry != null) registries.put(key.toString(), enderIOIds(registry.getKeys().stream()));
+    }
+
+    private static <V> void collectDataMap(Map<String, Map<String, JsonElement>> snapshot, RegistryDataMap<?, V> map,
+            RecipeManager owner, DynamicOps<JsonElement> ops) {
+        snapshot.put(map.file().toString(), encode(map.values(owner), map.codec(), ops));
+    }
+
+    private static <V> Map<String, JsonElement> encode(Map<ResourceLocation, V> values, Codec<V> codec, DynamicOps<JsonElement> ops) {
+        var output = new TreeMap<String, JsonElement>();
+        values.forEach((id, value) -> output.put(id.toString(), codec.encodeStart(ops, value)
+            .getOrThrow(false, error -> {})));
+        return output;
     }
 
     private static <T> void collectTags(Map<String, Map<String, List<String>>> tags,
