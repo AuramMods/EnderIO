@@ -9,7 +9,7 @@ import sys
 
 sys.dont_write_bytecode = True
 from client.run_multiplayer import stop_client, wait_signal
-from packaged_painting_machine import CAPACITOR, COST, PLAYER, inventory, paint_tag, palette
+from packaged_painting_machine import PLAYER, paint_and_extract, paint_tag
 from packaged_server_smoke import ROOT, digest
 from packaged_spawners import prepare_profile, run_stage
 
@@ -65,19 +65,7 @@ def setup(server, results):
     load(server, results, "fixture_chunks_loaded")
     build_scene(server)
     for x, kind, template, paint in SAMPLES:
-        machine = f"{x} 80 3"
-        hopper = f"{x} 79 3"
-        server.command(f"setblock {machine} enderio:painting_machine[facing=south]")
-        inputs = [CAPACITOR, f'{{Slot:1,id:"minecraft:{template}",Count:1}}', palette(paint)]
-        server.command(f'data merge block {machine} {{EnergyStored:{COST},Items:{{Items:[{",".join(inputs)}]}}}}')
-        output = item(kind, paint)
-        server.assert_state(f"native_recipe_paints_{kind}",
-                            f"{inventory(machine, [palette(paint), f'{{Slot:3,Count:1,{output}}}'], 0)} "
-                            f"unless data block {machine} Items.Items[{{Slot:1}}]", results, timeout=20)
-        server.command(f"setblock {hopper} minecraft:hopper[facing=down]")
-        server.assert_state(f"native_hopper_extracts_only_the_painted_{kind}",
-                            f'if data block {hopper} Items[{{Slot:0b,Count:1b,{output}}}] '
-                            f"{inventory(machine, [palette(paint)], 0)} unless data block {machine} Items.Items[{{Slot:3}}]", results)
+        paint_and_extract(server, results, f"{x} 80 3", f"{x} 79 3", kind, template, paint)
     place_receivers(server)
 
 

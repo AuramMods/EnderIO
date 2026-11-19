@@ -44,6 +44,20 @@ def inventory(pos, items, charge):
     return f'if data block {pos} {{EnergyStored:{charge},Items:{{Items:[{",".join([CAPACITOR, *items])}]}}}}'
 
 
+def paint_and_extract(server, results, machine, hopper, kind, template_item, paint):
+    server.command(f"setblock {machine} enderio:painting_machine[facing=south]")
+    entries = [CAPACITOR, f'{{Slot:1,id:"minecraft:{template_item}",Count:1}}', palette(paint)]
+    server.command(f'data merge block {machine} {{EnergyStored:{COST},Items:{{Items:[{",".join(entries)}]}}}}')
+    output = f'id:"enderio:painted_{kind}",{paint_tag(paint)}'
+    server.assert_state(f"native_recipe_paints_{kind}",
+                        f"{inventory(machine, [palette(paint), f'{{Slot:3,Count:1,{output}}}'], 0)} "
+                        f"unless data block {machine} Items.Items[{{Slot:1}}]", results, timeout=20)
+    server.command(f"setblock {hopper} minecraft:hopper[facing=down]")
+    server.assert_state(f"native_hopper_extracts_only_the_painted_{kind}",
+                        f'if data block {hopper} Items[{{Slot:0b,Count:1b,{output}}}] '
+                        f"{inventory(machine, [palette(paint)], 0)} unless data block {machine} Items.Items[{{Slot:3}}]", results)
+
+
 def stock(server, pos, block, output=None):
     entries = [CAPACITOR, template(2), palette(block)]
     if output is not None:
