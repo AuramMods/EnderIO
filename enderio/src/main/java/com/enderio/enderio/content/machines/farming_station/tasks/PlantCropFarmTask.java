@@ -8,6 +8,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.PitcherCropBlock;
 import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -29,7 +30,7 @@ public class PlantCropFarmTask implements FarmTask {
 
         if (seeds.getItem() instanceof BlockItem blockItem) {
             var block = blockItem.getBlock();
-            if (block instanceof CropBlock || block instanceof StemBlock) {
+            if (block instanceof CropBlock || block instanceof StemBlock || block instanceof PitcherCropBlock) {
 
                 // Try plant
                 InteractionResult result = blockEntity.useStack(targetBlock, seeds);
