@@ -18,6 +18,7 @@ import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
@@ -64,6 +65,11 @@ final class ClientBlockCarrySmoke {
             new Vec3(3078.5, 80, 11.5), new Vec3(3078.5, 80, 15.5), EIOBlocks.CRAFTER::get, stack -> {
                 var contents = EnderBlockEntity.ITEM_INVENTORY.get(stack);
                 return EIODataComponents.ENERGY.getOrDefault(stack, 0) == 3200 && contents != null && contents.getInt("Size") == 21;
+            }),
+        ENCHANTER("enchanter", "collected_the_enchanter_with_its_ingredients", new BlockPos(3450, 80, 13), new BlockPos(3450, 80, 8),
+            new Vec3(3450.5, 80, 16.5), new Vec3(3450.5, 80, 10.5), EIOBlocks.ENCHANTER::get, stack -> {
+                var contents = EnderBlockEntity.ITEM_INVENTORY.get(stack);
+                return contents != null && contents.getInt("Size") == 4 && contents.getList("Items", Tag.TAG_COMPOUND).size() >= 3;
             });
 
         private final String name;

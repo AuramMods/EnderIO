@@ -319,7 +319,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 104: Enchanter collection and restart | Rebuild the ready recipe on level attachment and refresh the preview after payment | Packaged TCP passes 17 client checks and nine server assertions for XP and inventory restrictions, exact payment and consumption, and two restarts. The build passes 79 unit and 483 native tests. [Evidence and commands](porting/1.20.1/cycle-104.md) | `d5680f7c6` |
 
-| 105: Enchanter prices and recipe reload | Send the server's price and refresh recipes for open and newly opened menus | Packaged TCP verifies removal, replacement, customized prices and exact Mending payment. The reload and collection scenarios pass 27 client checks and 17 server assertions combined. The build passes 79 unit and 483 native tests. [Evidence and commands](porting/1.20.1/cycle-105.md) | Commit containing cycle 105 |
+| 105: Enchanter prices and recipe reload | Send the server's price and refresh recipes for open and newly opened menus | Packaged TCP verifies removal, replacement, customized prices and exact Mending payment. The reload and collection scenarios pass 27 client checks and 17 server assertions combined. The build passes 79 unit and 483 native tests. [Evidence and commands](porting/1.20.1/cycle-105.md) | `1ffddb973` |
+
+| 106: Enchanter survival pickup and placement | Verify a ready Enchanter's native drop, tagged ingredients, replanting and collection after restart | Packaged TCP passes 13 guarded client checks and nine server assertions. The tagged writable book and exact ingredient counts survive carriage and restart. Collecting one Sharpness II book charges the player once, and the paid state survives the second restart. [Evidence and commands](porting/1.20.1/cycle-106.md) | Commit containing cycle 106 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

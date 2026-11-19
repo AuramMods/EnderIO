@@ -44,6 +44,7 @@ final class ClientEnchanterSmoke {
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private Stage stage = Stage.TITLE;
     private long titleReady;
+    private int positionedTick = -1;
     private int openTick;
     private int restrictedTick;
     private int collectionTick;
@@ -95,7 +96,15 @@ final class ClientEnchanterSmoke {
     private void open() {
         double x = pos.getX() + 0.5;
         if (!marker("ready") || minecraft.screen != null || minecraft.player.distanceToSqr(x, 80, 10.5) > 0.1
-            || minecraft.level.getBlockEntity(pos) == null) return;
+            || minecraft.level.getBlockEntity(pos) == null) {
+            positionedTick = -1;
+            return;
+        }
+        if (positionedTick == -1) {
+            positionedTick = minecraft.player.tickCount;
+        }
+        // A reconnect can already be at the target when the server issues its position correction.
+        if (minecraft.player.tickCount - positionedTick < 5) return;
         var hit = new BlockHitResult(new Vec3(x, 80.6, 9), Direction.SOUTH, pos, false);
         minecraft.gameMode.useItemOn(minecraft.player, InteractionHand.MAIN_HAND, hit);
         openTick = minecraft.player.tickCount;

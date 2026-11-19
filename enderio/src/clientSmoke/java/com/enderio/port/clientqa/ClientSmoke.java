@@ -70,6 +70,7 @@ public final class ClientSmoke {
             case "inventory-sorter" -> new ClientInventorySorterSmoke(true);
             case "inventory-sorter-absent" -> new ClientInventorySorterSmoke(false);
             case "enchanter" -> new ClientEnchanterSmoke();
+            case "enchanter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.ENCHANTER);
             case "enchanter-reload" -> new ClientEnchanterReloadSmoke();
             case "facade-seams" -> new ClientFacadeSeamSmoke(false, false);
             case "facade-seams-embeddium" -> new ClientFacadeSeamSmoke(false, true);
