@@ -129,8 +129,8 @@ def start_machines(server, results):
                         hopper_item(BINDER_OUTPUT, BINDER, 16), results, timeout=30)
 
 
-def route_state(balance):
-    bundles = " ".join(f'if data block {pos} {{Conduits:["enderio:energy"]}}' for pos in ENERGY_LINE)
+def route_state(balance, variants=("energy", "energy")):
+    bundles = " ".join(f'if data block {pos} {{Conduits:["enderio:{variant}"]}}' for pos, variant in zip(ENERGY_LINE, variants))
     return (f'{bundles} if data block {GENERATOR} {{BurnTime:0,EnergyStored:0,IOConfig:{{Modes:{{east:"disable",south:"push"}}}}}} '
             f'if data block {SMELTER} {{EnergyStored:{balance},IOConfig:{{Modes:{{west:"disable",south:"pull"}}}}}}')
 

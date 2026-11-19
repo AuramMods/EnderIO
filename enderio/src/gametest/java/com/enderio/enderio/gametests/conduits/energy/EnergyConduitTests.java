@@ -9,6 +9,7 @@ import com.enderio.enderio.gametests.conduits.ConduitGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOConduits;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.world.level.block.Blocks;
@@ -16,6 +17,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.gametests.util.FixtureTemplate;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
+import com.enderio.enderio.api.conduits.Conduit;
 
 import java.util.function.Supplier;
 
@@ -368,6 +370,58 @@ public class EnergyConduitTests {
                 })
                 .thenSucceed();
         });
+    }
+
+    @GameTest
+    public static void energyConduitTierBudgetsConserveEnergyEveryTick(final GameplayTest test) {
+        final int initialEnergy = 1_500_000;
+        test.registerGameTestTemplate(() -> {
+            var builder = FixtureBuilder.withSize(5, 1, 7);
+            for (int z = 0; z < 7; z += 2) {
+                var bank = EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.VIBRANT).get().defaultBlockState();
+                builder.set(0, 0, z, bank).set(4, 0, z, bank);
+            }
+            return builder;
+        });
+
+        test.onGameTest(ConduitGameTestHelper.class, helper -> {
+            var basic = helper.getConduit(EIOConduits.ENERGY);
+            var enhanced = helper.getConduit(EIOConduits.ENERGETIC_ENERGY);
+            var ender = helper.getConduit(EIOConduits.VIBRANT_ENERGY);
+            int[] firstRead = new int[4];
+            int[] rates = {8_000, 48_000, 192_000, 48_000};
+
+            helper.startSequence().thenIdle(1).thenExecute(() -> {
+                energyLane(helper, 0, basic, basic);
+                energyLane(helper, 2, enhanced, enhanced);
+                energyLane(helper, 4, ender, ender);
+                energyLane(helper, 6, ender, enhanced);
+            }).thenExecuteAfter(2, () -> {
+                for (int lane = 0; lane < rates.length; lane++) {
+                    helper.provideEnergyExact(0, 1, lane * 2, initialEnergy);
+                }
+            }).thenExecuteAfter(2, () -> {
+                for (int lane = 0; lane < rates.length; lane++) {
+                    firstRead[lane] = helper.getEnergyStored(4, 1, lane * 2);
+                    helper.assertEnergyStored(0, 1, lane * 2, initialEnergy - firstRead[lane]);
+                }
+            }).thenExecuteAfter(1, () -> {
+                for (int lane = 0; lane < rates.length; lane++) {
+                    int expected = firstRead[lane] + rates[lane];
+                    helper.assertEnergyStored(4, 1, lane * 2, expected);
+                    helper.assertEnergyStored(0, 1, lane * 2, initialEnergy - expected);
+                }
+            }).thenSucceed();
+        });
+    }
+
+    private static void energyLane(ConduitGameTestHelper helper, int z, Holder<Conduit<?, ?>> ends,
+            Holder<Conduit<?, ?>> middle) {
+        helper.placeConduit(ends, 1, 1, z);
+        helper.placeConduit(middle, 2, 1, z);
+        helper.placeConduit(ends, 3, 1, z);
+        helper.changeIoConfig(0, 1, z, bank -> bank.setIOMode(Direction.EAST, IOMode.PUSH));
+        helper.changeIoConfig(4, 1, z, bank -> bank.setIOMode(Direction.WEST, IOMode.PULL));
     }
 
     @GameTest(template = THREE_CAPACITOR_BANKS)
