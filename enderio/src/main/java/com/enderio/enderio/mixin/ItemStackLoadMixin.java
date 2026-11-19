@@ -35,8 +35,9 @@ public abstract class ItemStackLoadMixin {
             Forge6SoulData.restoreItem(stack, soulMachine);
             return;
         }
-        if (id.equals("enderio:painting_machine") || id.equals("enderio:xp_obelisk")) {
-            Forge6MachineItemData.restoreMachineItem(stack, id.equals("enderio:painting_machine"));
+        boolean poweredMachine = id.equals("enderio:painting_machine") || id.equals("enderio:impulse_hopper");
+        if (poweredMachine || id.equals("enderio:xp_obelisk")) {
+            Forge6MachineItemData.restoreMachineItem(stack, poweredMachine);
             return;
         }
         if (id.equals("enderio:aversion_obelisk") || id.equals("enderio:drain") || id.equals("enderio:vacuum_chest")

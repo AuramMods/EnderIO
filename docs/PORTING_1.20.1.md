@@ -381,7 +381,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 135: Vacuum Chest and XP Vacuum conservation | Preserve stock-filter remainders, merged XP points and the saved Forge 6 ranges | The build passes 79 unit cases and 507 native runs. Packaged Forge passes nine collection, export and restart assertions. Forge 6.2 conversion passes 13 placed-state and carried-drop assertions. [Evidence and commands](porting/1.20.1/cycle-135.md) | `c8c9eb7d2` |
 
-| 136: Vacuum multiplayer, recipes and placement | Verify both native menus, live collection, range overlays, survival recipes and placement of migrated drops | The build passes 79 unit cases and 507 native runs. Packaged multiplayer passes 45 client checks and 24 server assertions, including both factory resets and a dedicated restart. [Evidence and commands](porting/1.20.1/cycle-136.md) | Commit containing cycle 136 |
+| 136: Vacuum multiplayer, recipes and placement | Verify both native menus, live collection, range overlays, survival recipes and placement of migrated drops | The build passes 79 unit cases and 507 native runs. Packaged multiplayer passes 45 client checks and 24 server assertions, including both factory resets and a dedicated restart. [Evidence and commands](porting/1.20.1/cycle-136.md) | `412e786ea` |
+
+| 137: Impulse Hopper batches and energy | Check and pay for each batch in full, preserve tags and restore Forge 6 machines and drops | The build passes 79 unit cases and 512 native runs. Packaged Forge passes nine automation and persistence assertions. Forge 6.2 conversion passes eight saved-state, carried-drop and resumption assertions. [Evidence and commands](porting/1.20.1/cycle-137.md) | Commit containing cycle 137 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

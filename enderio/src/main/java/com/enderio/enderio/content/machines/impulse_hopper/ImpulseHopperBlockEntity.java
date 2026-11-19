@@ -21,7 +21,8 @@ public class ImpulseHopperBlockEntity extends PoweredMachineBlockEntity {
             MachinesConfig.COMMON.ENERGY.IMPULSE_HOPPER_CAPACITY);
     public static final QuadraticScalable ENERGY_USAGE = new QuadraticScalable(CapacitorModifier.ENERGY_USE,
             MachinesConfig.COMMON.ENERGY.IMPULSE_HOPPER_USAGE);
-    private static final int ENERGY_USAGE_PER_ITEM = 10; // TODO: What is? surely should use the ENERGY_USAGE key
+    private static final int ENERGY_USAGE_PER_ITEM = 10;
+    private static final int MIN_BATCH_INTERVAL = 20;
 
     public static final MultiSlotAccess INPUT = new MultiSlotAccess();
     public static final MultiSlotAccess OUTPUT = new MultiSlotAccess();
@@ -65,64 +66,71 @@ public class ImpulseHopperBlockEntity extends PoweredMachineBlockEntity {
         return canAct() && hasEnergy();
     }
 
-    public boolean shouldActTick() {// TODO General tick method for power consuming devices?
-        return canAct() && level.getGameTime() % ticksForAction() == 0;
+    public boolean shouldActTick() {
+        return canAct(ticksForAction());
     }
 
     public int ticksForAction() {
-        return 20;
+        int rate = Math.max(1, getMaxEnergyUse());
+        // A batch has a fixed cost. Allow enough ticks between batches for the configured average draw.
+        int energyTicks = 1 + (getBatchCost() - 1) / rate;
+        return Math.max(MIN_BATCH_INTERVAL, energyTicks);
     }
 
     public boolean canPass(int slot) {
         ItemStack input = INPUT.get(slot).getItemStack(this);
         ItemStack ghost = GHOST.get(slot).getItemStack(this);
-        if (ItemStack.isSameItemSameTags(input, ghost)) {
-            return input.getCount() >= ghost.getCount();
-        }
-        return false;
+        return ghost.isEmpty() || (ItemStack.isSameItemSameTags(input, ghost) && input.getCount() >= ghost.getCount());
     }
 
     public boolean canHoldAndMerge(int slot) {
-        boolean canHold = OUTPUT.get(slot).getItemStack(this).getCount()
-                + GHOST.get(slot).getItemStack(this).getCount() <= GHOST.get(slot).getItemStack(this).getMaxStackSize();
-        boolean canMerge = ItemStack.isSameItemSameTags(INPUT.get(slot).getItemStack(this),
-                GHOST.get(slot).getItemStack(this));
-        return canHold && canMerge;
+        ItemStack ghost = GHOST.get(slot).getItemStack(this);
+        if (ghost.isEmpty()) return true;
+        var outputSlot = OUTPUT.get(slot);
+        ItemStack output = outputSlot.getItemStack(this);
+        int limit = Math.min(ghost.getMaxStackSize(), getInventory().getSlotLimit(outputSlot.getIndex()));
+        return (output.isEmpty() || ItemStack.isSameItemSameTags(output, ghost))
+            && ghost.getCount() <= limit - output.getCount();
     }
 
     public boolean shouldPassItems() {
-        int totalpower = 0;
-        for (int i = 0; i < 6; i++) {
-            if (canPass(i) && canHoldAndMerge(i)) {
-                totalpower += GHOST.get(i).getItemStack(this).getCount() * ENERGY_USAGE_PER_ITEM;
-                continue;
-            }
+        int cost = getBatchCost();
+        if (cost <= 0 || !hasEnergy() || getMaxEnergyUse() <= 0 || getEnergyStorage().getEnergyStored() < cost) {
             return false;
         }
-        return this.getEnergyStorage().consumeEnergy(totalpower, true) > 0;
+        for (int i = 0; i < GHOST.size(); i++) {
+            if (!canPass(i) || !canHoldAndMerge(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int getBatchCost() {
+        int items = 0;
+        for (var slot : GHOST.getAccesses()) {
+            items += slot.getItemStack(this).getCount();
+        }
+        return items * ENERGY_USAGE_PER_ITEM;
     }
 
     private void passItems() {
-        for (int i = 0; i < 6; i++) {
-            ItemStack stack = INPUT.get(i).getItemStack(this);
-            ItemStack ghost = GHOST.get(i).getItemStack(this);
-            ItemStack result = OUTPUT.get(i).getItemStack(this);
-            if (ghost.isEmpty()) {
+        getEnergyStorage().takeEnergy(getBatchCost());
+        for (int i = 0; i < GHOST.size(); i++) {
+            int moved = GHOST.get(i).getItemStack(this).getCount();
+            if (moved == 0) {
                 continue;
             }
-            if (result.isEmpty()) {
-                result = stack.copy();
-                result.setCount(ghost.getCount());
-            } else if (stack.is(result.getItem())) {
-                result.setCount(result.getCount() + ghost.getCount());
-            }
-            this.getEnergyStorage().consumeEnergy(ghost.getCount() * ENERGY_USAGE_PER_ITEM, false);
-            stack.shrink(ghost.getCount());
-            OUTPUT.get(i).setStackInSlot(this, result);
+            var inputSlot = INPUT.get(i);
+            var outputSlot = OUTPUT.get(i);
+            ItemStack input = inputSlot.getItemStack(this);
+            ItemStack output = outputSlot.getItemStack(this);
+            outputSlot.setStackInSlot(this, output.isEmpty() ? input.copyWithCount(moved) : output.copyWithCount(output.getCount() + moved));
+            inputSlot.setStackInSlot(this, input.copyWithCount(input.getCount() - moved));
         }
     }
 
     public boolean ghostSlotHasItem(int slot) {
-        return GHOST.get(slot).getItemStack(this).isEmpty();
+        return !GHOST.get(slot).getItemStack(this).isEmpty();
     }
 }

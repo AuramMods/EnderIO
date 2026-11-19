@@ -16,6 +16,7 @@ com.enderio.enderio.gametests.content.storage.FluidTankTests
 com.enderio.enderio.gametests.content.storage.TravelAnchorMigrationTests
 com.enderio.enderio.gametests.machines.AlloySmelterTests
 com.enderio.enderio.gametests.machines.DrainTests
+com.enderio.enderio.gametests.machines.ImpulseHopperTests
 com.enderio.enderio.gametests.machines.VacuumTests
 com.enderio.enderio.gametests.machines.PrimitiveAlloySmelterTests
 com.enderio.enderio.gametests.machines.StirlingGeneratorTests
