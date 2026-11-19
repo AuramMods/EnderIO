@@ -1,5 +1,10 @@
 package com.enderio.enderio.gametests.machines;
 
+import com.enderio.enderio.content.glass.GlassCollisionPredicate;
+import com.enderio.enderio.content.glass.GlassIdentifier;
+import com.enderio.enderio.content.glass.GlassLighting;
+import com.enderio.enderio.content.machines.alloy.AlloySmelterBlockEntity;
+import com.enderio.enderio.content.machines.alloy.AlloySmelterMode;
 import com.enderio.enderio.content.machines.alloy.AlloySmeltingRecipe;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
@@ -96,6 +101,39 @@ public class AlloySmelterTests {
                     var recipe = helper.getLevel().getRecipeManager().getRecipeFor(EIORecipes.ALLOY_SMELTING.type().get(), input, helper.getLevel()).orElseThrow();
                     int expectedEnergy = energyToAdd - recipe.energy();
                     helper.assertEnergyStored(0, 1, 0, expectedEnergy);
+                })
+                .thenSucceed();
+        });
+    }
+
+    @GameTest(timeoutTicks = 120)
+    public static void smelterModeSelectsTheMatchingQuartzBlockRecipe(GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(3, 1, 1)
+            .set(0, 0, 0, EIOBlocks.ALLOY_SMELTER.get().defaultBlockState())
+            .set(2, 0, 0, EIOBlocks.ALLOY_SMELTER.get().defaultBlockState()));
+
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var quartz = EIOBlocks.GLASS_BLOCKS.get(new GlassIdentifier(GlassLighting.NONE,
+                GlassCollisionPredicate.NONE, true)).CLEAR.get().asItem();
+            helper.startSequence()
+                .thenExecute(() -> {
+                    helper.getBlockEntity(0, 1, 0, AlloySmelterBlockEntity.class).setMode(AlloySmelterMode.FURNACE);
+                    helper.getBlockEntity(2, 1, 0, AlloySmelterBlockEntity.class).setMode(AlloySmelterMode.ALLOYS);
+                    for (int x : new int[]{0, 2}) {
+                        helper.insertIntoContainer(x, 1, 0, EIOItems.OCTADIC_CAPACITOR.get(), 1);
+                        helper.provideEnergyExact(x, 1, 0, 10_000);
+                        helper.insertIntoContainer(x, 1, 0, Items.QUARTZ_BLOCK, 1);
+                    }
+                })
+                .thenWaitUntil(() -> {
+                    helper.assertContainerHasExactly(0, 1, 0, Items.SMOOTH_QUARTZ, 1);
+                    helper.assertContainerHasExactly(2, 1, 0, quartz, 1);
+                })
+                .thenExecute(() -> {
+                    helper.assertContainerHasExactly(0, 1, 0, Items.QUARTZ_BLOCK, 0);
+                    helper.assertContainerHasExactly(2, 1, 0, Items.QUARTZ_BLOCK, 0);
+                    helper.assertEnergyStored(0, 1, 0, 8_500);
+                    helper.assertEnergyStored(2, 1, 0, 3_600);
                 })
                 .thenSucceed();
         });

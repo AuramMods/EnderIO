@@ -42,6 +42,7 @@ parser.add_argument("--scenario",
                              "facade-ctm-core", "facade-ctm-athena", "facade-ctm-embeddium",
                              "facade-ctm-oculus", "facade-ctm-oculus-shader", "facade-ctm-oculus-terrain",
                              "facade-corners-core", "facade-corners-athena", "facade-corners-shader",
+                             "glass-progression",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")

@@ -316,21 +316,21 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
 
         @Override
         protected Optional<AlloySmeltingRecipe> findRecipe() {
+            var mode = getMode();
+            if (mode == AlloySmelterMode.ALL) {
+                return super.findRecipe();
+            }
+
             var level = getLevel();
             if (level == null) {
                 return Optional.empty();
             }
 
-            var optionalRecipe = super.findRecipe();
-            if (optionalRecipe.isEmpty()) {
-                return Optional.empty();
-            }
-
-            if (optionalRecipe.get().isSmelting() ? !getMode().canSmelt() : !getMode().canAlloy()) {
-                return Optional.empty();
-            }
-
-            return optionalRecipe;
+            // A furnace recipe and an alloy recipe can accept the same input.
+            var input = createRecipeInput();
+            return level.getRecipeManager().getAllRecipesFor(EIORecipes.ALLOY_SMELTING.type().get()).stream()
+                .filter(recipe -> recipe.isSmelting() == mode.canSmelt() && recipe.matches(input, level))
+                .findFirst();
         }
     }
 
