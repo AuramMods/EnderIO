@@ -80,12 +80,16 @@ def finished(case):
             f'unless data block {mill(x)} Task {inventory_checks} {hopper_item(output(x), "enderio:" + name, 1)}')
 
 
-def setup_machine(server, results, case):
-    x, name, ingredients = case
+def prepare_machine(server, x):
     server.command(f'setblock {mill(x)} {BLOCK}[facing=south]{{IOConfig:{{Modes:{{up:"pull",down:"push"}}}},'
                    f'Items:{{Items:[{entry(9, CAP)}]}}}}')
     server.command(f"setblock {feed(x)} minecraft:hopper[facing=down]")
     server.command(f"setblock {output(x)} minecraft:hopper[facing=down]")
+
+
+def setup_machine(server, results, case):
+    x, name, ingredients = case
+    prepare_machine(server, x)
     counts = dict.fromkeys(ingredients, 0)
     for stack in ingredients:
         counts[stack] += 1
@@ -100,7 +104,7 @@ def setup_machine(server, results, case):
     charge(server, x, PAID)
 
 
-def setup(server, results, cases):
+def prepare_area(server, results, cases):
     server.command("gamerule doMobSpawning false")
     server.command("gamerule doDaylightCycle false")
     server.command("gamerule spawnRadius 0")
@@ -109,6 +113,10 @@ def setup(server, results, cases):
     server.assert_state("fixture_chunks_are_loaded", f"if loaded {mill(MAIN[0])} if loaded {mill(cases[-1][0])}", results)
     server.command("fill 3157 79 5 3198 79 15 minecraft:stone_bricks")
     server.command("setworldspawn 3163 80 12")
+
+
+def setup(server, results, cases):
+    prepare_area(server, results, cases)
     for case in cases:
         setup_machine(server, results, case)
     for case in cases:
