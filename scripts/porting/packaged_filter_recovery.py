@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Remove a live filter endpoint, recover its drops and reinstall them over Forge TCP."""
+"""Exercise a live filter editor during conduit removal and recovery over Forge TCP."""
 
 import argparse
 from contextlib import ExitStack, contextmanager
@@ -25,10 +25,12 @@ NEIGHBOR = INSERT_STOCK.pos(3279)
 CHUNKS = "3264 0 3295 15"
 FILTER = '{id:"enderio:limited_item_filter",Count:1b}'
 CONDUIT = '{id:"enderio:conduit",Count:1b,tag:{"enderio:data":{"enderio:conduit":"enderio:item"}}}'
+REDSTONE_CONDUIT = '{id:"enderio:conduit",Count:1b,tag:{"enderio:data":{"enderio:conduit":"enderio:redstone"}}}'
 DROPS = '@e[type=minecraft:item,distance=..4]'
 OPERATOR = "EnderIOWrench"
 LEVER = "3279 80 2"
 LAMP = "3280 80 0"
+EDITED_STOCK = 37
 
 
 def item_entity(item, *, single=False):
@@ -44,9 +46,9 @@ def connection(pos, index, side):
     return f'{pos} Connections[{index}][{{Side:"{side}"}}]'
 
 
-def at_endpoint():
+def at_endpoint(stock_count=137):
     return (f'if data block {connection(ENDPOINT, 0, "east")}.Config{{is_insert:1b}} '
-            f'{settings("block", filter_slot(INSERT_STOCK, insert=True), "limited")}')
+            f'{settings("block", filter_slot(INSERT_STOCK, insert=True), "limited", stock_count=stock_count)}')
 
 
 def link(pos, index, side, *, internal=False):
@@ -83,12 +85,44 @@ def redstone(server, results, stage):
                             f"if block {LAMP} minecraft:redstone_lamp[lit={lit}]", results)
 
 
+def redstone_stays_removed(server, results, stage):
+    server.assert_state(f"the_powered_lever_no_longer_drives_a_lamp_{stage}",
+                        f'if block {LEVER} minecraft:lever[powered=true] '
+                        f'if block {LAMP} minecraft:redstone_lamp[lit=false] '
+                        f'if data block {ENDPOINT} {{Conduits:["enderio:item"]}} unless data block {ENDPOINT} Conduits[1] '
+                        f'unless data block {NEIGHBOR} Connections[1][{{Side:"east",Status:"connected_conduit"}}]',
+                        results)
+
+
+def edit_after_redstone_removal(server, results, client, output, operator, operator_output):
+    set_lever(server, LEVER, True)
+    server.assert_state("redstone_lamp_is_lit_while_the_original_editor_is_open",
+                        f"if block {LAMP} minecraft:redstone_lamp[lit=true]", results)
+    (operator_output / "server-ready-wrench").touch()
+    wait_signal(operator, operator_output, "wrenched")
+    redstone_stays_removed(server, results, "after_wrench")
+    server.command(f"execute positioned {ENDPOINT} store result score #all_drop port_stock if entity {DROPS}")
+    server.assert_state("only_the_redstone_conduit_drops_and_the_item_filter_remains_installed",
+                        f'{at_endpoint()} positioned {ENDPOINT} if score #all_drop port_stock matches 1 '
+                        f'if entity {item_entity(REDSTONE_CONDUIT)}', results)
+    (output / "server-ready-other-removed").touch()
+    wait_signal(client, output, "editor-updated")
+    server.assert_state("the_live_editor_has_changed_stock_without_consuming_the_player_sample",
+                        f'{at_endpoint(EDITED_STOCK)} if data entity {PLAYER} Inventory[{stack(1, SAMPLE, EDITED_STOCK)}] '
+                        f'unless data entity {inventory_item(FILTER)}', results)
+    routing(server, results, "while_the_original_editor_is_open", EDITED_STOCK)
+    (output / "server-ready-back").touch()
+    wait_signal(client, output, "editor-returned")
+
+
 @contextmanager
 def guarded_client(args, server, report, name, scenario, launch):
     output = ROOT / "build/port-evidence" / name
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
                "--launch", str(launch.resolve()), "--scenario", scenario,
                "--output", str(output), "--server", f"127.0.0.1:{args.port}", "--timeout", "195"]
+    if args.wrench_redstone:
+        command.append("--wrench-redstone")
     with (server.directory / f"{scenario}.log").open("w") as log:
         client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         try:
@@ -110,18 +144,25 @@ def exercise_client(args, server, results, report):
     with ExitStack() as clients:
         client, output = clients.enter_context(guarded_client(args, server, report, args.name, editor, args.launch))
         server.command(f"clear {PLAYER}")
+        if args.wrench_redstone:
+            server.command(f"item replace entity {PLAYER} hotbar.1 with minecraft:cobblestone{{StockSample:5}} {EDITED_STOCK}")
         server.command(f"tp {PLAYER} 3280.5 80 3.5 180 15")
         if mixed:
             operator, operator_output = clients.enter_context(
                 guarded_client(args, server, report, args.name + "-operator", "filter-wrench-operator", args.operator_launch))
             server.command(f"clear {OPERATOR}")
             server.command(f"item replace entity {OPERATOR} hotbar.0 with enderio:yeta_wrench")
-            server.command(f"tp {OPERATOR} 3282.5 80 3.5 140 15")
+            position = "3282.5 80 0.5 70 15" if args.wrench_redstone else "3282.5 80 3.5 140 15"
+            server.command(f"tp {OPERATOR} {position}")
 
         (output / "server-ready-initial").touch()
         wait_signal(client, output, "editor-open")
         server.assert_state("opened_editor_is_bound_to_the_original_installed_stock_filter",
                             f'{at_endpoint()} unless data entity {inventory_item(FILTER)}', results)
+
+        if args.wrench_redstone:
+            edit_after_redstone_removal(server, results, client, output, operator, operator_output)
+            return
 
         if mixed:
             (operator_output / "server-ready-wrench").touch()
@@ -167,19 +208,20 @@ def exercise_client(args, server, results, report):
                             f'positioned {ENDPOINT} unless entity {DROPS}', results)
 
 
-def routing(server, results, stage):
-    server.assert_state(f"recovered_filter_keeps_the_same_stock_and_tags_{stage}",
-                        f"{topology(INSERT_STOCK)} {at_endpoint()}", results)
+def routing(server, results, stage, stock_count=137):
+    server.assert_state(f"item_filter_has_the_expected_stock_and_tags_{stage}",
+                        f"{topology(INSERT_STOCK)} {at_endpoint(stock_count)}", results)
     set_items(server, INSERT_STOCK.source)
     set_items(server, INSERT_STOCK.target, stack(0, SAMPLE, 30), stack(3, WRONG_SAMPLE, 11))
     set_items(server, INSERT_STOCK.source, *(stack(i, SAMPLE, 64) for i in range(3)), stack(3, WRONG_SAMPLE, 7))
-    server.assert_state(f"recovered_filter_reaches_its_native_stock_limit_{stage}",
-                        f"if data block {INSERT_STOCK.target} Items[{stack(2, SAMPLE, 9)}]", results, timeout=20)
+    last_slot, extra_count = divmod(stock_count - 1, 64)
+    server.assert_state(f"item_filter_reaches_its_native_stock_limit_{stage}",
+                        f"if data block {INSERT_STOCK.target} Items[{stack(last_slot, SAMPLE, extra_count + 1)}]", results, timeout=20)
     wait_ticks(server, 35)
     quantity(server, "source", INSERT_STOCK.source)
     quantity(server, "target", INSERT_STOCK.target)
-    server.assert_state(f"recovered_filter_conserves_the_exact_tagged_counts_{stage}",
-                        'if score #source port_stock matches 85 if score #target port_stock matches 137 '
+    server.assert_state(f"item_filter_conserves_the_exact_tagged_counts_{stage}",
+                        f'if score #source port_stock matches {222 - stock_count} if score #target port_stock matches {stock_count} '
                         f'if data block {INSERT_STOCK.source} Items[{stack(3, WRONG_SAMPLE, 7)}] '
                         f'if data block {INSERT_STOCK.target} Items[{stack(3, WRONG_SAMPLE, 11)}]', results)
 
@@ -192,11 +234,14 @@ def main():
     parser.add_argument("--forge-server", type=Path, required=True)
     parser.add_argument("--launch", type=Path, required=True)
     parser.add_argument("--operator-launch", type=Path, help="Use a second guarded profile to wrench a mixed bundle")
+    parser.add_argument("--wrench-redstone", action="store_true", help="Remove redstone and edit the surviving item route")
     parser.add_argument("--jar", type=Path, required=True)
     parser.add_argument("--world", type=Path, required=True)
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be one directory name")
+    if args.wrench_redstone and args.operator_launch is None:
+        parser.error("--wrench-redstone requires --operator-launch")
     root = ROOT / "build/port-runtime" / args.name
     root.mkdir()
     directory = root / "server"
@@ -207,8 +252,12 @@ def main():
         shutil.copytree(args.world, directory / WORLD)
 
         def check_routes(server, results, stage):
-            routing(server, results, stage)
-            if mixed:
+            if args.wrench_redstone:
+                routing(server, results, stage, EDITED_STOCK)
+                redstone_stays_removed(server, results, stage)
+            else:
+                routing(server, results, stage)
+            if mixed and not args.wrench_redstone:
                 redstone(server, results, stage)
 
         def exercise(server, results):
@@ -217,7 +266,7 @@ def main():
                 prepare_mixed(server, results)
                 redstone(server, results, "before_wrench_use")
             exercise_client(args, server, results, report)
-            check_routes(server, results, "reinstalled")
+            check_routes(server, results, "edited" if args.wrench_redstone else "reinstalled")
             server.command("setworldspawn 0 80 0")
             server.command(f"forceload remove {CHUNKS}")
             server.assert_state("both_route_chunks_actually_unload_without_the_client",

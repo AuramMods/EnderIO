@@ -2,6 +2,7 @@ package com.enderio.port.clientqa;
 
 import com.enderio.core.client.gui.widgets.IconButton;
 import com.enderio.enderio.api.EnderIODataComponents;
+import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.client.content.conduits.gui.ConduitScreen;
 import com.enderio.enderio.client.content.filters.item.LimitedItemFilterScreen;
 import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
@@ -20,6 +21,7 @@ import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.Slot;
@@ -43,7 +45,8 @@ final class ClientFilterRecoverySmoke {
 
     private enum Stage {
         TITLE, JOIN, OPEN, ORIGINAL, ORIGINAL_FILTER, BREAK, PICKUP, PLACE, PLACED, REOPEN, RESTORE, REINSTALLED,
-        RESTORED_FILTER, RETURN, OPERATOR_READY, WRENCH, WRENCHED, CONFIRMED, DONE
+        RESTORED_FILTER, RETURN, OPERATOR_READY, WRENCH, WRENCHED, PRESERVED, CLEARED, EDITED, BACK_READY, EDIT_BACK,
+        CONFIRMED, DONE
     }
 
     private static final BlockPos ENDPOINT = new BlockPos(3280, 80, 1);
@@ -57,6 +60,7 @@ final class ClientFilterRecoverySmoke {
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final Mode mode;
+    private final boolean wrenchRedstone = Boolean.getBoolean("enderio.clientqa.wrenchRedstone");
     private Stage stage = Stage.TITLE;
     private long titleReady;
     private int brokenAt = -1;
@@ -64,6 +68,7 @@ final class ClientFilterRecoverySmoke {
     private int recoveredConduitSlot;
     private boolean insertClicked;
     private ItemStack originalFilter = ItemStack.EMPTY;
+    private LimitedItemFilterScreen originalEditor;
 
     ClientFilterRecoverySmoke() {
         this(Mode.BREAK);
@@ -77,7 +82,10 @@ final class ClientFilterRecoverySmoke {
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
-            if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > 165_000_000_000L) {
+            if (minecraft.screen instanceof DisconnectedScreen screen) {
+                throw new AssertionError("Filter recovery disconnected in " + stage + ": " + screen.getNarrationMessage().getString());
+            }
+            if (System.nanoTime() - started > 165_000_000_000L) {
                 throw new AssertionError("Filter recovery stopped in " + stage);
             }
             if (stage == Stage.TITLE) {
@@ -98,7 +106,7 @@ final class ClientFilterRecoverySmoke {
                 case OPERATOR_READY -> {
                     if (!ready("wrench") || !player.getMainHandItem().is(EIOItems.YETA_WRENCH.get())) return;
                     var bundle = bundle();
-                    if (bundle == null || itemConnectionHit(bundle) == null || !hasRedstone(bundle)) return;
+                    if (bundle == null || !hasItem(bundle) || !hasRedstone(bundle) || wrenchHit(bundle) == null) return;
                     minecraft.options.keyShift.setDown(true);
                     crouchTick = player.tickCount;
                     stage = Stage.WRENCH;
@@ -106,8 +114,9 @@ final class ClientFilterRecoverySmoke {
                 case WRENCH -> {
                     if (player.tickCount - crouchTick < 4 || !player.isSteppingCarefully()) return;
                     var bundle = bundle();
-                    var hit = bundle == null ? null : itemConnectionHit(bundle);
-                    check("crouch_wrench_targets_the_item_part_of_the_mixed_bundle", hit != null && hasRedstone(bundle));
+                    var hit = bundle == null ? null : wrenchHit(bundle);
+                    check("crouch_wrench_targets_only_the_requested_part_of_the_mixed_bundle",
+                        hit != null && hasItem(bundle) && hasRedstone(bundle));
                     var result = minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit);
                     minecraft.options.keyShift.setDown(false);
                     check("native_wrench_use_is_consumed", result.consumesAction());
@@ -115,8 +124,9 @@ final class ClientFilterRecoverySmoke {
                 }
                 case WRENCHED -> {
                     var bundle = bundle();
-                    if (bundle == null || hasItem(bundle)) return;
-                    check("operator_receives_the_redstone_only_bundle_update", hasRedstone(bundle));
+                    if (bundle == null || (wrenchRedstone ? hasRedstone(bundle) : hasItem(bundle))) return;
+                    check("operator_receives_the_bundle_with_only_the_other_conduit",
+                        wrenchRedstone ? hasItem(bundle) : hasRedstone(bundle));
                     signal("wrenched");
                     stage = Stage.CONFIRMED;
                 }
@@ -133,11 +143,61 @@ final class ClientFilterRecoverySmoke {
                     stage = Stage.ORIGINAL_FILTER;
                 }
                 case ORIGINAL_FILTER -> {
-                    if (!(minecraft.screen instanceof LimitedItemFilterScreen screen) || !showsStock(screen)) return;
+                    if (!(minecraft.screen instanceof LimitedItemFilterScreen screen) || !showsStock(screen, 137)) return;
+                    originalEditor = screen;
                     check("installed_editor_reads_original_full_stock", nearEndpoint());
                     capture("before-break");
                     signal("editor-open");
-                    stage = Stage.BREAK;
+                    stage = wrenchRedstone ? Stage.PRESERVED : Stage.BREAK;
+                }
+                case PRESERVED -> {
+                    if (!ready("other-removed")) return;
+                    var bundle = bundle();
+                    if (bundle == null || hasRedstone(bundle)) return;
+                    // Allow the dedicated server time to enforce menu validity after the bundle update.
+                    if (brokenAt == -1) brokenAt = player.tickCount;
+                    if (player.tickCount - brokenAt < 20) return;
+                    check("same_item_editor_remains_open_after_redstone_removal",
+                        hasItem(bundle) && nearEndpoint() && minecraft.screen == originalEditor
+                            && player.containerMenu == originalEditor.getMenu() && showsStock(originalEditor, 137));
+                    clickSlot(originalEditor, originalEditor.getMenu().getSlot(17));
+                    stage = Stage.CLEARED;
+                }
+                case CLEARED -> {
+                    check("clearing_the_sample_uses_the_same_editor", minecraft.screen == originalEditor);
+                    var ghost = (LimitedItemFilterSlot) originalEditor.getMenu().getSlot(17);
+                    if (!ghost.getResource().isEmpty()) return;
+                    var source = originalEditor.getMenu().slots.stream().filter(slot -> slot.container == player.getInventory()
+                        && slot.getSlotIndex() == 1).findFirst().orElseThrow();
+                    check("the_physical_sample_is_available_to_the_open_editor", source.getItem().is(Items.COBBLESTONE)
+                        && source.getItem().getCount() == 37);
+                    clickSlot(originalEditor, source);
+                    clickSlot(originalEditor, ghost);
+                    clickSlot(originalEditor, source);
+                    stage = Stage.EDITED;
+                }
+                case EDITED -> {
+                    check("the_original_editor_stays_open_through_the_edit", minecraft.screen == originalEditor);
+                    if (!showsStock(originalEditor, 37) || !originalEditor.getMenu().getCarried().isEmpty()) return;
+                    check("editing_the_ghost_slot_does_not_consume_the_physical_sample",
+                        player.getInventory().getItem(1).getCount() == 37);
+                    capture("after-other-removal");
+                    signal("editor-updated");
+                    stage = Stage.BACK_READY;
+                }
+                case BACK_READY -> {
+                    check("the_original_editor_stays_open_while_the_item_route_runs", minecraft.screen == originalEditor);
+                    if (!ready("back")) return;
+                    click(originalEditor, originalEditor.getGuiLeft() + 5, originalEditor.getGuiTop() + 5);
+                    stage = Stage.EDIT_BACK;
+                }
+                case EDIT_BACK -> {
+                    var screen = endpointScreen();
+                    if (screen == null) return;
+                    check("back_returns_to_the_unchanged_item_endpoint",
+                        screen.getMenu().getSlot(FILTER_SLOT).getItem().is(EIOItems.LIMITED_ITEM_FILTER.get()));
+                    signal("editor-returned");
+                    stage = Stage.CONFIRMED;
                 }
                 case BREAK -> {
                     if (!ready("broken")) return;
@@ -227,7 +287,7 @@ final class ClientFilterRecoverySmoke {
                     stage = Stage.RESTORED_FILTER;
                 }
                 case RESTORED_FILTER -> {
-                    if (!(minecraft.screen instanceof LimitedItemFilterScreen screen) || !showsStock(screen)) return;
+                    if (!(minecraft.screen instanceof LimitedItemFilterScreen screen) || !showsStock(screen, 137)) return;
                     check("replacement_editor_displays_the_same_stock_samples", true);
                     capture("after-recovery");
                     click(screen, screen.getGuiLeft() + 5, screen.getGuiTop() + 5);
@@ -259,7 +319,7 @@ final class ClientFilterRecoverySmoke {
     private boolean openEndpoint() {
         var bundle = bundle();
         if (minecraft.screen != null || bundle == null) return false;
-        var hit = itemConnectionHit(bundle);
+        var hit = connectionHit(bundle, Direction.EAST, EIOConduits.ITEM);
         if (hit == null) return false;
         minecraft.gameMode.useItemOn(minecraft.player, InteractionHand.MAIN_HAND, hit);
         return true;
@@ -277,15 +337,20 @@ final class ClientFilterRecoverySmoke {
         return bundle.getConduits().stream().anyMatch(holder -> holder.is(EIOConduits.REDSTONE));
     }
 
-    private static BlockHitResult itemConnectionHit(ConduitBundleBlockEntity bundle) {
-        // The outer edge of the east connector belongs to the item route. Mixed bundles can offset the pipes behind it.
-        var hit = new BlockHitResult(Vec3.atCenterOf(ENDPOINT).relative(Direction.EAST, 0.48),
-            Direction.SOUTH, ENDPOINT, false);
+    private BlockHitResult wrenchHit(ConduitBundleBlockEntity bundle) {
+        return wrenchRedstone ? connectionHit(bundle, Direction.NORTH, EIOConduits.REDSTONE)
+            : connectionHit(bundle, Direction.EAST, EIOConduits.ITEM);
+    }
+
+    private static BlockHitResult connectionHit(ConduitBundleBlockEntity bundle, Direction side,
+            ResourceKey<Conduit<?, ?>> type) {
+        // Use the outer connector plate, since mixed bundles can offset the pipes behind it.
+        var hit = new BlockHitResult(Vec3.atCenterOf(ENDPOINT).relative(side, 0.48), side.getClockWise(), ENDPOINT, false);
         var shape = bundle.getShape();
         var connection = shape.getConnectionFromHit(ENDPOINT, hit);
         var aimedConduit = shape.getConduit(ENDPOINT, hit);
-        return connection != null && connection.getFirst() == Direction.EAST && connection.getSecond().is(EIOConduits.ITEM)
-            && aimedConduit != null && aimedConduit.is(EIOConduits.ITEM) ? hit : null;
+        return connection != null && connection.getFirst() == side && connection.getSecond().is(type)
+            && aimedConduit != null && aimedConduit.is(type) ? hit : null;
     }
 
     private ConduitScreen endpointScreen() {
@@ -304,11 +369,12 @@ final class ClientFilterRecoverySmoke {
         return true;
     }
 
-    private static boolean showsStock(LimitedItemFilterScreen screen) {
+    private static boolean showsStock(LimitedItemFilterScreen screen, int stock) {
         var paper = ((LimitedItemFilterSlot) screen.getMenu().getSlot(0)).getResource();
         var cobble = ((LimitedItemFilterSlot) screen.getMenu().getSlot(17)).getResource();
         return screen.getMenu().shouldCompareComponents() && paper.is(Items.PAPER) && paper.getCount() == 64
-            && cobble.is(Items.COBBLESTONE) && cobble.getCount() == 137 && cobble.getTag().getInt("StockSample") == 5;
+            && cobble.is(Items.COBBLESTONE) && cobble.getCount() == stock && cobble.getTag() != null
+            && cobble.getTag().getInt("StockSample") == 5;
     }
 
     private static void clickSlot(AbstractContainerScreen<?> screen, Slot slot) {

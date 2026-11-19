@@ -57,12 +57,12 @@ def held(item, slot=0):
     return f'{PLAYER} Inventory[{{Slot:{slot}b,id:"enderio:{item}"}}]'
 
 
-def settings(target, path, name):
+def settings(target, path, name, *, stock_count=137):
     data = f'{path}.tag."enderio:data"."enderio:{"limited_item_filter" if name == "limited" else "item_filter"}"'
     if name == "limited":
         return (f'if data {target} {data}{{isNbt:1b}} '
                 f'if data {target} {data}.items[0].value{{id:"minecraft:paper",Count:64,tag:{{MenuStock:32}}}} '
-                f'if data {target} {data}.items[17].value{{id:"minecraft:cobblestone",Count:137,tag:{{StockSample:5}}}}')
+                f'if data {target} {data}.items[17].value{{id:"minecraft:cobblestone",Count:{stock_count},tag:{{StockSample:5}}}}')
     if name == "large":
         return (f'if data {target} {data}{{isInvert:1b}} '
                 f'if data {target} {data}.items[35].value{{id:"minecraft:paper",Count:1,tag:{{LargeSample:1}}}}')

@@ -46,4 +46,4 @@ python3 scripts/porting/packaged_filter_recovery.py --name cycle-128-break-reche
 
 ## Remaining verification
 
-Verify that removing a different conduit keeps an otherwise valid editor open. The first single-client destruction control disconnected during Forge login before gameplay. Its retry passed. The intermittent login failure remains open. See `build/port-evidence/cycle-128-block-control/summary.json`.
+[Cycle 129](cycle-129.md) verifies that removing a different conduit keeps the existing editor open and usable. The first single-client destruction control disconnected during Forge login before gameplay. Its retry passed. The intermittent login failure remains open. See `build/port-evidence/cycle-128-block-control/summary.json`.
