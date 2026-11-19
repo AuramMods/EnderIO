@@ -43,6 +43,7 @@ import com.enderio.enderio.content.misc_blocks.light.LegacyPoweredLightBlock;
 import com.enderio.enderio.content.misc_blocks.SilentPressurePlateBlock;
 import com.enderio.enderio.content.misc_blocks.SilentWeightedPressurePlateBlock;
 import com.enderio.enderio.content.misc_blocks.skull.EnderSkullBlock;
+import com.enderio.enderio.content.misc_blocks.skull.EnderSkullBlockItem;
 import com.enderio.enderio.content.misc_blocks.skull.WallEnderSkullBlock;
 import com.enderio.enderio.content.paint.block.PaintedCraftingTableBlock;
 import com.enderio.enderio.content.paint.block.PaintedFenceBlock;
@@ -69,6 +70,7 @@ import com.enderio.enderio.foundation.block.legacy.LegacyMachineBlock;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.Util;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
@@ -340,7 +342,8 @@ public class EIOBlocks {
         .registerBlock("cold_fire", ColdFireBlock::new, BlockBehaviour.Properties.copy(Blocks.FIRE).noLootTable());
 
     public static final BlockDeferredHolder<EnderSkullBlock> ENDERMAN_HEAD = registerWithItem("enderman_head", EnderSkullBlock::new,
-            BlockBehaviour.Properties.copy(Blocks.SKELETON_SKULL).instrument(NoteBlockInstrument.SKELETON).strength(1.0F).pushReaction(PushReaction.DESTROY));
+            BlockBehaviour.Properties.copy(Blocks.SKELETON_SKULL).instrument(NoteBlockInstrument.SKELETON).strength(1.0F).pushReaction(PushReaction.DESTROY),
+            block -> new EnderSkullBlockItem(block.get(), new Item.Properties(), Direction.DOWN));
 
     public static final BlockDeferredHolder<WallEnderSkullBlock> WALL_ENDERMAN_HEAD = BLOCKS.registerBlock("wall_enderman_head", WallEnderSkullBlock::new,
         BlockBehaviour.Properties.copy(Blocks.SKELETON_SKULL).strength(1.0F).lootFrom(ENDERMAN_HEAD).pushReaction(PushReaction.DESTROY));
