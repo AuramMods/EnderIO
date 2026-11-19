@@ -88,6 +88,7 @@ public final class ClientSmoke {
             case "transfer-filter-menus" -> new ClientTransferFilterMenusSmoke();
             case "stock-filter-menus" -> new ClientStockFilterMenusSmoke();
             case "filter-progression" -> new ClientFilterProgressionSmoke();
+            case "starter-progression" -> new ClientStarterProgressionSmoke();
             case "filter-recovery" -> new ClientFilterRecoverySmoke();
             case "filter-wrench-editor" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_EDITOR);
             case "filter-wrench-operator" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_OPERATOR);
