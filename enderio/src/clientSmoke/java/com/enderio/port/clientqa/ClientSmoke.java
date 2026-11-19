@@ -89,7 +89,8 @@ public final class ClientSmoke {
             case "stock-filter-menus" -> new ClientStockFilterMenusSmoke();
             case "filter-progression" -> new ClientFilterProgressionSmoke();
             case "starter-progression" -> new ClientStarterProgressionSmoke();
-            case "energy-progression" -> new ClientEnergyProgressionSmoke();
+            case "energy-progression" -> new ClientConduitProgressionSmoke(false);
+            case "item-progression" -> new ClientConduitProgressionSmoke(true);
             case "sag-progression" -> new ClientSagProgressionSmoke();
             case "legacy-sag" -> new ClientLegacySagSmoke();
             case "sag-jei" -> new ClientSagJeiSmoke();

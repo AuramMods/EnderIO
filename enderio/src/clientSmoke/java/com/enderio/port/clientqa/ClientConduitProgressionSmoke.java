@@ -23,6 +23,7 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
@@ -36,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-final class ClientEnergyProgressionSmoke {
+final class ClientConduitProgressionSmoke {
     private enum Stage { TITLE, JOIN, TABLE, RECIPE, WRONG_VARIANT, RESULT, TAKEN, SMELTER, SWAP, CAPACITY, UPGRADE, UPGRADED, FINISH, DONE }
 
     private record Craft(String id, String item, int count, String variant, String lowerVariant, String alloy) {
@@ -49,19 +50,21 @@ final class ClientEnergyProgressionSmoke {
         }
 
         boolean matches(ItemStack stack) {
-            return stack.is(ClientEnergyProgressionSmoke.item(item)) && (variant.isEmpty() || conduit(stack, variant));
+            return stack.is(ClientConduitProgressionSmoke.item(item)) && (variant.isEmpty() || conduit(stack, variant));
         }
     }
 
-    private static final BlockPos TABLE = new BlockPos(3031, 80, 8);
     private static final BlockPos SMELTER = new BlockPos(3040, 80, 8);
-    private static final BlockPos LEFT = new BlockPos(3039, 80, 9);
-    private static final BlockPos RIGHT = new BlockPos(3040, 80, 9);
-    private static final List<Craft> RECIPES = List.of(new Craft("double_layer_capacitor"), new Craft("double_layer_capacitor"),
+    private static final List<Craft> ENERGY_RECIPES = List.of(new Craft("double_layer_capacitor"), new Craft("double_layer_capacitor"),
         new Craft("octadic_capacitor"), new Craft("enhanced_energy_conduit", "enhanced_energy"),
         new Craft("enhanced_energy_conduit_upgrade", "enhanced_energy", "energy", "energetic_alloy_ingot"),
         new Craft("ender_energy_conduit", "ender_energy"),
         new Craft("ender_energy_conduit_upgrade", "ender_energy", "enhanced_energy", "vibrant_alloy_ingot"));
+    private static final List<Craft> ITEM_RECIPES = List.of(new Craft("item_conduit", "item"),
+        new Craft("energetic_item_conduit", "enhanced_item"),
+        new Craft("energetic_item_conduit_upgrade", "enhanced_item", "item", "energetic_alloy_ingot"),
+        new Craft("vibrant_item_conduit", "ender_item"),
+        new Craft("vibrant_item_conduit_upgrade", "ender_item", "enhanced_item", "vibrant_alloy_ingot"));
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
@@ -69,6 +72,12 @@ final class ClientEnergyProgressionSmoke {
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
+    private final boolean items;
+    private final BlockPos table;
+    private final BlockPos left;
+    private final BlockPos right;
+    private final List<Craft> recipes;
+    private final List<String> tiers;
     private Stage stage = Stage.TITLE;
     private long titleAt;
     private int availableAt = -1;
@@ -79,7 +88,13 @@ final class ClientEnergyProgressionSmoke {
     private int beforeUpper;
     private int beforeLower;
 
-    ClientEnergyProgressionSmoke() {
+    ClientConduitProgressionSmoke(boolean items) {
+        this.items = items;
+        table = items ? new BlockPos(3278, 80, 12) : new BlockPos(3031, 80, 8);
+        left = items ? new BlockPos(3279, 80, 8) : new BlockPos(3039, 80, 9);
+        right = left.east();
+        recipes = items ? ITEM_RECIPES : ENERGY_RECIPES;
+        tiers = items ? List.of("item", "enhanced_item", "ender_item") : List.of("energy", "enhanced_energy", "ender_energy");
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -87,14 +102,14 @@ final class ClientEnergyProgressionSmoke {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
             if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > 165_000_000_000L) {
-                throw new AssertionError("Energy progression stopped at " + stage + ", recipe " + recipeIndex + ", upgrade " + upgradeIndex);
+                throw new AssertionError("Conduit progression stopped at " + stage + ", recipe " + recipeIndex + ", upgrade " + upgradeIndex);
             }
             if (stage == Stage.TITLE) {
                 if (!(minecraft.screen instanceof TitleScreen) || minecraft.getOverlay() != null) return;
                 if (titleAt == 0) titleAt = System.nanoTime();
                 if (System.nanoTime() - titleAt < 2_000_000_000L) return;
                 ConnectScreen.startConnecting(new TitleScreen(), minecraft, ServerAddress.parseString(address),
-                    new ServerData("Energy progression QA", address, true), false);
+                    new ServerData("Conduit progression QA", address, true), false);
                 stage = Stage.JOIN;
                 return;
             }
@@ -110,12 +125,12 @@ final class ClientEnergyProgressionSmoke {
                     stage = Stage.TABLE;
                 }
                 case TABLE -> {
-                    if (!ready("table") || !at(3031.5, 10.5) || !settled()) return;
-                    open(TABLE);
+                    if (!ready("table") || !at(table.getX() + 0.5, table.getZ() + 2.5) || !settled()) return;
+                    open(table);
                     requestedAt = player.tickCount;
                     stage = Stage.RECIPE;
                 }
-                case RECIPE, WRONG_VARIANT, RESULT, TAKEN -> craft(RECIPES.get(recipeIndex));
+                case RECIPE, WRONG_VARIANT, RESULT, TAKEN -> craft(recipes.get(recipeIndex));
                 case SMELTER, SWAP, CAPACITY -> installCapacitor();
                 case UPGRADE, UPGRADED -> replaceConduit();
                 case FINISH -> {
@@ -170,6 +185,12 @@ final class ClientEnergyProgressionSmoke {
                 if (result.is(EIOItems.DOUBLE_LAYER_CAPACITOR.get())) {
                     check(name + "_has_the_tier_two_capacitor_default", CapacitorData.ITEM_DATA.get(result).base() == 2);
                 }
+                if (items) {
+                    int rate = 32 << tiers.indexOf(step.variant());
+                    String expected = "Effective Rate: " + rate + " Items/sec";
+                    check(name + "_displays_its_effective_transfer_rate", result.getTooltipLines(player, TooltipFlag.NORMAL)
+                        .stream().anyMatch(line -> line.getString().equals(expected)));
+                }
                 if (!step.lowerVariant().isEmpty()) {
                     if (!conduit(menu.getSlot(5).getItem(), step.lowerVariant())) return;
                     capture(step.id());
@@ -184,10 +205,10 @@ final class ClientEnergyProgressionSmoke {
                 check(name + "_native_pickup_is_exact", menu.getCarried().isEmpty());
                 recipeIndex++;
                 requestedAt = player.tickCount;
-                if (recipeIndex == RECIPES.size()) {
+                if (recipeIndex == recipes.size()) {
                     player.closeContainer();
                     signal("crafted");
-                    stage = Stage.SMELTER;
+                    stage = items ? Stage.UPGRADE : Stage.SMELTER;
                 } else stage = Stage.RECIPE;
             }
             default -> { }
@@ -222,11 +243,13 @@ final class ClientEnergyProgressionSmoke {
     }
 
     private void replaceConduit() throws IOException {
-        String upper = upgradeIndex < 2 ? "enhanced_energy" : "ender_energy";
-        String lower = upgradeIndex < 2 ? "energy" : "enhanced_energy";
-        BlockPos target = upgradeIndex % 2 == 0 ? LEFT : RIGHT;
+        int tier = upgradeIndex / 2 + (items ? 0 : 1);
+        String upper = tiers.get(tier);
+        String lower = tier == 0 ? "" : tiers.get(tier - 1);
+        BlockPos target = upgradeIndex % 2 == 0 ? left : right;
         if (stage == Stage.UPGRADE) {
             if (!ready("upgrade-" + upgradeIndex) || minecraft.screen != null) return;
+            if (items && (!at(right.getX() + 0.5, right.getZ() + 3.5) || !settled())) return;
             var inventory = minecraft.player.getInventory();
             boolean found = false;
             for (int slot = 0; slot < 9; slot++) {
@@ -238,17 +261,24 @@ final class ClientEnergyProgressionSmoke {
             }
             check("upgrade_" + upgradeIndex + "_uses_a_crafted_upper_tier", found);
             beforeUpper = count(stack -> conduit(stack, upper));
-            beforeLower = count(stack -> conduit(stack, lower));
-            open(target);
+            if (tier == 0) {
+                var hit = new BlockHitResult(Vec3.atBottomCenterOf(target), Direction.UP, target.below(), false);
+                check("placement_" + upgradeIndex + "_uses_the_crafted_basic_conduit",
+                    minecraft.gameMode.useItemOn(minecraft.player, InteractionHand.MAIN_HAND, hit).consumesAction());
+            } else {
+                beforeLower = count(stack -> conduit(stack, lower));
+                open(target);
+            }
             stage = Stage.UPGRADED;
         } else if (minecraft.level.getBlockEntity(target) instanceof ConduitBundleBlockEntity bundle
             && bundle.getConduits().stream().anyMatch(holder -> holder.is(id(upper)))
             && count(stack -> conduit(stack, upper)) == beforeUpper - 1
-            && count(stack -> conduit(stack, lower)) == beforeLower + 1) {
-            check("upgrade_" + upgradeIndex + "_consumes_one_upper_and_returns_one_lower", true);
+            && (tier == 0 || count(stack -> conduit(stack, lower)) == beforeLower + 1)) {
+            check(tier == 0 ? "placement_" + upgradeIndex + "_consumes_one_basic"
+                : "upgrade_" + upgradeIndex + "_consumes_one_upper_and_returns_one_lower", true);
             signal("upgraded-" + upgradeIndex);
             upgradeIndex++;
-            stage = upgradeIndex == 4 ? Stage.FINISH : Stage.UPGRADE;
+            stage = upgradeIndex == (items ? 6 : 4) ? Stage.FINISH : Stage.UPGRADE;
         }
     }
 
@@ -331,6 +361,6 @@ final class ClientEnergyProgressionSmoke {
         result.put("captures", captures);
         result.put("passed", failure == null);
         if (failure != null) result.put("error", failure.toString());
-        ClientSmoke.complete("client_energy_progression", result);
+        ClientSmoke.complete(items ? "client_item_progression" : "client_energy_progression", result);
     }
 }

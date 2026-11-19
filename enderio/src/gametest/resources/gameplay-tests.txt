@@ -7,6 +7,7 @@ com.enderio.enderio.gametests.conduits.energy.EnergyConduitTests
 com.enderio.enderio.gametests.conduits.fluid.FluidConduitTests
 com.enderio.enderio.gametests.conduits.fluid.FluidConduitRateTests
 com.enderio.enderio.gametests.conduits.fluid.FluidConduitConservationTests
+com.enderio.enderio.gametests.conduits.item.ItemConduitRateTests
 com.enderio.enderio.gametests.conduits.item.ItemConduitTests
 com.enderio.enderio.gametests.content.DecorativeRedstoneTests
 com.enderio.enderio.gametests.content.SteelConstructionTests
