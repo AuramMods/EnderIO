@@ -337,7 +337,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 113: Hang Glider | Restore chest equip, worn rendering and descending flight with default vanilla movement checks | All 79 unit cases and 483 native tests pass. Packaged TCP passes nine server assertions and 21 guarded client checks across crafting, safe flight, crouched fall and restart. [Evidence and commands](porting/1.20.1/cycle-113.md) | `7b2a799c8` |
 
-| 114: Staff of Levity | Restore Forge 6 fuel and toggle data, and charge the full server cost for levitation | All 79 unit cases and 483 native tests pass. Packaged Forge passes 12 server assertions and 15 guarded client checks across migration, tank refuelling, native flight, both resource limits and restart. [Evidence and commands](porting/1.20.1/cycle-114.md) | Commit containing cycle 114 |
+| 114: Staff of Levity | Restore Forge 6 fuel and toggle data, and charge the full server cost for levitation | All 79 unit cases and 483 native tests pass. Packaged Forge passes 12 server assertions and 15 guarded client checks across migration, tank refuelling, native flight, both resource limits and restart. [Evidence and commands](porting/1.20.1/cycle-114.md) | `ed652dcba` |
+
+| 115: Staff and VAT progression | Unlock the Staff recipe from its crafting ingredient and exercise the production chain in packaged single-player | Datagen, 79 unit cases, 483 native runs and 23 guarded single-player checks pass. Two disk reopens preserve the Vapor job and the cancelled Staff's exact resource balances. [Evidence and commands](porting/1.20.1/cycle-115.md) | Commit containing cycle 115 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

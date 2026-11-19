@@ -5,6 +5,7 @@ import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.foundation.tag.EIOTags;
 import com.enderio.enderio.init.EIOItems;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
+import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.recipes.RecipeCategory;
 import com.enderio.core.data.recipe.RecipeOutput;
@@ -121,7 +122,8 @@ public class ItemRecipeProvider extends SubRecipeProvider {
                 .pattern(" R ")
                 .pattern("R  ")
                 .unlockedBy("has_ingredient",
-                        InventoryChangeTrigger.TriggerInstance.hasItems(EIOItems.PULSATING_CRYSTAL.get()))
+                        InventoryChangeTrigger.TriggerInstance.hasItems(
+                            ItemPredicate.Builder.item().of(EIOTags.Items.GEMS_PRESCIENT_CRYSTAL).build()))
                 .save(recipeOutput);
 
         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, EIOItems.TRAVEL_STAFF.get())
