@@ -32,7 +32,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.FluidStack;
@@ -40,7 +39,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import java.util.Objects;
 
 public class NiardBlockEntity extends PoweredMachineBlockEntity implements RangedActor, FluidItemInteractive, FluidTankUser {
@@ -77,17 +75,18 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
 
     @Override
     public void serverTick() {
-        if (isActive()) {
-            if (canAct()) {
-                fillTank();
-            }
-
-            if (canAct((int) (BASE_IDLE_TICKS / getCapacitorData().base()))) {
-                tryPlaceFluid();
-            }
+        if (isActive() && canAct()) {
+            fillTank();
+            tryPlaceFluid();
         }
 
         super.serverTick();
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        updateMachineState(MachineState.EMPTY_TANK, TANK.isEmpty(this));
     }
 
     private void fillTank() {
@@ -95,33 +94,38 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
     }
 
     private void tryPlaceFluid() {
-        int startIndex = iterator.getIndex();
+        var contents = TANK.getFluid(this);
+        var energy = getEnergyStorage();
+        int energyPerTick = getMaxEnergyUse();
+        if (contents.getAmount() < FluidType.BUCKET_VOLUME || energy.getEnergyStored() < ENERGY_PER_BUCKET
+            || energyPerTick <= 0) {
+            return;
+        }
 
-        //check each position in the range and place fluid if possible
+        // A bucket has a fixed cost. Keep the average placement draw within the configured rate.
+        int energyTicks = 1 + (ENERGY_PER_BUCKET - 1) / energyPerTick;
+        int idleTicks = (int) (BASE_IDLE_TICKS / getCapacitorData().base());
+        if (!canAct(Math.max(energyTicks, idleTicks))) {
+            return;
+        }
+
+        Fluid fluid = contents.getFluid();
+        BlockState fluidBlockState = fluid.defaultFluidState().createLegacyBlock();
+        if (!fluidBlockState.getFluidState().isSource() || !fluid.isSame(fluidBlockState.getFluidState().getType())) {
+            return;
+        }
+
+        int startIndex = iterator.getIndex();
         do {
             BlockPos pos = iterator.current();
-            if ((isSameLiquid(pos) ? isFlowingBlock(pos) : canPlace(pos))) {
-                if (getFluidTank().getFluidAmount() >= FluidType.BUCKET_VOLUME) {
-                    placeFluid(pos);
-                    consumeResources();
-                }
+            if (level.hasChunkAt(pos) && canPlaceFluid(pos, fluid)
+                && level.setBlock(pos, fluidBlockState, Block.UPDATE_ALL)) {
+                energy.takeEnergy(ENERGY_PER_BUCKET);
+                TANK.drain(this, FluidType.BUCKET_VOLUME, IFluidHandler.FluidAction.EXECUTE);
                 return;
             }
             iterator.moveToNextPosition();
         } while (iterator.getIndex() != startIndex);
-    }
-
-    private void placeFluid(BlockPos pos) {
-        Fluid fluid = TANK.getFluid(this).getFluid();
-        if (fluid == Fluids.EMPTY) return;
-
-        BlockState fluidBlockState = fluid.defaultFluidState().createLegacyBlock();
-        level.setBlock(pos, fluidBlockState, Block.UPDATE_ALL);
-    }
-
-    private void consumeResources() {
-        TANK.drain(this, FluidType.BUCKET_VOLUME, IFluidHandler.FluidAction.EXECUTE);
-        getEnergyStorage().consumeEnergy(ENERGY_PER_BUCKET);
     }
 
     @Override
@@ -167,8 +171,10 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
             protected void onContentsChanged(int slot) {
                 setChanged();
                 super.onContentsChanged(slot);
-                updateMachineState(MachineState.EMPTY_TANK, TANK.getFluidAmount(this) <= 0);
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+                if (level != null) {
+                    updateMachineState(MachineState.EMPTY_TANK, TANK.isEmpty(this));
+                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+                }
             }
         };
     }
@@ -185,11 +191,16 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
 
     @Override
     public void setActionRange(ActionRange actionRange) {
-        this.actionRange = actionRange.clamp(0, getMaxRange());
-        iterator = new NiardRangeIterator(getBlockPos(), getActionRange());
-
+        applyActionRange(actionRange);
         setChanged();
-        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        if (level != null) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        }
+    }
+
+    private void applyActionRange(ActionRange actionRange) {
+        this.actionRange = actionRange.clamp(0, getMaxRange());
+        iterator = new NiardRangeIterator(getBlockPos(), this.actionRange);
     }
 
     @Override
@@ -206,27 +217,13 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
         return worldPosition.below(getRange() + 1);
     }
 
-    private boolean canPlace(BlockPos pos) {
+    private boolean canPlaceFluid(BlockPos pos, Fluid fluid) {
         BlockState state = level.getBlockState(pos);
-        boolean isAir = state.isAir();
-        boolean isLiquid = !state.getFluidState().isEmpty();
-        boolean replaceable = state.canBeReplaced();
-
-        return isAir || (!isLiquid && replaceable);
-    }
-
-    private boolean isSameLiquid(@Nonnull BlockPos pos) {
-        Fluid fluidAtPos = level.getBlockState(pos).getFluidState().getType();
-        Fluid fluidInTank = TANK.getFluid(this).getFluid();
-
-        return (fluidInTank == Fluids.WATER && (fluidAtPos == Fluids.WATER || fluidAtPos == Fluids.FLOWING_WATER))
-            || (fluidInTank == Fluids.LAVA && (fluidAtPos == Fluids.LAVA  || fluidAtPos == Fluids.FLOWING_LAVA))
-            || fluidInTank.isSame(fluidAtPos);
-    }
-
-    private boolean isFlowingBlock(@Nonnull BlockPos pos) {
-        FluidState fluidState = level.getFluidState(pos);
-        return !fluidState.isSource();
+        FluidState existing = state.getFluidState();
+        if (fluid.isSame(existing.getType())) {
+            return !existing.isSource();
+        }
+        return existing.isEmpty() && state.canBeReplaced();
     }
 
     public boolean acceptItemDrain(ItemStack item) {
@@ -248,7 +245,7 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
 
         var actionRange = EIODataComponents.ACTION_RANGE.get(components);
         if (actionRange != null) {
-            this.actionRange = actionRange;
+            applyActionRange(actionRange);
         }
     }
 
@@ -289,9 +286,9 @@ public class NiardBlockEntity extends PoweredMachineBlockEntity implements Range
         loadTank(lookupProvider, tag);
 
         if (tag.contains(MachineNBTKeys.ACTION_RANGE)) {
-            actionRange = ActionRange.parse(lookupProvider, Objects.requireNonNull(tag.get(MachineNBTKeys.ACTION_RANGE)));
+            applyActionRange(ActionRange.parse(lookupProvider, Objects.requireNonNull(tag.get(MachineNBTKeys.ACTION_RANGE))));
         } else {
-            actionRange = new ActionRange(getMaxRange(), false);
+            applyActionRange(DEFAULT_RANGE);
         }
     }
 

@@ -15,7 +15,7 @@ public class NiardRangeIterator {
 
     public NiardRangeIterator(BlockPos bc, ActionRange actionRange) {
         int radius = actionRange.range();
-        positions.add(bc);
+        positions.add(bc.below());
 
         for (int i = 1; i <= radius; i++) {
             for (int j = -i; j < i; j++) {
