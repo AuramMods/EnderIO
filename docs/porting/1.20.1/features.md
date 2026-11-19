@@ -247,6 +247,8 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 
 All 34 shipped filter crafting recipes execute in a packaged survival crafting table. This covers the item, fluid and soul filter tiers, the redstone base and all redstone filters, six gate conversions, and the twelve shipped erasure recipes. The two advanced upgrades consume Advanced Item Filters crafted earlier in the same session. [Cycle 126](cycle-126.md)
 
+Destroying an open conduit endpoint closes its installed filter editor. The player recovers one exact Limited Item Filter, reuses the conduit drop and reinstalls it through the normal menu. Its 137-item target and matching tags survive actual chunk eviction and a dedicated restart. A native regression verifies that players in a different dimension cannot keep a conduit menu open from matching coordinates. [Cycle 127](cycle-127.md)
+
 ## EIOConduits
 
 Connect, transfer, configure/filter, split/merge and unload/reload without loss or duplication.

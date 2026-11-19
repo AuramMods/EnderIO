@@ -295,7 +295,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
 
     @Override
     public boolean stillValid(Player player) {
-        return Container.stillValidBlockEntity(this, player);
+        return player.level() == level && Container.stillValidBlockEntity(this, player);
     }
 
     @Override

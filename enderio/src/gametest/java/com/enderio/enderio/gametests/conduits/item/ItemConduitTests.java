@@ -8,18 +8,24 @@ import com.enderio.enderio.content.conduits.type.item.ItemConduit;
 import com.enderio.enderio.content.conduits.type.item.ItemConduitConnectionConfig;
 import com.enderio.enderio.init.EIOConduits;
 import com.enderio.enderio.init.EIOItems;
+import com.mojang.authlib.GameProfile;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.gametests.util.FixtureTemplate;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
 
+import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 // Scenario group: conduit.item
@@ -115,6 +121,30 @@ public class ItemConduitTests {
                 helper.assertValueEqual(menu.getSlot(slot).hasItem(), false, "Menu removal clears the upgrade slot");
             }).thenSucceed();
         });
+    }
+
+    @GameTest
+    public static void conduitMenuRequiresThePlayersDimension(GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 2)
+            .set(0, 0, 0, Blocks.BARREL.defaultBlockState()));
+        test.onGameTest(ConduitGameTestHelper.class, helper -> helper.startSequence().thenExecute(() -> {
+            var conduit = helper.getConduit(EIOConduits.ITEM);
+            helper.placeConduit(conduit, 0, 1, 1);
+            var bundle = helper.getConduitBundle(0, 1, 1, false);
+            var position = Vec3.atCenterOf(helper.absolutePos(new BlockPos(0, 1, 1))).add(0, 0, 1);
+            var local = helper.getPlayer();
+            local.setPos(position.x, position.y, position.z);
+            var menu = new ConduitMenu(1, local.getInventory(), bundle, conduit, Direction.NORTH);
+            helper.assertValueEqual(menu.stillValid(local), true, "The live conduit menu accepts a nearby player");
+
+            var level = helper.getLevel();
+            var otherDimension = level.dimension() == Level.OVERWORLD ? Level.NETHER : Level.OVERWORLD;
+            var otherLevel = Objects.requireNonNull(level.getServer().getLevel(otherDimension));
+            var remote = FakePlayerFactory.get(otherLevel, new GameProfile(UUID.randomUUID(), "ConduitMenuTest"));
+            remote.setPos(position.x, position.y, position.z);
+            helper.assertValueEqual(menu.stillValid(remote), false,
+                "The same coordinates in another dimension cannot keep the conduit menu open");
+        }).thenSucceed());
     }
 
     @GameTest(template = THREE_CHESTS)

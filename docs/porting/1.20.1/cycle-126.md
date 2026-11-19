@@ -45,4 +45,4 @@ run_filter_progression cycle-126-confirmed 25967 enderio/build/libs/enderio-8.2.
 
 ## Remaining verification
 
-Configured inputs for the shipped erasure recipes are placed by hand in the crafting grid. Installed editor closure during conduit removal or chunk eviction still needs dedicated runtime coverage.
+Configured inputs for the shipped erasure recipes are placed by hand in the crafting grid. The next cycle verifies installed editor closure on whole-block destruction and the recovered filter's routing through chunk eviction and restart. [Cycle 127](cycle-127.md)
