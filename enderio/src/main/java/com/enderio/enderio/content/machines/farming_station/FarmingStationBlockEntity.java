@@ -26,7 +26,6 @@ import com.enderio.enderio.init.EIODataComponents;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
@@ -36,13 +35,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.client.event.RecipesUpdatedEvent;
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.util.FakePlayer;
 import org.jetbrains.annotations.Nullable;
@@ -50,7 +49,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class FarmingStationBlockEntity extends PoweredMachineBlockEntity implements RangedActor, FarmingMachine, SoulBindable {
     private static final QuadraticScalable ENERGY_CAPACITY = new QuadraticScalable(CapacitorModifier.ENERGY_CAPACITY,
@@ -72,10 +70,6 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
     private FarmTask currentTask = null;
 
     private Soul boundSoul = Soul.EMPTY;
-    @Nullable
-    private FarmSoul.SoulData soulData;
-    private static boolean reload = false;
-    private boolean reloadCache = !reload;
 
     private ActionRange actionRange = DEFAULT_RANGE;
 
@@ -125,13 +119,8 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
 
     @Override
     public void serverTick() {
-        if (reloadCache != reload && boundSoul.hasEntity()) {
-            Optional<FarmSoul.SoulData> op = FarmSoul.FARM.matches(boundSoul.entityType());
-            op.ifPresent(data -> soulData = data);
-            reloadCache = reload;
-        }
         // TODO: this is quite icky. need abstractions between tick time and power consumption
-        if (canAct(10) &&  getEnergyStorage().getEnergyStored() >= getMaxEnergyUse() * 10) {
+        if (canAct(10) && isCapacitorInstalled() && getEnergyStorage().getEnergyStored() >= getMaxEnergyUse() * 10L) {
             processFarmTask();
             getEnergyStorage().consumeEnergy(getMaxEnergyUse() * 10);
         }
@@ -205,7 +194,7 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
 
     @Override
     public boolean isActive() {
-        if (!canAct()) {
+        if (!canAct() || !isCapacitorInstalled()) {
             return false;
         }
         // TODO Check tool
@@ -227,12 +216,24 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
 
     public boolean handleDrops(BlockState plant, BlockPos pos, BlockPos soil, BlockEntity blockEntity,
             ItemStack stack) {
-        ItemStack dummy = stack.copy();
-        if (soulData != null) {
-            var fortuneEnchantment = Enchantments.BLOCK_FORTUNE;
-            dummy.enchant(fortuneEnchantment, dummy.getEnchantmentLevel(fortuneEnchantment) + soulData.seeds());
+        ItemStack tool = stack.copy();
+        var soulData = getSoulData();
+        if (soulData != null && soulData.seeds() != 0) {
+            // Vanilla loot conditions ignore enchantments on an empty stack.
+            if (tool.isEmpty()) {
+                tool = new ItemStack(Items.STICK);
+            }
+            var fortune = Enchantments.BLOCK_FORTUNE;
+            var enchantments = EnchantmentHelper.getEnchantments(tool);
+            long level = (long) tool.getEnchantmentLevel(fortune) + soulData.seeds();
+            if (level > 0) {
+                enchantments.put(fortune, (int) Math.min(level, 255));
+            } else {
+                enchantments.remove(fortune);
+            }
+            EnchantmentHelper.setEnchantments(enchantments, tool);
         }
-        List<ItemStack> drops = Block.getDrops(plant, (ServerLevel) this.level, pos, blockEntity, getPlayer(), dummy);
+        List<ItemStack> drops = Block.getDrops(plant, (ServerLevel) this.level, pos, blockEntity, getPlayer(), tool);
         return collectDrops(drops, soil);
     }
 
@@ -275,18 +276,16 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
     }
 
     public boolean consumeBonemeal() {
-        boolean consumed = false;
-        for (int i = 0; i < 2; i++) {
-            ItemStack itemStack = BONEMEAL.get(i).getItemStack(this);
-            if (!itemStack.isEmpty()) {
+        var soulData = getSoulData();
+        for (var slot : BONEMEAL.getAccesses()) {
+            if (!slot.getItemStack(this).isEmpty()) {
                 if (soulData == null || level.random.nextFloat() < soulData.bonemeal()) {
-                    itemStack.shrink(1);
+                    slot.extractItem(this, 1, false);
                 }
-                consumed = true;
-                break;
+                return true;
             }
         }
-        return consumed;
+        return false;
     }
 
     @Override
@@ -359,13 +358,21 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
 
     @Override
     public void bindSoul(Soul newSoul) {
+        if (!isSoulValid(newSoul)) {
+            throw new IllegalArgumentException("No Farming Station rule for " + newSoul.entityTypeId());
+        }
+        if (boundSoul.equals(newSoul)) {
+            return;
+        }
         this.boundSoul = newSoul;
-        this.soulData = FarmSoul.FARM.matches(newSoul.entityTypeId()).get();
+        setChanged();
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        }
     }
 
-    @SubscribeEvent
-    static void onReload(RecipesUpdatedEvent event) {
-        reload = !reload;
+    private @Nullable FarmSoul.SoulData getSoulData() {
+        return boundSoul.hasEntity() ? FarmSoul.FARM.matches(boundSoul.entityTypeId()).orElse(null) : null;
     }
 
     @Nullable
