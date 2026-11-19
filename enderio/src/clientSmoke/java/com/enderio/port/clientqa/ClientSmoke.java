@@ -146,6 +146,7 @@ public final class ClientSmoke {
             case "wireless-charge" -> new ClientWirelessChargeSmoke();
             case "antenna-progression" -> new ClientAntennaProgressionSmoke();
             case "ender-skull" -> new ClientEnderSkullSmoke();
+            case "legacy-ender-skull" -> new ClientLegacyEnderSkullSmoke();
             case "curios" -> new ClientCuriosSmoke();
             case "solar-wired" -> new ClientSolarWiredSmoke();
             case "solar-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.SOLAR);
