@@ -1,6 +1,7 @@
 package com.enderio.modded_conduits;
 
 import appeng.api.networking.GridHelper;
+import appeng.api.util.AEColor;
 import appeng.core.definitions.AEBlocks;
 import com.enderio.enderio.api.EnderIORegistries;
 import com.enderio.enderio.api.conduits.Conduit;
@@ -16,6 +17,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -109,6 +112,45 @@ public class ConduitNetworkIntegrationTests {
             .getOrCreateNodeData(com.enderio.modded_conduits.common.modules.appeng.MEConduitNodeData.TYPE).getMainNode();
         helper.assertTrue(managed != null && managed.getNode() != null, "Managed AE2 node is not ready at " + x);
         return managed.getNode();
+    }
+
+    @GameTest(template = "network", timeoutTicks = 160)
+    public static void authoredMEColorsKeepAdjacentGridsSeparateUntilColorsMatch(GameTestHelper helper) {
+        var registry = helper.getLevel().registryAccess().registryOrThrow(EnderIORegistries.Keys.CONDUIT);
+        var red = registry.getHolderOrThrow(ResourceKey.create(EnderIORegistries.Keys.CONDUIT,
+            ResourceLocation.parse("enderio_modded_conduits_tests:red_me")));
+        var blue = registry.getHolderOrThrow(ResourceKey.create(EnderIORegistries.Keys.CONDUIT,
+            ResourceLocation.parse("enderio_modded_conduits_tests:blue_me")));
+        var leftPos = new BlockPos(2, 1, 2);
+        var rightPos = leftPos.east();
+
+        helper.startSequence()
+            .thenExecute(() -> {
+                place(helper, red, 2);
+                place(helper, blue, 3);
+            })
+            .thenIdle(10)
+            .thenExecute(() -> {
+                var left = meNode(helper, red, 2);
+                var right = meNode(helper, blue, 3);
+                helper.assertTrue(left.getGridColor() == AEColor.RED && right.getGridColor() == AEColor.BLUE,
+                    "The data pack colors did not reach the AE2 nodes");
+                helper.assertTrue(left.getGrid() != right.getGrid() && left.getConnections().isEmpty()
+                    && right.getConnections().isEmpty(), "Different ME colors connected");
+            })
+            .thenExecute(() -> {
+                helper.setBlock(rightPos, Blocks.AIR);
+                place(helper, red, 3);
+            })
+            .thenIdle(10)
+            .thenExecute(() -> {
+                var left = meNode(helper, red, 2);
+                var right = meNode(helper, red, 3);
+                var link = left.getInWorldConnections().get(Direction.EAST);
+                helper.assertTrue(right.getGridColor() == AEColor.RED && left.getGrid() == right.getGrid()
+                    && link != null && link.getOtherSide(left) == right, "Matching ME colors did not form a native link");
+            })
+            .thenSucceed();
     }
 
     @GameTest(template = "network", timeoutTicks = 160)

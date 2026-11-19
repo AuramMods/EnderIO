@@ -14,6 +14,7 @@ import appeng.blockentity.storage.DriveBlockEntity;
 import appeng.core.definitions.AEItems;
 import appeng.core.definitions.AEParts;
 import appeng.items.parts.FacadeItem;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.refinedmods.refinedstorage.RSItems;
 import com.refinedmods.refinedstorage.api.network.node.INetworkNode;
@@ -27,9 +28,15 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -42,6 +49,7 @@ import java.util.function.Consumer;
 @Mod("port_storage_probe")
 public class StorageProbe {
     private static final int[] AE_ROUTES = {4, 7, 10};
+    private static final int[] COLORED_ROUTES = {4, 8};
     private static final BlockPos TERMINAL = new BlockPos(1085, 80, 4);
     private static final BlockPos GRID = new BlockPos(1085, 80, 13);
     private static final IActionSource AE_SOURCE = IActionSource.empty();
@@ -60,6 +68,18 @@ public class StorageProbe {
                 .executes(context -> run(context.getSource(), "Native AE2 terminal placed", StorageProbe::placeTerminal)))
             .then(Commands.literal("give_facade")
                 .executes(context -> run(context.getSource(), "Native AE2 diamond facade created", StorageProbe::giveFacade)))
+            .then(Commands.literal("place_colored_me").then(Commands.argument("route", IntegerArgumentType.integer(4, 8))
+                .then(Commands.argument("head", BoolArgumentType.bool()).then(Commands.argument("red", BoolArgumentType.bool())
+                    .executes(context -> run(context.getSource(), "Native colored ME conduit placed",
+                        level -> placeColoredME(level, IntegerArgumentType.getInteger(context, "route"),
+                            BoolArgumentType.getBool(context, "head"), BoolArgumentType.getBool(context, "red"))))))))
+            .then(Commands.literal("seed_colored_cells")
+                .executes(context -> run(context.getSource(), "Native colored ME cells loaded", StorageProbe::seedColoredCells)))
+            .then(Commands.literal("check_colored_route").then(Commands.argument("route", IntegerArgumentType.integer(4, 8))
+                .then(Commands.argument("connected", BoolArgumentType.bool())
+                    .executes(context -> run(context.getSource(), "Native colored ME route verified",
+                        level -> checkColoredRoute(level, IntegerArgumentType.getInteger(context, "route"),
+                            BoolArgumentType.getBool(context, "connected")))))))
             .then(Commands.literal("check_grid")
                 .executes(context -> run(context.getSource(), "Native RS grid connects to its controller", StorageProbe::checkGrid)))
             .then(Commands.literal("mount_items").executes(context -> run(context.getSource(), "Native item storage mounted", StorageProbe::mount)))
@@ -88,6 +108,54 @@ public class StorageProbe {
         require(!result.isEmpty() && result.getCount() == 1 && facade.getTextureItem(result).is(Items.DIAMOND_BLOCK),
             "AE2 did not create a diamond facade");
         player.getInventory().setItem(0, result);
+    }
+
+    private static void placeColoredME(ServerLevel level, int route, boolean head, boolean red) {
+        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse("enderio:conduit"));
+        if (!(item instanceof BlockItem conduit)) throw new IllegalStateException("Missing port conduit item");
+        var stack = new ItemStack(conduit);
+        stack.getOrCreateTagElement("enderio:data").putString("enderio:conduit",
+            red ? "enderio_modded_conduits_tests:red_me" : "enderio_modded_conduits_tests:blue_me");
+        var pos = new BlockPos(head ? 1119 : 1120, 80, route);
+        var player = FakePlayerFactory.getMinecraft(level);
+        var hit = new BlockHitResult(Vec3.atBottomCenterOf(pos), Direction.UP, pos.below(), false);
+        var context = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND, stack, hit);
+        require(conduit.place(context).consumesAction(), "Native colored ME item placement failed at " + pos);
+    }
+
+    private static void seedColoredCells(ServerLevel level) {
+        for (int route : COLORED_ROUTES) {
+            var drive = aeDrive(level, new BlockPos(1121, 80, route));
+            require(drive.getInternalInventory().insertItem(0, AEItems.ITEM_CELL_1K.stack(), false).isEmpty(),
+                "Native colored ME drive rejected its cell at z=" + route);
+            var cell = drive.getCellInventory(0);
+            require(cell != null && cell.insert(AEItemKey.of(sample(route)), route + 7, Actionable.MODULATE, AE_SOURCE) == route + 7,
+                "Native colored ME cell rejected tagged ingots at z=" + route);
+        }
+    }
+
+    private static void checkColoredRoute(ServerLevel level, int route, boolean connected) {
+        var controller = GridHelper.getExposedNode(level, new BlockPos(1118, 80, route), Direction.EAST);
+        var head = GridHelper.getExposedNode(level, new BlockPos(1119, 80, route), Direction.WEST);
+        var tail = GridHelper.getExposedNode(level, new BlockPos(1120, 80, route), Direction.EAST);
+        var drive = aeDrive(level, new BlockPos(1121, 80, route));
+        var driveNode = drive.getMainNode().getNode();
+        require(controller != null && head != null && tail != null && driveNode != null && controller.isActive() && driveNode.isActive(),
+            "A colored ME route endpoint is missing or unpowered at z=" + route);
+        require(head.getGridColor() == AEColor.RED && tail.getGridColor() == (connected ? AEColor.RED : AEColor.BLUE),
+            "Incorrect native grid color at z=" + route);
+        require(controller.getGrid() == head.getGrid() && tail.getGrid() == driveNode.getGrid()
+            && (head.getGrid() == tail.getGrid()) == connected, "Incorrect native grid membership at z=" + route);
+        var link = head.getInWorldConnections().get(Direction.EAST);
+        require(connected ? link != null && link.getOtherSide(head) == tail : link == null,
+            "Incorrect native link between colored conduits at z=" + route);
+        var key = AEItemKey.of(sample(route));
+        var cell = drive.getCellInventory(0);
+        int count = route + 7;
+        require(cell != null && cell.getAvailableStacks().get(key) == count
+            && driveNode.getGrid().getStorageService().getInventory().extract(key, 64, Actionable.SIMULATE, AE_SOURCE) == count
+            && controller.getGrid().getStorageService().getInventory().extract(key, 64, Actionable.SIMULATE, AE_SOURCE)
+                == (connected ? count : 0), "Incorrect tagged storage visibility at z=" + route);
     }
 
     private static int run(CommandSourceStack source, String message, Consumer<ServerLevel> operation) {
@@ -201,9 +269,13 @@ public class StorageProbe {
     }
 
     private static DriveBlockEntity aeDrive(ServerLevel level, int z) {
-        var block = level.getBlockEntity(new BlockPos(1089, 80, z));
+        return aeDrive(level, new BlockPos(1089, 80, z));
+    }
+
+    private static DriveBlockEntity aeDrive(ServerLevel level, BlockPos pos) {
+        var block = level.getBlockEntity(pos);
         if (block instanceof DriveBlockEntity drive) return drive;
-        throw new IllegalStateException("Missing AE2 drive at z=" + z);
+        throw new IllegalStateException("Missing AE2 drive at " + pos);
     }
 
     private static DiskDriveNetworkNode rsDrive(ServerLevel level) {

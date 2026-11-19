@@ -1,0 +1,7 @@
+{
+  "type": "enderio:me",
+  "description": "Test Red ME Conduit",
+  "color": "red",
+  "is_dense": false,
+  "texture": "enderio:block/conduit/me"
+}
