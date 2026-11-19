@@ -9,6 +9,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
@@ -19,7 +20,40 @@ import com.enderio.enderio.gametests.util.FixtureBuilder;
  */
 // Scenario group: regression.issue1237
 public class Issue1237 {
-    
+
+    @GameTest
+    public static void breakingRedstoneBridgeKeepsBothFragmentsTicking(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(5, 2, 1)
+            .set(0, 0, 0, Blocks.REDSTONE_BLOCK.defaultBlockState())
+            .set(4, 0, 0, Blocks.REDSTONE_LAMP.defaultBlockState()));
+
+        test.onGameTest(ConduitGameTestHelper.class, helper -> {
+            var redstone = helper.getConduit(EIOConduits.REDSTONE);
+            var bridge = new BlockPos(2, 1, 0);
+            var lamp = new BlockPos(4, 1, 0);
+            helper.startSequence()
+                .thenExecute(() -> {
+                    helper.placeConduit(redstone, 1, 1, 0);
+                    helper.placeConduit(redstone, 2, 1, 0);
+                    helper.placeConduit(redstone, 3, 1, 0);
+                    helper.getConduitBundle(3, 1, 0, false).setConnectionConfig(redstone, Direction.EAST,
+                        RedstoneConduitConnectionConfig.DEFAULT.withIsExtract(false).withIsInsert(true).withInsertChannel(DyeColor.RED));
+                })
+                .thenExecuteAfter(8, () -> {
+                    helper.assertTrue(helper.getBlockState(lamp).getValue(RedstoneLampBlock.LIT), "Connected lamp should light");
+                    helper.setBlock(bridge, Blocks.AIR);
+                    var source = helper.getConduitBundle(1, 1, 0, false).getConduitNode(redstone).getNetwork();
+                    var output = helper.getConduitBundle(3, 1, 0, false).getConduitNode(redstone).getNetwork();
+                    helper.assertTrue(source != output, "Bridge removal should split the network");
+                    helper.assertTrue(source.nodeCount(redstone) == 1 && output.nodeCount(redstone) == 1,
+                        "Each fragment must retain its one remaining redstone conduit in the tick count");
+                })
+                .thenExecuteAfter(8, () ->
+                    helper.assertTrue(!helper.getBlockState(lamp).getValue(RedstoneLampBlock.LIT), "Isolated lamp should turn off"))
+                .thenSucceed();
+        });
+    }
+
     @GameTest
     // Tests that pistons extend when receiving redstone signal via conduit
     public static void testPistonExtensionViaRedstoneConduit(final GameplayTest test) {

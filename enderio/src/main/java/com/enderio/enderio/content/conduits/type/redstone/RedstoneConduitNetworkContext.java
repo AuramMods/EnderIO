@@ -18,7 +18,7 @@ public class RedstoneConduitNetworkContext implements ConduitNetworkContext<Reds
             RedstoneConduitNetworkContext::new);
 
     private boolean isActive;
-    private final Map<DyeColor, Integer> previousChannelSignals = new HashMap<>();
+    private Map<DyeColor, Integer> previousChannelSignals = new HashMap<>();
     private Map<DyeColor, Integer> channelSignals = new HashMap<>();
 
     private NewNetworkDelay newNetworkDelay = NewNetworkDelay.NEW;
@@ -52,6 +52,10 @@ public class RedstoneConduitNetworkContext implements ConduitNetworkContext<Reds
         return previousChannelSignals.getOrDefault(color, 0);
     }
 
+    public boolean signalsChanged() {
+        return !channelSignals.equals(previousChannelSignals);
+    }
+
     public void nextTick() {
         if (newNetworkDelay == NewNetworkDelay.NEW) {
             newNetworkDelay = NewNetworkDelay.NEW_DECAY;
@@ -59,11 +63,10 @@ public class RedstoneConduitNetworkContext implements ConduitNetworkContext<Reds
             newNetworkDelay = NewNetworkDelay.OLD;
         }
 
-        // Save for change detection
-        for (DyeColor color : DyeColor.values()) {
-            previousChannelSignals.put(color, getSignal(color));
-        }
-
+        // Reuse both maps while retaining channels whose last connection disappeared.
+        var reusableSignals = previousChannelSignals;
+        previousChannelSignals = channelSignals;
+        channelSignals = reusableSignals;
         channelSignals.clear();
         isActive = false;
     }

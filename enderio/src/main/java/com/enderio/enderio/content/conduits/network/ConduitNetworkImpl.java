@@ -670,12 +670,13 @@ public class ConduitNetworkImpl extends Network<ConduitNetworkImpl, ConduitNodeI
         // Always recompute what conduits can tick - it's cheap to do.
         areTickableConduitsValid = false;
 
-        // Remove from node count
-        nodeCountByConduit.compute(node.conduit(), (k, count) -> count == null || count == 1 ? null : count - 1);
-
         if (shouldRebuildCache) {
+            // A split may have already counted the remaining nodes before this removal callback.
+            recomputeNodeCounts();
             return;
         }
+
+        nodeCountByConduit.compute(node.conduit(), (k, count) -> count == null || count == 1 ? null : count - 1);
 
         removeNodeFromPositionMaps(node);
         if (!shouldRebuildCache) {

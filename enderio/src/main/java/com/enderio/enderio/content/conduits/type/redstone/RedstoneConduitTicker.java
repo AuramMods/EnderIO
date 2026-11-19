@@ -26,7 +26,6 @@ public class RedstoneConduitTicker extends ConduitTickerBase<RedstoneConduit> {
         boolean isActiveBeforeTick = context.isActive();
         context.nextTick();
 
-        boolean didAnyChannelChange = false;
         for (var channel : network.allChannels()) {
             // Receive input signals.
             for (var extractConnection : network.extractConnections(channel)) {
@@ -47,16 +46,10 @@ public class RedstoneConduitTicker extends ConduitTickerBase<RedstoneConduit> {
                     context.setSignal(channel, signal);
                 }
             }
-
-            // Fire block updates if the signal changed.
-            if (context.isNew() || context.getSignal(channel) != context.getSignalLastTick(channel)) {
-                didAnyChannelChange = true;
-            }
         }
 
-        // If *any* channel changed, update all insert connections.
-        // Some insert connections may change even if their channel's signal value did not change.
-        if (didAnyChannelChange) {
+        // Bundled receivers and filters can observe channels other than their configured output channel.
+        if (context.isNew() || context.signalsChanged()) {
             for (var insertConnection : network.insertConnections()) {
                 level.updateNeighborsAt(insertConnection.node().pos(), EIOBlocks.CONDUIT_BUNDLE.get());
 
