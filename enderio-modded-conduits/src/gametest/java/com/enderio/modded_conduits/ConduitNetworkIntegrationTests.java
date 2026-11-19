@@ -37,12 +37,16 @@ public class ConduitNetworkIntegrationTests {
     }
 
     public static ConduitBundleBlockEntity place(GameTestHelper helper, Holder<Conduit<?, ?>> conduit, int x) {
-        var pos = helper.absolutePos(new BlockPos(x, 1, 2));
+        return place(helper, conduit, new BlockPos(x, 1, 2));
+    }
+
+    static ConduitBundleBlockEntity place(GameTestHelper helper, Holder<Conduit<?, ?>> conduit, BlockPos relativePos) {
+        var pos = helper.absolutePos(relativePos);
         var stack = ConduitBlockItem.getStackFor(conduit, 1);
         var player = FakePlayerFactory.getMinecraft(helper.getLevel());
         var result = ((ConduitBlockItem) stack.getItem()).place(new BlockPlaceContext(helper.getLevel(), player,
             InteractionHand.MAIN_HAND, stack, new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false)));
-        helper.assertTrue(result.consumesAction(), "Native conduit item placement failed at " + x);
+        helper.assertTrue(result.consumesAction(), "Native conduit item placement failed at " + relativePos);
         var blockEntity = helper.getLevel().getBlockEntity(pos);
         helper.assertTrue(blockEntity instanceof ConduitBundleBlockEntity, "Conduit item did not create a bundle");
         var bundle = (ConduitBundleBlockEntity) blockEntity;

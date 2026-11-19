@@ -387,7 +387,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 138: Impulse Hopper multiplayer and survival placement | Exercise the shipped recipes, template and side controls, lane indicators and survival placement of the original Forge 6.2 drop | The build passes 79 unit cases and 512 native runs. Packaged multiplayer passes 28 client checks and 10 server assertions, including exact charges, inventory and settings after a dedicated restart. [Evidence and commands](porting/1.20.1/cycle-138.md) | `24f21fabb` |
 
-| 139: AE2 and Refined Storage item operations | Read and write tagged items through actual cross-chunk normal, dense, mixed and RS conduit routes | The build passes 79 unit cases and 512 native runs. The packaged migration passes 100 assertions across Forge 6.2, conversion, chunk reload and restart, including exact physical disk and cell totals. [Evidence and commands](porting/1.20.1/cycle-139.md) | Commit containing cycle 139 |
+| 139: AE2 and Refined Storage item operations | Read and write tagged items through actual cross-chunk normal, dense, mixed and RS conduit routes | The build passes 79 unit cases and 512 native runs. The packaged migration passes 100 assertions across Forge 6.2, conversion, chunk reload and restart, including exact physical disk and cell totals. [Evidence and commands](porting/1.20.1/cycle-139.md) | `03fafbb82` |
+
+| 140: AE2 channel limits and live conduit upgrades | Saturate a real ME controller route with 33 drives and replace both normal conduits in place | Normal and mixed routes assign eight channels. The dense pair assigns 32, and removing an active drive frees a channel for the waiting drive. The full build passes 79 unit cases and 513 native runs. [Evidence and commands](porting/1.20.1/cycle-140.md) | Commit containing cycle 140 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
