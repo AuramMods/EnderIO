@@ -88,12 +88,20 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
 
     @Override
     public void setActionRange(ActionRange actionRange) {
-        this.actionRange = actionRange.clamp(0, getMaxRange());
-        updateLocations();
+        updateActionRange(actionRange);
         setChanged();
 
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        }
+    }
+
+    private void updateActionRange(ActionRange range) {
+        ActionRange clamped = range.clamp(0, getMaxRange());
+        boolean resized = clamped.range() != actionRange.range();
+        actionRange = clamped;
+        if (resized) {
+            updateLocations();
         }
     }
 
@@ -404,12 +412,9 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
         var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         super.load(tag);
 
-        if (tag.contains(MachineNBTKeys.ACTION_RANGE)) {
-            actionRange = ActionRange.parse(lookupProvider,
-                    Objects.requireNonNull(tag.get(MachineNBTKeys.ACTION_RANGE)));
-        } else {
-            actionRange = DEFAULT_RANGE;
-        }
+        updateActionRange(tag.contains(MachineNBTKeys.ACTION_RANGE)
+            ? ActionRange.parse(lookupProvider, Objects.requireNonNull(tag.get(MachineNBTKeys.ACTION_RANGE)))
+            : DEFAULT_RANGE);
 
         boundSoul = Soul.parseOptional(lookupProvider, tag.getCompound(MachineNBTKeys.ENTITY_STORAGE));
     }
@@ -420,7 +425,7 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
 
         var actionRange = EIODataComponents.ACTION_RANGE.get(components);
         if (actionRange != null) {
-            this.actionRange = actionRange;
+            updateActionRange(actionRange);
         }
 
         boundSoul = EIODataComponents.SOUL.getOrDefault(components, Soul.EMPTY);
@@ -430,7 +435,6 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
     protected void writeItemData(ItemStack components) {
         super.writeItemData(components);
 
-        // Only if unchanged.
         if (!actionRange.equals(DEFAULT_RANGE)) {
             EIODataComponents.ACTION_RANGE.set(components, actionRange);
         }

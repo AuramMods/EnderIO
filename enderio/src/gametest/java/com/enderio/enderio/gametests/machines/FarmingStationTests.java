@@ -11,6 +11,7 @@ import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
 import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.init.EIOBlocks;
+import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -238,6 +239,49 @@ public class FarmingStationTests {
                 })
                 .thenWaitUntil(() -> helper.assertTrue(ItemStack.matches(output.getItemStack(station), new ItemStack(Items.WHEAT)),
                     "the very same plot can be harvested with a charged capacitor"))
+                .thenSucceed();
+        });
+    }
+
+    @GameTest(timeoutTicks = 450)
+    public static void carriedRangeControlsAnAlreadyLoadedStation(GameplayTest test) {
+        restoredRangeControlsTheWorkingPlot(test, true);
+    }
+
+    @GameTest(timeoutTicks = 450)
+    public static void savedRangeControlsAnAlreadyLoadedStation(GameplayTest test) {
+        restoredRangeControlsTheWorkingPlot(test, false);
+    }
+
+    private static void restoredRangeControlsTheWorkingPlot(GameplayTest test, boolean carried) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(6, 2, 6)
+            .set(3, 1, 3, EIOBlocks.FARMING_STATION.get().defaultBlockState()));
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var station = helper.getBlockEntity(3, 2, 3, FarmingStationBlockEntity.class);
+            var inside = new BlockPos(4, 2, 3);
+            var outside = new BlockPos(1, 2, 2);
+            helper.setBlock(inside.below(), Blocks.DIRT);
+            helper.setBlock(outside.below(), Blocks.DIRT);
+            helper.setBlock(inside, Blocks.PUMPKIN);
+            helper.setBlock(outside, Blocks.PUMPKIN);
+            station.setActionRange(new ActionRange(2, false));
+            var range = new ActionRange(1, true);
+            if (carried) {
+                var stack = new ItemStack(EIOBlocks.FARMING_STATION.get());
+                EIODataComponents.ACTION_RANGE.set(stack, range);
+                station.applyItemData(stack);
+            } else {
+                var saved = station.saveWithoutMetadata();
+                saved.put("ActionRange", range.save(helper.getLevel().registryAccess()));
+                station.load(saved);
+            }
+            helper.assertValueEqual(station.getActionRange(), range, "the new range is present");
+            helper.insertIntoContainer(3, 2, 3, EIOItems.BASIC_CAPACITOR.get(), 1);
+            station.getEnergyStorage().setEnergyStored(4000);
+
+            helper.startSequence()
+                .thenWaitUntil(() -> helper.assertBlockPresent(Blocks.AIR, inside))
+                .thenExecute(() -> helper.assertBlockPresent(Blocks.PUMPKIN, outside))
                 .thenSucceed();
         });
     }
