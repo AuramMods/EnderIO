@@ -1,6 +1,8 @@
 package com.enderio.enderio.content.machines.vat;
 
+import com.enderio.core.common.capability.EnderFluidUtil;
 import com.enderio.core.common.recipes.OutputStack;
+import com.enderio.core.common.serialization.StackDataCodecs;
 import com.enderio.core.common.util.NamedFluidContents;
 import com.enderio.enderio.EnderIO;
 import com.enderio.core.annotations.UseOnly;
@@ -48,6 +50,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser, FluidItemInteractive {
@@ -58,16 +61,19 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     public static final MultiSlotAccess REAGENTS = new MultiSlotAccess();
 
     private static final ResourceLocation EMPTY = EnderIO.rl("");
+    private static final String PENDING_OUTPUT_NBT = "PendingOutput";
+    private static final String PENDING_OUTPUT_ITEM = "pending_output";
 
     private final MachineFluidHandler fluidHandler;
     private final CraftingMachineTaskHost<FermentingRecipe, FermentingRecipe.Input> craftingTaskHost;
+    private FluidStack pendingOutput = FluidStack.EMPTY;
 
     public VatBlockEntity(BlockPos worldPosition, BlockState blockState) {
         super(EIOBlockEntities.VAT.get(), worldPosition, blockState, true);
         fluidHandler = createFluidHandler();
 
-        craftingTaskHost = new CraftingMachineTaskHost<>(this, () -> true, EIORecipes.VAT_FERMENTING.type().get(),
-                this::createTask, this::createRecipeInput);
+        craftingTaskHost = new CraftingMachineTaskHost<>(this, () -> pendingOutput.isEmpty(),
+                EIORecipes.VAT_FERMENTING.type().get(), this::createTask, this::createRecipeInput);
     }
 
     @Nullable
@@ -81,9 +87,22 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
         super.serverTick();
 
         if (canAct()) {
-            craftingTaskHost.tick();
+            if (!pendingOutput.isEmpty()) publishPendingOutput();
+            if (pendingOutput.isEmpty()) craftingTaskHost.tick();
         }
         updateMachineState(MachineState.ACTIVE, isActive());
+    }
+
+    private void publishPendingOutput() {
+        int accepted = getOutputTank().fill(pendingOutput, IFluidHandler.FluidAction.EXECUTE);
+        if (accepted > 0) {
+            pendingOutput = EnderFluidUtil.copyWithAmount(pendingOutput, pendingOutput.getAmount() - accepted);
+            setChanged();
+        }
+        boolean blocked = !pendingOutput.isEmpty();
+        if (getMachineStates().contains(MachineState.FULL_OUTPUT) != blocked) {
+            updateMachineState(MachineState.FULL_OUTPUT, blocked);
+        }
     }
 
     @Override
@@ -100,7 +119,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     }
 
     public boolean isActive() {
-        return canAct() && craftingTaskHost.hasTask();
+        return canAct() && (!pendingOutput.isEmpty() || craftingTaskHost.hasTask());
     }
 
     @Override
@@ -174,12 +193,12 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     }
 
     public float getCraftingProgress() {
-        return craftingTaskHost.getProgress();
+        return pendingOutput.isEmpty() ? craftingTaskHost.getProgress() : 1.0f;
     }
 
     @Nullable
     public FermentingRecipe getRecipe() {
-        if (craftingTaskHost.hasTask()) {
+        if (pendingOutput.isEmpty() && craftingTaskHost.hasTask()) {
             return craftingTaskHost.getCurrentTask().getRecipe();
         }
 
@@ -188,7 +207,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
 
     @UseOnly(LogicalSide.SERVER)
     public void moveFluidToOutputTank() {
-        if (OUTPUT_TANK.isEmpty(this) && !INPUT_TANK.isEmpty(this)) {
+        if (pendingOutput.isEmpty() && OUTPUT_TANK.isEmpty(this) && !INPUT_TANK.isEmpty(this)) {
             OUTPUT_TANK.setFluid(this, INPUT_TANK.getFluid(this));
             INPUT_TANK.setFluid(this, FluidStack.EMPTY);
         }
@@ -199,7 +218,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
         OUTPUT_TANK.setFluid(this, FluidStack.EMPTY);
     }
 
-    protected static class VatCraftingMachineTask
+    protected class VatCraftingMachineTask
             extends CraftingMachineTask<FermentingRecipe, FermentingRecipe.Input> {
 
         public VatCraftingMachineTask(@NotNull Level level, MachineInventory inventory,
@@ -219,16 +238,20 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
         @Override
         protected boolean placeOutputs(List<OutputStack> outputs, boolean simulate) {
             FluidStack output = outputs.get(0).getFluid();
+            MachineFluidTank tank = getOutputTank();
 
-            // Always simulate first to check if we can place the full amount
-            int simulatedFill = OUTPUT_TANK.getTank(fluidHandler).fill(output, IFluidHandler.FluidAction.SIMULATE);
-            if (simulatedFill != output.getAmount()) {
+            // Ordinary batches still wait for room. A batch larger than the tank can commit once it starts filling.
+            int requiredSpace = output.getAmount() > tank.getCapacity() ? 1 : output.getAmount();
+            if (tank.fill(output, IFluidHandler.FluidAction.SIMULATE) < requiredSpace) {
                 return false;
             }
 
-            // Only execute if we're not simulating and the simulation succeeded
             if (!simulate) {
-                OUTPUT_TANK.getTank(fluidHandler).fill(output, IFluidHandler.FluidAction.EXECUTE);
+                int accepted = tank.fill(output, IFluidHandler.FluidAction.EXECUTE);
+                if (accepted < output.getAmount()) {
+                    pendingOutput = EnderFluidUtil.copyWithAmount(output, output.getAmount() - accepted);
+                    setChanged();
+                }
             }
 
             return true;
@@ -254,6 +277,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
         if (fluidContents != null) {
             INPUT_TANK.setFluid(this, fluidContents.copy("input_tank"));
             OUTPUT_TANK.setFluid(this, fluidContents.copy("output_tank"));
+            pendingOutput = fluidContents.copy(PENDING_OUTPUT_ITEM);
         }
     }
 
@@ -263,10 +287,17 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
 
         var inputTank = INPUT_TANK.getTank(this);
         var outputTank = OUTPUT_TANK.getTank(this);
-        if (!inputTank.isEmpty() || !outputTank.isEmpty()) {
-            EIODataComponents.NAMED_FLUID_CONTENTS.set(components, NamedFluidContents
-                    .copyOf(Map.of("input_tank", inputTank.getFluid(), "output_tank", outputTank.getFluid())));
+        if (!inputTank.isEmpty() || !outputTank.isEmpty() || !pendingOutput.isEmpty()) {
+            var fluids = new HashMap<>(Map.of("input_tank", inputTank.getFluid(), "output_tank", outputTank.getFluid()));
+            if (!pendingOutput.isEmpty()) fluids.put(PENDING_OUTPUT_ITEM, pendingOutput);
+            EIODataComponents.NAMED_FLUID_CONTENTS.set(components, NamedFluidContents.copyOf(fluids));
         }
+    }
+
+    @Override
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
+        tag.remove(PENDING_OUTPUT_NBT);
     }
 
     @Override
@@ -274,6 +305,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
         var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         super.saveAdditional(tag);
         saveTank(lookupProvider, tag);
+        if (!pendingOutput.isEmpty()) tag.put(PENDING_OUTPUT_NBT, StackDataCodecs.saveFluid(pendingOutput));
         craftingTaskHost.save(lookupProvider, tag);
     }
 
@@ -282,6 +314,7 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
         var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         super.load(tag);
         loadTank(lookupProvider, tag);
+        pendingOutput = StackDataCodecs.loadFluid(tag.getCompound(PENDING_OUTPUT_NBT));
         craftingTaskHost.load(lookupProvider, tag);
     }
 }

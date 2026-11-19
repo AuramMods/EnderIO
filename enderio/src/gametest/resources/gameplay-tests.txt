@@ -28,6 +28,7 @@ com.enderio.enderio.gametests.machines.FarmingStationHarvestTests
 com.enderio.enderio.gametests.machines.FarmingStationCropTests
 com.enderio.enderio.gametests.machines.PaintingMachineTests
 com.enderio.enderio.gametests.machines.PaintedSlabTests
+com.enderio.enderio.gametests.machines.VatOutputTests
 com.enderio.enderio.gametests.regressions.issues.Issue1033
 com.enderio.enderio.gametests.regressions.issues.Issue1171
 com.enderio.enderio.gametests.regressions.issues.Issue1190
