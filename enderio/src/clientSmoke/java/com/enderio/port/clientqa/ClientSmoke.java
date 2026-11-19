@@ -89,6 +89,7 @@ public final class ClientSmoke {
             case "decorative-redstone" -> new ClientDecorativeRedstoneSmoke();
             case "steel-construction" -> new ClientSteelConstructionSmoke();
             case "drain" -> new ClientDrainSmoke();
+            case "vacuums" -> new ClientVacuumSmoke();
             case "legacy-soulbound" -> new ClientSoulboundSmoke();
             case "enchanter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.ENCHANTER);
             case "enchanter-reload" -> new ClientEnchanterReloadSmoke();
