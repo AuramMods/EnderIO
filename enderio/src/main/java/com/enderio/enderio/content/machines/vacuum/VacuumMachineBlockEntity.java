@@ -1,6 +1,5 @@
 package com.enderio.enderio.content.machines.vacuum;
 
-import net.minecraft.world.item.ItemStack;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.io.IOMode;
 import com.enderio.enderio.foundation.MachineNBTKeys;
@@ -8,13 +7,17 @@ import com.enderio.enderio.foundation.attachment.ActionRange;
 import com.enderio.enderio.foundation.attachment.RangedActor;
 import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
 import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
+import com.enderio.enderio.foundation.io.Forge6MachineItemData;
 import com.enderio.enderio.foundation.io.IOConfig;
+import com.enderio.enderio.foundation.io.LegacyMachineData;
 import com.enderio.enderio.foundation.util.AttractionUtil;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -93,17 +96,12 @@ public abstract class VacuumMachineBlockEntity<T extends Entity> extends Machine
         }
         Iterator<WeakReference<T>> iterator = entities.iterator();
         while (iterator.hasNext()) {
-            WeakReference<T> ref = iterator.next();
-            if (ref.get() == null) { // If the entity no longer exists, remove from the list
+            T entity = iterator.next().get();
+            if (entity == null || entity.isRemoved()) {
                 iterator.remove();
                 continue;
             }
-            T entity = ref.get();
-            if (entity.isRemoved()) { // If the entity no longer exists, remove from the list
-                iterator.remove();
-                continue;
-            }
-            if (AttractionUtil.moveToPos(entity, pos, SPEED, SPEED_4, COLLISION_DISTANCE_SQ)) {
+            if (AttractionUtil.moveToPos(entity, pos, SPEED, SPEED_4, COLLISION_DISTANCE_SQ) && !level.isClientSide()) {
                 handleEntity(entity);
             }
         }
@@ -127,12 +125,20 @@ public abstract class VacuumMachineBlockEntity<T extends Entity> extends Machine
     @Override
     @UseOnly(LogicalSide.SERVER)
     public void setActionRange(ActionRange actionRange) {
-        this.actionRange = actionRange;
+        applyActionRange(actionRange);
         setChanged();
 
         if (level != null) {
             level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), Block.UPDATE_ALL);
         }
+    }
+
+    private void applyActionRange(ActionRange range) {
+        ActionRange clamped = range.clamp(0, getMaxRange());
+        if (actionRange.range() != clamped.range()) {
+            entities.clear();
+        }
+        actionRange = clamped;
     }
 
     @Override
@@ -151,7 +157,7 @@ public abstract class VacuumMachineBlockEntity<T extends Entity> extends Machine
 
     @Override
     protected void saveAdditionalSynced(CompoundTag tag) {
-        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        var registries = level == null ? RegistryAccess.EMPTY : level.registryAccess();
         super.saveAdditionalSynced(tag);
 
         if (!actionRange.equals(DEFAULT_RANGE)) {
@@ -161,16 +167,13 @@ public abstract class VacuumMachineBlockEntity<T extends Entity> extends Machine
 
     @Override
     public void load(CompoundTag tag) {
-        tag = com.enderio.enderio.foundation.io.LegacyMachineData.withNativeFields(tag);
-        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        tag = LegacyMachineData.withNativeFields(tag);
+        var registries = level == null ? RegistryAccess.EMPTY : level.registryAccess();
         super.load(tag);
 
-        // TODO: Ender IO 8 - remove support for old attachment loading
-        if (tag.contains(MachineNBTKeys.ACTION_RANGE)) {
-            actionRange = ActionRange.parse(registries, Objects.requireNonNull(tag.get(MachineNBTKeys.ACTION_RANGE)));
-        } else {
-            actionRange = DEFAULT_RANGE;
-        }
+        var savedRange = tag.get(MachineNBTKeys.ACTION_RANGE);
+        var range = savedRange == null ? Forge6MachineItemData.readActionRange(tag) : ActionRange.parse(registries, savedRange);
+        applyActionRange(Objects.requireNonNullElse(range, DEFAULT_RANGE));
     }
 
     @Override
@@ -179,7 +182,7 @@ public abstract class VacuumMachineBlockEntity<T extends Entity> extends Machine
 
         var actionRange = EIODataComponents.ACTION_RANGE.get(componentInput);
         if (actionRange != null) {
-            this.actionRange = actionRange;
+            applyActionRange(actionRange);
         }
     }
 

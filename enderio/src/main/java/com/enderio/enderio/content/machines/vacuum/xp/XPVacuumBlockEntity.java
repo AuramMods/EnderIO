@@ -1,6 +1,5 @@
 package com.enderio.enderio.content.machines.vacuum.xp;
 
-import net.minecraft.world.item.ItemStack;
 import com.enderio.enderio.config.machines.MachinesConfig;
 import com.enderio.enderio.content.machines.vacuum.VacuumMachineBlockEntity;
 import com.enderio.enderio.foundation.attachment.FluidTankUser;
@@ -17,6 +16,7 @@ import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
@@ -44,14 +44,61 @@ public class XPVacuumBlockEntity extends VacuumMachineBlockEntity<ExperienceOrb>
     }
 
     @Override
-    public void handleEntity(ExperienceOrb xpe) {
-        int filled = TANK.fill(this, new FluidStack(EIOFluids.XP_JUICE.source().get(), xpe.getValue() * EXP_TO_FLUID),
-                FluidAction.EXECUTE);
-        if (filled == xpe.getValue() * EXP_TO_FLUID) {
-            xpe.discard();
-        } else {
-            xpe.value -= Math.round(filled / ((float) EXP_TO_FLUID));
+    public void handleEntity(ExperienceOrb orb) {
+        var tank = getFluidTank();
+        var stored = tank.getFluid();
+        var xpJuice = EIOFluids.XP_JUICE.source().get();
+        int value = orb.getValue();
+        int orbCount = orb.count;
+        int space = tank.getCapacity() - tank.getFluidAmount();
+        if (value <= 0 || orbCount <= 0 || space < EXP_TO_FLUID || !stored.isEmpty() && stored.getFluid() != xpJuice) {
+            return;
         }
+
+        int points = (int) Math.min((long) value * orbCount, space / EXP_TO_FLUID);
+        int remainingOrbs = orbCount - points / value;
+        int partial = points % value;
+        ExperienceOrb remainder = null;
+        if (partial > 0 && remainingOrbs > 1) {
+            // The untouched orbs must keep their original value. Split off the partial one.
+            remainder = createRemainder(orb, value - partial);
+            if (orb.level().addFreshEntity(remainder)) {
+                remainingOrbs--;
+            } else {
+                remainder = null;
+                points -= partial;
+                partial = 0;
+            }
+        }
+        if (points == 0) {
+            return;
+        }
+
+        int volume = points * EXP_TO_FLUID;
+        var deposit = stored.isEmpty() ? new FluidStack(xpJuice, volume) : new FluidStack(stored, volume);
+        if (orb.isRemoved() || orb.count != orbCount || orb.getValue() != value || tank.fill(deposit, FluidAction.SIMULATE) != volume) {
+            if (remainder != null) remainder.discard();
+            return;
+        }
+        tank.fill(deposit, FluidAction.EXECUTE);
+        if (remainingOrbs == 0) {
+            orb.discard();
+        } else {
+            orb.count = remainingOrbs;
+            if (remainder == null) orb.value -= partial;
+        }
+    }
+
+    private static ExperienceOrb createRemainder(ExperienceOrb original, int value) {
+        var remainder = new ExperienceOrb(original.level(), original.getX(), original.getY(), original.getZ(), value);
+        var saved = new CompoundTag();
+        original.addAdditionalSaveData(saved);
+        saved.putShort("Value", (short) value);
+        saved.putInt("Count", 1);
+        remainder.readAdditionalSaveData(saved);
+        remainder.setDeltaMovement(original.getDeltaMovement());
+        remainder.setNoGravity(original.isNoGravity());
+        return remainder;
     }
 
     // region Fluid Storage

@@ -377,7 +377,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 133: Drain collection and saved work | Collect all valid sources in range, preserve waterlogged blocks and resume saved work | The build passes 79 unit cases and 502 native runs. Packaged Forge passes seven assertions for partial FE and exact export after restart. Forge 6.2 conversion passes nine assertions for placed and carried state and resumed collection. [Evidence and commands](porting/1.20.1/cycle-133.md) | `c45dbc78f` |
 
-| 134: Drain menu and survival crafting | Draw the range inside the menu and verify crafting, factory reset and migration through native player actions | The build passes 79 unit cases and 502 native runs. Packaged multiplayer passes 27 client checks and 13 server assertions covering exact lava and FE updates, both range controls, a visible overlay, native replacement and restart. [Evidence and commands](porting/1.20.1/cycle-134.md) | Commit containing cycle 134 |
+| 134: Drain menu and survival crafting | Draw the range inside the menu and verify crafting, factory reset and migration through native player actions | The build passes 79 unit cases and 502 native runs. Packaged multiplayer passes 27 client checks and 13 server assertions covering exact lava and FE updates, both range controls, a visible overlay, native replacement and restart. [Evidence and commands](porting/1.20.1/cycle-134.md) | `073882456` |
+
+| 135: Vacuum Chest and XP Vacuum conservation | Preserve stock-filter remainders, merged XP points and the saved Forge 6 ranges | The build passes 79 unit cases and 507 native runs. Packaged Forge passes nine collection, export and restart assertions. Forge 6.2 conversion passes 13 placed-state and carried-drop assertions. [Evidence and commands](porting/1.20.1/cycle-135.md) | Commit containing cycle 135 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

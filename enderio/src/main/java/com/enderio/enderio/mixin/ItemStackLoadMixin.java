@@ -39,7 +39,8 @@ public abstract class ItemStackLoadMixin {
             Forge6MachineItemData.restoreMachineItem(stack, id.equals("enderio:painting_machine"));
             return;
         }
-        if (id.equals("enderio:aversion_obelisk") || id.equals("enderio:drain")) {
+        if (id.equals("enderio:aversion_obelisk") || id.equals("enderio:drain") || id.equals("enderio:vacuum_chest")
+            || id.equals("enderio:xp_vacuum")) {
             Forge6MachineItemData.restoreRangedItem(stack);
             return;
         }
