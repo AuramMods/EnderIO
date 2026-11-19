@@ -43,6 +43,12 @@ public class EnchanterBlockEntity extends EnderBlockEntity implements MenuProvid
                 LAPIS.getItemStack(getInventory()));
     }
 
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        refreshRecipe();
+    }
+
     // region MenuProvider
 
     @Override
@@ -85,18 +91,8 @@ public class EnchanterBlockEntity extends EnderBlockEntity implements MenuProvid
                     return;
                 }
 
-                EnchanterRecipe.Input recipeInput = createRecipeInput();
-
-                currentRecipe = level.getRecipeManager()
-                        .getRecipeFor(EIORecipes.ENCHANTING.type().get(), recipeInput, level)
-                        .orElse(null);
                 if (!OUTPUT.isSlot(slot)) {
-                    if (currentRecipe != null) {
-                        OUTPUT.setStackInSlot(this,
-                                currentRecipe.assemble(recipeInput, level.registryAccess()));
-                    } else {
-                        OUTPUT.setStackInSlot(this, ItemStack.EMPTY);
-                    }
+                    refreshRecipe();
                 }
 
                 setChanged();
@@ -115,12 +111,20 @@ public class EnchanterBlockEntity extends EnderBlockEntity implements MenuProvid
         };
     }
 
+    void refreshRecipe() {
+        if (level == null) {
+            return;
+        }
+        var input = createRecipeInput();
+        currentRecipe = level.getRecipeManager().getRecipeFor(EIORecipes.ENCHANTING.type().get(), input, level).orElse(null);
+        var result = currentRecipe == null ? ItemStack.EMPTY : currentRecipe.assemble(input, level.registryAccess());
+        if (!ItemStack.matches(OUTPUT.getItemStack(inventory), result)) {
+            OUTPUT.setStackInSlot(inventory, result);
+        }
+    }
+
     @Nullable
     public EnchanterRecipe getCurrentRecipe() {
-        if (currentRecipe == null) {
-            return null;
-        }
-
         return currentRecipe;
     }
 

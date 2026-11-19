@@ -69,6 +69,7 @@ public final class ClientSmoke {
             case "laserio-filters" -> new ClientLaserIOSmoke();
             case "inventory-sorter" -> new ClientInventorySorterSmoke(true);
             case "inventory-sorter-absent" -> new ClientInventorySorterSmoke(false);
+            case "enchanter" -> new ClientEnchanterSmoke();
             case "facade-seams" -> new ClientFacadeSeamSmoke(false, false);
             case "facade-seams-embeddium" -> new ClientFacadeSeamSmoke(false, true);
             case "facade-seams-mixed" -> new ClientFacadeSeamSmoke(true, false);

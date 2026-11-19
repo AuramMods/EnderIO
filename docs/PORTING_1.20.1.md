@@ -315,7 +315,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 102: LaserIO filters and cards | Load the saved Basic Filter inventory for items and fluids and allow transfers through blank cards | The build passes 79 unit and 483 native tests. Packaged TCP passes 14 client checks and 26 server assertions for filter slot clicks, exact NBT matching and quantities across a chunk boundary and restart. A control with LaserIO absent passes 13 assertions. [Evidence and commands](porting/1.20.1/cycle-102.md) | `78483ff45` |
 
-| 103: Inventory Sorter slot protection | Register the Powered Spawner's concrete vial slot class with Forge IMC and verify normal sorting and protected slots | Both packaged profiles pass 33 client checks and 16 server assertions each across seven screens and a restart. The build passes 79 unit and 483 native tests. [Evidence and commands](porting/1.20.1/cycle-103.md) | Commit containing cycle 103 |
+| 103: Inventory Sorter slot protection | Register the Powered Spawner's concrete vial slot class with Forge IMC and verify normal sorting and protected slots | Both packaged profiles pass 33 client checks and 16 server assertions each across seven screens and a restart. The build passes 79 unit and 483 native tests. [Evidence and commands](porting/1.20.1/cycle-103.md) | `9f0c02686` |
+
+| 104: Enchanter collection and restart | Rebuild the ready recipe on level attachment and refresh the preview after payment | Packaged TCP passes 17 client checks and nine server assertions for XP and inventory restrictions, exact payment and consumption, and two restarts. The build passes 79 unit and 483 native tests. [Evidence and commands](porting/1.20.1/cycle-104.md) | Commit containing cycle 104 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

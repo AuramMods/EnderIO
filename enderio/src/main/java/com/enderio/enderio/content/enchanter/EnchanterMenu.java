@@ -102,6 +102,8 @@ public class EnchanterMenu extends BaseBlockEntityMenu<EnchanterBlockEntity> {
                 EnchanterBlockEntity.BOOK.getItemStack(inventory).shrink(1);
                 EnchanterBlockEntity.CATALYST.getItemStack(inventory).shrink(amount);
                 EnchanterBlockEntity.LAPIS.getItemStack(inventory).shrink(lapizForLevel);
+                blockEntity.refreshRecipe();
+                blockEntity.setChanged();
                 super.onTake(player, stack);
             }
         }
