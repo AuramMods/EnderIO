@@ -17,7 +17,7 @@ parser.add_argument("--scenario",
                              "powered-spawner", "spawner-rules", "obelisks", "entity-obelisks", "obelisk-carry", "farming-station",
                              "painting-machine", "legacy-painting", "painted-slabs", "legacy-aversion", "natural-spawns",
                              "facades", "facades-embeddium", "stained-facades", "stained-facades-embeddium", "stained-facades-oculus",
-                             "facade-seams", "facade-seams-embeddium",
+                             "facade-seams", "facade-seams-embeddium", "facade-seams-mixed", "facade-seams-mixed-embeddium",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")

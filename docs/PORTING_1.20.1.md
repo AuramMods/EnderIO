@@ -285,7 +285,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 087: stained-glass conduit facades | Paint all four variants with stained glass, place a standalone facade, add a conduit and reload client resources | The build passes 79 unit and 482 native tests. The packaged profiles verify the two conduit visibility modes, resource reload, loot and restart on standard Forge, Embeddium and Oculus with shaders disabled. [Evidence and commands](porting/1.20.1/cycle-087.md) | `6267aec1e` |
 
-| 088: matching facade face culling | Use the neighboring bundle's paint to hide shared faces across a chunk boundary | The build passes 79 unit and 482 native tests. Forge and Embeddium each pass six packaged server assertions and 13 guarded client checks covering exact vertex counts, live repaint, wrench view and restart. [Evidence and commands](porting/1.20.1/cycle-088.md) | Commit containing cycle 088 |
+| 088: matching facade face culling | Use the neighboring bundle's paint to hide shared faces across a chunk boundary | The build passes 79 unit and 482 native tests. Forge and Embeddium each pass six packaged server assertions and 13 guarded client checks covering exact vertex counts, live repaint, wrench view and restart. [Evidence and commands](porting/1.20.1/cycle-088.md) | `0a2cec40a` |
+
+| 089: facade and vanilla glass joins | Cull the ordinary glass face next to a matching facade and refresh both sections when wrench visibility changes | The build passes 79 unit and 482 native tests. The mixed join passes six packaged server assertions and 20 Forge or 25 Embeddium client checks. [Evidence and commands](porting/1.20.1/cycle-089.md) | Commit containing cycle 089 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

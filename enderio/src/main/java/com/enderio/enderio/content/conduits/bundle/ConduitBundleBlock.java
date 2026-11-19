@@ -736,5 +736,17 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
         return true;
     }
 
+    @Override
+    public boolean hidesNeighborFace(BlockGetter level, BlockPos pos, BlockState state, BlockState neighborState, Direction side) {
+        if (FMLEnvironment.dist.isClient() && !ClientFacadeVisibility.areFacadesVisible()) {
+            return false;
+        }
+
+        // Both Forge and Embeddium ask the adjoining bundle whether it covers a face of ordinary glass.
+        return level.getExistingBlockEntity(pos) instanceof ConduitBundleBlockEntity bundle
+            && bundle.hasFacade()
+            && neighborState.skipRendering(bundle.getFacadeBlock().defaultBlockState(), side.getOpposite());
+    }
+
     // endregion
 }

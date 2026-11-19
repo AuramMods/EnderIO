@@ -16,10 +16,16 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.ModList;
@@ -32,13 +38,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class ClientFacadeSeamSmoke {
-    private enum Stage { TITLE, CONNECT, MATCHING, REPAINTED, RESTORED, GHOSTED, DONE }
+    private enum Stage { TITLE, CONNECT, MATCHING, REPAINTED, RESTORED, GHOSTED, VISIBLE_AGAIN, DONE }
 
     private static final BlockPos WEST = new BlockPos(2703, 80, 9);
     private static final BlockPos EAST = WEST.east();
-    private static final BlockPos DIFFERENT_WEST = WEST.south(5);
-    private static final BlockPos DIFFERENT_EAST = EAST.south(5);
-    private static final BlockPos ORDINARY_NEIGHBOR = WEST.south(10);
+    private static final BlockPos DIFFERENT_WEST = WEST.south(10);
+    private static final BlockPos DIFFERENT_EAST = EAST.south(10);
+    private static final BlockPos ORDINARY_NEIGHBOR = WEST.south(15);
     private static final Block RED = Blocks.RED_STAINED_GLASS;
     private static final Block BLUE = Blocks.BLUE_STAINED_GLASS;
     // The stone floor already hides the bottom quad of every glass block.
@@ -51,11 +57,13 @@ final class ClientFacadeSeamSmoke {
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
+    private final boolean mixed;
     private final boolean embeddium;
     private Stage stage = Stage.TITLE;
     private int readyTick = -1;
 
-    ClientFacadeSeamSmoke(boolean embeddium) {
+    ClientFacadeSeamSmoke(boolean mixed, boolean embeddium) {
+        this.mixed = mixed;
         this.embeddium = embeddium;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
@@ -85,11 +93,11 @@ final class ClientFacadeSeamSmoke {
                 }
                 case MATCHING -> {
                     if (!marker("server-original") || minecraft.player.distanceToSqr(2700.5, 80, 12.5) > 0.1
-                        || !hasPaint(WEST, RED) || !hasPaint(EAST, RED)
+                        || !matchingPaintIsLoaded(RED)
                         || !hasPaint(DIFFERENT_WEST, RED) || !hasPaint(DIFFERENT_EAST, BLUE)
                         || !hasPaint(ORDINARY_NEIGHBOR, RED) || !minecraft.level.getBlockState(ORDINARY_NEIGHBOR.east()).is(RED)) return;
                     if (!waitForMesh(true)) return;
-                    int[] matching = {vertices(WEST), vertices(EAST)};
+                    int[] matching = pairVertices();
                     int[] different = {vertices(DIFFERENT_WEST), vertices(DIFFERENT_EAST)};
                     int ordinary = vertices(ORDINARY_NEIGHBOR);
                     var frame = capture("matching-facades");
@@ -98,26 +106,41 @@ final class ClientFacadeSeamSmoke {
                     frame.put("besideVanillaGlassVertices", ordinary);
                     check("different_glass_retains_both_shared_faces", sameCount(different, OPEN_VERTICES));
                     check("facade_culls_its_face_next_to_matching_vanilla_glass", ordinary == JOINED_VERTICES);
+                    checkVanillaFace("matching", false);
                     check("matching_facades_cull_each_face_across_a_chunk_boundary", sameCount(matching, JOINED_VERTICES));
                     signal("original");
                     stage = Stage.REPAINTED;
                 }
                 case REPAINTED -> {
-                    if (!marker("server-repainted") || !hasPaint(EAST, BLUE) || !waitForMesh(true)) return;
-                    checkPair("repainted-facades", OPEN_VERTICES);
+                    if (!marker("server-repainted") || !matchingPaintIsLoaded(BLUE) || !waitForMesh(true)) return;
+                    checkPair("repainted-facades", OPEN_VERTICES, OPEN_VERTICES);
+                    checkVanillaFace("repainted", true);
                     signal("repainted");
                     stage = Stage.RESTORED;
                 }
                 case RESTORED -> {
-                    if (!marker("server-restored") || !hasPaint(EAST, RED) || !waitForMesh(true)) return;
+                    if (!marker("server-restored") || !matchingPaintIsLoaded(RED) || !waitForMesh(true)) return;
                     if (!minecraft.player.getInventory().getItem(8).is(EIOItems.YETA_WRENCH.get())) return;
-                    checkPair("restored-facades", JOINED_VERTICES);
+                    checkPair("restored-facades", JOINED_VERTICES, JOINED_VERTICES);
+                    checkVanillaFace("restored", false);
                     minecraft.player.getInventory().selected = 8;
                     stage = Stage.GHOSTED;
                 }
                 case GHOSTED -> {
                     if (!waitForMesh(false)) return;
-                    checkPair("ghosted-facades", JOINED_VERTICES);
+                    checkPair("ghosted-facades", JOINED_VERTICES, mixed ? OPEN_VERTICES : JOINED_VERTICES);
+                    if (mixed) {
+                        checkVanillaFace("ghosted", true);
+                        minecraft.player.getInventory().selected = 0;
+                        stage = Stage.VISIBLE_AGAIN;
+                    } else {
+                        finish(null);
+                    }
+                }
+                case VISIBLE_AGAIN -> {
+                    if (!waitForMesh(true)) return;
+                    checkPair("facades-visible-again", JOINED_VERTICES, JOINED_VERTICES);
+                    checkVanillaFace("visible_again", false);
                     finish(null);
                 }
                 default -> { }
@@ -128,10 +151,29 @@ final class ClientFacadeSeamSmoke {
         }
     }
 
-    private void checkPair(String name, int expectedVertices) throws IOException {
-        int[] counts = {vertices(WEST), vertices(EAST)};
+    private boolean matchingPaintIsLoaded(Block paint) {
+        return mixed ? hasPaint(WEST, paint) && minecraft.level.getBlockState(EAST).is(RED)
+            : hasPaint(WEST, RED) && hasPaint(EAST, paint);
+    }
+
+    private void checkPair(String name, int westVertices, int eastVertices) throws IOException {
+        int[] counts = pairVertices();
         capture(name).put("vertices", counts);
-        check(name + "_both_expected_meshes", sameCount(counts, expectedVertices));
+        check(name + "_both_expected_meshes", counts[0] == westVertices && counts[1] == eastVertices);
+    }
+
+    private int[] pairVertices() {
+        return new int[] {vertices(WEST), mixed ? vanillaVertices() : vertices(EAST)};
+    }
+
+    private void checkVanillaFace(String phase, boolean visible) {
+        if (!mixed) return;
+        var level = minecraft.level;
+        var state = level.getBlockState(EAST);
+        check("forge_vanilla_face_" + phase, Block.shouldRenderFace(state, level, EAST, Direction.WEST, WEST) == visible);
+        if (embeddium) {
+            check("embeddium_vanilla_face_" + phase, EmbeddiumProbe.shouldDrawSide(state, level, EAST, Direction.WEST) == visible);
+        }
     }
 
     private static boolean sameCount(int[] counts, int expected) {
@@ -147,10 +189,35 @@ final class ClientFacadeSeamSmoke {
             check("stained_glass_uses_the_translucent_layer", layer == RenderType.translucent());
             return buffer;
         });
+        return finishVertices(buffer);
+    }
+
+    private int vanillaVertices() {
+        var level = minecraft.level;
+        var state = level.getBlockState(EAST);
+        var renderer = minecraft.getBlockRenderer();
+        var model = renderer.getBlockModel(state);
+        var buffer = new BufferBuilder(1024);
+        var random = RandomSource.create(42);
+        var data = model.getModelData(level, EAST, state, ModelData.EMPTY);
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+        renderer.getModelRenderer().tesselateBlock(level, model, state, EAST, new PoseStack(), buffer,
+            true, random, 42, OverlayTexture.NO_OVERLAY, data, RenderType.translucent());
+        return finishVertices(buffer);
+    }
+
+    private static int finishVertices(BufferBuilder buffer) {
         var drawn = buffer.end();
         int count = drawn.drawState().vertexCount();
         drawn.release();
         return count;
+    }
+
+    private static final class EmbeddiumProbe {
+        static boolean shouldDrawSide(BlockState state, BlockGetter level, BlockPos pos, Direction side) {
+            return new me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockOcclusionCache()
+                .shouldDrawSide(state, level, pos, side);
+        }
     }
 
     private boolean hasPaint(BlockPos pos, Block paint) {

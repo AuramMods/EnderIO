@@ -3,7 +3,10 @@ package com.enderio.enderio.client.content.conduits.model.facades;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
 import com.mojang.blaze3d.systems.RenderSystem;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -51,23 +54,26 @@ public class ClientFacadeVisibility {
     }
 
     private static void setFacadesVisible(boolean visible) {
-        if (visible != FACADES_VISIBLE) {
-            RenderSystem.recordRenderCall(() -> {
-                var level = Minecraft.getInstance().level;
-                if (level != null) {
-                    var chunkFacadesForDim = ConduitBundleBlockEntity.CHUNK_FACADES.get(level.dimension());
-                    if (chunkFacadesForDim != null) {
-                        chunkFacadesForDim.keySet().forEach((section) -> {
-                            Minecraft.getInstance().levelRenderer.setSectionDirty(
-                                SectionPos.x(section), 
-                                SectionPos.y(section),
-                                SectionPos.z(section));
-                        });
-                    }
-                }
-            });
-        }
-
+        if (visible == FACADES_VISIBLE) return;
         FACADES_VISIBLE = visible;
+        RenderSystem.recordRenderCall(() -> {
+            var minecraft = Minecraft.getInstance();
+            if (minecraft.level == null) return;
+            var chunkFacades = ConduitBundleBlockEntity.CHUNK_FACADES.get(minecraft.level.dimension());
+            if (chunkFacades == null) return;
+
+            var sections = new LongOpenHashSet(chunkFacades.keySet());
+            // An ordinary glass block across a section boundary can gain or lose its shared face.
+            for (var positions : chunkFacades.values()) {
+                positions.forEach((long position) -> {
+                    BlockPos pos = BlockPos.of(position);
+                    for (Direction side : Direction.values()) {
+                        sections.add(SectionPos.asLong(pos.relative(side)));
+                    }
+                });
+            }
+            sections.forEach((long section) -> minecraft.levelRenderer.setSectionDirty(
+                SectionPos.x(section), SectionPos.y(section), SectionPos.z(section)));
+        });
     }
 }
