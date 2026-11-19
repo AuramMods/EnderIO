@@ -59,9 +59,8 @@ public class DrainScreen extends MachineScreen<DrainMenu> {
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(font, MachinesLang.RANGE, imageWidth - 6 - font.width(MachinesLang.RANGE), 16 + 8, 4210752, false);
-        guiGraphics.drawString(font, getMenu().getBlockEntity().getRange() + "",
-                leftPos + imageWidth - 8 - 16 - font.width(getMenu().getBlockEntity().getRange() + "") - 10,
-                topPos + 16 * 2 + 6, 0, false);
+        String range = Integer.toString(menu.getBlockEntity().getRange());
+        guiGraphics.drawString(font, range, imageWidth - 8 - 16 - 10 - font.width(range), 16 * 2 + 6, 0, false);
         super.renderLabels(guiGraphics, mouseX, mouseY);
     }
 }
