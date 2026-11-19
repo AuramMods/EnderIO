@@ -219,12 +219,43 @@ def exercise_storage_conduits(server, stage, results):
 
     if stage == "converted":
         assert_storage_routes(server, stage, results)
+        assert_storage_items(server, stage, 41, results)
         server.command(f"forceload remove {chunks}")
         server.assert_state("storage_chunks_unloaded", "unless loaded 1087 80 4 unless loaded 1088 80 4", results, timeout=40)
         server.command(f"forceload add {chunks}")
         server.assert_state("storage_chunks_reloaded", "if loaded 1087 80 4 if loaded 1088 80 4", results)
         stage = "chunk_reload"
     assert_storage_routes(server, stage, results)
+    if legacy:
+        storage_operation(server, "mount_native_storage_in_legacy_world", "mount_items", "Native item storage mounted", results)
+        assert_storage_items(server, "legacy_empty", 0, results)
+        storage_operation(server, "write_native_items_in_legacy_world", "write_items 41",
+                          "Native item storage accepted the write", results)
+        assert_storage_items(server, stage, 41, results)
+    elif stage == "chunk_reload":
+        assert_storage_items(server, stage, 41, results)
+        storage_operation(server, "write_native_items_after_conversion", "write_items 7",
+                          "Native item storage accepted the write", results)
+        assert_storage_items(server, "after_write", 48, results)
+    else:
+        assert_storage_items(server, stage, 48, results)
+        storage_operation(server, "take_native_items_after_restart", "take_items 11",
+                          "Native item storage delivered the requested items", results)
+        assert_storage_items(server, "after_extraction", 37, results)
+
+
+def assert_storage_items(server, stage, count, results):
+    assert_probe(server, f"native_storage_item_counts_and_tags_{stage}", f"port_storage_native check_items {count}",
+                 "Native item storage counts verified", results)
+
+
+def storage_operation(server, assertion, operation, message, results):
+    command = f"port_storage_native {operation}"
+    output = server.command(command)
+    passed = message in output
+    results.append({"assertion": assertion, "passed": passed, "command": command})
+    if not passed:
+        raise AssertionError(f"{assertion} failed: {output}")
 
 
 def assert_storage_routes(server, stage, results):
