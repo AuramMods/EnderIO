@@ -23,6 +23,7 @@ def main():
     probes.add_argument("--storage-probe", action="store_true", help="Build the release-independent storage probe")
     probes.add_argument("--mekanism-probe", action="store_true", help="Build the release-independent Mekanism probe")
     probes.add_argument("--item-upgrade-probe", action="store_true", help="Build the release-independent item upgrade probe")
+    probes.add_argument("--registry-probe", action="store_true", help="Build the packaged server registry inventory probe")
     parser.add_argument("--mod", type=Path, action="append", default=[], help="Add a Forge mod dependency for compilation")
     parser.add_argument("--output", type=Path, required=True, help="New directory for the fixture jar and build files")
     args = parser.parse_args()
@@ -37,6 +38,8 @@ def main():
         metadata, source, filename = "mekanism_probe.toml", "MekanismProbe.java", "mekanism-probe.jar"
     elif args.item_upgrade_probe:
         metadata, source, filename = "item_upgrade_probe.toml", "ItemUpgradeProbe.java", "item-upgrade-probe.jar"
+    elif args.registry_probe:
+        metadata, source, filename = "registry_probe.toml", "RegistryProbe.java", "registry-probe.jar"
     shutil.copyfile(HERE / metadata, classes / "META-INF/mods.toml")
     artifacts = ROOT / "enderio/build/moddev/artifacts"
     forge = artifacts / "forge-1.20.1-47.4.28.jar"

@@ -1,0 +1,7 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+[[mods]]
+modId="port_registry_probe"
+version="1"
+displayName="Ender IO packaged registry inventory probe"

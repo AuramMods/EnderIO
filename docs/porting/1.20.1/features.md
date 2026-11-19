@@ -8,6 +8,8 @@ Factory expansion: `SOLAR_PANELS` covers energetic/pulsating/vibrant photovoltai
 
 Enablement audit: farming station is registered without a required feature flag in the baseline. Enderface and Niard require their named flags. Existing opt-in datapacks and their availability must be retained through a Forge-compatible implementation.
 
+The packaged inventory verifies baseline recipe and serializer IDs, 825 blocks, model-backed item IDs, 173 tag IDs, 813 loot tables, 995 advancements and 17 conduit variants across default and integrated Forge profiles. It also verifies packaged blockstate and item model files and the default and opted-in states of Enderface and Niard. [Cycle 165](cycle-165.md)
+
 ## EIOBlocks
 
 Place, render, interact/automate, break/drop and reload; machine rows also require their full processing behavior.
