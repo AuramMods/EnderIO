@@ -50,6 +50,7 @@ public final class ClientSmoke {
             case "obelisks" -> new ClientObeliskSmoke();
             case "weather-progression" -> new ClientWeatherProgressionSmoke();
             case "entity-obelisks" -> new ClientEntityObeliskSmoke();
+            case "attractor-progression" -> new ClientAttractorProgressionSmoke();
             case "obelisk-carry" -> new ClientObeliskCarrySmoke();
             case "farming-station" -> new ClientFarmingStationSmoke();
             case "painting-machine" -> new ClientPaintingMachineSmoke();

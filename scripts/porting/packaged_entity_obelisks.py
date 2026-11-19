@@ -17,8 +17,9 @@ MACHINES = (("inhibitor", 1700), ("aversion", 1703), ("relocator", 1706), ("attr
 PLAYER = "EnderIOQA"
 CAPACITOR = 'id:"enderio:basic_capacitor",Count:1'
 PEARL = "minecraft:ender_pearl"
-FILTER = ('id:"enderio:basic_soul_filter",Count:1,tag:{"enderio:data":{"enderio:soul_filter":'
-          '{entities:[{index:0,value:{entity_type:"minecraft:pig",entity_tag:{}}}],isInvert:0b,nbt:0b}}}')
+PIG_FILTER_TAG = ('{"enderio:data":{"enderio:soul_filter":'
+                  '{entities:[{index:0,value:{entity_type:"minecraft:pig",entity_tag:{}}}],isInvert:0b,nbt:0b}}}')
+FILTER = f'id:"enderio:basic_soul_filter",Count:1,tag:{PIG_FILTER_TAG}'
 FIELD = "1696 0 1727 15"
 PIG = '@e[type=minecraft:pig,tag=port_attractor,limit=1]'
 

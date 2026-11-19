@@ -143,7 +143,7 @@ final class ClientEntityObeliskSmoke {
         }
     }
 
-    private static boolean validFilter(ObeliskMenu<?> menu) {
+    static boolean validFilter(ObeliskMenu<?> menu) {
         var stack = menu.getSlot(1).getItem();
         var filter = EIODataComponents.SOUL_FILTER.get(stack);
         return stack.is(EIOItems.BASIC_SOUL_FILTER.get()) && filter != null && !filter.isDenyList()
