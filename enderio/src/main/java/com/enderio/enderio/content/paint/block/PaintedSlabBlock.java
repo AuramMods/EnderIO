@@ -51,12 +51,9 @@ public class PaintedSlabBlock extends SlabBlock implements EntityBlock, PaintedB
     public ItemStack getCloneItemStack(BlockState state, HitResult target, net.minecraft.world.level.BlockGetter level, BlockPos pos, Player player) {
         ItemStack stack = new ItemStack(this);
         if (level.getBlockEntity(pos) instanceof DoublePaintedBlockEntity paintedBlockEntity) {
-            Optional<Block> paint;
-            if (target.getLocation().y - pos.getY() > 0.5) {
-                paint = paintedBlockEntity.getSecondaryPaint();
-            } else {
-                paint = paintedBlockEntity.getPrimaryPaint();
-            }
+            var type = state.getValue(TYPE);
+            boolean upper = type == SlabType.TOP || type == SlabType.DOUBLE && target.getLocation().y - pos.getY() > 0.5;
+            var paint = upper ? paintedBlockEntity.getSecondaryPaint() : paintedBlockEntity.getPrimaryPaint();
 
             paint.ifPresent(block -> EIODataComponents.BLOCK_PAINT.set(stack, BlockPaintData.of(block)));
         }

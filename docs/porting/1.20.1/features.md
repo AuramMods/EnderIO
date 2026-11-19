@@ -40,7 +40,7 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `PAINTED_REDSTONE_BLOCK` | [EIOBlocks:186](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `PAINTED_TRAPDOOR` | [EIOBlocks:187](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `PAINTED_WOODEN_PRESSURE_PLATE` | [EIOBlocks:188](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `PAINTED_SLAB` | [EIOBlocks:189](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `PAINTED_SLAB` | [EIOBlocks:194](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java#L194) | Forge tests cover both stacking orders, an unpainted existing half, pick-block and native loot. Packaged multiplayer places both real Forge 6 drops and typed modern drops in survival. The client renders both colors and every fixture slab and drop survives server restart. Slab production in the Painting Machine still needs an end-to-end check. [Cycle 084](cycle-084.md) |
 | `PAINTED_GLOWSTONE` | [EIOBlocks:190](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `PAINTED_WALL` | [EIOBlocks:191](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `RESETTING_LEVERS` | [EIOBlocks:203](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
@@ -322,6 +322,7 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | --- | --- | --- |
 | Standard, inverted, wired and wireless lights | Six placed block IDs and six tagged items survive conversion, chunk eviction and restart. Owned light nodes persist across a chunk edge. Redstone toggling, wired energy use, node cleanup and single-player lighting updates pass. The six variants use the retained historical fixture geometry and vanilla lamp textures. | [Cycle 056](cycle-056.md) |
 | Primitive alloy smelter | The original block and tagged item, remaining fuel and exact job progress survive packaged conversion, chunk eviction and restart with Ender IO or AE2 silicon. The queued output is produced once. All 47 historical recipes resolve. Native lava fuel returns a bucket, and the guarded client verifies inputs, progress and output collection. | [Cycle 057](cycle-057.md) |
+| Painted slabs | A placed two-color slab and both native Forge 6 drops retain their colors through conversion and restart. Both drops render and replant as separate slab halves in survival. Modern loot returns one item per half. | [Cycle 084](cycle-084.md) |
 
 ## Shared state and presentation
 

@@ -2,7 +2,6 @@ package com.enderio.enderio.content.paint.item;
 
 import com.enderio.enderio.content.paint.PaintUtils;
 import com.enderio.enderio.content.paint.block.entity.PaintedBlockEntity;
-import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.player.Player;
@@ -30,7 +29,7 @@ public class PaintedBlockItem extends BlockItem {
     protected boolean updateCustomBlockEntityTag(BlockPos pos, Level level, @Nullable Player player, ItemStack stack, BlockState state) {
         boolean result = super.updateCustomBlockEntityTag(pos, level, player, stack, state);
 
-        var paintData = EIODataComponents.BLOCK_PAINT.get(stack);
+        var paintData = PaintUtils.getItemPaint(stack);
 
         if (paintData == null) {
             // TODO: Log error?

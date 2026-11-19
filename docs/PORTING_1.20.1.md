@@ -275,7 +275,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 082: Farming Station crop lifecycle | Plant pitcher pods and harvest the mature two-block crop once. Verify hoe tilling, torchflowers, nether wart and native stalk planting | The build passes 79 unit and 473 native tests. Eight packaged crop assertions verify fertilizer, full-output stops, exact yields, replanting and two restarts. [Evidence and commands](porting/1.20.1/cycle-082.md) | `39676eb37` |
 
-| 083: Painting Machine delivery | Validate saved inputs, use the installed palette when a paid job delivers, and award advancements after insertion | The build passes 79 unit and 476 native tests. Packaged Forge passes 11 server and seven guarded client checks on production, menu transfer, diamond fence rendering and restart. The seven packaged Soul Binder regression assertions also pass. [Evidence and commands](porting/1.20.1/cycle-083.md) | Commit containing cycle 083 |
+| 083: Painting Machine delivery | Validate saved inputs, use the installed palette when a paid job delivers, and award advancements after insertion | The build passes 79 unit and 476 native tests. Packaged Forge passes 11 server and seven guarded client checks on production, menu transfer, diamond fence rendering and restart. The seven packaged Soul Binder regression assertions also pass. [Evidence and commands](porting/1.20.1/cycle-083.md) | `f8e06f663` |
+
+| 084: painted slab halves | Stack both colors in either order. Carry Forge 6 slab loot into the port and restore both original tags | The build passes 79 unit and 481 native tests. A copied Forge 6 world passes ten packaged server assertions and 11 guarded client checks for mixed slab placement, synchronized paint, loot and restart. [Evidence and commands](porting/1.20.1/cycle-084.md) | Commit containing cycle 084 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

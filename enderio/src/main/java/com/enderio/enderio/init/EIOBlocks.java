@@ -56,6 +56,7 @@ import com.enderio.enderio.content.paint.block.PaintedWallBlock;
 import com.enderio.enderio.content.paint.block.PaintedWoodenPressurePlateBlock;
 import com.enderio.enderio.content.paint.block.SinglePaintedBlock;
 import com.enderio.enderio.content.paint.item.PaintedBlockItem;
+import com.enderio.enderio.content.paint.item.PaintedSlabBlockItem;
 import com.enderio.enderio.content.storage.fluid_tank.FluidTankBlock;
 import com.enderio.enderio.content.storage.fluid_tank.FluidTankBlockItem;
 import com.enderio.enderio.content.travel.travel_anchor.PaintedTravelAnchorBlock;
@@ -190,7 +191,8 @@ public class EIOBlocks {
     public static final BlockDeferredHolder<PaintedRedstoneBlock> PAINTED_REDSTONE_BLOCK = registerPainted("painted_redstone_block", PaintedRedstoneBlock::new, Blocks.REDSTONE_BLOCK);
     public static final BlockDeferredHolder<PaintedTrapDoorBlock> PAINTED_TRAPDOOR = registerPainted("painted_trapdoor", PaintedTrapDoorBlock::new, Blocks.OAK_TRAPDOOR);
     public static final BlockDeferredHolder<PaintedWoodenPressurePlateBlock> PAINTED_WOODEN_PRESSURE_PLATE = registerPainted("painted_wooden_pressure_plate", PaintedWoodenPressurePlateBlock::new, Blocks.OAK_PRESSURE_PLATE);
-    public static final BlockDeferredHolder<PaintedSlabBlock> PAINTED_SLAB = registerPainted("painted_slab", PaintedSlabBlock::new, Blocks.OAK_SLAB);
+    public static final BlockDeferredHolder<PaintedSlabBlock> PAINTED_SLAB = registerPainted("painted_slab", PaintedSlabBlock::new, Blocks.OAK_SLAB,
+        block -> new PaintedSlabBlockItem(block.get(), new Item.Properties()));
     public static final BlockDeferredHolder<SinglePaintedBlock> PAINTED_GLOWSTONE = registerPainted("painted_glowstone", SinglePaintedBlock::new, Blocks.GLOWSTONE);
 
     public static final BlockDeferredHolder<LegacyLightBlock> LIGHT = legacyLight("light", properties -> new LegacyLightBlock(properties, false));
@@ -214,7 +216,12 @@ public class EIOBlocks {
     public static final BlockDeferredHolder<PaintedWallBlock> PAINTED_WALL = registerPainted("painted_wall", PaintedWallBlock::new, Blocks.COBBLESTONE_WALL);
 
     private static <B extends Block> BlockDeferredHolder<B> registerPainted(String name, Function<BlockBehaviour.Properties, B> factory, Block reference) {
-        var blockHolder = registerWithItem(name, factory, BlockBehaviour.Properties.copy(reference).noOcclusion(), b -> new PaintedBlockItem(b.get(), new Item.Properties()));
+        return registerPainted(name, factory, reference, block -> new PaintedBlockItem(block.get(), new Item.Properties()));
+    }
+
+    private static <B extends Block> BlockDeferredHolder<B> registerPainted(String name, Function<BlockBehaviour.Properties, B> factory, Block reference,
+        Function<Supplier<B>, Item> itemFactory) {
+        var blockHolder = registerWithItem(name, factory, BlockBehaviour.Properties.copy(reference).noOcclusion(), itemFactory);
         PAINTED_BLOCKS.add(Pair.of(blockHolder, reference));
         return blockHolder;
     }
