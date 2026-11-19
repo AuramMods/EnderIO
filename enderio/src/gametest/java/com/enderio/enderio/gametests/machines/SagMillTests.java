@@ -1,12 +1,15 @@
 package com.enderio.enderio.gametests.machines;
 
 import com.enderio.enderio.api.components.GrindingBallData;
+import com.enderio.enderio.content.machines.sag_mill.SagMillBlockEntity;
 import com.enderio.enderio.content.machines.sag_mill.SagMillingRecipe;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOItems;
 import com.enderio.enderio.init.EIORecipes;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -44,6 +47,38 @@ public class SagMillTests {
         var stack = new ItemStack(Items.COBBLESTONE, count);
         stack.getOrCreateTag().putString("Variant", variant);
         return stack;
+    }
+
+    @GameTest
+    public static void forge6ActiveBallUsesHistoricalModifiersAndPreservesUnknownData(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
+            .set(0, 0, 0, EIOBlocks.SAG_MILL.get().defaultBlockState()));
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var mill = helper.getBlockEntity(0, 1, 0, SagMillBlockEntity.class);
+            var historical = new GrindingBallData(1.2f, 1.65f, 0.8f, 40000);
+            var tag = new CompoundTag();
+            tag.putString("GrindingBallId", "enderio:grindingball/copper_alloy_grinding_ball");
+            tag.putInt("GrindingBallDamage", 600);
+            mill.load(tag);
+            helper.assertTrue(mill.getGrindingBallData().equals(historical), "active copper ball keeps its Forge 6 modifiers");
+            var converted = mill.saveWithoutMetadata();
+            helper.assertValueEqual(converted.getInt("GrindingBallDamage"), 600, "wear survives the migration");
+            helper.assertTrue(!converted.contains("GrindingBallId"), "a known ball saves as a native snapshot");
+            converted.putString("GrindingBallId", "enderio:grindingball/flint");
+            mill.load(converted);
+            helper.assertTrue(mill.getGrindingBallData().equals(historical), "the native snapshot takes precedence");
+
+            String unknown = "custom:grindingball/charged_quartz";
+            tag.putString("GrindingBallId", unknown);
+            mill.load(tag);
+            helper.assertTrue(mill.getGrindingBallData().isIdentity(), "an unknown ID does not reuse prior modifiers");
+            var stack = new ItemStack(EIOBlocks.SAG_MILL.get());
+            mill.saveToItem(stack);
+            var fallback = BlockItem.getBlockEntityData(stack);
+            helper.assertTrue(fallback != null && fallback.getString("GrindingBallId").equals(unknown)
+                && fallback.getInt("GrindingBallDamage") == 600, "the unknown ID and wear survive native item export");
+            helper.startSequence().thenSucceed();
+        });
     }
 
     @GameTest

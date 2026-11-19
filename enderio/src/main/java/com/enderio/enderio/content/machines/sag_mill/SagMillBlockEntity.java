@@ -28,6 +28,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -56,6 +57,8 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
 
     private GrindingBallData grindingBallData = GrindingBallData.IDENTITY;
     private int grindingBallDamage;
+    @Nullable
+    private String unresolvedForge6BallId;
 
     private final CraftingMachineTaskHost<SagMillingRecipe, SagMillingRecipe.Input> craftingTaskHost;
 
@@ -74,6 +77,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     public void setGrindingBallData(GrindingBallData data) {
         grindingBallDamage = 0;
         grindingBallData = data;
+        unresolvedForge6BallId = null;
     }
 
     public float getGrindingBallDamage() {
@@ -202,13 +206,12 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
             protected int makeProgress(int remainingProgress) {
                 int energyConsumed = super.makeProgress(remainingProgress);
 
-                if (getRecipe().bonusType().useGrindingBall()) {
+                if (getRecipe().bonusType().useGrindingBall() && !grindingBallData.isIdentity()) {
                     // Damage the grinding ball by how much micro infinity was consumed.
-                    grindingBallDamage += energyConsumed;
-
-                    // If its broken, go back to identity.
-                    if (grindingBallDamage >= grindingBallData.durability()) {
+                    if (energyConsumed >= grindingBallData.durability() - grindingBallDamage) {
                         setGrindingBallData(GrindingBallData.IDENTITY);
+                    } else {
+                        grindingBallDamage += energyConsumed;
                     }
                 }
 
@@ -225,6 +228,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
 
     private static final String KEY_GRINDING_BALL = "GrindingBal";
     private static final String KEY_GRINDING_BALL_DAMAGE = "GrindingBallDamage";
+    private static final String KEY_FORGE6_GRINDING_BALL = "GrindingBallId";
 
     @Override
     public void saveAdditional(CompoundTag tag) {
@@ -235,6 +239,9 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
         if (!grindingBallData.isIdentity()) {
             tag.put(KEY_GRINDING_BALL, grindingBallData.save(lookupProvider));
             tag.putInt(KEY_GRINDING_BALL_DAMAGE, grindingBallDamage);
+        } else if (unresolvedForge6BallId != null) {
+            tag.putString(KEY_FORGE6_GRINDING_BALL, unresolvedForge6BallId);
+            tag.putInt(KEY_GRINDING_BALL_DAMAGE, grindingBallDamage);
         }
     }
 
@@ -242,24 +249,48 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     public void load(CompoundTag tag) {
         var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
         super.load(tag);
+        int wear = tag.getInt(KEY_GRINDING_BALL_DAMAGE);
+        if (tag.contains(KEY_GRINDING_BALL, Tag.TAG_COMPOUND)) {
+            restoreGrindingBall(GrindingBallData.parseOptional(lookupProvider, tag.getCompound(KEY_GRINDING_BALL)), wear);
+        } else if (tag.contains(KEY_FORGE6_GRINDING_BALL, Tag.TAG_STRING)) {
+            String legacyId = tag.getString(KEY_FORGE6_GRINDING_BALL);
+            var historical = Forge6GrindingBallData.get(legacyId);
+            if (historical != null) {
+                restoreGrindingBall(historical, wear);
+            } else {
+                setGrindingBallData(GrindingBallData.IDENTITY);
+                unresolvedForge6BallId = legacyId;
+                grindingBallDamage = wear;
+            }
+        } else {
+            setGrindingBallData(GrindingBallData.IDENTITY);
+        }
         craftingTaskHost.load(lookupProvider, tag);
+    }
 
-        if (tag.contains(KEY_GRINDING_BALL)) {
-            grindingBallData = GrindingBallData.parseOptional(lookupProvider, tag.getCompound((KEY_GRINDING_BALL)));
-        }
-
-        if (tag.contains(KEY_GRINDING_BALL_DAMAGE)) {
-            grindingBallDamage = tag.getInt(KEY_GRINDING_BALL_DAMAGE);
-        }
+    private void restoreGrindingBall(GrindingBallData data, int wear) {
+        setGrindingBallData(data);
+        grindingBallDamage = Math.max(0, Math.min(wear, data.durability()));
     }
 
     @Override
     protected void readItemData(ItemStack components) {
         super.readItemData(components);
 
-        grindingBallData = EIODataComponents.SAG_MILL_GRINDING_BALL.getOrDefault(components,
-                GrindingBallData.IDENTITY);
-        grindingBallDamage = EIODataComponents.SAG_MILL_GRINDING_BALL_DAMAGE.getOrDefault(components, 0);
+        var carriedBall = EIODataComponents.SAG_MILL_GRINDING_BALL.get(components);
+        if (carriedBall != null) {
+            restoreGrindingBall(carriedBall, EIODataComponents.SAG_MILL_GRINDING_BALL_DAMAGE.getOrDefault(components, 0));
+        }
+
+        // Native placement loads BlockEntityTag first. Rebind the saved recipe input once its
+        // carried inventory and active grinding ball are both available.
+        var saved = BlockItem.getBlockEntityData(components);
+        if (saved != null) {
+            var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+            craftingTaskHost.load(registries, saved);
+        } else {
+            craftingTaskHost.newTaskAvailable();
+        }
     }
 
     @Override
@@ -276,7 +307,9 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     public void removeItemDataFromTag(CompoundTag tag) {
         super.removeItemDataFromTag(tag);
         tag.remove(KEY_GRINDING_BALL);
-        tag.remove(KEY_GRINDING_BALL_DAMAGE);
+        if (unresolvedForge6BallId == null) {
+            tag.remove(KEY_GRINDING_BALL_DAMAGE);
+        }
     }
 
     // endregion
