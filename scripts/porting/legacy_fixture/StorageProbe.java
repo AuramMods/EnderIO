@@ -1,6 +1,7 @@
 package porting.storageprobe;
 
 import appeng.api.config.Actionable;
+import appeng.api.ids.AEItemIds;
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.security.IActionSource;
@@ -12,6 +13,7 @@ import appeng.api.util.AEColor;
 import appeng.blockentity.storage.DriveBlockEntity;
 import appeng.core.definitions.AEItems;
 import appeng.core.definitions.AEParts;
+import appeng.items.parts.FacadeItem;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.refinedmods.refinedstorage.RSItems;
 import com.refinedmods.refinedstorage.api.network.node.INetworkNode;
@@ -32,6 +34,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -55,6 +58,8 @@ public class StorageProbe {
             .then(Commands.literal("seed_legacy_owners").executes(context -> check(context.getSource(), true)))
             .then(Commands.literal("place_terminal")
                 .executes(context -> run(context.getSource(), "Native AE2 terminal placed", StorageProbe::placeTerminal)))
+            .then(Commands.literal("give_facade")
+                .executes(context -> run(context.getSource(), "Native AE2 diamond facade created", StorageProbe::giveFacade)))
             .then(Commands.literal("check_grid")
                 .executes(context -> run(context.getSource(), "Native RS grid connects to its controller", StorageProbe::checkGrid)))
             .then(Commands.literal("mount_items").executes(context -> run(context.getSource(), "Native item storage mounted", StorageProbe::mount)))
@@ -72,6 +77,17 @@ public class StorageProbe {
             .then(Commands.literal("take_items").then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
                 .executes(context -> run(context.getSource(), "Native item storage delivered the requested items",
                     level -> take(level, IntegerArgumentType.getInteger(context, "count")))))));
+    }
+
+    private static void giveFacade(ServerLevel level) {
+        var player = level.getServer().getPlayerList().getPlayerByName("EnderIOQA");
+        require(player != null, "Missing survival facade player");
+        var item = ForgeRegistries.ITEMS.getValue(AEItemIds.FACADE);
+        if (!(item instanceof FacadeItem facade)) throw new IllegalStateException("Missing native AE2 facade item");
+        var result = facade.createFacadeForItem(new ItemStack(Items.DIAMOND_BLOCK), false);
+        require(!result.isEmpty() && result.getCount() == 1 && facade.getTextureItem(result).is(Items.DIAMOND_BLOCK),
+            "AE2 did not create a diamond facade");
+        player.getInventory().setItem(0, result);
     }
 
     private static int run(CommandSourceStack source, String message, Consumer<ServerLevel> operation) {
