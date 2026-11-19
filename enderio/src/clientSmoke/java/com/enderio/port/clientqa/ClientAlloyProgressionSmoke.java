@@ -43,7 +43,7 @@ final class ClientAlloyProgressionSmoke {
         String block() { return id + "_block"; }
     }
 
-    private record Craft(String name, String recipe, Map<String, Integer> inputs, String result, int results, List<String> layout) {
+    record Craft(String name, String recipe, Map<String, Integer> inputs, String result, int results, List<String> layout) {
         Craft(String name, String recipe, String input, int inputs, String result, int results) {
             this(name, recipe, Map.of(input, inputs), result, results, List.of());
         }
@@ -384,11 +384,11 @@ final class ClientAlloyProgressionSmoke {
         minecraft.gameMode.handleInventoryMouseClick(menu.containerId, slot, 0, ClickType.QUICK_MOVE, minecraft.player);
     }
 
-    private static ResourceLocation id(String path) {
+    static ResourceLocation id(String path) {
         return path.contains(":") ? ResourceLocation.parse(path) : ResourceLocation.fromNamespaceAndPath("enderio", path);
     }
 
-    private static Item item(String path) {
+    static Item item(String path) {
         return BuiltInRegistries.ITEM.getOptional(id(path)).orElseThrow();
     }
 

@@ -144,6 +144,7 @@ public final class ClientSmoke {
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "natural-spawns" -> new ClientNaturalSpawnSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();
+            case "antenna-progression" -> new ClientAntennaProgressionSmoke();
             case "curios" -> new ClientCuriosSmoke();
             case "solar-wired" -> new ClientSolarWiredSmoke();
             case "solar-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.SOLAR);
