@@ -10,24 +10,28 @@ import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
 import com.enderio.enderio.foundation.inventory.MultiSlotAccess;
 import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
 import com.enderio.enderio.init.EIOBlockEntities;
+import com.enderio.core.common.recipes.CraftingRecipeInput;
+import com.enderio.core.common.serialization.StackDataCodecs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import com.enderio.core.common.recipes.CraftingRecipeInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
-import java.util.Optional;
 import java.util.Queue;
 
 // TODO: Might want to see if we can adapt this into a crafting task.
 public class CrafterBlockEntity extends PoweredMachineBlockEntity {
+    private static final String OUTPUT_BUFFER_TAG = "OutputBuffer";
 
     public static final QuadraticScalable ENERGY_CAPACITY = new QuadraticScalable(CapacitorModifier.ENERGY_CAPACITY,
             MachinesConfig.COMMON.ENERGY.CRAFTER_CAPACITY);
@@ -40,6 +44,8 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
 
     @Nullable
     private CraftingRecipe recipe;
+    @Nullable
+    private RecipeManager recipeManager;
     private final Queue<ItemStack> outputBuffer = new ArrayDeque<>();
 
     public CrafterBlockEntity(BlockPos worldPosition, BlockState blockState) {
@@ -60,13 +66,16 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
     }
 
     private void updateRecipe() {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
         var input = getCraftingInput(GHOST);
+        recipeManager = level.getRecipeManager();
+        recipe = recipeManager.getRecipeFor(RecipeType.CRAFTING, input, level).orElse(null);
 
-        recipe = getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, getLevel()).orElse(null);
-        PREVIEW.setStackInSlot(this, ItemStack.EMPTY);
-
-        if (recipe != null) {
-            PREVIEW.setStackInSlot(this, recipe.getResultItem(getLevel().registryAccess()));
+        var preview = recipe == null ? ItemStack.EMPTY : recipe.getResultItem(level.registryAccess());
+        if (!ItemStack.matches(PREVIEW.getItemStack(this), preview)) {
+            PREVIEW.setStackInSlot(this, preview.copy());
         }
     }
 
@@ -106,15 +115,39 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (level != null && !level.isClientSide()) {
-            updateRecipe();
+        outputBuffer.clear();
+        var savedOutputs = tag.getList(OUTPUT_BUFFER_TAG, Tag.TAG_COMPOUND);
+        for (int i = 0; i < savedOutputs.size(); i++) {
+            var output = StackDataCodecs.loadItem(savedOutputs.getCompound(i));
+            if (!output.isEmpty()) {
+                outputBuffer.add(output);
+            }
+        }
+        updateRecipe();
+    }
+
+    @Override
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        if (!outputBuffer.isEmpty()) {
+            var savedOutputs = new ListTag();
+            for (var output : outputBuffer) {
+                savedOutputs.add(StackDataCodecs.saveItem(output));
+            }
+            tag.put(OUTPUT_BUFFER_TAG, savedOutputs);
         }
     }
 
     @Override
     public void serverTick() {
-        if (canAct()) {
-            tryCraft();
+        if (level.getGameTime() % 20 == 0) {
+            var currentRecipes = level.getRecipeManager();
+            if (currentRecipes != recipeManager || recipe != null && currentRecipes.byKey(recipe.getId()).orElse(null) != recipe) {
+                updateRecipe();
+            }
+            if (canAct()) {
+                tryCraft();
+            }
         }
 
         super.serverTick();
@@ -127,82 +160,54 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
     }
 
     private void tryCraft() {
-        getRecipeResult().ifPresent(result -> {
-            if (shouldActTick() && hasPowerToCraft() && canMergeOutput(result) && outputBuffer.isEmpty()) {
-                craftItem();
-            }
-        });
-    }
-
-    private boolean shouldActTick() {
-        return canAct() && level.getGameTime() % ticksForAction() == 0;
-    }
-
-    private int ticksForAction() {
-        return 20;
-    }
-
-    private boolean hasPowerToCraft() {
-        return getEnergyStorage().consumeEnergy(MachinesConfig.COMMON.ENERGY.CRAFTING_RECIPE_COST.get(),
-                true) >= MachinesConfig.COMMON.ENERGY.CRAFTING_RECIPE_COST.get();
-    }
-
-    private void processOutputBuffer() {
-        if (outputBuffer.isEmpty()) {
+        int cost = MachinesConfig.COMMON.ENERGY.CRAFTING_RECIPE_COST.get();
+        if (recipe == null || !outputBuffer.isEmpty() || getEnergyStorage().consumeEnergy(cost, true) < cost) {
             return;
         }
 
-        // output
-        if (canMergeOutput(outputBuffer.peek())) {
-            var stack = OUTPUT.getItemStack(this);
-            if (stack.isEmpty()) {
-                OUTPUT.setStackInSlot(this, outputBuffer.peek().copy());
-            } else {
-                stack.grow(outputBuffer.peek().getCount());
-            }
-            outputBuffer.remove();
-        }
-    }
-
-    private Optional<ItemStack> getRecipeResult() {
-        var input = getCraftingInput(INPUT);
-        if (recipe != null && recipe.matches(input, getLevel())) {
-            return Optional.of(recipe.assemble(input, getLevel().registryAccess()));
-        }
-        return Optional.empty();
-    }
-
-    private boolean canMergeOutput(ItemStack item) {
-        ItemStack output = OUTPUT.getItemStack(this);
-        return output.isEmpty()
-                || (ItemStack.isSameItemSameTags(output, item) && (output.getCount() + item.getCount() <= 64));
-    }
-
-    private void craftItem() {
         for (int i = 0; i < 9; i++) {
             if (!ItemStack.isSameItem(INPUT.get(i).getItemStack(this), GHOST.get(i).getItemStack(this))) {
                 return;
             }
         }
-        // get input
         var input = getCraftingInput(INPUT);
-        // craft
-        clearInput();
-        outputBuffer.add(recipe.assemble(input, getLevel().registryAccess()));
-        outputBuffer.addAll(recipe.getRemainingItems(input));
-        // clean buffer
-        outputBuffer.removeIf(ItemStack::isEmpty);
-        // consume power
-        getEnergyStorage().consumeEnergy(MachinesConfig.COMMON.ENERGY.CRAFTING_RECIPE_COST.get(), false);
-        // check resource reload
-        if (level.getRecipeManager().byKey(recipe.getId()).orElse(null) != recipe) {
-            recipe = null;
+        if (!recipe.matches(input, level)) {
+            return;
+        }
+
+        var result = recipe.assemble(input, level.registryAccess());
+        if (result.isEmpty() || !canMergeOutput(result)) {
+            return;
+        }
+        var remainders = recipe.getRemainingItems(input);
+        outputBuffer.add(result.copy());
+        for (var remainder : remainders) {
+            if (!remainder.isEmpty()) {
+                outputBuffer.add(remainder.copy());
+            }
+        }
+        for (var slot : INPUT.getAccesses()) {
+            var stack = slot.getItemStack(this);
+            if (!stack.isEmpty()) {
+                slot.setStackInSlot(this, stack.copyWithCount(stack.getCount() - 1));
+            }
+        }
+        getEnergyStorage().consumeEnergy(cost, false);
+    }
+
+    private void processOutputBuffer() {
+        var next = outputBuffer.peek();
+        if (next != null && canMergeOutput(next)) {
+            outputBuffer.remove();
+            int count = OUTPUT.getItemStack(this).getCount() + next.getCount();
+            OUTPUT.setStackInSlot(this, next.copyWithCount(count));
         }
     }
 
-    private void clearInput() {
-        for (int i = 0; i < 9; i++) {
-            INPUT.get(i).setStackInSlot(this, ItemStack.EMPTY);
-        }
+    private boolean canMergeOutput(ItemStack item) {
+        var output = OUTPUT.getItemStack(this);
+        int limit = Math.min(getInventory().getSlotLimit(OUTPUT.getIndex()), item.getMaxStackSize());
+        return (output.isEmpty() || ItemStack.isSameItemSameTags(output, item))
+            && output.getCount() <= limit - item.getCount();
     }
 }
