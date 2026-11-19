@@ -48,6 +48,7 @@ public final class ClientSmoke {
             case "powered-spawner" -> new ClientPoweredSpawnerSmoke();
             case "spawner-rules" -> new ClientSpawnerRulesSmoke();
             case "obelisks" -> new ClientObeliskSmoke();
+            case "weather-progression" -> new ClientWeatherProgressionSmoke();
             case "entity-obelisks" -> new ClientEntityObeliskSmoke();
             case "obelisk-carry" -> new ClientObeliskCarrySmoke();
             case "farming-station" -> new ClientFarmingStationSmoke();

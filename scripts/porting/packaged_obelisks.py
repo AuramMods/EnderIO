@@ -58,13 +58,13 @@ def xp_state(amount, pos=XP, tag=""):
     return f'if data block {pos} {{{fluid_contents(XP_FLUID, amount, tag)}}}'
 
 
-def weather_state(fluid, amount, rockets):
-    return (f'if data block {WEATHER} {{{fluid_contents(fluid, amount)},'
+def weather_state(fluid, amount, rockets, *, pos=WEATHER):
+    return (f'if data block {pos} {{{fluid_contents(fluid, amount)},'
             f'Items:{{Items:[{{Slot:0,id:"minecraft:firework_rocket",Count:{rockets}}}]}}}}')
 
 
-def task_state(recipe, progress):
-    return (f'if data block {WEATHER} {{Task:{{RecipeId:"enderio:{recipe}",'
+def task_state(recipe, progress, *, pos=WEATHER):
+    return (f'if data block {pos} {{Task:{{RecipeId:"enderio:{recipe}",'
             f'ProgressRequired:600,ProgressMade:{progress}}}}}')
 
 
