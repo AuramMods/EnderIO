@@ -37,9 +37,9 @@ public class CoordinateMenuScreen extends EnderContainerScreen<CoordinateMenu> {
         nameInput.setTextColor(0xFFFFFFFF);
         nameInput.setTextColorUneditable(0xFFFFFFFF);
         nameInput.setBordered(false);
-        nameInput.setMaxLength(50);
-        nameInput.setResponder(this::onNameChanged);
+        nameInput.setMaxLength(CoordinateMenu.MAX_NAME_LENGTH);
         nameInput.setValue(menu.getName());
+        nameInput.setResponder(this::onNameChanged);
 
         addRenderableWidget(nameInput);
         addRestorableState("name", nameInput);

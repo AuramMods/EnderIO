@@ -55,10 +55,9 @@ public class LocationPrintoutItem extends Item {
         return super.use(level, player, usedHand);
     }
 
-    private static void handleRightClick(ServerPlayer serverPlayer, @Nullable CoordinateSelection selection, ItemStack printout) {
-        if (selection != null) {
-            openMenu(serverPlayer, selection, printout.getHoverName().getString());
-        }
+    private static void handleRightClick(ServerPlayer serverPlayer, CoordinateSelection selection, ItemStack printout) {
+        String name = printout.hasCustomHoverName() ? printout.getHoverName().getString(CoordinateMenu.MAX_NAME_LENGTH) : "";
+        openMenu(serverPlayer, selection, name);
     }
 
     private static void openMenu(ServerPlayer player, CoordinateSelection selection, String name) {

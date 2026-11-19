@@ -7,6 +7,7 @@ import com.enderio.enderio.config.base.BaseConfig;
 import com.enderio.enderio.content.filters.FilterSlot;
 import com.enderio.enderio.content.filters.fluid.FluidFilterSlot;
 import com.enderio.enderio.content.tools.ElectromagnetItem;
+import com.enderio.enderio.content.tools.coordinate_selector.CoordinateMenu;
 import com.enderio.enderio.content.travel.TravelHandler;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import com.enderio.enderio.foundation.menu.GhostMachineSlot;
@@ -35,7 +36,7 @@ public class ServerPayloadHandler {
         if (player instanceof ServerPlayer serverPlayer && !player.isSpectator()
                 && player.containerMenu.containerId == packet.containerId()
                 && packet.menuClass().isInstance(player.containerMenu) && player.containerMenu.stillValid(player)
-                && packet.name().length() <= 50) {
+                && packet.name().length() <= CoordinateMenu.MAX_NAME_LENGTH) {
             packet.menuClass().cast(player.containerMenu).updateName(packet.name(), serverPlayer);
         }
     }

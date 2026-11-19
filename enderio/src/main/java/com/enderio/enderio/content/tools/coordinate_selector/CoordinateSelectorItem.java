@@ -84,7 +84,7 @@ public class CoordinateSelectorItem extends Item {
             public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
                 return new CoordinateMenu(containerId, selection, null);
             }
-        }, buf -> CoordinateMenu.writeAdditionalData(buf, selection, ""));
+        }, buf -> CoordinateMenu.writeAdditionalData(buf, selection, null));
     }
 
     private static boolean checkPaper(Player player) {

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 public class CoordinateMenu extends AbstractContainerMenu {
+    public static final int MAX_NAME_LENGTH = 50;
 
     private final CoordinateSelection selection;
 
@@ -31,7 +32,7 @@ public class CoordinateMenu extends AbstractContainerMenu {
         super(menuType, containerId);
         selection = CoordinateSelection.STREAM_CODEC.decode(buf);
         isPrintout = buf.readBoolean();
-        name = buf.readUtf(50);
+        name = buf.readUtf(MAX_NAME_LENGTH);
     }
 
     /**
@@ -53,8 +54,8 @@ public class CoordinateMenu extends AbstractContainerMenu {
      */
     public static void writeAdditionalData(FriendlyByteBuf buf, CoordinateSelection selection, @Nullable String name) {
         CoordinateSelection.STREAM_CODEC.encode(buf, selection);
-        buf.writeBoolean(name == null);
-        buf.writeUtf(name == null ? "" : name, 50);
+        buf.writeBoolean(name != null);
+        buf.writeUtf(name == null ? "" : name, MAX_NAME_LENGTH);
     }
 
     @Override
