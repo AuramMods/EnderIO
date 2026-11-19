@@ -5,9 +5,11 @@ import argparse
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 
 sys.dont_write_bytecode = True
+from client.run_multiplayer import stop_client, wait_signal
 from packaged_legacy_migration import assert_probe, storage_operation
 from packaged_server_smoke import ROOT, digest
 from packaged_spawners import WORLD, prepare_profile, run_stage
@@ -18,6 +20,7 @@ COLORS = "colored-me-conduits"
 CHUNKS = "1104 0 1135 15"
 MATCHING = 4
 MIXED = 8
+PLAYER = "EnderIOQA"
 
 
 def install_datapack(directory):
@@ -92,12 +95,62 @@ def verify(server, results):
     check(server, results, "red_blue_stays_split_after_restart", MIXED, False)
 
 
+def check_client(args, server, report):
+    results = report["assertions"]
+    output = ROOT / "build/port-evidence" / f"{args.name}-client"
+    server.command("gamerule doDaylightCycle false")
+    server.command("time set noon")
+    server.command("weather clear")
+    server.command("fill 1117 79 3 1122 79 12 minecraft:stone_bricks")
+    server.command("gamerule spawnRadius 0")
+    server.command(f"setworldspawn 1120 80 {MIXED + 3}")
+    command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
+               "--launch", str(args.launch.resolve()), "--scenario", "me-colors", "--output", str(output),
+               "--server", f"127.0.0.1:{args.port}", "--timeout", "155"]
+    with (server.directory / "me-colors-client.log").open("w") as log:
+        client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        try:
+            wait_signal(client, output, "connected")
+            for slot, color in enumerate(("red", "blue")):
+                variant = f'enderio:conduit{{"enderio:data":{{"enderio:conduit":"{NAMESPACE}:{color}_me"}}}}'
+                server.command(f"item replace entity {PLAYER} hotbar.{slot} with {variant}")
+            server.command(f"tp {PLAYER} 1120.0 80 {MATCHING + 3}.0 180 24")
+            (output / "server-matched").touch()
+            wait_signal(client, output, "matched")
+            server.command(f"tp {PLAYER} 1120.0 80 {MIXED + 3}.0 180 24")
+            (output / "server-mixed").touch()
+            wait_signal(client, output, "mixed")
+            server.command(f"setblock 1120 80 {MIXED} minecraft:air")
+            (output / "server-place").touch()
+            check(server, results, "survival_red_item_rejoins_the_native_grid", MIXED, True)
+            server.assert_state("survival_placement_consumes_only_the_used_variant",
+                                f'unless data entity {PLAYER} Inventory[{{Slot:0b}}] '
+                                f'if data entity {PLAYER} Inventory[{{Slot:1b,id:"enderio:conduit",Count:1b,'
+                                f'tag:{{"enderio:data":{{"enderio:conduit":"{NAMESPACE}:blue_me"}}}}}}]', results)
+            (output / "server-updated").touch()
+            wait_signal(client, output, "updated")
+            if client.wait(timeout=25) != 0:
+                raise AssertionError(f"ME color client failed; see {output}")
+            summary = json.loads((output / "summary.json").read_text())
+            mods = summary["client"]["captures"]["updated"]["loadedMods"]
+            for mod in ("enderio", "ae2", "guideme", "refinedstorage"):
+                path = Path(mods[mod]["file"])
+                if digest(path) != report["jarHashes"][path.name]:
+                    raise AssertionError(f"Client and server loaded different {mod} artifacts")
+        finally:
+            stop_client(client)
+            summary = output / "summary.json"
+            if summary.exists():
+                report["client"] = json.loads(summary.read_text())
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True)
     parser.add_argument("--port", required=True, type=int)
     for path in ("java", "forge-server", "jar", "probe"):
         parser.add_argument(f"--{path}", required=True, type=Path)
+    parser.add_argument("--launch", type=Path, help="Verify synchronized models with a guarded packaged client")
     parser.add_argument("--mod", action="append", required=True, type=Path)
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
@@ -109,9 +162,15 @@ def main():
         shutil.copyfile(mod, directory / "mods" / mod.name)
     report = {"passed": False, "assertions": [], "servers": [],
               "jarHashes": {mod.name: digest(mod) for mod in sorted((directory / "mods").glob("*.jar"))}}
+
+    def restart(server, results):
+        verify(server, results)
+        if args.launch:
+            check_client(args, server, report)
+
     try:
         run_stage(args, directory, report, "exercise", exercise)
-        run_stage(args, directory, report, "restart", verify)
+        run_stage(args, directory, report, "restart", restart)
         report["passed"] = True
     finally:
         (directory / "me-colors-results.json").write_text(json.dumps(report, indent=2) + "\n")

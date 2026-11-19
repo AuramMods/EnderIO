@@ -3,5 +3,5 @@
   "description": "Test Blue ME Conduit",
   "color": "blue",
   "is_dense": false,
-  "texture": "enderio:block/conduit/me"
+  "texture": "minecraft:block/blue_wool"
 }
