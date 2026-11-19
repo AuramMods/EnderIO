@@ -55,6 +55,8 @@ public final class ClientSmoke {
             case "stained-facades-embeddium" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.EMBEDDIUM, true);
             case "stained-facades-oculus" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.OCULUS, true);
             case "stained-facades-oculus-shader" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.OCULUS_SHADER, true);
+            case "facade-dimensions" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.FORGE, true, true);
+            case "facade-dimensions-embeddium" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.EMBEDDIUM, true, true);
             case "facade-seams" -> new ClientFacadeSeamSmoke(false, false);
             case "facade-seams-embeddium" -> new ClientFacadeSeamSmoke(false, true);
             case "facade-seams-mixed" -> new ClientFacadeSeamSmoke(true, false);

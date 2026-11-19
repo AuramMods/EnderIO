@@ -19,9 +19,12 @@ import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
@@ -42,7 +45,7 @@ import java.util.concurrent.CompletableFuture;
 final class ClientFacadeSmoke {
     enum Renderer { FORGE, EMBEDDIUM, OCULUS, OCULUS_SHADER }
 
-    private enum Stage { TITLE, CONNECT, PLACE, ADD_CONDUIT, VISIBLE, GHOST, RESTORED, RELOADED, DONE }
+    private enum Stage { TITLE, CONNECT, PLACE, ADD_CONDUIT, VISIBLE, GHOST, NETHER_GHOST, NETHER_NORMAL, OVERWORLD_GHOST, RESTORED, RELOADED, DONE }
 
     private record Sample(BlockPos pos, FacadeType type, Block paint) {}
     private static final BlockPos STANDALONE = new BlockPos(2656, 80, 13);
@@ -56,6 +59,10 @@ final class ClientFacadeSmoke {
         new Sample(new BlockPos(2654, 80, 13), FacadeType.HARDENED, Blocks.BLUE_STAINED_GLASS),
         new Sample(STANDALONE, FacadeType.TRANSPARENT, Blocks.RED_STAINED_GLASS),
         new Sample(new BlockPos(2658, 80, 13), FacadeType.TRANSPARENT_HARDENED, Blocks.BLUE_STAINED_GLASS));
+    private static final List<Sample> NETHER_SAMPLES = STAINED_SAMPLES.stream()
+        .map(sample -> new Sample(sample.pos(), sample.type(),
+            sample.paint() == Blocks.RED_STAINED_GLASS ? Blocks.BLUE_STAINED_GLASS : Blocks.RED_STAINED_GLASS))
+        .toList();
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final String address = System.getProperty("enderio.clientqa.server");
@@ -65,6 +72,7 @@ final class ClientFacadeSmoke {
     private final long started = System.nanoTime();
     private final Renderer renderer;
     private final boolean stainedGlass;
+    private final boolean dimensionRoundTrip;
     private final List<Sample> samples;
     private Stage stage = Stage.TITLE;
     private int nextSlot;
@@ -73,8 +81,13 @@ final class ClientFacadeSmoke {
     private CompletableFuture<Void> reload;
 
     ClientFacadeSmoke(Renderer renderer, boolean stainedGlass) {
+        this(renderer, stainedGlass, false);
+    }
+
+    ClientFacadeSmoke(Renderer renderer, boolean stainedGlass, boolean dimensionRoundTrip) {
         this.renderer = renderer;
         this.stainedGlass = stainedGlass;
+        this.dimensionRoundTrip = dimensionRoundTrip;
         samples = stainedGlass ? STAINED_SAMPLES : OPAQUE_SAMPLES;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
@@ -146,12 +159,46 @@ final class ClientFacadeSmoke {
                                 weakColors[i] > 100 && colors[i] * 2 < visibleColors[i]);
                         }
                     }
+                    if (dimensionRoundTrip) {
+                        signal("overworld-departure");
+                        stage = Stage.NETHER_GHOST;
+                    } else {
+                        minecraft.player.getInventory().selected = 0;
+                        stage = Stage.RESTORED;
+                    }
+                }
+                case NETHER_GHOST -> {
+                    if (!dimensionReady(Level.NETHER, NETHER_SAMPLES, false)) return;
+                    checkFacadeIndex(Level.NETHER, Level.OVERWORLD);
+                    check("nether_arrival_shows_its_own_ghost_colors",
+                        enoughPaint(capture("nether-ghosted", 7, NETHER_SAMPLES)));
+                    checkGlassConduits(false, NETHER_SAMPLES, "nether_arrival");
+                    minecraft.player.getInventory().selected = 0;
+                    stage = Stage.NETHER_NORMAL;
+                }
+                case NETHER_NORMAL -> {
+                    if (!dimensionReady(Level.NETHER, NETHER_SAMPLES, true)) return;
+                    check("nether_glass_recovers_normal_colors",
+                        enoughPaint(capture("nether-visible", 14, NETHER_SAMPLES)));
+                    checkGlassConduits(true, NETHER_SAMPLES, "nether_normal");
+                    minecraft.player.getInventory().selected = 8;
+                    stage = Stage.OVERWORLD_GHOST;
+                    signal("nether-departure");
+                }
+                case OVERWORLD_GHOST -> {
+                    if (!dimensionReady(Level.OVERWORLD, STAINED_SAMPLES, false)) return;
+                    checkFacadeIndex(Level.OVERWORLD, Level.NETHER);
+                    check("overworld_return_shows_the_original_ghost_colors",
+                        enoughPaint(capture("overworld-return-ghosted", 7)));
+                    checkGlassConduits(false, STAINED_SAMPLES, "overworld_return");
                     minecraft.player.getInventory().selected = 0;
                     stage = Stage.RESTORED;
                 }
                 case RESTORED -> {
                     if (!waitForMesh(true)) return;
-                    check("four_facades_restore_their_normal_colors", enoughPaint(capture("facades-restored", stainedGlass ? 14 : 55)));
+                    var restored = capture("facades-restored", stainedGlass ? 14 : 55);
+                    check("four_facades_restore_their_normal_colors", dimensionRoundTrip
+                        ? Arrays.equals(visibleColors, restored) : enoughPaint(restored));
                     if (stainedGlass) {
                         checkGlassConduits(true);
                         reload = minecraft.reloadResourcePacks();
@@ -236,9 +283,32 @@ final class ClientFacadeSmoke {
         return true;
     }
 
+    private boolean dimensionReady(ResourceKey<Level> dimension, List<Sample> expected, boolean visible) {
+        if (minecraft.level.dimension() != dimension || !positioned(2655.5, 19.5)
+                || minecraft.player.getMainHandItem().is(EIOItems.YETA_WRENCH.get()) == visible
+                || !expected.stream().allMatch(this::matchesModel)) return false;
+        if (readyTick == -1) minecraft.gui.getChat().clearMessages(false);
+        return waitForMesh(visible);
+    }
+
+    private void checkFacadeIndex(ResourceKey<Level> current, ResourceKey<Level> departed) {
+        var scope = ConduitBundleBlockEntity.CHUNK_FACADES.get(current);
+        var previous = ConduitBundleBlockEntity.CHUNK_FACADES.get(departed);
+        check(current.location().getPath() + "_indexes_all_four_facades",
+            scope != null && STAINED_SAMPLES.stream().allMatch(sample -> {
+                var positions = scope.get(SectionPos.asLong(sample.pos()));
+                return positions != null && positions.contains(sample.pos().asLong());
+            }));
+        check(departed.location().getPath() + "_releases_old_facade_positions", previous == null || previous.isEmpty());
+    }
+
     private void checkGlassConduits(boolean facadesVisible) {
         String phase = facadesVisible ? stage.name().toLowerCase(java.util.Locale.ROOT) : "wrench";
-        for (var sample : samples) {
+        checkGlassConduits(facadesVisible, samples, phase);
+    }
+
+    private void checkGlassConduits(boolean facadesVisible, List<Sample> expected, String phase) {
+        for (var sample : expected) {
             var state = minecraft.level.getBlockState(sample.pos());
             var data = minecraft.level.getBlockEntity(sample.pos()).getModelData();
             var model = minecraft.getBlockRenderer().getBlockModel(state);
@@ -255,6 +325,10 @@ final class ClientFacadeSmoke {
     }
 
     private int[] capture(String name, int contrast) throws IOException {
+        return capture(name, contrast, samples);
+    }
+
+    private int[] capture(String name, int contrast, List<Sample> expected) throws IOException {
         var frame = ClientSmoke.capture(name + ".png");
         if (renderer == Renderer.OCULUS_SHADER) {
             var shaderActive = net.irisshaders.iris.api.v0.IrisApi.getInstance().isShaderPackInUse();
@@ -265,7 +339,7 @@ final class ClientFacadeSmoke {
                 check("shader_pack_drew_" + name, shaderActive && signature == 0xFF00FF);
             }
         }
-        var colors = palettePixels(contrast);
+        var colors = palettePixels(contrast, expected);
         frame.put("facadeColorPixels", colors);
         if (!stainedGlass && name.equals("facades-ghosted")) frame.put("faintFacadeColorPixels", palettePixels(14));
         captures.put(name, frame);
@@ -274,18 +348,38 @@ final class ClientFacadeSmoke {
     }
 
     private int[] palettePixels(int contrast) {
+        return palettePixels(contrast, samples);
+    }
+
+    private int[] palettePixels(int contrast, List<Sample> expected) {
         try (var image = Screenshot.takeScreenshot(minecraft.getMainRenderTarget())) {
-            int[] counts = new int[samples.size()];
+            int[] counts = new int[expected.size()];
             int width = image.getWidth();
             int height = image.getHeight();
             int halfWidth = width * 35 / 1000;
+            boolean nether = minecraft.level.dimension() == Level.NETHER;
+            int minY = height * (nether ? 51 : 47) / 100;
             // Sample the interior face of each facade at the fixture's fixed camera position.
             // The cyan sample excludes the blue sky above its facade.
             for (int i = 0; i < counts.length; i++) {
                 int centerX = width * (295 + i * 135) / 1000;
-                for (int y = height * 47 / 100; y < height * 58 / 100; y++) {
+                boolean redPaint = expected.get(i).paint() == Blocks.RED_STAINED_GLASS;
+                int controlX = width * (360 + 270 * (i / 2)) / 1000;
+                for (int y = minY; y < height * 58 / 100; y++) {
+                    // Measure Nether glass relative to exposed stone on the same row.
+                    int bias = 0;
+                    if (nether) {
+                        for (int x = controlX - 2; x <= controlX + 2; x++) {
+                            bias += redMinusBlue(image.getPixelRGBA(x, y));
+                        }
+                        bias /= 5;
+                    }
                     for (int x = centerX - halfWidth; x < centerX + halfWidth; x++) {
-                        if (matchesPaint(i, image.getPixelRGBA(x, y), contrast)) counts[i]++;
+                        int pixel = image.getPixelRGBA(x, y);
+                        int glassColor = redMinusBlue(pixel) - bias;
+                        if (nether ? (redPaint ? glassColor : -glassColor) >= contrast : matchesPaint(i, redPaint, pixel, contrast)) {
+                            counts[i]++;
+                        }
                     }
                 }
             }
@@ -293,12 +387,16 @@ final class ClientFacadeSmoke {
         }
     }
 
-    private boolean matchesPaint(int sample, int pixel, int contrast) {
+    private static int redMinusBlue(int pixel) {
+        return (pixel & 255) - (pixel >> 16 & 255);
+    }
+
+    private boolean matchesPaint(int sample, boolean redPaint, int pixel, int contrast) {
         int red = pixel & 255;
         int green = pixel >> 8 & 255;
         int blue = pixel >> 16 & 255;
         if (stainedGlass) {
-            return sample % 2 == 0 ? red - green >= contrast && red - blue >= contrast
+            return redPaint ? red - green >= contrast && red - blue >= contrast
                 : blue - red >= contrast && blue - green >= contrast;
         }
         return switch (sample) {

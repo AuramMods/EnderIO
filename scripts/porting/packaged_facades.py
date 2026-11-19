@@ -79,10 +79,44 @@ def produce(server, results, stained_glass):
                             f'if data block {x} 80 7 Items.Items[{{Slot:2,id:"minecraft:{paint}",Count:1}}]', results)
 
 
+def nether_variants():
+    return tuple((x, blank, paint) for (x, blank, _), paint in zip(variants(True), ("blue_stained_glass", "red_stained_glass") * 2))
+
+
+def prepare_nether(server, results):
+    prefix = "execute in minecraft:the_nether run "
+    server.command(prefix + "forceload add 2640 0 2671 31")
+    server.assert_state("nether_facade_chunks_are_loaded", "in minecraft:the_nether if loaded 2652 80 13 if loaded 2658 80 13",
+                        results, timeout=40)
+    server.command(prefix + "fill 2647 80 5 2663 91 24 minecraft:air")
+    server.command(prefix + "fill 2647 79 5 2663 79 24 minecraft:stone")
+    for z in (10, 14, 18):
+        for x in (2652, 2655, 2658):
+            server.command(prefix + f"setblock {x} 83 {z} minecraft:light[level=15]")
+    for x, blank, paint in nether_variants():
+        provider = f'FacadeProvider:{{id:"enderio:{blank}",Count:1,{paint_data(paint)}}}'
+        server.command(prefix + f"setblock {x} 80 13 enderio:conduit{ENERGY_CONDUIT}")
+        server.command(prefix + f"data merge block {x} 80 13 {{{provider}}}")
+    server.assert_state("nether_uses_different_paint_at_the_same_positions", "in minecraft:the_nether "
+                        + " ".join(bundle_state(*variant) for variant in nether_variants()), results)
+
+
+def travel_with_wrench(server, client, output, results):
+    for signal, destination in (("overworld-departure", "the_nether"), ("nether-departure", "overworld")):
+        wait_signal(client, output, signal)
+        server.assert_state(f"player_keeps_wrench_selected_for_{destination}",
+                            f'if data entity {PLAYER} {{SelectedItem:{{id:"enderio:yeta_wrench"}}}}', results)
+        server.command(f"execute in minecraft:{destination} run tp {PLAYER} 2655.5 80 19.5 180 9")
+        server.assert_state(f"player_arrives_in_{destination}",
+                            f"in minecraft:{destination} positioned 2655.5 80 19.5 if entity @a[name={PLAYER},distance=..0.5]", results)
+
+
 def exercise_client(args, server, report):
     results = report["assertions"]
     output = ROOT / "build/port-evidence" / f"{args.name}-client"
     scenario = "stained-facades" if args.stained_glass else "facades"
+    if args.dimensions:
+        scenario = "facade-dimensions"
     if args.oculus:
         scenario += "-oculus"
         if args.active_shaders:
@@ -119,6 +153,8 @@ def exercise_client(args, server, report):
             server.command(f"item replace entity {PLAYER} hotbar.8 with enderio:yeta_wrench")
             server.command(f"tp {PLAYER} 2655.5 80 19.5 180 9")
             (output / "server-inspect").touch()
+            if args.dimensions:
+                travel_with_wrench(server, client, output, results)
             if client.wait(timeout=90) != 0:
                 raise AssertionError(f"Facade client failed; see {output}")
             summary = json.loads((output / "summary.json").read_text())
@@ -131,9 +167,12 @@ def exercise_client(args, server, report):
             report["client"] = json.loads(summary.read_text()) if summary.exists() else None
 
 
-def reopened(server, results, stained_glass):
+def reopened(server, results, stained_glass, dimensions):
     server.assert_state("all_facades_keep_their_items_paint_and_conduits_after_restart",
                         " ".join(bundle_state(*variant) for variant in variants(stained_glass)), results)
+    if dimensions:
+        server.assert_state("nether_facades_reopen_with_their_own_paint_and_conduits", "in minecraft:the_nether "
+                            + " ".join(bundle_state(*variant) for variant in nether_variants()), results, timeout=30)
     server.command(f"setblock {BARREL} minecraft:barrel")
     for slot, (x, facade, paint) in enumerate(variants(stained_glass)):
         server.command(f"loot replace block {BARREL} container.{slot * 2} 2 mine {x} 80 13 minecraft:diamond_pickaxe")
@@ -154,13 +193,16 @@ def main():
     parser.add_argument("--embeddium", action="store_true")
     parser.add_argument("--oculus", action="store_true", help="Use the stained-glass profile with Oculus installed")
     parser.add_argument("--active-shaders", action="store_true", help="Expect the facade test shader pack to be active with Oculus")
+    parser.add_argument("--dimensions", action="store_true", help="Use separate stained-glass fixtures in the Overworld and Nether")
     parser.add_argument("--stained-glass", action="store_true")
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a directory name")
     if args.active_shaders and not args.oculus:
         parser.error("--active-shaders requires --oculus")
-    args.stained_glass = args.stained_glass or args.oculus
+    if args.dimensions and args.oculus:
+        parser.error("--dimensions accepts the Forge or Embeddium renderer")
+    args.stained_glass = args.stained_glass or args.oculus or args.dimensions
 
     directory = ROOT / "build/port-runtime" / args.name
     prepare_profile(args, directory, args.jar)
@@ -169,10 +211,13 @@ def main():
     try:
         def fresh(server, results):
             produce(server, results, args.stained_glass)
+            if args.dimensions:
+                prepare_nether(server, results)
             exercise_client(args, server, report)
 
         run_stage(args, directory, report, "fresh", fresh)
-        run_stage(args, directory, report, "reopened", lambda server, results: reopened(server, results, args.stained_glass))
+        run_stage(args, directory, report, "reopened", lambda server, results:
+                  reopened(server, results, args.stained_glass, args.dimensions))
         report["passed"] = True
     finally:
         path = directory / "facade-results.json"
