@@ -47,6 +47,7 @@ public final class ClientSmoke {
             case "obelisk-carry" -> new ClientObeliskCarrySmoke();
             case "farming-station" -> new ClientFarmingStationSmoke();
             case "painting-machine" -> new ClientPaintingMachineSmoke();
+            case "legacy-painting" -> new ClientLegacyPaintingSmoke();
             case "painted-slabs" -> new ClientPaintedSlabSmoke();
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "natural-spawns" -> new ClientNaturalSpawnSmoke();

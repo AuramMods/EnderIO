@@ -47,11 +47,12 @@ public final class Forge6MachineItemData {
         stack.addTagElement(BlockItem.BLOCK_ENTITY_TAG, remaining);
     }
 
-    public static void restoreFluidMachineItem(ItemStack stack) {
+    public static void restoreMachineItem(ItemStack stack, boolean storesEnergy) {
         var saved = BlockItem.getBlockEntityData(stack);
         if (saved == null) return;
         var remaining = saved.copy();
         restoreCarriedProperties(stack, remaining);
+        if (storesEnergy) restoreCarriedEnergy(stack, remaining);
         if (EIODataComponents.ITEM_FLUID_CONTENT.has(stack)) remaining.remove(CoreNBTKeys.FLUID);
         if (!remaining.equals(saved)) {
             if (remaining.isEmpty()) stack.removeTagKey(BlockItem.BLOCK_ENTITY_TAG);

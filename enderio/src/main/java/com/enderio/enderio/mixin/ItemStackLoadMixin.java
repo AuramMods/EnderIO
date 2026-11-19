@@ -4,6 +4,8 @@ import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.content.broken_spawner.BrokenSpawnerItem;
 import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
 import com.enderio.enderio.content.filters.soul.EnderSoulFilterItem;
+import com.enderio.enderio.content.paint.PaintUtils;
+import com.enderio.enderio.content.paint.item.PaintedBlockItem;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.foundation.io.Forge6MachineItemData;
 import com.enderio.enderio.foundation.soul.Forge6SoulData;
@@ -28,8 +30,8 @@ public abstract class ItemStackLoadMixin {
             Forge6SoulData.restoreItem(stack, soulMachine);
             return;
         }
-        if (id.equals("enderio:xp_obelisk")) {
-            Forge6MachineItemData.restoreFluidMachineItem(stack);
+        if (id.equals("enderio:painting_machine") || id.equals("enderio:xp_obelisk")) {
+            Forge6MachineItemData.restoreMachineItem(stack, id.equals("enderio:painting_machine"));
             return;
         }
         if (id.equals("enderio:aversion_obelisk")) {
@@ -38,6 +40,10 @@ public abstract class ItemStackLoadMixin {
         }
         if (stack.getItem() instanceof EnderSoulFilterItem) {
             Forge6SoulData.restoreFilterItem(stack);
+            return;
+        }
+        if (stack.getItem() instanceof PaintedBlockItem) {
+            PaintUtils.restoreLegacyItemPaint(stack);
             return;
         }
         var type = Forge6ConduitData.itemConduitId(id);

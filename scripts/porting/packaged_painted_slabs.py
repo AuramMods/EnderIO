@@ -140,14 +140,15 @@ def main():
         shutil.copytree(legacy / WORLD, port / WORLD)
 
         def converted(server, results):
-            server.assert_state("copied_save_keeps_the_block_and_both_legacy_items", f"{mixed(SOURCE)} {old_loot()}", results)
+            server.assert_state("copied_save_keeps_the_block_and_imports_both_legacy_items",
+                                f"{mixed(SOURCE)} {new_loot(0)} unless data block {BARREL} Items[].tag.BlockEntityTag", results)
             extract(server, SOURCE, 2)
             server.assert_state("converted_slab_loot_writes_both_typed_colors", new_loot(2), results)
             exercise_client(args, server, report)
 
         def reopened(server, results):
             server.assert_state("all_three_mixed_slabs_and_all_loot_survive_restart",
-                                f"{mixed(SOURCE)} {mixed(OLD)} {mixed(NEW)} {old_loot()} "
+                                f"{mixed(SOURCE)} {mixed(OLD)} {mixed(NEW)} {new_loot(0)} "
                                 f"{new_loot(2)} {new_loot(4)} {new_loot(6)}", results)
 
         run_stage(args, port, report, "converted", converted)

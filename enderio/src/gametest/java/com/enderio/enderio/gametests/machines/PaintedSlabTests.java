@@ -66,6 +66,28 @@ public class PaintedSlabTests {
     }
 
     @GameTest
+    public static void loadedLegacyPaintStacksWithModernPaintAndRetainsOtherTags(GameplayTest test) {
+        test.registerGameTestTemplate(PaintedSlabTests::fixture);
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            for (var key : List.of(EIONBTKeys.PAINT, EIONBTKeys.PAINT_2)) {
+                var legacy = historical(key, "minecraft:diamond_block");
+                legacy.setCount(3);
+                var migrated = ItemStack.of(legacy.save(new CompoundTag()));
+                helper.assertValueEqual(migrated.getCount(), 3, "legacy paint import preserves the item count");
+                helper.assertTrue(ItemStack.isSameItemSameTags(migrated, painted(Blocks.DIAMOND_BLOCK)),
+                    "legacy and modern slabs with the same paint can stack");
+
+                BlockItem.getBlockEntityData(legacy).putString("OtherData", "keep");
+                migrated = ItemStack.of(legacy.save(new CompoundTag()));
+                helper.assertValueEqual(BlockItem.getBlockEntityData(migrated).getString("OtherData"), "keep",
+                    "unrelated block entity data remains on the carried item");
+                helper.assertTrue(!BlockItem.getBlockEntityData(migrated).contains(key), "the migrated paint key is removed");
+            }
+            helper.startSequence().thenSucceed();
+        });
+    }
+
+    @GameTest
     public static void missingPreviousPaintDoesNotChangeWhichHalfWasAdded(GameplayTest test) {
         test.registerGameTestTemplate(PaintedSlabTests::fixture);
         test.onGameTest(EnderGameTestHelper.class, helper -> {

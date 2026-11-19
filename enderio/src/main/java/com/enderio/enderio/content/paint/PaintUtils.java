@@ -41,7 +41,40 @@ public class PaintUtils {
 
         // Forge 6 block loot used the half's stored key on each separate slab item.
         String key = legacyTag.contains(EIONBTKeys.PAINT, Tag.TAG_STRING) ? EIONBTKeys.PAINT : EIONBTKeys.PAINT_2;
-        var id = ResourceLocation.tryParse(legacyTag.getString(key));
+        return readLegacyPaint(legacyTag.getString(key));
+    }
+
+    public static void restoreLegacyItemPaint(ItemStack stack) {
+        var tag = BlockItem.getBlockEntityData(stack);
+        if (tag == null || BlockPaintData.ITEM_DATA.has(stack)) {
+            return;
+        }
+
+        boolean primary = tag.contains(EIONBTKeys.PAINT, Tag.TAG_STRING);
+        boolean secondary = tag.contains(EIONBTKeys.PAINT_2, Tag.TAG_STRING);
+        if (primary == secondary) {
+            return;
+        }
+
+        String key = primary ? EIONBTKeys.PAINT : EIONBTKeys.PAINT_2;
+        var paint = readLegacyPaint(tag.getString(key));
+        if (paint == null) {
+            return;
+        }
+
+        var remaining = tag.copy();
+        remaining.remove(key);
+        if (remaining.isEmpty()) {
+            stack.removeTagKey(BlockItem.BLOCK_ENTITY_TAG);
+        } else {
+            stack.addTagElement(BlockItem.BLOCK_ENTITY_TAG, remaining);
+        }
+        BlockPaintData.ITEM_DATA.set(stack, paint);
+    }
+
+    @Nullable
+    private static BlockPaintData readLegacyPaint(String value) {
+        var id = ResourceLocation.tryParse(value);
         if (id == null) {
             return null;
         }
