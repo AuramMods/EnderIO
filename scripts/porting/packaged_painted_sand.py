@@ -47,8 +47,7 @@ def finished_machine():
             f"unless data block {MACHINE} Items.Items[{{Slot:1}}] unless data block {MACHINE} Items.Items[{{Slot:3}}]")
 
 
-def setup(server, results):
-    load(server, results, "both_falling_sand_chunks_are_loaded")
+def build_scene(server):
     server.command("gamerule doMobSpawning false")
     server.command("gamerule doDaylightCycle false")
     server.command("gamerule spawnRadius 0")
@@ -59,6 +58,11 @@ def setup(server, results):
     server.command("setworldspawn 1804 80 6")
     for x in (LAND, DROP):
         server.command(f"setblock {x} 87 8 minecraft:stone_bricks")
+
+
+def setup(server, results):
+    load(server, results, "both_falling_sand_chunks_are_loaded")
+    build_scene(server)
     server.command(f"setblock {DROP} 80 8 minecraft:torch")
     server.command(f"setblock {MACHINE} enderio:painting_machine[facing=south]")
     inputs = [CAPACITOR, '{Slot:1,id:"minecraft:sand",Count:2}', palette("diamond_block")]

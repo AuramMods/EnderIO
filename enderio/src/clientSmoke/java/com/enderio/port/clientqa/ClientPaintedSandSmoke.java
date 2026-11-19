@@ -4,6 +4,7 @@ import com.enderio.enderio.client.content.machines.gui.screen.PaintingMachineScr
 import com.enderio.enderio.client.content.paint.PaintedSandRenderer;
 import com.enderio.enderio.content.paint.BlockPaintData;
 import com.enderio.enderio.content.paint.PaintedSandEntity;
+import com.enderio.enderio.content.paint.block.entity.SinglePaintedBlockEntity;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOEntities;
@@ -35,22 +36,26 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class ClientPaintedSandSmoke {
-    private enum Stage { TITLE, JOIN, OPEN, TAKE, TRANSFER, FIRST, SECOND, AIRBORNE, DONE }
+    private enum Stage { TITLE, JOIN, OPEN, TAKE, TRANSFER, FIRST, SECOND, AIRBORNE,
+        LEGACY_AIRBORNE, LEGACY_PLACE, LEGACY_PLACED, DONE }
 
     private static final BlockPos MACHINE = new BlockPos(1804, 80, 4);
     private static final BlockPos FIRST = new BlockPos(1804, 88, 8);
     private static final BlockPos SECOND = new BlockPos(1810, 88, 8);
     private static final BlockPaintData DIAMOND = BlockPaintData.of(Blocks.DIAMOND_BLOCK);
+    private static final BlockPaintData EMERALD = BlockPaintData.of(Blocks.EMERALD_BLOCK);
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final String address = System.getProperty("enderio.clientqa.server");
+    private final boolean legacy = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase"));
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
     private Stage stage = Stage.TITLE;
     private long titleAt;
     private int airborneTick = -1;
+    private int placedTick = -1;
     private int heldSlot;
 
     ClientPaintedSandSmoke() {
@@ -80,7 +85,7 @@ final class ClientPaintedSandSmoke {
                     check("dedicated_survival_tcp", !minecraft.player.isCreative() && !minecraft.player.isSpectator()
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     signal("connected");
-                    stage = Stage.OPEN;
+                    stage = legacy ? Stage.LEGACY_AIRBORNE : Stage.OPEN;
                 }
                 case OPEN -> {
                     if (!ready("server-menu") || !positioned(MACHINE, 2.5)) return;
@@ -91,7 +96,7 @@ final class ClientPaintedSandSmoke {
                 case TAKE -> {
                     if (!(minecraft.screen instanceof PaintingMachineScreen screen)) return;
                     var menu = screen.getMenu();
-                    if (!paintedSand(menu.getSlot(3).getItem(), 2) || menu.getEnergyStorage() == null) return;
+                    if (!paintedSand(menu.getSlot(3).getItem(), 2, DIAMOND) || menu.getEnergyStorage() == null) return;
                     check("menu_syncs_two_paid_outputs_and_the_reusable_palette", menu.getEnergyStorage().energyStored() == 0
                         && menu.isCapacitorInstalled() && !menu.getSlot(1).hasItem()
                         && menu.getSlot(2).getItem().is(Items.DIAMOND_BLOCK) && menu.getSlot(2).getItem().getCount() == 1);
@@ -102,7 +107,7 @@ final class ClientPaintedSandSmoke {
                 case TRANSFER -> {
                     if (!(minecraft.screen instanceof PaintingMachineScreen screen) || screen.getMenu().getSlot(3).hasItem()) return;
                     for (int slot = 0; slot < 9; slot++) {
-                        if (!paintedSand(minecraft.player.getInventory().getItem(slot), 2)) continue;
+                        if (!paintedSand(minecraft.player.getInventory().getItem(slot), 2, DIAMOND)) continue;
                         heldSlot = slot;
                         check("quick_move_carries_both_typed_sand_items", true);
                         minecraft.player.closeContainer();
@@ -113,35 +118,45 @@ final class ClientPaintedSandSmoke {
                 }
                 case FIRST -> {
                     if (!ready("server-first") || !positioned(FIRST, 3.5)) return;
-                    place(FIRST, "survival_places_the_first_sand_block", 2);
+                    place(FIRST, "survival_places_the_first_sand_block", 2, DIAMOND);
                     signal("placed-first");
                     stage = Stage.SECOND;
                 }
                 case SECOND -> {
                     if (!ready("server-second") || !positioned(SECOND, 3.5)) return;
-                    place(SECOND, "survival_places_the_second_sand_block", 1);
+                    place(SECOND, "survival_places_the_second_sand_block", 1, DIAMOND);
                     signal("placed-second");
                     stage = Stage.AIRBORNE;
                 }
                 case AIRBORNE -> {
-                    if (!ready("server-airborne") || !positioned(FIRST, 3.5)) return;
-                    var bounds = new AABB(FIRST).expandTowards(0, -5, 0);
-                    var entities = minecraft.level.getEntitiesOfClass(PaintedSandEntity.class, bounds);
-                    if (entities.isEmpty()) return;
-                    if (airborneTick == -1) airborneTick = minecraft.player.tickCount + 12;
-                    if (minecraft.player.tickCount < airborneTick) return;
-                    var sand = entities.get(0);
-                    check("forge_spawn_packet_syncs_falling_block_state_and_diamond_paint", entities.size() == 1
-                        && sand.getType() == EIOEntities.PAINTED_SAND.get() && sand.getPaint() == Blocks.DIAMOND_BLOCK
-                        && sand.getBlockState().is(EIOBlocks.PAINTED_SAND.get()) && minecraft.level.isEmptyBlock(FIRST));
-                    check("painted_sand_uses_its_registered_entity_renderer",
-                        minecraft.getEntityRenderDispatcher().getRenderer(sand) instanceof PaintedSandRenderer);
+                    if (!captureAirborne("painted-sand-airborne")) return;
                     check("both_placements_consume_the_original_inventory", minecraft.player.getMainHandItem().isEmpty());
-                    var frame = capture("painted-sand-airborne");
-                    int pixels = diamondPixels();
-                    frame.put("diamondPixels", pixels);
-                    check("airborne_frame_shows_the_diamond_surface", pixels > 300);
                     signal("rendered");
+                    finish(null);
+                }
+                case LEGACY_AIRBORNE -> {
+                    if (!captureAirborne("painted-sand-legacy-airborne")) return;
+                    signal("legacy-airborne");
+                    stage = Stage.LEGACY_PLACE;
+                }
+                case LEGACY_PLACE -> {
+                    if (!ready("server-place-legacy") || !positioned(SECOND, 3.5)
+                        || minecraft.player.getInventory().getItem(0).isEmpty()) return;
+                    heldSlot = 0;
+                    place(SECOND, "survival_replants_the_original_emerald_drop", 1, EMERALD);
+                    signal("legacy-placed");
+                    stage = Stage.LEGACY_PLACED;
+                }
+                case LEGACY_PLACED -> {
+                    if (!ready("server-legacy-verified") || !positioned(SECOND, 3.5)
+                        || !(minecraft.level.getBlockEntity(SECOND) instanceof SinglePaintedBlockEntity block)) return;
+                    if (placedTick == -1) placedTick = minecraft.player.tickCount + 12;
+                    if (minecraft.player.tickCount < placedTick) return;
+                    check("legacy_drop_becomes_an_emerald_painted_block_on_the_client",
+                        minecraft.player.getMainHandItem().isEmpty() && block.getBlockState().is(EIOBlocks.PAINTED_SAND.get())
+                            && block.getPrimaryPaint().orElse(null) == Blocks.EMERALD_BLOCK
+                            && block.getModelData().get(SinglePaintedBlockEntity.PAINT) == Blocks.EMERALD_BLOCK);
+                    capture("painted-sand-legacy-replanted");
                     finish(null);
                 }
                 default -> { }
@@ -152,17 +167,37 @@ final class ClientPaintedSandSmoke {
         }
     }
 
-    private void place(BlockPos pos, String name, int count) {
+    private boolean captureAirborne(String image) throws IOException {
+        if (!ready("server-airborne") || !positioned(FIRST, 3.5)) return false;
+        var bounds = new AABB(FIRST).expandTowards(0, -5, 0);
+        var entities = minecraft.level.getEntitiesOfClass(PaintedSandEntity.class, bounds);
+        if (entities.isEmpty()) return false;
+        if (airborneTick == -1) airborneTick = minecraft.player.tickCount + 12;
+        if (minecraft.player.tickCount < airborneTick) return false;
+        var sand = entities.get(0);
+        check("forge_spawn_packet_syncs_falling_block_state_and_diamond_paint", entities.size() == 1
+            && sand.getType() == EIOEntities.PAINTED_SAND.get() && sand.getPaint() == Blocks.DIAMOND_BLOCK
+            && sand.getBlockState().is(EIOBlocks.PAINTED_SAND.get()) && minecraft.level.isEmptyBlock(FIRST));
+        check("painted_sand_uses_its_registered_entity_renderer",
+            minecraft.getEntityRenderDispatcher().getRenderer(sand) instanceof PaintedSandRenderer);
+        var frame = capture(image);
+        int pixels = diamondPixels();
+        frame.put("diamondPixels", pixels);
+        check("airborne_frame_shows_the_diamond_surface", pixels > 300);
+        return true;
+    }
+
+    private void place(BlockPos pos, String name, int count, BlockPaintData paint) {
         var inventory = minecraft.player.getInventory();
         inventory.selected = heldSlot;
         var hit = new BlockHitResult(Vec3.atBottomCenterOf(pos), Direction.UP, pos.below(), false);
-        check(name, paintedSand(inventory.getSelected(), count)
+        check(name, paintedSand(inventory.getSelected(), count, paint)
             && minecraft.gameMode.useItemOn(minecraft.player, InteractionHand.MAIN_HAND, hit).consumesAction());
     }
 
-    private static boolean paintedSand(ItemStack stack, int count) {
+    private static boolean paintedSand(ItemStack stack, int count, BlockPaintData paint) {
         return stack.is(EIOBlocks.PAINTED_SAND.get().asItem()) && stack.getCount() == count
-            && DIAMOND.equals(EIODataComponents.BLOCK_PAINT.get(stack));
+            && paint.equals(EIODataComponents.BLOCK_PAINT.get(stack));
     }
 
     private int diamondPixels() {
