@@ -31,13 +31,17 @@ public class RedstoneConduitTicker extends ConduitTickerBase<RedstoneConduit> {
             for (var extractConnection : network.extractConnections(channel)) {
                 int signal;
 
-                var redstoneExtractFilter = extractConnection.inventory()
-                    .getStackInSlot(RedstoneConduit.EXTRACT_FILTER_SLOT)
-                    .getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER).orElse(null);
+                var filterStack = extractConnection.inventory().getStackInSlot(RedstoneConduit.EXTRACT_FILTER_SLOT);
+                var redstoneExtractFilter = filterStack.getCapability(EnderIOCapabilities.REDSTONE_EXTRACT_FILTER).orElse(null);
 
                 if (redstoneExtractFilter != null) {
+                    var previousTag = filterStack.getTag();
                     signal = redstoneExtractFilter.getInputSignal(level, extractConnection.connectedBlockPos(),
                         extractConnection.connectionSide());
+                    // ItemDataKey replaces the tag when a timer advances, without changing the inventory slot.
+                    if (filterStack.getTag() != previousTag) {
+                        level.blockEntityChanged(extractConnection.node().pos());
+                    }
                 } else {
                     signal = level.getSignal(extractConnection.connectedBlockPos(), extractConnection.connectionSide());
                 }
@@ -48,8 +52,24 @@ public class RedstoneConduitTicker extends ConduitTickerBase<RedstoneConduit> {
             }
         }
 
+        // Advance stateful filters using one complete sample, before any receiver queries their output.
+        boolean outputsChanged = false;
+        for (var insertConnection : network.insertConnections()) {
+            var filterStack = insertConnection.inventory().getStackInSlot(RedstoneConduit.INSERT_FILTER_SLOT);
+            var filter = filterStack.getCapability(EnderIOCapabilities.REDSTONE_INSERT_FILTER).orElse(null);
+            if (filter != null) {
+                var before = filterStack.getTag();
+                var config = insertConnection.connectionConfig(RedstoneConduitConnectionConfig.TYPE);
+                filter.updateOutput(context, config.insertChannel());
+                if (filterStack.getTag() != before) {
+                    level.blockEntityChanged(insertConnection.node().pos());
+                    outputsChanged = true;
+                }
+            }
+        }
+
         // Bundled receivers and filters can observe channels other than their configured output channel.
-        if (context.isNew() || context.signalsChanged()) {
+        if (context.isNew() || context.signalsChanged() || outputsChanged) {
             for (var insertConnection : network.insertConnections()) {
                 level.updateNeighborsAt(insertConnection.node().pos(), EIOBlocks.CONDUIT_BUNDLE.get());
 

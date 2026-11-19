@@ -237,12 +237,12 @@ Obtain/craft where applicable, render/tooltip, use, copy/stack, transfer and per
 | `AND_FILTER` | [EIOItems:268](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `NOR_FILTER` | [EIOItems:269](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 | `NAND_FILTER` | [EIOItems:270](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `XOR_FILTER` | [EIOItems:271](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `XOR_FILTER` | [EIOItems:271](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. A Forge 6.2 stack keeps its blue and yellow channels and marker in a copied packaged world. [Cycle 119](cycle-119.md) |
 | `XNOR_FILTER` | [EIOItems:272](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `TLATCH_FILTER` | [EIOItems:273](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `COUNT_FILTER` | [EIOItems:274](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `TLATCH_FILTER` | [EIOItems:273](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. A cross-chunk route toggles a vanilla lamp on rising edges and holds it steady on falling edges. A held-high input preserves the output over restart. Releasing and raising the input again switches off the lamp. Forge 6.2 loose filter state converts with both values intact. [Cycle 119](cycle-119.md) |
+| `COUNT_FILTER` | [EIOItems:274](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. The installed filter counts pulses from an actual timer on a cross-chunk route and continues from its saved count after restart. A Forge 6.2 stack keeps its red channel, seven of twelve edges and rearmed state. [Cycle 119](cycle-119.md) |
 | `SENSOR_FILTER` | [EIOItems:275](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
-| `TIMER_FILTER` | [EIOItems:276](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
+| `TIMER_FILTER` | [EIOItems:276](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Partial. The native stack codec preserves an eight-tick timer halfway through its period. A packaged timer emits distinct pulses across a chunk edge. Forge 6.2 keeps a loose timer's six of eighteen elapsed ticks. [Cycle 119](cycle-119.md) |
 | `CREATIVE_ICON` | [EIOItems:282](../../../enderio/src/main/java/com/enderio/enderio/init/EIOItems.java) | Pending |
 
 ## EIOConduits
@@ -254,7 +254,7 @@ Connect, transfer, configure/filter, split/merge and unload/reload without loss 
 | `ENERGY` | [EIOConduits:11](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
 | `ENERGETIC_ENERGY` | [EIOConduits:13](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
 | `VIBRANT_ENERGY` | [EIOConduits:15](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
-| `REDSTONE` | [EIOConduits:17](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Pending |
+| `REDSTONE` | [EIOConduits:17](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Partial. A packaged route clears disconnected signals after removing a source or splitting the bridge, with or without CC:Tweaked. Cross-chunk toggle and timer routes drive a real lamp and counting filter. [Cycle 094](cycle-094.md), [cycle 119](cycle-119.md) |
 | `FLUID` | [EIOConduits:19](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Partial. Native tanks transfer 1,000 mB per five-tick update. Partial destinations share that source budget. Mixed paths, filters and channel/redstone changes pass. Rejected execution fluid survives retry, native callback and codec recovery, item drops and placement, waterlogging and native destruction. Packaged TCP uses both LaserIO filter slots and verifies type-only allowance, exact tagged-fluid denial and cross-chunk routing across restart. [Cycle 037](cycle-037.md), [cycle 042](cycle-042.md), [cycle 102](cycle-102.md) |
 | `ENERGETIC_FLUID` | [EIOConduits:21](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Partial: pressurized tier transfers 5,000 mB per five-tick native update with exact source/destination accounting. Native upgrade into this tier preserves existing and carried rejected-fluid resources without duplicating the returned lower-tier item. Complete feature/disk-lifecycle/client evidence remains pending ([cycle 037](cycle-037.md), [cycle 042](cycle-042.md)) |
 | `VIBRANT_FLUID` | [EIOConduits:23](../../../enderio/src/main/java/com/enderio/enderio/init/EIOConduits.java) | Partial: ender tier transfers all 32,000 mB available in the actual test tank (below its 40,000 mB update limit); mixed basic-tier path limits transfer to 1,000 mB. Complete feature/lifecycle/client evidence remains pending ([cycle 037](cycle-037.md)) |
@@ -331,6 +331,7 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | Withering and Repellent | A Forge 6 sword applies Wither I on a native melee hit, and the original bow supplies Withering on a player-owned arrow impact while held. An offhand-only sword leaves the target unwithered. The original Repellent IV chestplate teleports a zombie after a melee hit within the established configuration bounds. The saved gear and both effects survive restart. | [Cycle 111](cycle-111.md) |
 | Shimmer and XP Boost | The migrated chestplate renders with glint and resolves the native Shimmer tooltip. The original hoe yields two XP from sculk, the combined Silk Touch control yields the block and zero XP, and the original sword yields eight XP from a zombie. An arrow fired by the original bow retains its launch rank across restart and awards eleven XP with an ordinary sword held. The sampled 6.2.18-beta world converts with zero registry errors. | [Cycle 112](cycle-112.md) |
 | Staff of Levity | Two Forge 6 Staff stacks keep their exact charge, tagged Vapor and toggle state in the copied world. The active Staff resumes from inventory. The disabled Staff can levitate after crouch-use and retains the remaining tagged fuel when its charge falls below the server cost. | [Cycle 114](cycle-114.md) |
+| Redstone conduit filters | A copied Forge 6.2.18-beta inventory preserves XOR input colors, counting channel and progress, toggle output and edge state, and timer period and phase. | [Cycle 119](cycle-119.md) |
 
 ## Shared state and presentation
 

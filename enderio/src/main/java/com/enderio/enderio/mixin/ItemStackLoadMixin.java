@@ -3,6 +3,7 @@ package com.enderio.enderio.mixin;
 import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.content.broken_spawner.BrokenSpawnerItem;
 import com.enderio.enderio.content.conduits.legacy.Forge6ConduitData;
+import com.enderio.enderio.content.filters.redstone.RedstoneFilterItem;
 import com.enderio.enderio.content.filters.soul.EnderSoulFilterItem;
 import com.enderio.enderio.content.paint.PaintUtils;
 import com.enderio.enderio.content.paint.item.PaintedBlockItem;
@@ -45,6 +46,10 @@ public abstract class ItemStackLoadMixin {
         }
         if (stack.getItem() instanceof EnderSoulFilterItem) {
             Forge6SoulData.restoreFilterItem(stack);
+            return;
+        }
+        if (stack.getItem() instanceof RedstoneFilterItem filter) {
+            filter.restoreForge6State(stack);
             return;
         }
         if (stack.getItem() instanceof PaintedBlockItem) {

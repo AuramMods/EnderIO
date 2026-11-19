@@ -2,6 +2,7 @@ com.enderio.enderio.gametests.conduits.BasicConduitTests
 com.enderio.enderio.gametests.conduits.ConduitBreakTests
 com.enderio.enderio.gametests.conduits.ConduitBundleImportTests
 com.enderio.enderio.gametests.conduits.LegacyConduitItemTests
+com.enderio.enderio.gametests.conduits.RedstoneFilterStateTests
 com.enderio.enderio.gametests.conduits.energy.EnergyConduitTests
 com.enderio.enderio.gametests.conduits.fluid.FluidConduitTests
 com.enderio.enderio.gametests.conduits.fluid.FluidConduitRateTests

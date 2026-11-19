@@ -21,17 +21,18 @@ public class RedstoneTLatchFilter implements RedstoneOutputFilter {
 
     @Override
     public int getOutputSignal(RedstoneOutputFilterContext context, DyeColor control) {
-        boolean output = isActive();
-        if (context.isActive(control) && isDeactivated()) {
-            output = !output;
-            setState(output, false);
-        }
+        return isActive() ? 15 : 0;
+    }
 
-        if (!context.isActive(control) && !isDeactivated()) {
-            setState(output, true);
+    @Override
+    public void updateOutput(RedstoneOutputFilterContext context, DyeColor control) {
+        var state = EIODataComponents.REDSTONE_TLATCH_FILTER.get(stack);
+        boolean activeInput = context.isActive(control);
+        if (activeInput && state.deactivated()) {
+            setState(!state.active(), false);
+        } else if (!activeInput && !state.deactivated()) {
+            setState(state.active(), true);
         }
-
-        return output ? 15 : 0;
     }
 
     public boolean isActive() {
@@ -54,7 +55,8 @@ public class RedstoneTLatchFilter implements RedstoneOutputFilter {
 
     public record Component(boolean active, boolean deactivated) {
         public static final Codec<Component> CODEC = RecordCodecBuilder.create(instance -> instance
-                .group(Codec.BOOL.fieldOf("deactivated").forGetter(Component::active),
+                // Older port builds saved only the input state. Start their missing output low.
+                .group(Codec.BOOL.optionalFieldOf("active", false).forGetter(Component::active),
                         Codec.BOOL.fieldOf("deactivated").forGetter(Component::deactivated))
                 .apply(instance, Component::new));
 

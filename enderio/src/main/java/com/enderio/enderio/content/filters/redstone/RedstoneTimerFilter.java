@@ -24,14 +24,13 @@ public class RedstoneTimerFilter implements RedstoneInputFilter {
     @Override
     public int getInputSignal(Level level, BlockPos pos, Direction direction) {
         int ticks = getTicks();
-        ticks += 2; //TODO Conduits tick every 2 ticks, so make this clear in the gui
         int maxTicks = getMaxTicks();
-        if (ticks >= maxTicks) {
-            ticks = 0;
-            setTimer(ticks, maxTicks);
+        // The redstone network runs every two game ticks.
+        if (ticks >= maxTicks - 2) {
+            setTimer(0, maxTicks);
             return 15;
         }
-        setTimer(ticks, maxTicks);
+        setTimer(ticks + 2, maxTicks);
         return 0;
     }
 
@@ -59,9 +58,10 @@ public class RedstoneTimerFilter implements RedstoneInputFilter {
 
     public record Component(int ticks, int maxTicks) {
         public static final Codec<Component> CODEC = RecordCodecBuilder.create(instance ->
-            instance.group(ExtraCodecs.POSITIVE_INT.fieldOf("ticks").forGetter(r -> r.maxTicks),
-                    ExtraCodecs.POSITIVE_INT.fieldOf("maxTicks").forGetter(r -> r.maxTicks))
-                .apply(instance, Component::new)
+            instance.group(ExtraCodecs.NON_NEGATIVE_INT.fieldOf("ticks").forGetter(Component::ticks),
+                    ExtraCodecs.POSITIVE_INT.fieldOf("maxTicks").forGetter(Component::maxTicks))
+                // Older port builds encoded maxTicks as the phase. That elapsed time is unrecoverable.
+                .apply(instance, (ticks, maxTicks) -> new Component(ticks.equals(maxTicks) ? 0 : ticks, maxTicks))
         );
 
         public static final PacketCodec<Component> STREAM_CODEC = PacketCodec.composite(

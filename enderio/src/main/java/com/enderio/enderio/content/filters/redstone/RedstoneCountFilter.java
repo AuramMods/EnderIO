@@ -23,23 +23,25 @@ public class RedstoneCountFilter implements RedstoneOutputFilter {
 
     @Override
     public int getOutputSignal(RedstoneOutputFilterContext context, DyeColor control) {
-        DyeColor channel = getChannel();
-        int maxCount = getMaxCount();
-        boolean deactivated = isDeactivated();
-        int count = getCount();
-        if (context.isActive(channel) && deactivated) {
-            count++;
-            deactivated = false;
+        var state = EIODataComponents.REDSTONE_COUNT_FILTER.get(stack);
+        return state.count() == state.maxCount() ? 15 : 0;
+    }
+
+    @Override
+    public void updateOutput(RedstoneOutputFilterContext context, DyeColor control) {
+        var state = EIODataComponents.REDSTONE_COUNT_FILTER.get(stack);
+        boolean deactivated = !context.isActive(state.channel1());
+        int count = state.count();
+        if (!deactivated && state.deactivated()) {
+            count = count >= state.maxCount() ? 1 : count + 1;
         }
-        if (!context.isActive(channel)) {
-            deactivated = true;
-        }
-        if (count > maxCount) {
+        if (count > state.maxCount()) {
             count = 1;
         }
-        setCount(count);
-        setDeactivated(deactivated);
-        return count == maxCount ? 15 : 0;
+        if (count != state.count() || deactivated != state.deactivated()) {
+            EIODataComponents.REDSTONE_COUNT_FILTER.set(stack,
+                new Component(state.channel1(), state.maxCount(), count, deactivated));
+        }
     }
 
     public DyeColor getChannel() {
