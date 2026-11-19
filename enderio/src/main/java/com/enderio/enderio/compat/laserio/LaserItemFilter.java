@@ -1,8 +1,7 @@
 package com.enderio.enderio.compat.laserio;
 
-import com.direwolf20.laserio.common.containers.FilterBasicContainer;
-import com.direwolf20.laserio.common.containers.customhandler.FilterBasicHandler;
 import com.direwolf20.laserio.common.items.filters.BaseFilter;
+import com.direwolf20.laserio.common.items.filters.FilterBasic;
 import com.enderio.enderio.api.filter.ItemFilter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
@@ -23,10 +22,13 @@ public class LaserItemFilter implements ItemFilter {
     @Override
     public ItemStack test(@Nullable IItemHandler target, ItemStack stack) {
         ItemStack container = this.container.get();
+        if (container.isEmpty()) {
+            return stack;
+        }
         final boolean isAllowList = BaseFilter.getAllowList(container);
         final boolean shouldCompareNbt = BaseFilter.getCompareNBT(container);
 
-        FilterBasicHandler handler = new FilterBasicHandler(FilterBasicContainer.SLOTS, container);
+        var handler = FilterBasic.getInventory(container);
         for (int i = 0; i < handler.getSlots(); i++) {
             ItemStack match = handler.getStackInSlot(i);
             if (!match.isEmpty()) {
