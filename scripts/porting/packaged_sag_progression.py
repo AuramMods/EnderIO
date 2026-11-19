@@ -70,11 +70,15 @@ def load(server, results):
     server.assert_state("both_sag_mills_and_workbench_are_loaded", f"if loaded {mill(STOCK_X)} if loaded 3074 80 8", results)
 
 
-def setup(server, results, x, item, balls, coal):
+def prepare_mill(server, x):
     server.command(f'setblock {mill(x)} enderio:sag_mill[facing=south]{{IOConfig:{{Modes:{{up:"pull",down:"push"}}}},'
                    'Items:{Items:[{Slot:6,id:"enderio:basic_capacitor",Count:1}]}}')
     server.command(f"setblock {feed(x)} minecraft:hopper[facing=down]")
     server.command(f"setblock {output(x)} minecraft:hopper[facing=down]")
+
+
+def setup(server, results, x, item, balls, coal):
+    prepare_mill(server, x)
     inputs(server, x, "minecraft:coal", coal)
     server.command(f"item replace block {feed(x)} container.1 with {item} {balls}")
     server.assert_state(f"native_hopper_inserts_coal_and_grinding_ball_{x}",
@@ -82,10 +86,10 @@ def setup(server, results, x, item, balls, coal):
                         f'{{Slot:5,id:"{item}",Count:{balls}}}]}}}} unless data block {feed(x)} Items[0]', results)
 
 
-def paused(x, cost, ball, wear):
+def paused(x, cost, ball, wear, *, paid=PAID):
     return (f'if block {mill(x)} enderio:sag_mill if data block {mill(x)} {{EnergyStored:0,GrindingBal:{ball},'
             f'GrindingBallDamage:{wear},Items:{{Items:[{{Slot:0,id:"minecraft:coal",Count:1}}]}},'
-            f'Task:{{RecipeId:"{COAL}",ProgressMade:{PAID},ProgressRequired:{cost},HasDeterminedOutputs:1b}}}}')
+            f'Task:{{RecipeId:"{COAL}",ProgressMade:{paid},ProgressRequired:{cost},HasDeterminedOutputs:1b}}}}')
 
 
 def archived_roll(server, report, name, x, min_count, max_count):

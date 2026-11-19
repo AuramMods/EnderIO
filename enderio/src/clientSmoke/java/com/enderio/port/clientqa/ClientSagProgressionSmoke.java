@@ -152,7 +152,7 @@ final class ClientSagProgressionSmoke {
         }
     }
 
-    private static boolean matches(SagMillMenu menu, GrindingBallData ball, int progress, int cost, int wear) {
+    static boolean matches(SagMillMenu menu, GrindingBallData ball, int progress, int cost, int wear) {
         float remaining = ball.isIdentity() ? 0 : 1 - wear / (float) ball.durability();
         return menu.getGrindingBallData().equals(ball) && close(menu.getGrindingBallDamage(), remaining)
             && close(menu.getCraftingProgress(), progress / (float) cost) && menu.getEnergyStorage().getEnergyStored() == 0;
