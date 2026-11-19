@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -30,6 +31,7 @@ parser.add_argument("--scenario",
                              "levitation-progression", "vat-controls", "redstone-filters", "conduit-filters", "transfer-filter-menus",
                              "stock-filter-menus", "filter-progression", "filter-recovery",
                              "filter-wrench-editor", "filter-wrench-operator",
+                             "decorative-redstone",
                              "facade-seams", "facade-seams-embeddium", "facade-seams-mixed", "facade-seams-mixed-embeddium",
                              "facade-ctm-core", "facade-ctm-athena", "facade-ctm-embeddium",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
@@ -40,9 +42,12 @@ parser.add_argument("--server", default="127.0.0.1:25641")
 parser.add_argument("--multiplayer-phase", choices=("exercise", "verify"), default="exercise")
 parser.add_argument("--data-maps", action="store_true")
 parser.add_argument("--wrench-redstone", action="store_true")
+parser.add_argument("--redstone-layout", type=Path)
 args = parser.parse_args()
 output = args.output.resolve()
 output.mkdir(parents=True, exist_ok=False)
+if args.redstone_layout:
+    shutil.copyfile(args.redstone_layout, output / "layout.json")
 harness = json.loads((ROOT / "build/port-client-harness/harness.json").read_text())
 launch = json.loads(args.launch.read_text())
 arguments = launch["arguments"]

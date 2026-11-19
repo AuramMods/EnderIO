@@ -4,11 +4,12 @@
 import argparse
 import json
 from pathlib import Path
+import shutil
 import sys
 
 sys.dont_write_bytecode = True
 from packaged_server_smoke import ROOT, digest
-from packaged_spawners import prepare_profile, run_stage
+from packaged_spawners import WORLD, prepare_profile, run_stage
 
 
 LEVER_TIERS = ("five", "ten", "thirty", "sixty", "three_hundred")
@@ -55,7 +56,7 @@ def occupied_power(plate, item_signal):
     return 15 if "soularium" in plate else item_signal
 
 
-def exercise(server, results):
+def exercise(server, results, *, legacy=False):
     load(server, results, "initial")
     server.command("difficulty normal")
     server.command("gamerule doMobSpawning false")
@@ -79,7 +80,13 @@ def exercise(server, results):
         for _ in range(12 if signal in (2, 12) else 1):
             server.command(f'summon minecraft:item {x} 80 8.5 {{Tags:["{TRIGGER}"],NoGravity:1b,'
                            'PickupDelay:32767s,Item:{id:"minecraft:cobblestone",Count:1b}}')
-    verify_plates(server, results, "with_item_entities", lambda _, value: value)
+    def item_signal(plate, value):
+        # Forge 6.2 copies the vanilla stone sensitivity. The 1.21.1 baseline uses EVERYTHING.
+        if legacy and plate in ("silent_stone_pressure_plate", "silent_polished_blackstone_pressure_plate"):
+            return 0
+        return value
+
+    verify_plates(server, results, "with_item_entities", item_signal)
     for i, plate in enumerate(PLATES):
         if "soularium" not in plate:
             continue
@@ -89,7 +96,8 @@ def exercise(server, results):
             server.command(f"fill {x + dx} {base} {8 + dz} {x + dx} 82 {8 + dz} minecraft:stone")
         server.command(f'summon minecraft:zombie {x + 0.5} 81.25 8.5 {{Tags:["{TRIGGER}"],'
                        'Silent:1b,PersistenceRequired:1b}')
-    verify_plates(server, results, "with_persistent_triggers", occupied_power)
+    verify_plates(server, results, "with_persistent_triggers",
+                  lambda plate, value: occupied_power(plate, item_signal(plate, value)))
 
 
 def reopen(server, results):
@@ -107,6 +115,7 @@ def main():
     parser.add_argument("--port", required=True, type=int)
     parser.add_argument("--forge-server", required=True, type=Path)
     parser.add_argument("--jar", required=True, type=Path)
+    parser.add_argument("--legacy-jar", type=Path, help="Place the blocks in Forge 6.2 and reopen a copy with the port")
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be one directory name")
@@ -116,8 +125,16 @@ def main():
     report = {"passed": False, "jarSha256": digest(args.jar), "assertions": [], "servers": []}
     try:
         prepare_profile(args, directory, args.jar)
-        run_stage(args, directory, report, "placed", exercise)
-        run_stage(args, directory, report, "reopened", reopen)
+        if args.legacy_jar:
+            legacy = root / "legacy"
+            report["legacyJarSha256"] = digest(args.legacy_jar)
+            prepare_profile(args, legacy, args.legacy_jar)
+            run_stage(args, legacy, report, "legacy_placed", lambda server, results: exercise(server, results, legacy=True))
+            shutil.copytree(legacy / WORLD, directory / WORLD)
+            run_stage(args, directory, report, "converted", reopen)
+        else:
+            run_stage(args, directory, report, "placed", exercise)
+            run_stage(args, directory, report, "reopened", reopen)
         report["passed"] = True
     finally:
         (root / "decorative-redstone-results.json").write_text(json.dumps(report, indent=2) + "\n")

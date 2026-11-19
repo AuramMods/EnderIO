@@ -41,4 +41,4 @@ PY
 
 ## Remaining verification
 
-The release jar contains blockstate and inventory model JSON for all 26 variants. The client still needs to bake and render those models in a packaged profile. In-progress lever pulses across a dedicated restart and historical saves are separate from the verified runtime timing.
+[Cycle 131](cycle-131.md) verifies the packaged render states and saved lever pulses. It also opens a converted Forge 6.2 world containing all 26 variants.
