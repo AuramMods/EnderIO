@@ -37,9 +37,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class ClientFilterRecoverySmoke {
+    enum Mode {
+        BREAK, WRENCH_EDITOR, WRENCH_OPERATOR
+    }
+
     private enum Stage {
         TITLE, JOIN, OPEN, ORIGINAL, ORIGINAL_FILTER, BREAK, PICKUP, PLACE, PLACED, REOPEN, RESTORE, REINSTALLED,
-        RESTORED_FILTER, RETURN, CONFIRMED, DONE
+        RESTORED_FILTER, RETURN, OPERATOR_READY, WRENCH, WRENCHED, CONFIRMED, DONE
     }
 
     private static final BlockPos ENDPOINT = new BlockPos(3280, 80, 1);
@@ -52,14 +56,21 @@ final class ClientFilterRecoverySmoke {
     private final long started = System.nanoTime();
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
+    private final Mode mode;
     private Stage stage = Stage.TITLE;
     private long titleReady;
     private int brokenAt = -1;
+    private int crouchTick;
     private int recoveredConduitSlot;
     private boolean insertClicked;
     private ItemStack originalFilter = ItemStack.EMPTY;
 
     ClientFilterRecoverySmoke() {
+        this(Mode.BREAK);
+    }
+
+    ClientFilterRecoverySmoke(Mode mode) {
+        this.mode = mode;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -82,7 +93,32 @@ final class ClientFilterRecoverySmoke {
                     check("dedicated_survival_connection", !player.isCreative() && !player.isSpectator()
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     signal("connected");
-                    stage = Stage.OPEN;
+                    stage = mode == Mode.WRENCH_OPERATOR ? Stage.OPERATOR_READY : Stage.OPEN;
+                }
+                case OPERATOR_READY -> {
+                    if (!ready("wrench") || !player.getMainHandItem().is(EIOItems.YETA_WRENCH.get())) return;
+                    var bundle = bundle();
+                    if (bundle == null || itemConnectionHit(bundle) == null || !hasRedstone(bundle)) return;
+                    minecraft.options.keyShift.setDown(true);
+                    crouchTick = player.tickCount;
+                    stage = Stage.WRENCH;
+                }
+                case WRENCH -> {
+                    if (player.tickCount - crouchTick < 4 || !player.isSteppingCarefully()) return;
+                    var bundle = bundle();
+                    var hit = bundle == null ? null : itemConnectionHit(bundle);
+                    check("crouch_wrench_targets_the_item_part_of_the_mixed_bundle", hit != null && hasRedstone(bundle));
+                    var result = minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit);
+                    minecraft.options.keyShift.setDown(false);
+                    check("native_wrench_use_is_consumed", result.consumesAction());
+                    stage = Stage.WRENCHED;
+                }
+                case WRENCHED -> {
+                    var bundle = bundle();
+                    if (bundle == null || hasItem(bundle)) return;
+                    check("operator_receives_the_redstone_only_bundle_update", hasRedstone(bundle));
+                    signal("wrenched");
+                    stage = Stage.CONFIRMED;
                 }
                 case OPEN -> {
                     if (!ready("initial") || !nearEndpoint() || !openEndpoint()) return;
@@ -104,10 +140,17 @@ final class ClientFilterRecoverySmoke {
                     stage = Stage.BREAK;
                 }
                 case BREAK -> {
-                    if (!ready("broken") || !minecraft.level.getBlockState(ENDPOINT).isAir()) return;
+                    if (!ready("broken")) return;
+                    if (mode == Mode.WRENCH_EDITOR) {
+                        var bundle = bundle();
+                        if (bundle == null || hasItem(bundle)) return;
+                        check("editor_receives_the_redstone_only_bundle_update", hasRedstone(bundle));
+                    } else if (!minecraft.level.getBlockState(ENDPOINT).isAir()) {
+                        return;
+                    }
                     if (brokenAt == -1) brokenAt = player.tickCount;
                     if (minecraft.screen != null && player.tickCount - brokenAt < 50) return;
-                    check("native_destruction_closes_the_editor_while_the_player_stays_in_range",
+                    check("endpoint_removal_closes_the_editor_while_the_player_stays_in_range",
                         minecraft.screen == null && nearEndpoint());
                     signal("editor-closed");
                     stage = Stage.PICKUP;
@@ -133,13 +176,22 @@ final class ClientFilterRecoverySmoke {
                 case PLACE -> {
                     if (!ready("place")) return;
                     player.getInventory().selected = recoveredConduitSlot;
-                    minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
-                        new BlockHitResult(Vec3.atBottomCenterOf(ENDPOINT), Direction.UP, ENDPOINT.below(), false));
+                    var hit = new BlockHitResult(Vec3.atBottomCenterOf(ENDPOINT), Direction.UP, ENDPOINT.below(), false);
+                    if (mode == Mode.WRENCH_EDITOR) {
+                        var bundle = bundle();
+                        check("redstone_is_still_installed_before_adding_the_recovered_conduit",
+                            bundle != null && hasRedstone(bundle) && !hasItem(bundle));
+                        var redstone = bundle.getConduits().get(0);
+                        var box = bundle.getShape().getShapeFor(redstone).toAabbs().get(0);
+                        hit = new BlockHitResult(Vec3.atLowerCornerOf(ENDPOINT).add(box.getCenter()),
+                            Direction.SOUTH, ENDPOINT, false);
+                    }
+                    minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit);
                     stage = Stage.PLACED;
                 }
                 case PLACED -> {
-                    if (!(minecraft.level.getBlockEntity(ENDPOINT) instanceof ConduitBundleBlockEntity bundle)
-                        || bundle.getConduits().stream().noneMatch(h -> h.is(EIOConduits.ITEM))) return;
+                    var bundle = bundle();
+                    if (bundle == null || !hasItem(bundle)) return;
                     if (player.getInventory().items.stream().anyMatch(stack -> stack.is(EIOItems.CONDUIT.get()))) return;
                     check("replaced_endpoint_uses_the_picked_up_item", true);
                     signal("conduit-placed");
@@ -205,13 +257,35 @@ final class ClientFilterRecoverySmoke {
     }
 
     private boolean openEndpoint() {
-        if (minecraft.screen != null || !(minecraft.level.getBlockEntity(ENDPOINT) instanceof ConduitBundleBlockEntity bundle)) return false;
-        var hit = new BlockHitResult(Vec3.atCenterOf(ENDPOINT).relative(Direction.EAST, 0.45),
-            Direction.SOUTH, ENDPOINT, false);
-        var connection = bundle.getShape().getConnectionFromHit(ENDPOINT, hit);
-        if (connection == null || connection.getFirst() != Direction.EAST) return false;
+        var bundle = bundle();
+        if (minecraft.screen != null || bundle == null) return false;
+        var hit = itemConnectionHit(bundle);
+        if (hit == null) return false;
         minecraft.gameMode.useItemOn(minecraft.player, InteractionHand.MAIN_HAND, hit);
         return true;
+    }
+
+    private ConduitBundleBlockEntity bundle() {
+        return minecraft.level.getBlockEntity(ENDPOINT) instanceof ConduitBundleBlockEntity bundle ? bundle : null;
+    }
+
+    private static boolean hasItem(ConduitBundleBlockEntity bundle) {
+        return bundle.getConduits().stream().anyMatch(holder -> holder.is(EIOConduits.ITEM));
+    }
+
+    private static boolean hasRedstone(ConduitBundleBlockEntity bundle) {
+        return bundle.getConduits().stream().anyMatch(holder -> holder.is(EIOConduits.REDSTONE));
+    }
+
+    private static BlockHitResult itemConnectionHit(ConduitBundleBlockEntity bundle) {
+        // The outer edge of the east connector belongs to the item route. Mixed bundles can offset the pipes behind it.
+        var hit = new BlockHitResult(Vec3.atCenterOf(ENDPOINT).relative(Direction.EAST, 0.48),
+            Direction.SOUTH, ENDPOINT, false);
+        var shape = bundle.getShape();
+        var connection = shape.getConnectionFromHit(ENDPOINT, hit);
+        var aimedConduit = shape.getConduit(ENDPOINT, hit);
+        return connection != null && connection.getFirst() == Direction.EAST && connection.getSecond().is(EIOConduits.ITEM)
+            && aimedConduit != null && aimedConduit.is(EIOConduits.ITEM) ? hit : null;
     }
 
     private ConduitScreen endpointScreen() {
@@ -279,6 +353,7 @@ final class ClientFilterRecoverySmoke {
 
     private void finish(Throwable failure) {
         stage = Stage.DONE;
+        minecraft.options.keyShift.setDown(false);
         var result = new LinkedHashMap<String, Object>();
         result.put("passed", failure == null);
         result.put("checks", checks);

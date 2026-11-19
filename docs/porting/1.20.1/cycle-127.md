@@ -44,4 +44,4 @@ run_filter_recovery cycle-127-recovery 25969 enderio/build/libs/enderio-8.2.14.1
 
 ## Remaining verification
 
-Selective wrench removal from a mixed bundle with an editor open still needs its own runtime scenario. The dimension test exercises the native menu on the server. The packaged scenario exercises destruction within reach, physical recovery, and chunk eviction after the client disconnects.
+Selective wrench removal from a mixed bundle with an editor open is covered in [cycle 128](cycle-128.md). The dimension test exercises the native menu on the server. This cycle's packaged scenario exercises destruction within reach, physical recovery, and chunk eviction after the client disconnects.

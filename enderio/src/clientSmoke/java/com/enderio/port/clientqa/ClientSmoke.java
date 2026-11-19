@@ -84,6 +84,8 @@ public final class ClientSmoke {
             case "stock-filter-menus" -> new ClientStockFilterMenusSmoke();
             case "filter-progression" -> new ClientFilterProgressionSmoke();
             case "filter-recovery" -> new ClientFilterRecoverySmoke();
+            case "filter-wrench-editor" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_EDITOR);
+            case "filter-wrench-operator" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_OPERATOR);
             case "legacy-soulbound" -> new ClientSoulboundSmoke();
             case "enchanter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.ENCHANTER);
             case "enchanter-reload" -> new ClientEnchanterReloadSmoke();

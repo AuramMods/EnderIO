@@ -58,6 +58,7 @@ def arguments(entries, values):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True)
+    parser.add_argument("--username", default="EnderIOQA", help="Offline player name for this isolated profile")
     parser.add_argument("--java", required=True, type=Path)
     parser.add_argument("--installer", required=True, type=Path)
     parser.add_argument("--jar", required=True, type=Path)
@@ -129,9 +130,9 @@ def main():
     (directory / "eula.txt").write_text("eula=true\n")
     natives = directory / "natives"
     natives.mkdir(exist_ok=True)
-    values = {"auth_player_name": "EnderIOQA", "version_name": FORGE, "game_directory": directory,
+    values = {"auth_player_name": args.username, "version_name": FORGE, "game_directory": directory,
               "assets_root": assets, "assets_index_name": index_info["id"],
-              "auth_uuid": str(uuid.UUID(bytes=hashlib.md5(b"OfflinePlayer:EnderIOQA").digest(), version=3)),
+              "auth_uuid": str(uuid.UUID(bytes=hashlib.md5(f"OfflinePlayer:{args.username}".encode()).digest(), version=3)),
               "auth_access_token": "0", "clientid": "", "auth_xuid": "", "user_type": "legacy",
               "version_type": "release", "resolution_width": "960", "resolution_height": "540",
               "natives_directory": natives, "launcher_name": "EnderIO-Packaged-QA", "launcher_version": "1",
