@@ -5,6 +5,7 @@ import com.enderio.enderio.compat.jei.JEILang;
 import com.enderio.enderio.compat.jei.JEIUtils;
 import com.enderio.enderio.compat.jei_machines_to_merge.util.MachineRecipeCategory;
 import com.enderio.enderio.compat.jei_machines_to_merge.util.RecipeUtil;
+import com.enderio.enderio.content.machines.slicer.SlicerBlockEntity;
 import com.enderio.enderio.content.machines.slicer.SlicingRecipe;
 import com.enderio.enderio.init.EIOBlocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -12,12 +13,10 @@ import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeType;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.common.Tags;
 
 import java.util.List;
 
@@ -34,10 +33,14 @@ public class SlicingRecipeCategory extends MachineRecipeCategory<SlicingRecipe> 
 
     private final IDrawable background;
     private final IDrawable icon;
+    private final List<ItemStack> axes;
+    private final List<ItemStack> shears;
 
     public SlicingRecipeCategory(IGuiHelper guiHelper) {
         this.background = guiHelper.createDrawable(BG_TEXTURE, 0, 0, WIDTH, HEIGHT);
         this.icon = guiHelper.createDrawableItemStack(new ItemStack(EIOBlocks.SLICE_AND_SPLICE.get()));
+        this.axes = BuiltInRegistries.ITEM.stream().filter(SlicerBlockEntity::isValidAxe).map(ItemStack::new).toList();
+        this.shears = BuiltInRegistries.ITEM.stream().filter(SlicerBlockEntity::isValidShears).map(ItemStack::new).toList();
     }
 
     @Override
@@ -63,8 +66,8 @@ public class SlicingRecipeCategory extends MachineRecipeCategory<SlicingRecipe> 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, SlicingRecipe recipe, IFocusGroup focuses) {
         // Tool slots
-        builder.addSlot(CATALYST, 11, 1).addIngredients(Ingredient.of(ItemTags.AXES));
-        builder.addSlot(CATALYST, 29, 1).addIngredients(Ingredient.of(Tags.Items.SHEARS));
+        builder.addSlot(CATALYST, 11, 1).addItemStacks(axes);
+        builder.addSlot(CATALYST, 29, 1).addItemStacks(shears);
 
         builder.addSlot(INPUT, 1, 25).addIngredients(recipe.inputs().get(0));
         builder.addSlot(INPUT, 19, 25).addIngredients(recipe.inputs().get(1));

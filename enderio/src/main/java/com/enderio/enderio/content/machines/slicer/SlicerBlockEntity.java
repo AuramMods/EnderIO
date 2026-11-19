@@ -34,6 +34,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.item.Tiers;
@@ -125,9 +126,9 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
                 .setStackLimit(1) // Force all input slots to have 1 output
                 .inputSlot(6, this::isValidInput)
                 .slotAccess(INPUTS)
-                .inputSlot(this::validAxe)
+                .inputSlot((slot, stack) -> isValidAxe(stack.getItem()))
                 .slotAccess(AXE)
-                .inputSlot((slot, stack) -> stack.getItem() instanceof ShearsItem)
+                .inputSlot((slot, stack) -> isValidShears(stack.getItem()))
                 .slotAccess(SHEARS)
                 .setStackLimit(64) // Reset originalStack limit
                 .outputSlot()
@@ -143,11 +144,12 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
         return SlicerRecipeManager.isSlicerValid(level.getRecipeManager(), stack, index);
     }
 
-    private boolean validAxe(int slot, ItemStack stack) {
-        if (stack.getItem() instanceof AxeItem axeItem) {
-            return axeItem.getTier() != Tiers.WOOD;
-        }
-        return false;
+    public static boolean isValidAxe(Item item) {
+        return item instanceof AxeItem axe && axe.getTier() != Tiers.WOOD;
+    }
+
+    public static boolean isValidShears(Item item) {
+        return item instanceof ShearsItem;
     }
 
     @Override
