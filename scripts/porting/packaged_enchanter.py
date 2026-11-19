@@ -54,18 +54,21 @@ def assert_books(server, results, name, count, conditions):
     server.assert_state(name, f"{conditions} if score PortBooks port_enchant matches {count}", results)
 
 
-def exercise(args, server, results, report, *, restarted):
+def exercise(args, server, results, report, *, restarted, replant=None):
     phase = "verify" if restarted else "exercise"
     pos = SAVED if restarted else FRESH
     output = ROOT / "build/port-evidence" / f"{args.name}-{phase}-client"
+    scenario = "legacy-enchanter" if replant else "enchanter"
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"), "--launch", str(args.launch.resolve()),
-               "--scenario", "enchanter", "--multiplayer-phase", phase, "--output", str(output),
+               "--scenario", scenario, "--multiplayer-phase", phase, "--output", str(output),
                "--server", f"127.0.0.1:{args.port}", "--timeout", "155"]
     summary = output / "summary.json"
     with (server.directory / f"enchanter-{phase}-client.log").open("w") as log:
         client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         try:
             wait_signal(client, output, "connected")
+            if replant:
+                replant(server, results, client, output)
             if restarted:
                 server.assert_state("player_rejoins_with_the_original_book_and_exact_xp",
                                     f'if data entity {PLAYER} {{XpLevel:19}} {player_has_book(9)}', results)

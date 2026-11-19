@@ -2,6 +2,7 @@ package com.enderio.port.clientqa;
 
 import com.enderio.enderio.client.content.machines.gui.screen.EnchanterScreen;
 import com.enderio.enderio.content.enchanter.EnchanterMenu;
+import com.enderio.enderio.init.EIOBlocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
@@ -29,12 +30,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class ClientEnchanterSmoke {
-    private enum Stage { TITLE, JOIN, OPEN, RESTRICTED, WAIT_RESTRICTED, UNLOCK, COLLECT, VERIFY, CONFIRM, DONE }
+    private enum Stage { TITLE, JOIN, REPLANT, OPEN, RESTRICTED, WAIT_RESTRICTED, UNLOCK, COLLECT, VERIFY, CONFIRM, DONE }
 
     private static final int OUTPUT_SLOT = 3;
     private static final int FIRST_PLAYER_SLOT = 4;
     private static final int XP_COST = 11;
     private final boolean restarted = System.getProperty("enderio.clientqa.multiplayerPhase").equals("verify");
+    private final boolean replantFirst;
     private final BlockPos pos = new BlockPos(restarted ? 3454 : 3450, 80, 8);
     private final Minecraft minecraft = Minecraft.getInstance();
     private final String address = System.getProperty("enderio.clientqa.server");
@@ -49,7 +51,8 @@ final class ClientEnchanterSmoke {
     private int restrictedTick;
     private int collectionTick;
 
-    ClientEnchanterSmoke() {
+    ClientEnchanterSmoke(boolean replantFirst) {
+        this.replantFirst = replantFirst;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -69,9 +72,11 @@ final class ClientEnchanterSmoke {
                     && minecraft.getSingleplayerServer() == null && !connection.isMemoryConnection()
                     && connection.getRemoteAddress() instanceof InetSocketAddress);
                 signal("connected");
-                stage = Stage.OPEN;
+                stage = replantFirst ? Stage.REPLANT : Stage.OPEN;
             }
-            if (stage == Stage.OPEN) {
+            if (stage == Stage.REPLANT) {
+                replant();
+            } else if (stage == Stage.OPEN) {
                 open();
             } else if (minecraft.screen instanceof EnchanterScreen screen) {
                 exercise(screen.getMenu());
@@ -93,18 +98,35 @@ final class ClientEnchanterSmoke {
         stage = Stage.JOIN;
     }
 
-    private void open() {
+    private void replant() throws IOException {
+        var player = minecraft.player;
+        var inventory = player.getInventory();
+        var carried = inventory.getItem(0);
+        if (!marker("replant") || !carried.is(EIOBlocks.ENCHANTER.get().asItem()) || !positioned()) return;
+        inventory.selected = 0;
+        var hit = new BlockHitResult(Vec3.atBottomCenterOf(pos), Direction.UP, pos.below(), false);
+        check("legacy_enchanter_places_in_survival", minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit).consumesAction());
+        signal("replanted");
+        positionedTick = -1;
+        stage = Stage.OPEN;
+    }
+
+    private boolean positioned() {
         double x = pos.getX() + 0.5;
-        if (!marker("ready") || minecraft.screen != null || minecraft.player.distanceToSqr(x, 80, 10.5) > 0.1
-            || minecraft.level.getBlockEntity(pos) == null) {
+        if (minecraft.screen != null || minecraft.player.distanceToSqr(x, 80, 10.5) > 0.1) {
             positionedTick = -1;
-            return;
+            return false;
         }
         if (positionedTick == -1) {
             positionedTick = minecraft.player.tickCount;
         }
         // A reconnect can already be at the target when the server issues its position correction.
-        if (minecraft.player.tickCount - positionedTick < 5) return;
+        return minecraft.player.tickCount - positionedTick >= 5;
+    }
+
+    private void open() {
+        double x = pos.getX() + 0.5;
+        if (!marker("ready") || minecraft.level.getBlockEntity(pos) == null || !positioned()) return;
         var hit = new BlockHitResult(new Vec3(x, 80.6, 9), Direction.SOUTH, pos, false);
         minecraft.gameMode.useItemOn(minecraft.player, InteractionHand.MAIN_HAND, hit);
         openTick = minecraft.player.tickCount;

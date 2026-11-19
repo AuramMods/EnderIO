@@ -69,7 +69,8 @@ public final class ClientSmoke {
             case "laserio-filters" -> new ClientLaserIOSmoke();
             case "inventory-sorter" -> new ClientInventorySorterSmoke(true);
             case "inventory-sorter-absent" -> new ClientInventorySorterSmoke(false);
-            case "enchanter" -> new ClientEnchanterSmoke();
+            case "enchanter" -> new ClientEnchanterSmoke(false);
+            case "legacy-enchanter" -> new ClientEnchanterSmoke(true);
             case "enchanter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.ENCHANTER);
             case "enchanter-reload" -> new ClientEnchanterReloadSmoke();
             case "facade-seams" -> new ClientFacadeSeamSmoke(false, false);
