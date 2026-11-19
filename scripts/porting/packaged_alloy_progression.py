@@ -87,11 +87,11 @@ def placed_blocks():
                     for index, name in enumerate(ALLOYS))
 
 
-def exercise_client(args, server, results, report):
+def exercise_client(args, server, results, report, *, scenario="alloy-progression", placements=placed_blocks):
     evidence = ROOT / "build/port-evidence" / f"{args.name}-client"
     summary = evidence / "summary.json"
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"), "--launch", str(args.launch.resolve()),
-               "--scenario", "alloy-progression", "--output", str(evidence), "--server", f"127.0.0.1:{args.port}",
+               "--scenario", scenario, "--output", str(evidence), "--server", f"127.0.0.1:{args.port}",
                "--timeout", "185"]
     with (server.directory / "alloy-client.log").open("w") as log:
         client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
@@ -101,7 +101,7 @@ def exercise_client(args, server, results, report):
             (evidence / "server-ready").touch()
             wait_signal(client, evidence, "placed")
             server.assert_state("survival_uses_only_the_original_machine_outputs",
-                                f"{placed_blocks()} unless data block {CHEST} Items[0]", results)
+                                f"{placements()} unless data block {CHEST} Items[0]", results)
             (evidence / "server-done").touch()
             if client.wait(timeout=30) != 0:
                 raise AssertionError(f"Alloy progression client failed; see {evidence}")
@@ -114,14 +114,15 @@ def exercise_client(args, server, results, report):
             report["client"] = json.loads(summary.read_text()) if summary.exists() else None
 
 
-def verify_saved_inventory(directory, report):
+def verify_saved_inventory(directory, report, *, expected=None):
     world = directory / WORLD
     # The disposable offline profile has exactly one player.
     player, = (world / "playerdata").glob("*.dat")
     counts = {}
     for entry in read_data_file(player)["Inventory"]:
         counts[entry["id"]] = counts.get(entry["id"], 0) + entry["Count"]
-    expected = {f"enderio:{alloy}_ingot": count for alloy, count in zip(ALLOYS, REMAINDERS) if count}
+    if expected is None:
+        expected = {f"enderio:{alloy}_ingot": count for alloy, count in zip(ALLOYS, REMAINDERS) if count}
     report["savedInventory"] = counts
     if counts != expected:
         raise AssertionError(f"Saved survival inventory {counts} differs from {expected}")
