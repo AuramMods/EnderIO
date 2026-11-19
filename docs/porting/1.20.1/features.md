@@ -34,7 +34,7 @@ Place, render, interact/automate, break/drop and reload; machine rows also requi
 | `REINFORCED_OBSIDIAN` | [EIOBlocks:172](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java#L172) | Partial. The block survives a native explosion and the Forge wither destruction check. Diamond-tier mining, crafting, loot, model bake and placed state through Forge 6.2 conversion pass. [Cycle 132](cycle-132.md) |
 | `PAINTED_FENCE` | [EIOBlocks:185](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java#L185) | Partial. A real diamond-painted fence is produced, transferred in the menu, placed in survival and rendered over packaged TCP. Native loot and a server restart preserve the paint. Historical migration and other placement configurations remain open. [Cycle 083](cycle-083.md) |
 | `PAINTED_FENCE_GATE` | [EIOBlocks:182](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
-| `PAINTED_SAND` | [EIOBlocks:183](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
+| `PAINTED_SAND` | [EIOBlocks:188](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java#L188) | The native Painting Machine recipe produces two diamond-painted items from two sand templates. Packaged survival placement, falling, landing and typed loot preserve the paint. The landed block and both item outcomes survive restart. Forge 6.2 conversion remains open. [Cycle 147](cycle-147.md) |
 | `PAINTED_STAIRS` | [EIOBlocks:184](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `PAINTED_CRAFTING_TABLE` | [EIOBlocks:185](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
 | `PAINTED_REDSTONE_BLOCK` | [EIOBlocks:186](../../../enderio/src/main/java/com/enderio/enderio/init/EIOBlocks.java) | Pending |
@@ -291,7 +291,7 @@ Spawn, render, interact and persist/synchronize where applicable.
 
 | Declaration | Source | Evidence |
 | --- | --- | --- |
-| `PAINTED_SAND` | [EIOEntities:15](../../../enderio/src/main/java/com/enderio/enderio/init/EIOEntities.java) | Pending |
+| `PAINTED_SAND` | [EIOEntities:15](../../../enderio/src/main/java/com/enderio/enderio/init/EIOEntities.java#L15) | The native spawn packet syncs the original block and paint to a packaged client and the renderer draws the diamond surface. Restored falling entities land or drop the painted item as appropriate. Forge 6.2 conversion remains open. [Cycle 147](cycle-147.md) |
 
 ## EIORecipes
 
@@ -307,7 +307,7 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | `SLICING` | [EIORecipes:47](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java) | Pending |
 | `SOUL_BINDING` | [EIORecipes:49](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java) | Partial: loaded native recipe packet and all mob-category values round-trip; malformed categories reject correctly. Packaged dedicated login/reconnect passes after the codec fix. Full recipe gameplay remains pending ([cycle 041](cycle-041.md)) |
 | `TANK` | [EIORecipes:51](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java) | Pending |
-| `PAINTING` | [EIORecipes:56](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java#L56) | Partial. Packaged Forge runs the fence, wooden slab and four facade recipes and verifies template consumption, reusable paint and output transfer. Fence and slab profiles verify advancement and job persistence. Other recipe families remain to be exercised. [Cycle 083](cycle-083.md), [cycle 085](cycle-085.md), [cycle 086](cycle-086.md) |
+| `PAINTING` | [EIORecipes:56](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java#L56) | Partial. Packaged Forge runs the fence, wooden slab, sand and four facade recipes and verifies template consumption, reusable paint and output transfer. Fence and slab profiles verify advancement and job persistence. The sand recipe delivers two outputs for two templates and 4,800 FE. Other recipe families remain to be exercised. [Cycle 083](cycle-083.md), [cycle 085](cycle-085.md), [cycle 086](cycle-086.md), [cycle 147](cycle-147.md) |
 | `VAT_FERMENTING` | [EIORecipes:58](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java#L58) | Partial. Packaged single-player synchronizes the active recipe and progress across disk reopen. Dedicated Forge verifies all ten stock outputs, an authored tagged result and the stock 81,000 mB Blue Ice output. Packaged multiplayer shows asymmetric reagent modifiers in both reversed slots and updates the paid remainder during redstone pause and resume. Additional reagent permutations and optional viewer coverage remain open. [Cycle 115](cycle-115.md), [cycle 116](cycle-116.md), [cycle 117](cycle-117.md), [cycle 118](cycle-118.md) |
 | `WEATHER_CHANGE` | [EIORecipes:57](../../../enderio/src/main/java/com/enderio/enderio/init/EIORecipes.java) | Pending |
 
