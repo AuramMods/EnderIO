@@ -283,7 +283,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 086: conduit facade recipes and rendering | Paint and install all four variants, toggle visibility with the Yeta Wrench, and verify loot and restart | The build passes 79 unit and 482 native tests. Standard Forge and Embeddium each pass 18 server assertions and 24 guarded client checks. [Evidence and commands](porting/1.20.1/cycle-086.md) | `27f398053` |
 
-| 087: stained-glass conduit facades | Paint all four variants with stained glass, place a standalone facade, add a conduit and reload client resources | The build passes 79 unit and 482 native tests. The packaged profiles verify the two conduit visibility modes, resource reload, loot and restart on standard Forge, Embeddium and Oculus with shaders disabled. [Evidence and commands](porting/1.20.1/cycle-087.md) | Commit containing cycle 087 |
+| 087: stained-glass conduit facades | Paint all four variants with stained glass, place a standalone facade, add a conduit and reload client resources | The build passes 79 unit and 482 native tests. The packaged profiles verify the two conduit visibility modes, resource reload, loot and restart on standard Forge, Embeddium and Oculus with shaders disabled. [Evidence and commands](porting/1.20.1/cycle-087.md) | `6267aec1e` |
+
+| 088: matching facade face culling | Use the neighboring bundle's paint to hide shared faces across a chunk boundary | The build passes 79 unit and 482 native tests. Forge and Embeddium each pass six packaged server assertions and 13 guarded client checks covering exact vertex counts, live repaint, wrench view and restart. [Evidence and commands](porting/1.20.1/cycle-088.md) | Commit containing cycle 088 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
