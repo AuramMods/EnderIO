@@ -629,6 +629,17 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
             result = new AddConduitResult.Insert();
         }
 
+        if (result instanceof AddConduitResult.Upgrade upgrade &&
+            !ConduitUtility.canConnectConduits(conduit, upgrade.replacedConduit())) {
+            // Clear the old links before connecting the new variant to already upgraded neighbors.
+            for (Direction side : Direction.values()) {
+                if (getConnectionStatus(conduit, side) == ConnectionStatus.CONNECTED_CONDUIT) {
+                    removeNeighborConnection(upgrade.replacedConduit(), side);
+                    setConnectionStatus(conduit, side, ConnectionStatus.DISCONNECTED);
+                }
+            }
+        }
+
         // Now attempt to make connections, starting from the "primary" side (clicked or
         // facing direction)
         if (primaryConnectionSide != null) {
@@ -643,11 +654,6 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
 
         if (level instanceof ServerLevel serverLevel) {
             ConduitNetworkSavedData.onNetworkCreated(serverLevel, getConduitNode(conduit).getNetwork());
-        }
-
-        if (result instanceof AddConduitResult.Upgrade upgrade &&
-            !ConduitUtility.canConnectConduits(conduit, upgrade.replacedConduit())) {
-            removeNeighborConnections(upgrade.replacedConduit());
         }
 
         bundleChanged();

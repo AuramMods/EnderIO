@@ -82,7 +82,7 @@ public record ItemConduit(ResourceLocation texture, Component description, int t
 
     @Override
     public boolean canConnectToConduit(ItemConduit other) {
-        return ConduitsConfig.COMMON.CAN_MIX_ITEM_CONDUIT_TIERS.get();
+        return this == other || ConduitsConfig.COMMON.CAN_MIX_ITEM_CONDUIT_TIERS.get();
     }
 
     @Override
