@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.ClickType;
@@ -67,13 +68,15 @@ final class ClientPaintedBuildingSmoke {
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
+    private final boolean wet;
     private Stage stage = Stage.TITLE;
     private long titleAt;
     private int slot;
     private int nextCaptureTick;
     private List<Integer> initialGeometry = List.of();
 
-    ClientPaintedBuildingSmoke() {
+    ClientPaintedBuildingSmoke(boolean wet) {
+        this.wet = wet;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -119,6 +122,9 @@ final class ClientPaintedBuildingSmoke {
                         check("the_glowstone_site_starts_with_no_block_light", state.isAir() && blockLight(LIGHT_PROBE) == 0);
                     }
                     var pos = sample.pos();
+                    if (wet && slot < 2) {
+                        check(sample.name() + "_is_placed_into_a_real_water_source", hasWaterSource(pos));
+                    }
                     var click = new BlockHitResult(Vec3.atBottomCenterOf(pos), Direction.UP, pos.below(), false);
                     check(sample.name() + "_survival_placement_consumes_action",
                         minecraft.gameMode.useItemOn(minecraft.player, InteractionHand.MAIN_HAND, click).consumesAction());
@@ -232,6 +238,10 @@ final class ClientPaintedBuildingSmoke {
         var sprite = ResourceLocation.parse("minecraft:block/" + BuiltInRegistries.BLOCK.getKey(sample.paint()).getPath());
         check(sample.name() + "_" + phase + "_uses_the_expected_sprite",
             !quads.isEmpty() && quads.stream().allMatch(quad -> quad.getSprite().contents().name().equals(sprite)));
+        if (wet && slot < 2) {
+            check(sample.name() + "_" + phase + "_retains_source_water",
+                state.getValue(BlockStateProperties.WATERLOGGED) && hasWaterSource(sample.pos()));
+        }
         return quads.stream().map(quad -> Arrays.hashCode(quad.getVertices())).sorted().toList();
     }
 
@@ -242,6 +252,11 @@ final class ClientPaintedBuildingSmoke {
 
     private int blockLight(BlockPos pos) {
         return minecraft.level.getBrightness(LightLayer.BLOCK, pos);
+    }
+
+    private boolean hasWaterSource(BlockPos pos) {
+        var fluid = minecraft.level.getFluidState(pos);
+        return fluid.isSource() && fluid.is(FluidTags.WATER);
     }
 
     private void verifyLight(Sample sample) {

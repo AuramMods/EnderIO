@@ -49,7 +49,8 @@ public final class ClientSmoke {
             case "painting-machine" -> new ClientPaintingMachineSmoke();
             case "painted-sand" -> new ClientPaintedSandSmoke();
             case "painted-redstone" -> new ClientPaintedRedstoneSmoke();
-            case "painted-building" -> new ClientPaintedBuildingSmoke();
+            case "painted-building" -> new ClientPaintedBuildingSmoke(false);
+            case "painted-building-wet" -> new ClientPaintedBuildingSmoke(true);
             case "legacy-painting" -> new ClientLegacyPaintingSmoke();
             case "painted-slabs" -> new ClientPaintedSlabSmoke();
             case "facades" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.FORGE, false);
