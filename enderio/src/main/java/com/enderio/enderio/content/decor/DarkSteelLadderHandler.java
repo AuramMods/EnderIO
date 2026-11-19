@@ -37,7 +37,7 @@ public class DarkSteelLadderHandler {
 
     @SubscribeEvent
     public static void onTooltip(ItemTooltipEvent event) {
-        if (event.getItemStack().is(EIOBlocks.DARK_STEEL_BLOCK.asItem())) {
+        if (event.getItemStack().is(EIOBlocks.DARK_STEEL_LADDER.asItem())) {
             event.getToolTip().add(EIOCommonLang.DARK_STEEL_LADDER_FASTER);
         }
     }
