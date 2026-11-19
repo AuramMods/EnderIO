@@ -46,13 +46,14 @@ final class ClientCoordinatePrintoutSmoke {
 
     private static final BlockPos TABLE = new BlockPos(3161, 80, 9);
     private static final BlockPos TARGET = new BlockPos(3161, 81, 0);
-    private static final CoordinateSelection SELECTION = new CoordinateSelection(Level.OVERWORLD, TARGET);
     private static final String FIRST_NAME = "North Survey";
     private static final String RENAMED = "Nether Survey";
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final boolean restarted = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase"));
+    private final boolean legacy;
+    private final CoordinateSelection selection;
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
@@ -60,7 +61,9 @@ final class ClientCoordinatePrintoutSmoke {
     private long titleAt;
     private int deadline;
 
-    ClientCoordinatePrintoutSmoke() {
+    ClientCoordinatePrintoutSmoke(boolean legacy) {
+        this.legacy = legacy;
+        selection = new CoordinateSelection(Level.OVERWORLD, legacy ? new BlockPos(-3161, 43, -12) : TARGET);
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -89,7 +92,7 @@ final class ClientCoordinatePrintoutSmoke {
                     check("dedicated_survival_tcp", !player.isCreative() && !player.isSpectator()
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     signal("connected");
-                    stage = restarted ? Stage.NETHER : Stage.TABLE;
+                    stage = restarted || legacy ? Stage.NETHER : Stage.TABLE;
                 }
                 case TABLE -> {
                     if (!marker("craft") || player.distanceToSqr(3161.5, 80, 11.5) > 0.1
@@ -145,7 +148,7 @@ final class ClientCoordinatePrintoutSmoke {
                 }
                 case SELECTED -> {
                     if (!(minecraft.screen instanceof CoordinateMenuScreen screen)) return;
-                    check("selector_menu_receives_exact_position", screen.getMenu().getSelection().equals(SELECTION)
+                    check("selector_menu_receives_exact_position", screen.getMenu().getSelection().equals(selection)
                         && screen.getMenu().stillValid(player) && editBox(screen).getValue().isEmpty());
                     replaceName(screen, FIRST_NAME);
                     capture("selected-coordinate");
@@ -169,7 +172,7 @@ final class ClientCoordinatePrintoutSmoke {
                 case EDIT, CLEAR -> {
                     if (!(minecraft.screen instanceof CoordinateMenuScreen screen)) return;
                     String oldName = restarted ? RENAMED : FIRST_NAME;
-                    check("printout_menu_keeps_overworld_location_in_the_nether", screen.getMenu().getSelection().equals(SELECTION)
+                    check("printout_menu_keeps_overworld_location_in_the_nether", screen.getMenu().getSelection().equals(selection)
                         && editBox(screen).getValue().equals(oldName));
                     check("printout_menu_stays_valid_for_the_held_printer_output", screen.getMenu().stillValid(player));
                     replaceName(screen, restarted ? "" : RENAMED);
@@ -253,11 +256,13 @@ final class ClientCoordinatePrintoutSmoke {
         var stack = player.getMainHandItem();
         check("item_identity_and_coordinates_" + stage, stack.is(EIOItems.LOCATION_PRINTOUT.get())
             && count(player, EIOItems.LOCATION_PRINTOUT.get()) == 1
-            && LocationPrintoutItem.getSelection(stack).filter(SELECTION::equals).isPresent());
+            && LocationPrintoutItem.getSelection(stack).filter(selection::equals).isPresent());
         check("expected_printout_name_" + stage, expectedName.isEmpty() ? !stack.hasCustomHoverName()
             : stack.hasCustomHoverName() && stack.getHoverName().getString().equals(expectedName));
         var lines = stack.getTooltipLines(player, TooltipFlag.NORMAL).stream().map(Component::getString).toList();
-        check("coordinate_and_dimension_tooltip_" + stage, lines.contains("x3161y81z0") && lines.contains("overworld"));
+        var pos = selection.pos();
+        check("coordinate_and_dimension_tooltip_" + stage,
+            lines.contains("x" + pos.getX() + "y" + pos.getY() + "z" + pos.getZ()) && lines.contains(selection.getLevelName()));
     }
 
     private void replaceName(CoordinateMenuScreen screen, String name) {

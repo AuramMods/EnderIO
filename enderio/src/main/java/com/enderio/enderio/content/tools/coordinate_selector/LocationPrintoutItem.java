@@ -3,8 +3,13 @@ package com.enderio.enderio.content.tools.coordinate_selector;
 import com.enderio.enderio.api.attachment.CoordinateSelection;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -24,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class LocationPrintoutItem extends Item {
+    private static final String LEGACY_SELECTION = "CoordinateSelection";
 
     public LocationPrintoutItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -82,6 +88,25 @@ public class LocationPrintoutItem extends Item {
 
     public static void setSelection(ItemStack stack, CoordinateSelection selection) {
         EIODataComponents.COORDINATE_SELECTION.set(stack, selection);
+    }
+
+    public static void restoreForge6State(ItemStack stack) {
+        var saved = stack.getTagElement(LEGACY_SELECTION);
+        if (saved == null) return;
+        if (EIODataComponents.COORDINATE_SELECTION.has(stack)) {
+            stack.removeTagKey(LEGACY_SELECTION);
+            return;
+        }
+
+        var dimension = ResourceLocation.tryParse(saved.getString("Level"));
+        var position = saved.getCompound("BlockPos");
+        if (dimension == null || dimension.getPath().isEmpty()
+            || !position.contains("X", Tag.TAG_INT) || !position.contains("Y", Tag.TAG_INT) || !position.contains("Z", Tag.TAG_INT)) {
+            return;
+        }
+
+        setSelection(stack, new CoordinateSelection(ResourceKey.create(Registries.DIMENSION, dimension), NbtUtils.readBlockPos(position)));
+        stack.removeTagKey(LEGACY_SELECTION);
     }
 
     @Override
