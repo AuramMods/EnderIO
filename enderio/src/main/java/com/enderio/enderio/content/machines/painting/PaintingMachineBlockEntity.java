@@ -5,8 +5,6 @@ import com.enderio.enderio.api.capacitor.CapacitorModifier;
 import com.enderio.enderio.api.capacitor.QuadraticScalable;
 import com.enderio.enderio.api.io.energy.EnergyIOMode;
 import com.enderio.enderio.config.machines.MachinesConfig;
-import com.enderio.enderio.content.paint.BlockPaintData;
-import com.enderio.enderio.content.paint.block.PaintedBlock;
 import com.enderio.enderio.foundation.block.entity.PoweredMachineBlockEntity;
 import com.enderio.enderio.foundation.block.entity.flags.CapacitorSupport;
 import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
@@ -16,10 +14,10 @@ import com.enderio.enderio.foundation.task.PoweredCraftingMachineTask;
 import com.enderio.enderio.foundation.task.host.CraftingMachineTaskHost;
 import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIOCriterions;
-import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIORecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -27,14 +25,12 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.shapes.Shapes;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 public class PaintingMachineBlockEntity extends PoweredMachineBlockEntity {
 
@@ -104,15 +100,7 @@ public class PaintingMachineBlockEntity extends PoweredMachineBlockEntity {
     }
 
     private boolean isValidPaint(int index, ItemStack stack) {
-        if (stack.getItem() instanceof BlockItem blockItem) {
-            Block block = blockItem.getBlock();
-            if (block instanceof PaintedBlock) {
-                return false;
-            }
-
-            return block.defaultBlockState().getOcclusionShape(level, getBlockPos()) == Shapes.block();
-        }
-        return false;
+        return level != null && PaintingRecipe.acceptsPaint(stack, level, getBlockPos());
     }
 
     @Override
@@ -122,7 +110,7 @@ public class PaintingMachineBlockEntity extends PoweredMachineBlockEntity {
     }
 
     private PaintingRecipe.Input createRecipeInput() {
-        return new PaintingRecipe.Input(INPUT.getItemStack(getInventory()), PAINT.getItemStack(getInventory()));
+        return new PaintingRecipe.Input(() -> INPUT.getItemStack(this), () -> PAINT.getItemStack(this), getBlockPos());
     }
 
     // endregion
@@ -144,30 +132,21 @@ public class PaintingMachineBlockEntity extends PoweredMachineBlockEntity {
                 recipe) {
             @Override
             protected void consumeInputs(PaintingRecipe recipe) {
-                INPUT.getItemStack(getInventory()).shrink(1);
+                INPUT.extractItem(getInventory(), 1, false);
+                if (level instanceof ServerLevel serverLevel && recipeInput.paint().getItem() instanceof BlockItem paint) {
+                    for (ServerPlayer player : serverLevel.players()) {
+                        if (area.contains(player.position())) {
+                            EIOCriterions.PAINTING_TRIGGER.get().trigger(player, paint.getBlock());
+                        }
+                    }
+                }
             }
 
             @Override
             protected boolean placeOutputs(List<OutputStack> outputs, boolean simulate) {
-                if (getLevel() == null || getLevel().isClientSide) {
-                    return super.placeOutputs(outputs, simulate);
-                }
-
-                Optional<BlockPaintData> s = outputs.stream()
-                        .findFirst()
-                        .map(OutputStack::getItem)
-                        .flatMap(item -> Optional.ofNullable(EIODataComponents.BLOCK_PAINT.get(item)));
-
-                s.ifPresent(paintData -> {
-                    for (Player player : getLevel().players()) {
-                        if (player instanceof ServerPlayer serverPlayer
-                                && area.contains(player.getX(), player.getY(), player.getZ())) {
-                            EIOCriterions.PAINTING_TRIGGER.get().trigger(serverPlayer, paintData.paint());
-                        }
-                    }
-                });
-
-                return super.placeOutputs(outputs, simulate);
+                // A reusable paint block can change after a job is paid, including while it waits for output space.
+                var currentOutputs = Objects.requireNonNull(getRecipe()).craft(recipeInput, level.registryAccess());
+                return super.placeOutputs(currentOutputs, simulate);
             }
         };
     }

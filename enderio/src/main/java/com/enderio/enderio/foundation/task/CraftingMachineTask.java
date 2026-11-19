@@ -131,6 +131,13 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
             return;
         }
 
+        if (!recipe.matches(recipeInput, level)) {
+            inventory.updateMachineState(MachineState.EMPTY_INPUT, true);
+            isComplete = true;
+            return;
+        }
+        inventory.updateMachineState(MachineState.EMPTY_INPUT, false);
+
         // Get the outputs list.
         if (!hasDeterminedOutputs) {
             hasDeterminedOutputs = true;
@@ -142,14 +149,6 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
             // Store the recipe energy cost.
             progressRequired = getProgressRequired(recipe);
         }
-
-        // If we don't have a recipe match, complete the task and wait for a new one.
-        if (!recipe.matches(recipeInput, level)) {
-            inventory.updateMachineState(MachineState.EMPTY_INPUT, true);
-            isComplete = true;
-            return;
-        }
-        inventory.updateMachineState(MachineState.EMPTY_INPUT, false);
 
         // Try to consume as much energy as possible to finish the craft.
         if (progressMade < progressRequired) {

@@ -15,7 +15,7 @@ parser.add_argument("--scenario",
                     choices=("title", "singleplayer", "multiplayer", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
                              "primitive-smelter", "stirling", "soul-binder", "soul-vials", "soul-engine", "soul-engine-fuels",
                              "powered-spawner", "spawner-rules", "obelisks", "entity-obelisks", "obelisk-carry", "farming-station",
-                             "legacy-aversion", "natural-spawns",
+                             "painting-machine", "legacy-aversion", "natural-spawns",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")

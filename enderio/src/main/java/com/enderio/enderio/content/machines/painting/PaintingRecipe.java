@@ -5,12 +5,14 @@ import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.recipes.OutputStack;
 import com.enderio.enderio.config.machines.MachinesConfig;
 import com.enderio.enderio.content.paint.BlockPaintData;
+import com.enderio.enderio.content.paint.block.PaintedBlock;
 import com.enderio.enderio.foundation.MachineRecipe;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIORecipes;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.world.item.BlockItem;
@@ -20,9 +22,10 @@ import com.enderio.core.common.recipes.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public record PaintingRecipe(Ingredient input, ItemStack output, ResourceLocation id) implements MachineRecipe<PaintingRecipe.Input> {
 
@@ -38,7 +41,15 @@ public record PaintingRecipe(Ingredient input, ItemStack output, ResourceLocatio
 
     @Override
     public boolean matches(Input recipeInput, Level level) {
-        return input.test(recipeInput.getItem(0)) && !recipeInput.getItem(1).isEmpty();
+        return input.test(recipeInput.template()) && acceptsPaint(recipeInput.paint(), level, recipeInput.pos());
+    }
+
+    static boolean acceptsPaint(ItemStack stack, Level level, BlockPos pos) {
+        if (stack.isEmpty() || !(stack.getItem() instanceof BlockItem blockItem)) {
+            return false;
+        }
+        var block = blockItem.getBlock();
+        return !(block instanceof PaintedBlock) && Block.isShapeFullBlock(block.defaultBlockState().getOcclusionShape(level, pos));
     }
 
     @Override
@@ -48,10 +59,9 @@ public record PaintingRecipe(Ingredient input, ItemStack output, ResourceLocatio
 
     @Override
     public List<OutputStack> craft(Input recipeInput, RegistryAccess registryAccess) {
-        List<OutputStack> outputs = new ArrayList<>();
         ItemStack outputStack = output.copy();
 
-        var paintItem = recipeInput.getItem(1);
+        var paintItem = recipeInput.paint();
         if (!(paintItem.getItem() instanceof BlockItem blockItem)) {
             throw new IllegalStateException("The item must be a block item.");
         }
@@ -59,8 +69,7 @@ public record PaintingRecipe(Ingredient input, ItemStack output, ResourceLocatio
         var paintBlock = blockItem.getBlock();
         EIODataComponents.BLOCK_PAINT.set(outputStack, BlockPaintData.of(paintBlock));
 
-        outputs.add(OutputStack.of(outputStack));
-        return outputs;
+        return List.of(OutputStack.of(outputStack));
     }
 
     @Override
@@ -88,13 +97,25 @@ public record PaintingRecipe(Ingredient input, ItemStack output, ResourceLocatio
         return EIORecipes.PAINTING.type().get();
     }
 
-    public record Input(ItemStack template, ItemStack paint) implements RecipeInput {
+    public record Input(Supplier<ItemStack> templateSlot, Supplier<ItemStack> paintSlot, BlockPos pos) implements RecipeInput {
+
+        public Input(ItemStack template, ItemStack paint) {
+            this(() -> template, () -> paint, BlockPos.ZERO);
+        }
+
+        public ItemStack template() {
+            return templateSlot.get();
+        }
+
+        public ItemStack paint() {
+            return paintSlot.get();
+        }
 
         @Override
         public ItemStack getItem(int slotIndex) {
             return switch (slotIndex) {
-            case 0 -> template;
-            case 1 -> paint;
+            case 0 -> template();
+            case 1 -> paint();
             default -> throw new IllegalArgumentException("No item for index " + slotIndex);
             };
         }
