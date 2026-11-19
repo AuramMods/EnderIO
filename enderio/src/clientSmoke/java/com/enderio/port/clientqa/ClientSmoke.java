@@ -98,6 +98,7 @@ public final class ClientSmoke {
             case "sag-progression" -> new ClientSagProgressionSmoke();
             case "legacy-sag" -> new ClientLegacySagSmoke();
             case "sag-jei" -> new ClientSagJeiSmoke();
+            case "sag-unified" -> new ClientUnifiedSagSmoke();
             case "slicer" -> new ClientSlicerSmoke();
             case "legacy-slicer" -> new ClientLegacySlicerSmoke();
             case "slicer-jei" -> new ClientSlicerJeiSmoke();

@@ -113,7 +113,7 @@ final class ClientSagJeiSmoke {
                 }
                 case TRANSFER -> {
                     if (!(minecraft.screen instanceof RecipesGui gui)) return;
-                    var layout = visibleOre(gui);
+                    var layout = visibleRecipe(gui, ORE);
                     if (layout == null || !layout.transferButton().isInitialized()) return;
                     check("real_viewer_displays_stock_flint", layout.getRecipeLayout().getRecipeSlotsView()
                         .getSlotViews(RecipeIngredientRole.CATALYST).get(0).getDisplayedItemStack().orElseThrow().is(Items.FLINT));
@@ -124,12 +124,7 @@ final class ClientSagJeiSmoke {
                         stage = Stage.MANUAL;
                         return;
                     }
-                    var rect = layout.getRecipeLayout().getRect();
-                    var button = layout.getRecipeLayout().getSideButtonArea(0);
-                    double x = rect.getX() + button.getX() + button.getWidth() / 2.0;
-                    double y = rect.getY() + button.getY() + button.getHeight() / 2.0;
-                    check("clicks_actual_jei_transfer_button", layout.transferButton().isMouseOver(x, y)
-                        && gui.mouseClicked(x, y, 0) && gui.mouseReleased(x, y, 0));
+                    check("clicks_actual_jei_transfer_button", clickTransfer(gui, layout));
                     stage = Stage.TRANSFERRED;
                 }
                 case MANUAL -> {
@@ -164,7 +159,7 @@ final class ClientSagJeiSmoke {
                 }
                 case RELOADED -> {
                     if (!(minecraft.screen instanceof RecipesGui gui)) return;
-                    var layout = visibleOre(gui);
+                    var layout = visibleRecipe(gui, ORE);
                     if (layout == null) return;
                     check("real_viewer_displays_authored_feather", layout.getRecipeLayout().getRecipeSlotsView()
                         .getSlotViews(RecipeIngredientRole.CATALYST).get(0).getDisplayedItemStack().orElseThrow().is(Items.FEATHER));
@@ -257,16 +252,16 @@ final class ClientSagJeiSmoke {
         return tooltip.toLegacyToComponents().stream().map(Component::getString).toList();
     }
 
-    private static boolean matches(IJeiRuntime runtime, RecipeIngredientRole role, Item item, ResourceLocation id) {
+    static boolean matches(IJeiRuntime runtime, RecipeIngredientRole role, Item item, ResourceLocation id) {
         return runtime.getRecipeManager().createRecipeLookup(SagMillCategory.TYPE)
             .limitFocus(List.of(focus(runtime, role, item))).get().anyMatch(recipe -> recipe.getId().equals(id));
     }
 
-    private static IFocus<ItemStack> focus(IJeiRuntime runtime, RecipeIngredientRole role, Item item) {
+    static IFocus<ItemStack> focus(IJeiRuntime runtime, RecipeIngredientRole role, Item item) {
         return runtime.getJeiHelpers().getFocusFactory().createFocus(role, VanillaTypes.ITEM_STACK, new ItemStack(item));
     }
 
-    private static SagMillingRecipe recipe(IJeiRuntime runtime, ResourceLocation id) {
+    static SagMillingRecipe recipe(IJeiRuntime runtime, ResourceLocation id) {
         return runtime.getRecipeManager().createRecipeLookup(SagMillCategory.TYPE).get()
             .filter(recipe -> recipe.getId().equals(id)).findFirst().orElseThrow();
     }
@@ -284,15 +279,23 @@ final class ClientSagJeiSmoke {
             List.of(recipe(runtime, ORE)), List.of(focus(runtime, RecipeIngredientRole.CATALYST, ball)));
     }
 
-    private static RecipeLayoutWithButtons<?> visibleOre(RecipesGui gui) {
+    static RecipeLayoutWithButtons<?> visibleRecipe(RecipesGui gui, ResourceLocation id) {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
                 if (gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
-                    && layout.getRecipeLayout().getRecipe() instanceof SagMillingRecipe recipe && ORE.equals(recipe.getId())) return layout;
+                    && layout.getRecipeLayout().getRecipe() instanceof SagMillingRecipe recipe && id.equals(recipe.getId())) return layout;
             }
         }
         return null;
+    }
+
+    static boolean clickTransfer(RecipesGui gui, RecipeLayoutWithButtons<?> layout) {
+        var rect = layout.getRecipeLayout().getRect();
+        var button = layout.getRecipeLayout().getSideButtonArea(0);
+        double x = rect.getX() + button.getX() + button.getWidth() / 2.0;
+        double y = rect.getY() + button.getY() + button.getHeight() / 2.0;
+        return layout.transferButton().isMouseOver(x, y) && gui.mouseClicked(x, y, 0) && gui.mouseReleased(x, y, 0);
     }
 
     private void signal(String name) throws IOException {

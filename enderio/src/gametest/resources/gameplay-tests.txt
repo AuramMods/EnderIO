@@ -12,6 +12,7 @@ com.enderio.enderio.gametests.conduits.item.ItemConduitRateTests
 com.enderio.enderio.gametests.conduits.item.ItemConduitTests
 com.enderio.enderio.gametests.content.DecorativeRedstoneTests
 com.enderio.enderio.gametests.content.GlassTests
+com.enderio.enderio.gametests.content.PlayerReachTests
 com.enderio.enderio.gametests.content.SteelConstructionTests
 com.enderio.enderio.gametests.content.FireCraftingTests
 com.enderio.enderio.gametests.content.LegacyLightTests

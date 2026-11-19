@@ -7,8 +7,14 @@ import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOItems;
 import com.enderio.enderio.init.EIORecipes;
+import io.netty.buffer.Unpooled;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -47,6 +53,39 @@ public class SagMillTests {
         var stack = new ItemStack(Items.COBBLESTONE, count);
         stack.getOrCreateTag().putString("Variant", variant);
         return stack;
+    }
+
+    @GameTest
+    public static void recipeSyncPreservesResolvedTagOutputs(final GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1));
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var available = SagMillingRecipe.OutputItem.of(ItemTags.LOGS, 193, 0.75f, false);
+            var missingTag = TagKey.create(Registries.ITEM, new ResourceLocation("enderio", "test_missing_sag_output"));
+            var missing = SagMillingRecipe.OutputItem.of(missingTag, 4, 0.5f, true);
+            var fixed = SagMillingRecipe.OutputItem.of(taggedCobblestone(7, "network"), 1.0f, false);
+            var recipe = new SagMillingRecipe(Ingredient.of(Items.STONE), List.of(available, missing, fixed), 20,
+                SagMillingRecipe.BonusType.NONE);
+            var buffer = new FriendlyByteBuf(Unpooled.buffer());
+            try {
+                var codec = SagMillingRecipe.Serializer.STREAM_CODEC;
+                codec.encode(buffer, recipe);
+                var synced = codec.decode(buffer).outputs();
+                helper.assertTrue(available.output().right().isPresent(), "sync keeps the server recipe tag-backed");
+                helper.assertTrue(synced.get(0).output().left().isPresent()
+                    && ItemStack.matches(synced.get(0).getItemStack(), available.getItemStack()),
+                    "sync includes the resolved item and full count");
+                helper.assertTrue(!synced.get(1).isPresent() && synced.get(1).output().right().orElseThrow().count() == 0,
+                    "an unavailable tag stays empty on the client");
+                helper.assertTrue(synced.get(1).isOptional() && synced.get(1).chance() == 0.5f,
+                    "empty output preserves optionality and chance");
+                helper.assertTrue(ItemStack.matches(synced.get(2).getItemStack(), fixed.getItemStack()),
+                    "sync preserves fixed output NBT");
+                helper.assertTrue(!buffer.isReadable(), "sync consumes the whole packet");
+            } finally {
+                buffer.release();
+            }
+            helper.startSequence().thenSucceed();
+        });
     }
 
     @GameTest

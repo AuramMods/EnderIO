@@ -4,6 +4,7 @@
 import argparse
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -103,12 +104,15 @@ def main():
     parser.add_argument("--forge-server", required=True, type=Path)
     parser.add_argument("--jar", required=True, type=Path)
     parser.add_argument("--launch", required=True, type=Path)
+    parser.add_argument("--mod", action="append", default=[], type=Path, help="Install an optional mod on the server")
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a directory name")
 
     directory = ROOT / "build/port-runtime" / args.name
     prepare_profile(args, directory, args.jar)
+    for mod in args.mod:
+        shutil.copyfile(mod, directory / "mods" / mod.name)
     with (directory / "server.properties").open("a") as properties:
         properties.write(f"initial-enabled-packs=vanilla,{PACK}\n")
     report = {"passed": False, "forge": FORGE, "jarSha256": digest(directory / "mods/enderio.jar"),

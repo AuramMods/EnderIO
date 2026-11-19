@@ -184,7 +184,7 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
                 .apply(instance, OutputItem::new));
 
         public static final PacketCodec<OutputItem> STREAM_CODEC = PacketCodec.composite(
-                PacketCodecs.either(PacketCodecs.REQUIRED_ITEM_STACK_DATA, SizedTagOutput.STREAM_CODEC), OutputItem::output,
+                PacketCodecs.either(PacketCodecs.REQUIRED_ITEM_STACK_DATA, SizedTagOutput.STREAM_CODEC), OutputItem::networkOutput,
                 PacketCodecs.FLOAT, OutputItem::chance, PacketCodecs.BOOL, OutputItem::isOptional, OutputItem::new);
 
         public static OutputItem of(Item item, int count, float chance, boolean optional) {
@@ -207,6 +207,16 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
             return output.map(ItemStack::copy, SizedTagOutput::getItemStack);
         }
 
+        private Either<ItemStack, SizedTagOutput> networkOutput() {
+            return output.map(Either::left, tagged -> {
+                // The server's unification preferences can differ from the client's.
+                ItemStack resolved = tagged.getItemStack();
+                return resolved.isEmpty()
+                        ? Either.right(new SizedTagOutput(tagged.itemTag(), 0))
+                        : Either.left(resolved);
+            });
+        }
+
         public record SizedTagOutput(TagKey<Item> itemTag, int count) {
             private static final Codec<SizedTagOutput> CODEC = RecordCodecBuilder.create(instance -> instance
                     .group(TagKey.codec(Registries.ITEM).fieldOf("tag").forGetter(SizedTagOutput::itemTag),
@@ -220,6 +230,9 @@ public record SagMillingRecipe(Ingredient input, List<OutputItem> outputs, int e
                             SizedTagOutput::itemTag, PacketCodecs.INT, SizedTagOutput::count, SizedTagOutput::new);
 
             public ItemStack getItemStack() {
+                if (count == 0) {
+                    return ItemStack.EMPTY;
+                }
                 return OptionalItemUtility.getOptionalItem(itemTag).map(item -> new ItemStack(item, count)).orElse(ItemStack.EMPTY);
             }
         }

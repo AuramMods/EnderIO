@@ -284,6 +284,31 @@ def tag_progression(server, results):
         raise AssertionError("\n".join(failures))
 
 
+def verify_unified_furnaces(server, results):
+    """Observe the exact Mekanism recipe that cooks each Ender IO dust after deduplication."""
+    server.command("forceload add 2880 0 2895 15")
+    server.assert_state("unified_furnace_fixture_chunk_loaded", "if loaded 2881 80 8", results)
+    jobs = []
+    for index, material in enumerate(("copper", "gold", "iron")):
+        for offset, (kind, block) in enumerate((("blasting", "blast_furnace"), ("smelting", "furnace"))):
+            pos = f"{2881 + 2 * index + offset} 80 8"
+            server.command(f"setblock {pos} minecraft:{block}")
+            server.command(f"item replace block {pos} container.0 with enderio:powdered_{material}")
+            server.command(f"item replace block {pos} container.1 with minecraft:coal")
+            jobs.append((kind, material, pos))
+
+    replacements = {}
+    for kind, material, pos in jobs:
+        removed = f"enderio:item.minecraft.{material}_ingot_from_{kind}"
+        retained = f"mekanism:processing/{material}/ingot/from_dust_{kind}"
+        server.assert_state(f"unified_{kind}_cooks_the_original_enderio_{material}_dust",
+                            f'if data block {pos} {{RecipesUsed:{{"{retained}":1}}}} '
+                            f'if data block {pos} Items[{{Slot:2b,id:"minecraft:{material}_ingot",Count:1b}}] '
+                            f'unless data block {pos} Items[{{Slot:0b}}]', results, timeout=22)
+        replacements[removed] = retained
+    return replacements
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True)
@@ -292,6 +317,7 @@ def main():
     parser.add_argument("--experiments", action="store_true", help="Enable the three built-in experimental packs at world creation")
     parser.add_argument("--aluminum-fixture", action="store_true", help="Supply Forge aluminum tags and run the three SAG recipes")
     parser.add_argument("--tag-progression", action="store_true", help="Run the stock VAT variants and use native Forge wrenches")
+    parser.add_argument("--unified-furnaces", action="store_true", help="Demonstrate Almost Unified's six furnace replacements")
     for path in ("java", "forge-server", "jar", "probe"):
         parser.add_argument(f"--{path}", required=True, type=Path)
     args = parser.parse_args()
@@ -321,11 +347,20 @@ def main():
             grind_aluminum(server, results)
         if args.tag_progression:
             tag_progression(server, results)
+        if args.unified_furnaces:
+            report["furnaceReplacements"] = verify_unified_furnaces(server, results)
 
     try:
         run_stage(args, directory, report, "audit", exercise)
         runtime = json.loads((directory / "registry-snapshot.json").read_text())
         audit = reconcile(args.jar, runtime, args.experiments)
+        if args.unified_furnaces:
+            for key in ("baselineRecipes", "packagedRecipes"):
+                missing = audit[key]["missing"]
+                audit[key]["provedReplacements"] = {
+                    name: retained for name, retained in report["furnaceReplacements"].items() if name in missing
+                }
+                audit[key]["missing"] = [name for name in missing if name not in audit[key]["provedReplacements"]]
         report["audit"] = audit
         differences = ("missing", "unexpectedlyActive", "serializerDifferences", "orphanUnexpectedlyRegistered")
         report["passed"] = all(not check.get(field) for check in audit.values() for field in differences)

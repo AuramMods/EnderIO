@@ -34,7 +34,7 @@ parser.add_argument("--scenario",
                              "levitation-progression", "vat-controls", "redstone-filters", "conduit-filters", "transfer-filter-menus",
                              "stock-filter-menus", "filter-progression", "filter-recovery", "starter-progression", "energy-progression",
                              "item-progression",
-                             "sag-progression", "legacy-sag", "sag-jei", "slicer", "legacy-slicer", "slicer-jei",
+                             "sag-progression", "legacy-sag", "sag-jei", "sag-unified", "slicer", "legacy-slicer", "slicer-jei",
                              "filter-wrench-editor", "filter-wrench-operator",
                              "decorative-redstone", "steel-construction", "drain", "vacuums", "impulse-hopper", "storage-terminals",
                              "mekanism-controls", "ae2-facade", "me-colors",
@@ -90,7 +90,8 @@ shader_drew_frame = ((args.scenario == "stained-facades-oculus-shader" and check
                          and checks.get("shader_pack_drew_connected-facades"))
                      or (args.scenario == "facade-corners-shader" and checks.get("shader_drew_matching-south"))
                      or (args.scenario in {"facade-shader-passes", "facade-shader-toggle"}
-                         and checks.get("active_shader_final_pass_visible")))
+                         and checks.get("active_shader_final_pass_visible"))
+                     or (args.scenario == "sag-unified" and checks.get("authored_shader_draws_the_integrated_world")))
 if checks.get("expected_oculus_installation") and (shaders_disabled or shader_drew_frame):
     # Embeddium emits this support-policy diagnostic when Oculus patches its renderer.
     notice = ("/ERROR] [Embeddium-MixinTaintDetector/]: Mod mixin into Embeddium internals detected. "
