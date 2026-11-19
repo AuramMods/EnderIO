@@ -307,7 +307,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 098: Enderface preview and remote menus | Restore the staff's client action and match preview clicks to world block hits | The build passes 79 unit and 483 native tests. Packaged TCP passes eight server assertions and 29 client checks covering two remote menus, exact shift-click transfer, removal, reconnect and restart. [Evidence and commands](porting/1.20.1/cycle-098.md) | `d75ad3977` |
 
-| 099: Crafter recipes and saved output | Restore templates after level attachment and preserve outputs and crafting remainders across restart | The build passes 79 unit and 483 native tests. Packaged Forge passes 14 assertions covering two restarts, hopper input and output, exact recipe costs, full output and a live datapack reload. [Evidence and commands](porting/1.20.1/cycle-099.md) | Commit containing cycle 099 |
+| 099: Crafter recipes and saved output | Restore templates after level attachment and preserve outputs and crafting remainders across restart | The build passes 79 unit and 483 native tests. Packaged Forge passes 14 assertions covering two restarts, hopper input and output, exact recipe costs, full output and a live datapack reload. [Evidence and commands](porting/1.20.1/cycle-099.md) | `fc5a6142b` |
+
+| 100: Crafter recipe transfer and native menu | Preserve required Forge ingredient tags during JEI transfer and verify manual ghost slots with JEI absent | The build passes 79 unit and 483 native tests. Two packaged TCP profiles pass 27 guarded client checks and 11 server assertions covering shaped transfer, tagged ingredients, exact craft cost and restart. [Evidence and commands](porting/1.20.1/cycle-100.md) | Commit containing cycle 100 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

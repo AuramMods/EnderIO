@@ -310,6 +310,10 @@ public final class ClientSoulEngineFuelsSmoke {
     public static final class JeiProbe implements IModPlugin {
         private static IJeiRuntime runtime;
 
+        static IJeiRuntime runtime() {
+            return runtime;
+        }
+
         @Override
         public ResourceLocation getPluginUid() {
             return ResourceLocation.fromNamespaceAndPath("enderio_client_qa", "soul_engine_fuels");

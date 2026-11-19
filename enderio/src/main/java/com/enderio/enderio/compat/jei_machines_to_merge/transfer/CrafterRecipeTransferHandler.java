@@ -105,10 +105,12 @@ public class CrafterRecipeTransferHandler implements IRecipeTransferHandler<Craf
     private ItemStack getIngredientItem(Player player, Ingredient ingredient) {
         for (var item : player.getInventory().items) {
             if (ingredient.test(item)) {
-                return new ItemStack(item.getItem(), 1);
+                // Ordinary ingredients only need the item, while Forge ingredients can require its NBT.
+                var plain = new ItemStack(item.getItem());
+                return ingredient.test(plain) ? plain : item.copyWithCount(1);
             }
         }
 
-        return ingredient.getItems()[0];
+        return ingredient.getItems()[0].copyWithCount(1);
     }
 }

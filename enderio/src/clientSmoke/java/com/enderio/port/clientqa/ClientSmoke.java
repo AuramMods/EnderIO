@@ -63,6 +63,8 @@ public final class ClientSmoke {
             case "ultimine" -> new ClientUltimineSmoke(true);
             case "ultimine-absent" -> new ClientUltimineSmoke(false);
             case "enderface" -> new ClientEnderfaceSmoke();
+            case "crafter" -> new ClientCrafterSmoke(false);
+            case "crafter-jei" -> new ClientCrafterSmoke(true);
             case "facade-seams" -> new ClientFacadeSeamSmoke(false, false);
             case "facade-seams-embeddium" -> new ClientFacadeSeamSmoke(false, true);
             case "facade-seams-mixed" -> new ClientFacadeSeamSmoke(true, false);
