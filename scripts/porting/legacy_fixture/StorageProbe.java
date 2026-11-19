@@ -4,10 +4,14 @@ import appeng.api.config.Actionable;
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.security.IActionSource;
+import appeng.api.parts.IPartItem;
+import appeng.api.parts.PartHelper;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.MEStorage;
+import appeng.api.util.AEColor;
 import appeng.blockentity.storage.DriveBlockEntity;
 import appeng.core.definitions.AEItems;
+import appeng.core.definitions.AEParts;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.refinedmods.refinedstorage.RSItems;
 import com.refinedmods.refinedstorage.api.network.node.INetworkNode;
@@ -35,6 +39,8 @@ import java.util.function.Consumer;
 @Mod("port_storage_probe")
 public class StorageProbe {
     private static final int[] AE_ROUTES = {4, 7, 10};
+    private static final BlockPos TERMINAL = new BlockPos(1085, 80, 4);
+    private static final BlockPos GRID = new BlockPos(1085, 80, 13);
     private static final IActionSource AE_SOURCE = IActionSource.empty();
     private static final UUID RS_LEFT_OWNER = UUID.fromString("3e96b660-0e27-4020-a770-00d68996d801");
     private static final UUID RS_RIGHT_OWNER = UUID.fromString("3e96b660-0e27-4020-a770-00d68996d802");
@@ -47,6 +53,10 @@ public class StorageProbe {
         event.getDispatcher().register(Commands.literal("port_storage_native").requires(source -> source.hasPermission(4))
             .executes(context -> check(context.getSource(), false))
             .then(Commands.literal("seed_legacy_owners").executes(context -> check(context.getSource(), true)))
+            .then(Commands.literal("place_terminal")
+                .executes(context -> run(context.getSource(), "Native AE2 terminal placed", StorageProbe::placeTerminal)))
+            .then(Commands.literal("check_grid")
+                .executes(context -> run(context.getSource(), "Native RS grid connects to its controller", StorageProbe::checkGrid)))
             .then(Commands.literal("mount_items").executes(context -> run(context.getSource(), "Native item storage mounted", StorageProbe::mount)))
             .then(Commands.literal("write_items").then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
                 .executes(context -> run(context.getSource(), "Native item storage accepted the write",
@@ -54,6 +64,11 @@ public class StorageProbe {
             .then(Commands.literal("check_items").then(Commands.argument("count", IntegerArgumentType.integer(0, 64))
                 .executes(context -> run(context.getSource(), "Native item storage counts verified",
                     level -> checkItems(level, IntegerArgumentType.getInteger(context, "count"))))))
+            .then(Commands.literal("check_route_items").then(Commands.argument("route", IntegerArgumentType.integer(4, 13))
+                .then(Commands.argument("count", IntegerArgumentType.integer(0, 64))
+                    .executes(context -> run(context.getSource(), "Native route item count verified",
+                        level -> checkRouteItems(level, IntegerArgumentType.getInteger(context, "route"),
+                            IntegerArgumentType.getInteger(context, "count")))))))
             .then(Commands.literal("take_items").then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
                 .executes(context -> run(context.getSource(), "Native item storage delivered the requested items",
                     level -> take(level, IntegerArgumentType.getInteger(context, "count")))))));
@@ -68,6 +83,21 @@ public class StorageProbe {
         }
         source.sendSuccess(() -> Component.literal(message), false);
         return 1;
+    }
+
+    private static void placeTerminal(ServerLevel level) {
+        var player = FakePlayerFactory.getMinecraft(level);
+        var cable = PartHelper.setPart(level, TERMINAL, null, player, AEParts.GLASS_CABLE.item(AEColor.TRANSPARENT));
+        require(cable != null, "AE2 did not place the terminal's glass cable");
+        require(PartHelper.setPart(level, TERMINAL, Direction.WEST, player, IPartItem.byId(AEParts.TERMINAL.id())) != null,
+            "AE2 did not place the item terminal on the west face");
+    }
+
+    private static void checkGrid(ServerLevel level) {
+        var controller = rsNode(level, 1086);
+        var grid = rsNode(level, GRID.getX());
+        require(grid.getNetwork() != null && grid.getNetwork() == controller.getNetwork() && grid.isActive(),
+            "The RS grid is not active on the fixture controller's native network");
     }
 
     private static void mount(ServerLevel level) {
@@ -92,17 +122,33 @@ public class StorageProbe {
 
     private static void checkItems(ServerLevel level, int count) {
         for (int z : AE_ROUTES) {
-            var key = AEItemKey.of(sample(z));
-            var storage = aeStorage(level, z);
-            var cell = aeDrive(level, z).getCellInventory(0);
-            require(cell != null && cell.getAvailableStacks().get(key) == count, "Wrong physical AE2 cell count at z=" + z);
-            require(storage.extract(key, 64, Actionable.SIMULATE, AE_SOURCE) == count
-                && storage.extract(AEItemKey.of(sample(0)), 1, Actionable.SIMULATE, AE_SOURCE) == 0,
-                "Wrong AE2 item count or tag at z=" + z);
-            if (count == 0) {
-                require(storage.insert(key, 64, Actionable.SIMULATE, AE_SOURCE) == 64, "AE2 cell is not mounted at z=" + z);
-            }
+            checkAEItems(level, z, count);
         }
+        checkRSItems(level, count);
+    }
+
+    private static void checkRouteItems(ServerLevel level, int route, int count) {
+        switch (route) {
+            case 4, 7, 10 -> checkAEItems(level, route, count);
+            case 13 -> checkRSItems(level, count);
+            default -> throw new IllegalStateException("Unknown storage route " + route);
+        }
+    }
+
+    private static void checkAEItems(ServerLevel level, int z, int count) {
+        var key = AEItemKey.of(sample(z));
+        var storage = aeStorage(level, z);
+        var cell = aeDrive(level, z).getCellInventory(0);
+        require(cell != null && cell.getAvailableStacks().get(key) == count, "Wrong physical AE2 cell count at z=" + z);
+        require(storage.extract(key, 64, Actionable.SIMULATE, AE_SOURCE) == count
+            && storage.extract(AEItemKey.of(sample(0)), 1, Actionable.SIMULATE, AE_SOURCE) == 0,
+            "Wrong AE2 item count or tag at z=" + z);
+        if (count == 0) {
+            require(storage.insert(key, 64, Actionable.SIMULATE, AE_SOURCE) == 64, "AE2 cell is not mounted at z=" + z);
+        }
+    }
+
+    private static void checkRSItems(ServerLevel level, int count) {
         var network = rsNode(level, 1086).getNetwork();
         var disk = rsDrive(level).getItemDisks()[0];
         var stack = sample(13);

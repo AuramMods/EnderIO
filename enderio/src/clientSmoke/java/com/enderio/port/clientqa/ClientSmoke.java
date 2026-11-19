@@ -91,6 +91,7 @@ public final class ClientSmoke {
             case "drain" -> new ClientDrainSmoke();
             case "vacuums" -> new ClientVacuumSmoke();
             case "impulse-hopper" -> new ClientImpulseHopperSmoke();
+            case "storage-terminals" -> new ClientStorageTerminalSmoke();
             case "legacy-soulbound" -> new ClientSoulboundSmoke();
             case "enchanter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.ENCHANTER);
             case "enchanter-reload" -> new ClientEnchanterReloadSmoke();
