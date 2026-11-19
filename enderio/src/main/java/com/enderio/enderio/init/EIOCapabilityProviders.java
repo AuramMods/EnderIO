@@ -65,7 +65,7 @@ public class EIOCapabilityProviders {
         // Filter menu providers
         registry.register(EnderIOCapabilities.FILTER_MENU_PROVIDER, AbstractFilterItem.FILTER_MENU_PROVIDER, EIOItems.BASIC_ITEM_FILTER.getId(),
             EIOItems.ADVANCED_ITEM_FILTER.getId(), EIOItems.BIG_ITEM_FILTER.getId(), EIOItems.BIG_ADVANCED_ITEM_FILTER.getId(), EIOItems.BASIC_SOUL_FILTER.getId(),
-            EIOItems.LIMITED_ITEM_FILTER.getId());
+            EIOItems.LIMITED_ITEM_FILTER.getId(), EIOItems.BASIC_FLUID_FILTER.getId());
 
         // Filter providers
         registry.register(EnderIOCapabilities.ITEM_FILTER, EnderItemFilterItem.ITEM_FILTER_PROVIDER, EIOItems.BASIC_ITEM_FILTER.getId(), EIOItems.ADVANCED_ITEM_FILTER.getId(),

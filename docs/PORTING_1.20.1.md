@@ -355,7 +355,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 122: Installed Forge 6.2 redstone filters | Preserve a pending pulse when converting a legacy timer whose period was shortened | The build passes 79 unit cases and 487 native runs. Packaged Forge passes 71 assertions across eight installed filters, a forced chest link, chunk eviction, dedicated restart and native filter recovery. [Evidence and commands](porting/1.20.1/cycle-122.md) | `61eb0b415` |
 
-| 123: Forge 6.2 item and fluid filters | Restore loose and installed filters with their original samples and comparison rules | The build passes 79 unit cases and 489 native runs. Packaged Forge passes 61 assertions across four item and fluid routes, eight filter stacks, chunk eviction and dedicated restart. [Evidence and commands](porting/1.20.1/cycle-123.md) | Commit containing cycle 123 |
+| 123: Forge 6.2 item and fluid filters | Restore loose and installed filters with their original samples and comparison rules | The build passes 79 unit cases and 489 native runs. Packaged Forge passes 61 assertions across four item and fluid routes, eight filter stacks, chunk eviction and dedicated restart. [Evidence and commands](porting/1.20.1/cycle-123.md) | `db67916be` |
+
+| 124: Item and fluid filter menus | Bind handheld edits to the opening hand and expose the installed fluid configure button | The build passes 79 unit cases and 489 native runs. Packaged multiplayer passes 11 client and 12 server checks, including exact item and fluid routing before and after a dedicated restart. [Evidence and commands](porting/1.20.1/cycle-124.md) | Commit containing cycle 124 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

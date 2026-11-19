@@ -44,9 +44,8 @@ public abstract class AbstractFilterItem<T> extends Item implements FilterMenuPr
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if (player.isSteppingCarefully()) {
+            var itemInHand = player.getItemInHand(usedHand);
             if (player instanceof ServerPlayer serverPlayer) {
-                var itemInHand = player.getItemInHand(usedHand);
-
                 serverPlayer.openMenu(new MenuProvider() {
                     @Override
                     public Component getDisplayName() {
@@ -55,10 +54,12 @@ public abstract class AbstractFilterItem<T> extends Item implements FilterMenuPr
 
                     @Override
                     public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-                        return AbstractFilterItem.this.createMenu(containerId, inventory, new AbstractFilterMenu.HandFilterAccess(player, itemInHand));
+                        return AbstractFilterItem.this.createMenu(containerId, inventory,
+                            new AbstractFilterMenu.HandFilterAccess(player, usedHand, itemInHand));
                     }
                 });
             }
+            return InteractionResultHolder.sidedSuccess(itemInHand, level.isClientSide);
         }
 
         return super.use(level, player, usedHand);

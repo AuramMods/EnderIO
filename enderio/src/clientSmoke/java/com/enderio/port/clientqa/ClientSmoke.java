@@ -80,6 +80,7 @@ public final class ClientSmoke {
             case "vat-controls" -> new ClientVatControlsSmoke();
             case "redstone-filters" -> new ClientRedstoneFiltersSmoke();
             case "conduit-filters" -> new ClientConduitFiltersSmoke();
+            case "transfer-filter-menus" -> new ClientTransferFilterMenusSmoke();
             case "legacy-soulbound" -> new ClientSoulboundSmoke();
             case "enchanter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.ENCHANTER);
             case "enchanter-reload" -> new ClientEnchanterReloadSmoke();

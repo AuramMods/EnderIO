@@ -4,7 +4,7 @@ import com.enderio.core.annotations.UseOnly;
 import com.enderio.core.common.menu.BaseEnderMenu;
 import com.enderio.core.common.network.menu.IntSyncSlot;
 import com.enderio.core.common.item.ItemDataKey;
-import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
@@ -40,7 +40,7 @@ public abstract class AbstractFilterMenu<T> extends BaseEnderMenu {
 
     /**
      * Client menu constructor.
-     * Filter access should be created from the network buffer available in the client constructors.
+     * The opening slot is synchronized by the menu.
      */
     protected AbstractFilterMenu(@Nullable MenuType<?> menuType, int containerId, Inventory playerInventory) {
         super(menuType, containerId, playerInventory);
@@ -96,6 +96,11 @@ public abstract class AbstractFilterMenu<T> extends BaseEnderMenu {
             public boolean mayPickup(Player player) {
                 return slot != playerInventorySlot.get();
             }
+
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return slot != playerInventorySlot.get();
+            }
         };
     }
 
@@ -113,15 +118,12 @@ public abstract class AbstractFilterMenu<T> extends BaseEnderMenu {
 
     @UseOnly(LogicalSide.SERVER)
     private int getPlayerInventorySlot() {
-        if (filterAccess instanceof HandFilterAccess) {
-            return getPlayerInventory().selected;
-        }
-
-        return -1;
+        return filterAccess instanceof HandFilterAccess hand ? hand.inventorySlot : -1;
     }
 
     @Override
     public void doClick(int slotId, int button, ClickType clickType, Player player) {
+        if (clickType == ClickType.SWAP && button == playerInventorySlot.get()) return;
         if (slotId >= 0 && slotId < slots.size() && getSlot(slotId) instanceof FilterSlot<?> filterSlot) {
             // Only allow PICKUP (click) or QUICK_MOVE (shift + click) events.
             if (clickType != ClickType.PICKUP && clickType != ClickType.QUICK_MOVE) {
@@ -150,10 +152,14 @@ public abstract class AbstractFilterMenu<T> extends BaseEnderMenu {
 
     public static final class HandFilterAccess implements FilterAccess {
         private final Player player;
+        private final InteractionHand hand;
+        private final int inventorySlot;
         private ItemStack stack;
 
-        public HandFilterAccess(Player player, ItemStack stack) {
+        public HandFilterAccess(Player player, InteractionHand hand, ItemStack stack) {
             this.player = player;
+            this.hand = hand;
+            this.inventorySlot = hand == InteractionHand.MAIN_HAND ? player.getInventory().selected : Inventory.SLOT_OFFHAND;
             this.stack = stack;
         }
 
@@ -164,13 +170,14 @@ public abstract class AbstractFilterMenu<T> extends BaseEnderMenu {
 
         @Override
         public void setFilterItem(ItemStack stack) {
-            player.setItemSlot(EquipmentSlot.MAINHAND, stack);
+            player.setItemInHand(hand, stack);
             this.stack = stack;
         }
 
         @Override
         public boolean stillValid(Player player) {
-            return player.getMainHandItem().equals(stack);
+            return this.player == player && player.getItemInHand(hand) == stack
+                && (hand == InteractionHand.OFF_HAND || player.getInventory().selected == inventorySlot);
         }
 
         @Override

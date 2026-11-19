@@ -32,4 +32,4 @@ python3 scripts/porting/packaged_legacy_transfer_filters.py --name cycle-123-fix
 
 ## Remaining verification
 
-Packaged multiplayer editing remains open for the item and fluid filter families. The large item filters and both limited stock filters are newer than this Forge 6 fixture and need their own live scenarios. Earlier port builds wrote installed filters without the comparison modes added here. Reload the original 6.2 save to recover those modes for such filters.
+The large item filters and the limited stock filter are newer than this Forge 6 fixture and need their own live scenarios. [Cycle 124](cycle-124.md) exercises the migrated advanced item and basic fluid filter editors over multiplayer. Earlier port builds wrote installed filters without the comparison modes added here. Reload the original 6.2 save to recover those modes for such filters.
