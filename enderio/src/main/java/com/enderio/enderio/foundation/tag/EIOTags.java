@@ -159,6 +159,10 @@ public class EIOTags {
             return ItemTags.create(ResourceLocation.fromNamespaceAndPath(COMMON, name));
         }
 
+        public static TagKey<Item> forgeEquivalent(TagKey<Item> commonTag) {
+            return ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", commonTag.location().getPath()));
+        }
+
         private static TagKey<Item> tag(String name) {
             return ItemTags.create(EnderIO.rl(name));
         }

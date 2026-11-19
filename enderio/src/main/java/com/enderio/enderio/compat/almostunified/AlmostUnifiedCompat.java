@@ -1,6 +1,7 @@
 package com.enderio.enderio.compat.almostunified;
 
 import com.almostreliable.unified.api.AlmostUnifiedLookup;
+import com.enderio.enderio.foundation.tag.EIOTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.fml.ModList;
@@ -21,7 +22,15 @@ public class AlmostUnifiedCompat {
 
     private static class Adapter {
         private static @Nullable Item getTagTargetItem(TagKey<Item> tag) {
-            return AlmostUnifiedLookup.INSTANCE.getPreferredItemForTag(tag);
+            var lookup = AlmostUnifiedLookup.INSTANCE;
+            Item preferred = lookup.getPreferredItemForTag(tag);
+            if (preferred != null || !tag.location().getNamespace().equals(EIOTags.COMMON)) {
+                return preferred;
+            }
+
+            // Forge 1.20.1 unification configs usually select the Forge material tag.
+            Item forgePreferred = lookup.getPreferredItemForTag(EIOTags.Items.forgeEquivalent(tag));
+            return forgePreferred != null && forgePreferred.builtInRegistryHolder().is(tag) ? forgePreferred : null;
         }
     }
 }

@@ -8,7 +8,10 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.ItemTagsProvider;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.Tags;
@@ -41,6 +44,7 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
         copy(EIOTags.Blocks.FUSED_QUARTZ, EIOTags.Items.FUSED_QUARTZ);
 
         addDustsTags();
+        addSagMillMaterialTags();
         addIngotTags();
         addNuggetTags();
 
@@ -134,10 +138,10 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
 
     private void addDustsTags() {
         tag(EIOTags.Items.DUSTS_COAL).add(EIOItems.POWDERED_COAL.get());
-        tag(EIOTags.Items.DUSTS_IRON).add(EIOItems.POWDERED_IRON.get());
-        tag(EIOTags.Items.DUSTS_GOLD).add(EIOItems.POWDERED_GOLD.get());
-        tag(EIOTags.Items.DUSTS_COPPER).add(EIOItems.POWDERED_COPPER.get());
-        tag(EIOTags.Items.DUSTS_TIN).add(EIOItems.POWDERED_TIN.get());
+        addSharedMaterial(EIOTags.Items.DUSTS_IRON, EIOItems.POWDERED_IRON.get());
+        addSharedMaterial(EIOTags.Items.DUSTS_GOLD, EIOItems.POWDERED_GOLD.get());
+        addSharedMaterial(EIOTags.Items.DUSTS_COPPER, EIOItems.POWDERED_COPPER.get());
+        addSharedMaterial(EIOTags.Items.DUSTS_TIN, EIOItems.POWDERED_TIN.get());
         tag(EIOTags.Items.DUSTS_ENDER).add(EIOItems.POWDERED_ENDER_PEARL.get());
         tag(EIOTags.Items.DUSTS_OBSIDIAN).add(EIOItems.POWDERED_OBSIDIAN.get());
         tag(EIOTags.Items.DUSTS_LAPIS).add(EIOItems.POWDERED_LAPIS_LAZULI.get());
@@ -164,6 +168,28 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
             .addTag(EIOTags.Items.DUSTS_GRAINS_OF_VIBRANCY)
             .addTag(EIOTags.Items.DUSTS_GRAINS_OF_PIZEALLITY)
             .addTag(EIOTags.Items.DUSTS_GRAINS_OF_THE_END);
+    }
+
+    private void addSharedMaterial(TagKey<Item> common, Item item) {
+        TagKey<Item> forge = EIOTags.Items.forgeEquivalent(common);
+        tag(forge).add(item);
+        tag(common).addTag(forge);
+    }
+
+    private void addSagMillMaterialTags() {
+        for (String metal : new String[] { "aluminum", "osmium", "tin", "uranium", "lead" }) {
+            for (String form : new String[] { "ores", "ingots", "raw_materials" }) {
+                addOptionalForgeMaterial(form + "/" + metal);
+            }
+        }
+        for (String metal : new String[] { "aluminum", "osmium", "uranium", "lead", "sulfur" }) {
+            addOptionalForgeMaterial("dusts/" + metal);
+        }
+    }
+
+    private void addOptionalForgeMaterial(String path) {
+        var common = ItemTags.create(ResourceLocation.fromNamespaceAndPath(EIOTags.COMMON, path));
+        tag(common).addOptionalTag(EIOTags.Items.forgeEquivalent(common).location());
     }
 
     private void addGearTags() {

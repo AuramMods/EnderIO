@@ -15,7 +15,7 @@ Selected on 2026-11-17. Artifact coordinates are pinned in `gradle/libs.versions
 | Refined Storage | 1.12.4 | Modrinth `refined-storage:ZITLFjjf` | Native controller routing, split/reconnect, sides and bundle reload pass. Packaged migration keeps a controller-to-drive route and owners across chunk reload and restart. Storage operations and the client remain pending ([cycle 053](cycle-053.md)) |
 | LaserIO | 1.6.8 | Curse Maven `laserio-626839:5074767` | Native book recipe passes with Patchouli; card/filter gameplay pending |
 | Patchouli (LaserIO book) | 1.20.1-84.1-forge | Modrinth `patchouli:8Qyw08ld` | Native LaserIO book matching/assembly passes; book UI pending |
-| Almost Unified | 1.20.1-0.10.1 | `com.almostreliable.mods:almostunified-forge` | Pending |
+| Almost Unified | 1.20.1-0.10.1 | `com.almostreliable.mods:almostunified-forge` | A packaged Forge SAG Mill selects the configured Forge tin dust, respects a live output-tag restriction and preserves previous outputs after priority changes and restart. Optional loading and the Mekanism input work with Almost Unified absent. Other material and JEI combinations remain open. [Cycle 095](cycle-095.md) |
 | FTB Ultimine | 2001.1.8 | `dev.ftb.mods:ftb-ultimine-forge` | Pending |
 | FTB Library | 2001.2.13 | `dev.ftb.mods:ftb-library-forge` | Pending |
 | Architectury | 9.2.14+forge | Modrinth `architectury-api:1MKTLiiG` | Pending |
