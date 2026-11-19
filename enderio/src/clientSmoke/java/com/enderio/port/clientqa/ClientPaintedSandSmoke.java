@@ -9,7 +9,6 @@ import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderio.enderio.init.EIOEntities;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
@@ -181,7 +180,7 @@ final class ClientPaintedSandSmoke {
         check("painted_sand_uses_its_registered_entity_renderer",
             minecraft.getEntityRenderDispatcher().getRenderer(sand) instanceof PaintedSandRenderer);
         var frame = capture(image);
-        int pixels = diamondPixels();
+        int pixels = ClientSmoke.diamondPixels(minecraft);
         frame.put("diamondPixels", pixels);
         check("airborne_frame_shows_the_diamond_surface", pixels > 300);
         return true;
@@ -198,22 +197,6 @@ final class ClientPaintedSandSmoke {
     private static boolean paintedSand(ItemStack stack, int count, BlockPaintData paint) {
         return stack.is(EIOBlocks.PAINTED_SAND.get().asItem()) && stack.getCount() == count
             && paint.equals(EIODataComponents.BLOCK_PAINT.get(stack));
-    }
-
-    private int diamondPixels() {
-        int count = 0;
-        try (var image = Screenshot.takeScreenshot(minecraft.getMainRenderTarget())) {
-            for (int y = image.getHeight() * 18 / 100; y < image.getHeight() * 82 / 100; y++) {
-                for (int x = image.getWidth() * 43 / 100; x < image.getWidth() * 57 / 100; x++) {
-                    int pixel = image.getPixelRGBA(x, y);
-                    int red = pixel & 255;
-                    int green = pixel >>> 8 & 255;
-                    int blue = pixel >>> 16 & 255;
-                    if (green - red > 45 && blue - red > 38 && Math.abs(green - blue) < 35) count++;
-                }
-            }
-        }
-        return count;
     }
 
     private boolean positioned(BlockPos pos, double offsetZ) {

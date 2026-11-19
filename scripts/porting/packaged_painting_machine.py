@@ -46,7 +46,8 @@ def inventory(pos, items, charge):
 
 def paint_and_extract(server, results, machine, hopper, kind, template_item, paint):
     server.command(f"setblock {machine} enderio:painting_machine[facing=south]")
-    entries = [CAPACITOR, f'{{Slot:1,id:"minecraft:{template_item}",Count:1}}', palette(paint)]
+    template_id = template_item if ":" in template_item else f"minecraft:{template_item}"
+    entries = [CAPACITOR, f'{{Slot:1,id:"{template_id}",Count:1}}', palette(paint)]
     server.command(f'data merge block {machine} {{EnergyStored:{COST},Items:{{Items:[{",".join(entries)}]}}}}')
     output = f'id:"enderio:painted_{kind}",{paint_tag(paint)}'
     server.assert_state(f"native_recipe_paints_{kind}",

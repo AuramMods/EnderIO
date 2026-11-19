@@ -51,6 +51,7 @@ public final class ClientSmoke {
             case "painted-redstone" -> new ClientPaintedRedstoneSmoke();
             case "painted-building" -> new ClientPaintedBuildingSmoke(false);
             case "painted-building-wet" -> new ClientPaintedBuildingSmoke(true);
+            case "painted-travel" -> new ClientPaintedTravelSmoke();
             case "legacy-painting" -> new ClientLegacyPaintingSmoke();
             case "painted-slabs" -> new ClientPaintedSlabSmoke();
             case "facades" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.FORGE, false);
@@ -193,6 +194,22 @@ public final class ClientSmoke {
             && ((Long) result.get("distinctPixels")) > 100;
         result.put("passed", passed);
         return result;
+    }
+
+    static int diamondPixels(Minecraft minecraft) {
+        int count = 0;
+        try (var image = Screenshot.takeScreenshot(minecraft.getMainRenderTarget())) {
+            for (int y = image.getHeight() * 18 / 100; y < image.getHeight() * 82 / 100; y++) {
+                for (int x = image.getWidth() * 43 / 100; x < image.getWidth() * 57 / 100; x++) {
+                    int pixel = image.getPixelRGBA(x, y);
+                    int red = pixel & 255;
+                    int green = pixel >>> 8 & 255;
+                    int blue = pixel >>> 16 & 255;
+                    if (green - red > 45 && blue - red > 38 && Math.abs(green - blue) < 35) count++;
+                }
+            }
+        }
+        return count;
     }
 
     static void complete(String event, Map<String, Object> result) {
