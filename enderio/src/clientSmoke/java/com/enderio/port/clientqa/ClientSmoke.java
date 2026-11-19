@@ -129,6 +129,7 @@ public final class ClientSmoke {
             case "facade-corners-core" -> new ClientFacadeCornerSmoke(false, false);
             case "facade-corners-athena" -> new ClientFacadeCornerSmoke(true, false);
             case "facade-corners-shader" -> new ClientFacadeCornerSmoke(true, true);
+            case "facade-shader-passes" -> new ClientFacadeShaderPassSmoke();
             case "glass-progression" -> new ClientGlassProgressionSmoke();
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "natural-spawns" -> new ClientNaturalSpawnSmoke();
