@@ -1,6 +1,5 @@
 package com.enderio.enderio.content.machines.drain;
 
-import net.minecraft.world.item.ItemStack;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.capacitor.CapacitorModifier;
 import com.enderio.enderio.api.capacitor.QuadraticScalable;
@@ -14,7 +13,9 @@ import com.enderio.enderio.foundation.attachment.RangedActor;
 import com.enderio.enderio.foundation.block.entity.PoweredMachineBlockEntity;
 import com.enderio.enderio.foundation.block.entity.flags.CapacitorSupport;
 import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
+import com.enderio.enderio.foundation.io.Forge6MachineItemData;
 import com.enderio.enderio.foundation.io.IOConfig;
+import com.enderio.enderio.foundation.io.LegacyMachineData;
 import com.enderio.enderio.foundation.io.fluid.MachineFluidHandler;
 import com.enderio.enderio.foundation.io.fluid.MachineFluidTank;
 import com.enderio.enderio.foundation.io.fluid.MachineTankLayout;
@@ -24,15 +25,17 @@ import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIODataComponents;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.BucketPickup;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fluids.FluidType;
@@ -59,7 +62,7 @@ public class DrainBlockEntity extends PoweredMachineBlockEntity implements Range
     private static final int ENERGY_PER_BUCKET = 1_500;
     private List<BlockPos> positions;
     private int currentIndex = 0;
-    private boolean fluidFound = false;
+    private boolean collectedSource;
     private int consumed = 0;
     private Fluid type = Fluids.EMPTY;
 
@@ -79,12 +82,19 @@ public class DrainBlockEntity extends PoweredMachineBlockEntity implements Range
     @Override
     @UseOnly(LogicalSide.SERVER)
     public void setActionRange(ActionRange actionRange) {
-        this.actionRange = actionRange.clamp(0, getMaxRange());
-        updateLocations();
+        applyActionRange(actionRange);
         setChanged();
 
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        }
+    }
+
+    private void applyActionRange(ActionRange range) {
+        int previousRange = getRange();
+        actionRange = range.clamp(0, getMaxRange());
+        if (previousRange != getRange() && level != null && !level.isClientSide()) {
+            updateLocations();
         }
     }
 
@@ -117,8 +127,8 @@ public class DrainBlockEntity extends PoweredMachineBlockEntity implements Range
         return new MachineFluidHandler(this, getTankLayout()) {
             @Override
             protected void onContentsChanged(int slot) {
-                super.onContentsChanged(slot);
-                updateMachineState(MachineState.FULL_TANK, TANK.getFluidAmount(this) >= TANK.getCapacity(this));
+                updateMachineState(MachineState.FULL_TANK, getFluidInTank(slot).getAmount() >= getTankCapacity(slot));
+                setChanged();
             }
         };
     }
@@ -139,69 +149,70 @@ public class DrainBlockEntity extends PoweredMachineBlockEntity implements Range
 
     @Override
     public boolean isActive() {
-        if (!canAct()) {
+        if (!canAct() || !isCapacitorInstalled()) {
             return false;
         }
 
-        FluidState fluidState = level.getFluidState(worldPosition.below());
-        if (fluidState.isEmpty() || !fluidState.isSource()) {
-            updateMachineState(MachineState.NO_SOURCE, true);
-            return false;
-        }
-        updateMachineState(MachineState.NO_SOURCE, false);
-        type = fluidState.getType();
-        return TANK.fill(this, new FluidStack(type, FluidType.BUCKET_VOLUME),
+        BlockState intake = getSource(worldPosition.below());
+        updateMachineState(MachineState.NO_SOURCE, intake == null);
+        type = intake == null ? Fluids.EMPTY : intake.getFluidState().getType();
+        return intake != null && (hasEnergy() || consumed == ENERGY_PER_BUCKET)
+            && TANK.fill(this, new FluidStack(type, FluidType.BUCKET_VOLUME),
                 IFluidHandler.FluidAction.SIMULATE) == FluidType.BUCKET_VOLUME;
     }
 
-    public void drainFluids() {
-        int stop = Math.min(currentIndex + getRange(), positions.size());
-        while (currentIndex < stop) {
-            if (currentIndex >= positions.size()) {
-                currentIndex--;
-            }
+    private void drainFluids() {
+        BlockPos intake = worldPosition.below();
+        int stop = Math.min(currentIndex + Math.max(1, getRange()), positions.size());
+        for (; currentIndex < stop; currentIndex++) {
             BlockPos pos = positions.get(currentIndex);
-
-            // Skip, as this is the last checked block
-            if (pos.equals(worldPosition.below()) && positions.size() != 1) {
-                currentIndex++;
+            BlockState source = pos.equals(intake) ? null : getSource(pos);
+            if (source == null || !type.isSame(source.getFluidState().getType())) {
                 continue;
             }
-
-            // Last block, so reset
-            if (currentIndex + 1 == positions.size()) {
-                if (!fluidFound) {
-                    pos = worldPosition.below(); // No fluids found, so consume the last block under the drain
-                } else {
-                    currentIndex = 0;
-                    fluidFound = false;
-                }
-            }
-
-            // Not a valid fluid
-            FluidState fluidState = level.getFluidState(pos);
-            if (fluidState.isEmpty() || !fluidState.isSource()
-                    || !TANK.isFluidValid(this, new FluidStack(fluidState.getType(), 1))) {
+            if (payForBucket()) {
+                collectedSource |= collect(pos, source);
                 currentIndex++;
-                continue;
             }
-
-            // Fluid found, try to consume it
-            fluidFound = true;
-            if (TANK.fill(this, new FluidStack(fluidState.getType(), FluidType.BUCKET_VOLUME),
-                    IFluidHandler.FluidAction.SIMULATE) == FluidType.BUCKET_VOLUME) {
-                if (consumed >= ENERGY_PER_BUCKET) {
-                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-                    TANK.fill(this, new FluidStack(fluidState.getType(), FluidType.BUCKET_VOLUME),
-                            IFluidHandler.FluidAction.EXECUTE);
-                    consumed -= ENERGY_PER_BUCKET;
-                    currentIndex++;
-                } else {
-                    consumed += getEnergyStorage().consumeEnergy(ENERGY_PER_BUCKET - consumed, false);
-                }
-                return;
-            }
+            return;
         }
+
+        // Keep the intake until an entire pass finds no other source to collect.
+        if (currentIndex == positions.size() && (collectedSource || payForBucket())) {
+            if (!collectedSource) {
+                collect(intake, level.getBlockState(intake));
+            }
+            currentIndex = 0;
+            collectedSource = false;
+        }
+    }
+
+    @Nullable
+    private BlockState getSource(BlockPos pos) {
+        if (!level.hasChunkAt(pos)) {
+            return null;
+        }
+        BlockState state = level.getBlockState(pos);
+        return state.getBlock() instanceof BucketPickup && state.getFluidState().isSource() ? state : null;
+    }
+
+    private boolean payForBucket() {
+        if (consumed == ENERGY_PER_BUCKET) {
+            return true;
+        }
+        consumed += getEnergyStorage().consumeEnergy(ENERGY_PER_BUCKET - consumed, false);
+        return false;
+    }
+
+    private boolean collect(BlockPos pos, BlockState source) {
+        ((BucketPickup) source.getBlock()).pickupBlock(level, pos, source);
+        var remaining = level.getFluidState(pos);
+        if (remaining.isSource() && type.isSame(remaining.getType())) {
+            return false;
+        }
+        consumed = 0;
+        TANK.fill(this, new FluidStack(type, FluidType.BUCKET_VOLUME), IFluidHandler.FluidAction.EXECUTE);
+        return true;
     }
 
     public BlockPos getParticleLocation() {
@@ -221,12 +232,15 @@ public class DrainBlockEntity extends PoweredMachineBlockEntity implements Range
     @Override
     public void onLoad() {
         super.onLoad();
-        updateLocations();
+        if (!level.isClientSide()) {
+            updateLocations();
+        }
     }
 
     private void updateLocations() {
         positions = new ArrayList<>();
         currentIndex = 0;
+        collectedSource = false;
         int range = getRange();
         for (BlockPos pos : BlockPos.betweenClosed(worldPosition.offset(-range, -range * 2 - 1, -range),
                 worldPosition.offset(range, -1, range))) {
@@ -242,7 +256,7 @@ public class DrainBlockEntity extends PoweredMachineBlockEntity implements Range
 
     @Override
     public void saveAdditional(CompoundTag tag) {
-        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        var lookupProvider = level == null ? RegistryAccess.EMPTY : level.registryAccess();
         super.saveAdditional(tag);
         tag.putInt(CONSUMED, consumed);
         saveTank(lookupProvider, tag);
@@ -250,7 +264,7 @@ public class DrainBlockEntity extends PoweredMachineBlockEntity implements Range
 
     @Override
     protected void saveAdditionalSynced(CompoundTag tag) {
-        var registries = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        var registries = level == null ? RegistryAccess.EMPTY : level.registryAccess();
         super.saveAdditionalSynced(tag);
 
         if (!actionRange.equals(DEFAULT_RANGE)) {
@@ -260,19 +274,16 @@ public class DrainBlockEntity extends PoweredMachineBlockEntity implements Range
 
     @Override
     public void load(CompoundTag tag) {
-        tag = com.enderio.enderio.foundation.io.LegacyMachineData.withNativeFields(tag);
-        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        tag = LegacyMachineData.withNativeFields(tag);
+        var lookupProvider = level == null ? RegistryAccess.EMPTY : level.registryAccess();
         super.load(tag);
-        consumed = tag.getInt(CONSUMED);
+        consumed = Mth.clamp(tag.getInt(CONSUMED), 0, ENERGY_PER_BUCKET);
         loadTank(lookupProvider, tag);
 
-        // TODO: Ender IO 8 - remove support for old attachment loading
-        if (tag.contains(MachineNBTKeys.ACTION_RANGE)) {
-            actionRange = ActionRange.parse(lookupProvider,
-                    Objects.requireNonNull(tag.get(MachineNBTKeys.ACTION_RANGE)));
-        } else {
-            actionRange = DEFAULT_RANGE;
-        }
+        var savedRange = tag.get(MachineNBTKeys.ACTION_RANGE);
+        var range = savedRange == null ? Forge6MachineItemData.readActionRange(tag)
+            : ActionRange.parse(lookupProvider, savedRange);
+        applyActionRange(Objects.requireNonNullElse(range, DEFAULT_RANGE));
     }
 
     @Override
@@ -281,7 +292,7 @@ public class DrainBlockEntity extends PoweredMachineBlockEntity implements Range
 
         var actionRange = EIODataComponents.ACTION_RANGE.get(components);
         if (actionRange != null) {
-            this.actionRange = actionRange;
+            applyActionRange(actionRange);
         }
 
         FluidStack storedFluid = EIODataComponents.ITEM_FLUID_CONTENT.get(components);

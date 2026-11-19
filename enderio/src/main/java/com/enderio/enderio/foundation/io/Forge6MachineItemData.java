@@ -30,7 +30,7 @@ public final class Forge6MachineItemData {
         return new ActionRange(Math.max(0, tag.getInt(RANGE)), tag.getBoolean(RANGE_VISIBLE));
     }
 
-    public static void restoreAversionItem(ItemStack stack) {
+    public static void restoreRangedItem(ItemStack stack) {
         var saved = BlockItem.getBlockEntityData(stack);
         if (saved == null) return;
         var range = readActionRange(saved);
@@ -42,6 +42,7 @@ public final class Forge6MachineItemData {
         }
         restoreCarriedProperties(stack, remaining);
         restoreCarriedEnergy(stack, remaining);
+        if (EIODataComponents.ITEM_FLUID_CONTENT.has(stack)) remaining.remove(CoreNBTKeys.FLUID);
         remaining.remove(RANGE);
         remaining.remove(RANGE_VISIBLE);
         stack.addTagElement(BlockItem.BLOCK_ENTITY_TAG, remaining);
