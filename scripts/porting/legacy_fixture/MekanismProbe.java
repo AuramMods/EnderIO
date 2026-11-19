@@ -3,6 +3,9 @@ package porting.mekanismprobe;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import mekanism.api.MekanismAPI;
 import mekanism.api.RelativeSide;
+import mekanism.api.chemical.Chemical;
+import mekanism.api.chemical.ChemicalStack;
+import mekanism.api.chemical.IChemicalHandler;
 import mekanism.api.chemical.IChemicalTank;
 import mekanism.api.chemical.gas.GasStack;
 import mekanism.api.chemical.infuse.InfusionStack;
@@ -20,9 +23,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 
@@ -48,11 +53,89 @@ public class MekanismProbe {
             .then(Commands.literal("batch").executes(context -> batch(context.getSource())))
             .then(Commands.literal("check").then(Commands.argument("total", IntegerArgumentType.integer(1))
                 .executes(context -> check(context.getSource(), IntegerArgumentType.getInteger(context, "total")))))
+            .then(Commands.literal("samples").executes(context -> samples(context.getSource())))
+            .then(Commands.literal("filter_oxygen").executes(context -> seedFilter(context.getSource(), "oxygen")))
+            .then(Commands.literal("filter_hydrogen").executes(context -> seedFilter(context.getSource(), "hydrogen")))
+            .then(Commands.literal("filter_blocked").executes(context -> checkFilter(context.getSource(), false)))
+            .then(Commands.literal("filter_delivered").executes(context -> checkFilter(context.getSource(), true)))
+            .then(Commands.literal("heat_pulse").executes(context -> pulse(context.getSource())))
+            .then(Commands.literal("heat_blocked").executes(context -> checkHeat(context.getSource(), false)))
+            .then(Commands.literal("heat_delivered").executes(context -> checkHeat(context.getSource(), true)))
             .then(Commands.literal("seed_hydrogen").executes(context -> {
                 seed(context.getSource().getLevel(), HYDROGEN);
                 return success(context.getSource(), "Hydrogen batch seeded");
             }))
             .then(Commands.literal("check_hydrogen").executes(context -> checkHydrogen(context.getSource()))));
+    }
+
+    private static int samples(CommandSourceStack source) {
+        var player = source.getServer().getPlayerList().getPlayerByName("EnderIOQA");
+        if (player == null) return failure(source, "No fixture player for chemical samples");
+        var tank = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse("mekanism:basic_chemical_tank"));
+        for (int i = 0; i < TRANSFERS.size(); i++) {
+            var route = TRANSFERS.get(i);
+            var id = ResourceLocation.fromNamespaceAndPath("mekanism", route.chemical());
+            var stack = new ItemStack(tank);
+            boolean filled = switch (route.family()) {
+                case GAS -> fill(stack.getCapability(Capabilities.GAS_HANDLER).orElseThrow(IllegalStateException::new),
+                    new GasStack(MekanismAPI.gasRegistry().getValue(id), BATCH));
+                case INFUSION -> fill(stack.getCapability(Capabilities.INFUSION_HANDLER).orElseThrow(IllegalStateException::new),
+                    new InfusionStack(MekanismAPI.infuseTypeRegistry().getValue(id), BATCH));
+                case PIGMENT -> fill(stack.getCapability(Capabilities.PIGMENT_HANDLER).orElseThrow(IllegalStateException::new),
+                    new PigmentStack(MekanismAPI.pigmentRegistry().getValue(id), BATCH));
+                case SLURRY -> fill(stack.getCapability(Capabilities.SLURRY_HANDLER).orElseThrow(IllegalStateException::new),
+                    new SlurryStack(MekanismAPI.slurryRegistry().getValue(id), BATCH));
+                default -> throw new IllegalArgumentException("Unexpected chemical family " + route.family());
+            };
+            if (!filled) return failure(source, "Sample tank rejected " + route.chemical());
+            player.getInventory().setItem(i + 1, stack);
+        }
+        return success(source, "Four native chemical sample tanks created");
+    }
+
+    private static <C extends Chemical<C>, S extends ChemicalStack<C>> boolean fill(IChemicalHandler<C, S> handler, S sample) {
+        handler.setChemicalInTank(0, sample);
+        var held = handler.getChemicalInTank(0);
+        return held.getType() == sample.getType() && held.getAmount() == BATCH;
+    }
+
+    private static int seedFilter(CommandSourceStack source, String chemical) {
+        var level = source.getLevel();
+        var route = new Route(0, TransmissionType.GAS, chemical);
+        var destination = getTank(level, 1153, route);
+        destination.getGasTank().setStack(GasStack.EMPTY);
+        destination.markForSave();
+        seed(level, route);
+        return success(source, "Native chemical filter batch seeded");
+    }
+
+    private static int checkFilter(CommandSourceStack source, boolean delivered) {
+        var level = source.getLevel();
+        var route = TRANSFERS.get(0);
+        var upstream = getTank(level, 1150, route).getGasTank().getStack();
+        var downstream = getTank(level, 1153, route).getGasTank().getStack();
+        var held = delivered ? downstream : upstream;
+        var expected = ResourceLocation.parse(delivered ? "mekanism:hydrogen" : "mekanism:oxygen");
+        if (held.getAmount() != BATCH || !expected.equals(held.getType().getRegistryName())
+            || !(delivered ? upstream : downstream).isEmpty()) {
+            return failure(source, "Unexpected gas balances: " + upstream.getAmount() + "/" + downstream.getAmount());
+        }
+        return success(source, "Native chemical filter matched the exact gas balances");
+    }
+
+    private int pulse(CommandSourceStack source) {
+        var level = source.getLevel();
+        var upstream = heat(level, 1150, Direction.EAST);
+        var downstream = heat(level, 1153, Direction.WEST);
+        destinationTemperature = downstream.getTotalTemperature();
+        upstream.handleHeat(upstream.getTotalHeatCapacity() * 3000);
+        return success(source, "Native heat pulse prepared");
+    }
+
+    private int checkHeat(CommandSourceStack source, boolean delivered) {
+        var change = heat(source.getLevel(), 1153, Direction.WEST).getTotalTemperature() - destinationTemperature;
+        if (delivered ? change <= 1 : change > 0.1) return failure(source, "Unexpected destination heat change " + change + " K");
+        return success(source, "Native heat destination matched the selected control");
     }
 
     private int configure(CommandSourceStack source) {
