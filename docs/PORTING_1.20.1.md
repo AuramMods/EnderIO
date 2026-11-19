@@ -299,7 +299,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 094: CC:Tweaked and conduit redstone clearing | Keep both fragments ticking after a bridge split and notify receivers when a channel loses its last source | The build passes 79 unit and 483 native tests. Packaged Forge passes 21 assertions with a native CC:Tweaked computer and 20 with a vanilla lamp, including split, reconnection and restart. [Evidence and commands](porting/1.20.1/cycle-094.md) | `f2e8c8c73` |
 
-| 095: Forge materials in the SAG Mill | Bridge stock ingredient/output tags to Forge and honor Almost Unified priority | The build passes 79 unit and 483 native tests. Three packaged Forge profiles pass 20 assertions for exact energy use, tin and osmium outputs, live tag restriction and restart. [Evidence and commands](porting/1.20.1/cycle-095.md) | Commit containing cycle 095 |
+| 095: Forge materials in the SAG Mill | Bridge stock ingredient/output tags to Forge and honor Almost Unified priority | The build passes 79 unit and 483 native tests. Three packaged Forge profiles pass 20 assertions for exact energy use, tin and osmium outputs, live tag restriction and restart. [Evidence and commands](porting/1.20.1/cycle-095.md) | `872092f6c` |
+
+| 096: FTB Ultimine facade and conduit mining | Verify the native key, selective preview and survival drops across a chunk boundary | The build passes 79 unit and 483 native tests. The packaged enabled and absent profiles pass 14 server assertions each and 14 guarded client checks combined. The selected components, preserved neighbors and exact drops are verified through restart. [Evidence and commands](porting/1.20.1/cycle-096.md) | Commit containing cycle 096 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
