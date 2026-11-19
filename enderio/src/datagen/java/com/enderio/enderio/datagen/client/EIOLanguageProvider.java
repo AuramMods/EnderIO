@@ -543,6 +543,7 @@ public class EIOLanguageProvider extends LanguageProvider {
         }
 
         add(EIOItems.DARK_STEEL_SWORD.get(), "The Ender");
+        add("enchantment.enderio.soulbound", "Soulbound");
 
         // Filters
         add(EIOItems.BASIC_ITEM_FILTER.get(), "Basic Item Filter");

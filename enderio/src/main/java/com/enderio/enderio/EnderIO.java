@@ -20,6 +20,7 @@ import com.enderio.enderio.init.EIOConduitTypes;
 import com.enderio.enderio.init.EIOCreativeTabs;
 import com.enderio.enderio.init.EIOCriterions;
 import com.enderio.enderio.init.EIODataComponents;
+import com.enderio.enderio.init.EIOEnchantments;
 import com.enderio.enderio.init.EIOEntities;
 import com.enderio.enderio.init.EIOFluids;
 import com.enderio.enderio.init.EIOIngredientTypes;
@@ -98,6 +99,7 @@ public class EnderIO {
         EnderIORegistries.register(modEventBus);
         EIOCreativeTabs.register(modEventBus);
         EIOItems.register(modEventBus);
+        EIOEnchantments.register(modEventBus);
         EIOBlocks.register(modEventBus);
         EIOBlockEntities.register(modEventBus);
         EIOFluids.register(modEventBus);
