@@ -58,6 +58,7 @@ public class EnchanterBlockEntity extends EnderBlockEntity implements MenuProvid
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        refreshRecipe();
         return new EnchanterMenu(containerId, playerInventory, this);
     }
 
@@ -112,7 +113,7 @@ public class EnchanterBlockEntity extends EnderBlockEntity implements MenuProvid
     }
 
     void refreshRecipe() {
-        if (level == null) {
+        if (level == null || level.isClientSide()) {
             return;
         }
         var input = createRecipeInput();
@@ -126,6 +127,10 @@ public class EnchanterBlockEntity extends EnderBlockEntity implements MenuProvid
     @Nullable
     public EnchanterRecipe getCurrentRecipe() {
         return currentRecipe;
+    }
+
+    boolean isLoadedRecipe(EnchanterRecipe recipe) {
+        return level != null && level.getRecipeManager().byKey(recipe.getId()).orElse(null) == recipe;
     }
 
     // endregion

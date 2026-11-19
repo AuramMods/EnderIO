@@ -1,16 +1,19 @@
 package com.enderio.enderio.content.enchanter;
 
 import com.enderio.core.common.menu.BaseBlockEntityMenu;
+import com.enderio.core.common.network.menu.IntSyncSlot;
 import com.enderio.enderio.foundation.inventory.MachineInventory;
 import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
 import com.enderio.enderio.foundation.menu.MachineSlot;
 import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIOMenus;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeManager;
 import org.jetbrains.annotations.Nullable;
 
 public class EnchanterMenu extends BaseBlockEntityMenu<EnchanterBlockEntity> {
@@ -18,13 +21,24 @@ public class EnchanterMenu extends BaseBlockEntityMenu<EnchanterBlockEntity> {
     public static final int INPUT_COUNT = 3;
     public static final int LAST_INDEX = 3;
 
+    private final IntSyncSlot currentCost;
+    @Nullable
+    private RecipeManager recipes;
+
     public EnchanterMenu(int containerId, Inventory inventory, EnchanterBlockEntity blockEntity) {
         super(EIOMenus.ENCHANTER.get(), containerId, inventory, blockEntity);
+        recipes = inventory.player.level().getRecipeManager();
+        currentCost = addSyncSlot(IntSyncSlot.readOnly(() -> {
+            var recipe = blockEntity.getCurrentRecipe();
+            return recipe == null ? -1 : recipe.getXPCost(blockEntity.createRecipeInput());
+        }));
         addSlots();
     }
 
     public EnchanterMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         super(EIOMenus.ENCHANTER.get(), containerId, playerInventory, buf, EIOBlockEntities.ENCHANTER.get());
+        currentCost = addSyncSlot(IntSyncSlot.standalone());
+        currentCost.set(-1);
         addSlots();
     }
 
@@ -42,11 +56,21 @@ public class EnchanterMenu extends BaseBlockEntityMenu<EnchanterBlockEntity> {
     }
 
     public int getCurrentCost() {
-        EnchanterRecipe recipe = this.getBlockEntity().getCurrentRecipe();
-        if (recipe != null) {
-            return recipe.getXPCost(this.getBlockEntity().createRecipeInput());
+        return currentCost.get();
+    }
+
+    @Override
+    public void broadcastChanges() {
+        if (getPlayerInventory().player instanceof ServerPlayer player) {
+            var currentRecipes = player.level().getRecipeManager();
+            var enchanter = getBlockEntity();
+            var recipe = enchanter.getCurrentRecipe();
+            if (recipes != currentRecipes || (recipe != null && !enchanter.isLoadedRecipe(recipe))) {
+                recipes = currentRecipes;
+                enchanter.refreshRecipe();
+            }
         }
-        return -1;
+        super.broadcastChanges();
     }
 
     // TODO: need to find a way to factor this out somehow...
@@ -113,7 +137,7 @@ public class EnchanterMenu extends BaseBlockEntityMenu<EnchanterBlockEntity> {
             EnchanterRecipe recipe = blockEntity.getCurrentRecipe();
             EnchanterRecipe.Input recipeInput = blockEntity.createRecipeInput();
 
-            if (recipe != null
+            if (recipe != null && blockEntity.isLoadedRecipe(recipe)
                     && (playerIn.experienceLevel >= recipe.getXPCost(recipeInput) || playerIn.isCreative())) {
                 return super.mayPickup(playerIn);
             }
