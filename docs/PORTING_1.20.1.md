@@ -289,7 +289,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 089: facade and vanilla glass joins | Cull the ordinary glass face next to a matching facade and refresh both sections when wrench visibility changes | The build passes 79 unit and 482 native tests. The mixed join passes six packaged server assertions and 20 Forge or 25 Embeddium client checks. [Evidence and commands](porting/1.20.1/cycle-089.md) | `af6cced13` |
 
-| 090: Athena glass and facade rendering | Generate Forge blockstates for the optional glass pack and apply the cutout layer and tint to Athena's baked model | Both datagens and the build pass with 79 unit and 482 native tests. Packaged client/server tests cover a matching facade across a chunk edge, a matching ordinary glass neighbor, live repaint, resource reload and server restart. [Evidence and commands](porting/1.20.1/cycle-090.md) | Commit containing cycle 090 |
+| 090: Athena glass and facade rendering | Generate Forge blockstates for the optional glass pack and apply the cutout layer and tint to Athena's baked model | Both datagens and the build pass with 79 unit and 482 native tests. Packaged client/server tests cover a matching facade across a chunk edge, a matching ordinary glass neighbor, live repaint, resource reload and server restart. [Evidence and commands](porting/1.20.1/cycle-090.md) | `53fe64d8e` |
+
+| 091: active Oculus shader pack | Check the four stained-glass facades and the wrench view through a real Oculus shader pass | The build passes 79 unit and 482 native tests. Packaged tests verify the shader output pixel, full-color normal glass, exposed conduits in wrench view, restoration and resource reload. [Evidence and commands](porting/1.20.1/cycle-091.md) | Commit containing cycle 091 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

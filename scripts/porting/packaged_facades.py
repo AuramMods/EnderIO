@@ -85,6 +85,8 @@ def exercise_client(args, server, report):
     scenario = "stained-facades" if args.stained_glass else "facades"
     if args.oculus:
         scenario += "-oculus"
+        if args.active_shaders:
+            scenario += "-shader"
     elif args.embeddium:
         scenario += "-embeddium"
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"), "--launch", str(args.launch.resolve()),
@@ -150,11 +152,14 @@ def main():
     parser.add_argument("--jar", required=True, type=Path)
     parser.add_argument("--launch", required=True, type=Path)
     parser.add_argument("--embeddium", action="store_true")
-    parser.add_argument("--oculus", action="store_true", help="Use the stained-glass profile with Oculus installed and shaders disabled")
+    parser.add_argument("--oculus", action="store_true", help="Use the stained-glass profile with Oculus installed")
+    parser.add_argument("--active-shaders", action="store_true", help="Expect the facade test shader pack to be active with Oculus")
     parser.add_argument("--stained-glass", action="store_true")
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a directory name")
+    if args.active_shaders and not args.oculus:
+        parser.error("--active-shaders requires --oculus")
     args.stained_glass = args.stained_glass or args.oculus
 
     directory = ROOT / "build/port-runtime" / args.name

@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 final class ClientFacadeSmoke {
-    enum Renderer { FORGE, EMBEDDIUM, OCULUS }
+    enum Renderer { FORGE, EMBEDDIUM, OCULUS, OCULUS_SHADER }
 
     private enum Stage { TITLE, CONNECT, PLACE, ADD_CONDUIT, VISIBLE, GHOST, RESTORED, RELOADED, DONE }
 
@@ -99,7 +99,8 @@ final class ClientFacadeSmoke {
                     check("dedicated_survival_tcp", !minecraft.player.isCreative() && !minecraft.player.isSpectator()
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     check("expected_chunk_renderer", ModList.get().isLoaded("embeddium") == (renderer != Renderer.FORGE));
-                    check("expected_oculus_installation", ModList.get().isLoaded("oculus") == (renderer == Renderer.OCULUS));
+                    check("expected_oculus_installation", ModList.get().isLoaded("oculus")
+                        == (renderer == Renderer.OCULUS || renderer == Renderer.OCULUS_SHADER));
                     signal("connected");
                     stage = Stage.PLACE;
                 }
@@ -132,7 +133,11 @@ final class ClientFacadeSmoke {
                     if (!waitForMesh(false)) return;
                     var colors = capture("facades-ghosted", stainedGlass ? 7 : 55);
                     if (stainedGlass) {
-                        check("stained_glass_remains_visible_as_a_ghost", enoughPaint(colors));
+                        if (renderer == Renderer.OCULUS_SHADER) {
+                            check("shader_pass_suppresses_all_four_ghost_facades", Arrays.stream(colors).allMatch(count -> count < 100));
+                        } else {
+                            check("stained_glass_remains_visible_as_a_ghost", enoughPaint(colors));
+                        }
                         checkGlassConduits(false);
                     } else {
                         var weakColors = palettePixels(14);
@@ -251,6 +256,15 @@ final class ClientFacadeSmoke {
 
     private int[] capture(String name, int contrast) throws IOException {
         var frame = ClientSmoke.capture(name + ".png");
+        if (renderer == Renderer.OCULUS_SHADER) {
+            var shaderActive = net.irisshaders.iris.api.v0.IrisApi.getInstance().isShaderPackInUse();
+            try (var image = Screenshot.takeScreenshot(minecraft.getMainRenderTarget())) {
+                int signature = image.getPixelRGBA(16, image.getHeight() - 16) & 0xFFFFFF;
+                frame.put("shaderPackInUse", shaderActive);
+                frame.put("shaderSignature", Integer.toHexString(signature));
+                check("shader_pack_drew_" + name, shaderActive && signature == 0xFF00FF);
+            }
+        }
         var colors = palettePixels(contrast);
         frame.put("facadeColorPixels", colors);
         if (!stainedGlass && name.equals("facades-ghosted")) frame.put("faintFacadeColorPixels", palettePixels(14));

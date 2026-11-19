@@ -17,6 +17,7 @@ parser.add_argument("--scenario",
                              "powered-spawner", "spawner-rules", "obelisks", "entity-obelisks", "obelisk-carry", "farming-station",
                              "painting-machine", "legacy-painting", "painted-slabs", "legacy-aversion", "natural-spawns",
                              "facades", "facades-embeddium", "stained-facades", "stained-facades-embeddium", "stained-facades-oculus",
+                             "stained-facades-oculus-shader",
                              "facade-seams", "facade-seams-embeddium", "facade-seams-mixed", "facade-seams-mixed-embeddium",
                              "facade-ctm-core", "facade-ctm-athena", "facade-ctm-embeddium",
                              "wireless-charge", "curios", "solar-wired", "solar-carry",
@@ -51,8 +52,11 @@ result = json.loads(result_path.read_text()) if result_path.exists() else {"pass
 log = (output / "focus.json.client.log").read_text()
 errors = [line for line in log.splitlines() if "/ERROR]" in line or "/FATAL]" in line]
 known_diagnostics = []
-if (args.scenario == "stained-facades-oculus" and result.get("checks", {}).get("expected_oculus_installation")
-        and " [Oculus/]: Shaders are disabled because enableShaders is set to false" in log):
+checks = result.get("checks", {})
+shaders_disabled = (args.scenario == "stained-facades-oculus"
+                    and " [Oculus/]: Shaders are disabled because enableShaders is set to false" in log)
+shader_drew_frame = args.scenario == "stained-facades-oculus-shader" and checks.get("shader_pack_drew_facades-visible")
+if checks.get("expected_oculus_installation") and (shaders_disabled or shader_drew_frame):
     # Embeddium emits this support-policy diagnostic when Oculus patches its renderer.
     notice = ("/ERROR] [Embeddium-MixinTaintDetector/]: Mod mixin into Embeddium internals detected. "
               "This instance is now tainted. The Embeddium team does not provide any guarantee of support "
