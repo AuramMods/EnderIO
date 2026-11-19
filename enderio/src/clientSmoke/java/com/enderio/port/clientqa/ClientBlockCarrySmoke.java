@@ -1,5 +1,6 @@
 package com.enderio.port.clientqa;
 
+import com.enderio.core.common.blockentity.EnderBlockEntity;
 import com.enderio.core.common.energy.ItemStackEnergy;
 import com.enderio.enderio.api.io.IOMode;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity;
@@ -58,6 +59,11 @@ final class ClientBlockCarrySmoke {
                 var io = EIODataComponents.IO_CONFIG.get(stack);
                 return ItemStackEnergy.getEnergyStored(stack) == 500000 && io != null
                     && io.getMode(Direction.NORTH) == IOMode.DISABLED && io.getMode(Direction.SOUTH) == IOMode.PULL;
+            }),
+        CRAFTER("crafter", "collected_the_crafter_with_charge_and_inventory", new BlockPos(3078, 80, 8), new BlockPos(3078, 80, 13),
+            new Vec3(3078.5, 80, 11.5), new Vec3(3078.5, 80, 15.5), EIOBlocks.CRAFTER::get, stack -> {
+                var contents = EnderBlockEntity.ITEM_INVENTORY.get(stack);
+                return EIODataComponents.ENERGY.getOrDefault(stack, 0) == 3200 && contents != null && contents.getInt("Size") == 21;
             });
 
         private final String name;
@@ -93,6 +99,7 @@ final class ClientBlockCarrySmoke {
     private final Scenario scenario;
     private Stage stage = Stage.TITLE;
     private long titleReady;
+    private int miningTick;
 
     ClientBlockCarrySmoke(Scenario scenario) {
         this.scenario = scenario;
@@ -129,10 +136,17 @@ final class ClientBlockCarrySmoke {
                         && connection.getRemoteAddress() instanceof InetSocketAddress);
                     if (scenario == Scenario.CAPACITOR_BANK) recordBankFace("before_mining");
                     check("normal_survival_mining_action", minecraft.gameMode.startDestroyBlock(scenario.source, Direction.SOUTH));
+                    miningTick = minecraft.player.tickCount;
                     stage = Stage.MINING;
                 }
                 case MINING -> {
-                    if (!minecraft.level.isEmptyBlock(scenario.source)) return;
+                    if (!minecraft.level.isEmptyBlock(scenario.source)) {
+                        if (miningTick != minecraft.player.tickCount) {
+                            miningTick = minecraft.player.tickCount;
+                            minecraft.gameMode.continueDestroyBlock(scenario.source, Direction.SOUTH);
+                        }
+                        return;
+                    }
                     if (scenario == Scenario.CAPACITOR_BANK) recordBankFace("after_mining");
                     signal("mined");
                     stage = Stage.PICKUP;

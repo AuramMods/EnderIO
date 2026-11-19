@@ -65,6 +65,7 @@ public final class ClientSmoke {
             case "enderface" -> new ClientEnderfaceSmoke();
             case "crafter" -> new ClientCrafterSmoke(false);
             case "crafter-jei" -> new ClientCrafterSmoke(true);
+            case "crafter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.CRAFTER);
             case "facade-seams" -> new ClientFacadeSeamSmoke(false, false);
             case "facade-seams-embeddium" -> new ClientFacadeSeamSmoke(false, true);
             case "facade-seams-mixed" -> new ClientFacadeSeamSmoke(true, false);

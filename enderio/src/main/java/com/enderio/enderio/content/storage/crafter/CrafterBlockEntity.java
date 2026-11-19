@@ -1,5 +1,9 @@
 package com.enderio.enderio.content.storage.crafter;
 
+import com.enderio.core.common.item.ItemDataKey;
+import com.enderio.core.common.recipes.CraftingRecipeInput;
+import com.enderio.core.common.serialization.StackDataCodecs;
+import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.capacitor.CapacitorModifier;
 import com.enderio.enderio.api.capacitor.QuadraticScalable;
 import com.enderio.enderio.api.io.energy.EnergyIOMode;
@@ -10,8 +14,6 @@ import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
 import com.enderio.enderio.foundation.inventory.MultiSlotAccess;
 import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
 import com.enderio.enderio.init.EIOBlockEntities;
-import com.enderio.core.common.recipes.CraftingRecipeInput;
-import com.enderio.core.common.serialization.StackDataCodecs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -27,11 +29,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Queue;
 
 // TODO: Might want to see if we can adapt this into a crafting task.
 public class CrafterBlockEntity extends PoweredMachineBlockEntity {
     private static final String OUTPUT_BUFFER_TAG = "OutputBuffer";
+    private static final ItemDataKey<List<ItemStack>> ITEM_OUTPUT_BUFFER = new ItemDataKey<>(
+        EnderIO.rl("crafter_output_buffer"), StackDataCodecs.OPTIONAL_ITEM.listOf(), false);
 
     public static final QuadraticScalable ENERGY_CAPACITY = new QuadraticScalable(CapacitorModifier.ENERGY_CAPACITY,
             MachinesConfig.COMMON.ENERGY.CRAFTER_CAPACITY);
@@ -136,6 +141,34 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
             }
             tag.put(OUTPUT_BUFFER_TAG, savedOutputs);
         }
+    }
+
+    @Override
+    protected void readItemData(ItemStack stack) {
+        super.readItemData(stack);
+        var savedOutputs = ITEM_OUTPUT_BUFFER.get(stack);
+        if (savedOutputs != null) {
+            outputBuffer.clear();
+            for (var output : savedOutputs) {
+                if (!output.isEmpty()) {
+                    outputBuffer.add(output);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void writeItemData(ItemStack stack) {
+        super.writeItemData(stack);
+        if (!outputBuffer.isEmpty()) {
+            ITEM_OUTPUT_BUFFER.set(stack, List.copyOf(outputBuffer));
+        }
+    }
+
+    @Override
+    public void removeItemDataFromTag(CompoundTag tag) {
+        super.removeItemDataFromTag(tag);
+        tag.remove(OUTPUT_BUFFER_TAG);
     }
 
     @Override
