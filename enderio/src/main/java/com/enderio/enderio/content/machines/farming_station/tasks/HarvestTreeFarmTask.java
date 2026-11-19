@@ -6,12 +6,11 @@ import com.enderio.enderio.api.farm.FarmingMachine;
 import com.enderio.enderio.foundation.util.TreeHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-
-import java.util.Set;
 
 public class HarvestTreeFarmTask implements FarmTask {
     public static final HarvestTreeFarmTask INSTANCE = new HarvestTreeFarmTask();
@@ -21,37 +20,36 @@ public class HarvestTreeFarmTask implements FarmTask {
 
     @Override
     public <T extends BlockEntity & FarmingMachine> FarmInteraction process(BlockPos targetBlock, T blockEntity) {
+        var level = blockEntity.getLevel();
         BlockPos bottom = targetBlock.above();
-        BlockState bottomState = blockEntity.getLevel().getBlockState(bottom);
+        if (!level.getBlockState(bottom).is(BlockTags.LOGS)) {
+            return FarmInteraction.IGNORED;
+        }
+        if (blockEntity.getAxe().isEmpty()) {
+            return FarmInteraction.BLOCKED;
+        }
+
         AABB range = new AABB(blockEntity.getPosition())
             .inflate(blockEntity.getFarmingRange())
             .inflate(4, 8, 4) // increase range to accommodate for extra leaves
             .move(0, 8, 0);
-        if (bottomState.is(BlockTags.LOGS)) {
-            Set<BlockPos> tree = TreeHelper.getTree(blockEntity.getLevel(), bottom, pos -> range.contains(pos.getX(), pos.getY(), pos.getZ()));
-            for (BlockPos pos : tree) {
-                BlockState state = blockEntity.getLevel().getBlockState(pos);
-                if (state.is(BlockTags.LOGS)) {
-                    if (blockEntity.getAxe().isEmpty()) {
-                        return FarmInteraction.BLOCKED;
-                    }
-
-                    if (!blockEntity.handleDrops(state, pos, targetBlock, blockEntity, blockEntity.getAxe())) {
-                        return FarmInteraction.BLOCKED;
-                    }
-                    blockEntity.getLevel().setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-                    blockEntity.getAxe().mineBlock(blockEntity.getLevel(), state, pos, blockEntity.getPlayer());
-                } else if (state.is(BlockTags.LEAVES)) {
-                    if (!blockEntity.handleDrops(state, pos, targetBlock, blockEntity, blockEntity.getShears())) {
-                        return FarmInteraction.BLOCKED;
-                    }
-                    blockEntity.getLevel().setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-                    blockEntity.getShears().mineBlock(blockEntity.getLevel(), state, pos, blockEntity.getPlayer());
-                }
+        var tree = TreeHelper.getTreeHarvestOrder(level, bottom, pos -> range.contains(pos.getX(), pos.getY(), pos.getZ()));
+        for (BlockPos pos : tree) {
+            ItemStack axe = blockEntity.getAxe();
+            if (axe.isEmpty()) {
+                return FarmInteraction.BLOCKED;
             }
-            return FarmInteraction.FINISHED;
-
+            BlockState state = level.getBlockState(pos);
+            if (!TreeHelper.isTree(state)) {
+                continue;
+            }
+            ItemStack tool = state.is(BlockTags.LOGS) ? axe : blockEntity.getShears();
+            if (!blockEntity.handleDrops(state, pos, targetBlock, blockEntity, tool)) {
+                return FarmInteraction.BLOCKED;
+            }
+            level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+            tool.mineBlock(level, state, pos, blockEntity.getPlayer());
         }
-        return FarmInteraction.IGNORED;
+        return FarmInteraction.FINISHED;
     }
 }

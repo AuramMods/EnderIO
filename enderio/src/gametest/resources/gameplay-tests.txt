@@ -24,6 +24,7 @@ com.enderio.enderio.gametests.machines.XPObeliskTests
 com.enderio.enderio.gametests.machines.WeatherObeliskTests
 com.enderio.enderio.gametests.machines.EntityObeliskTests
 com.enderio.enderio.gametests.machines.FarmingStationTests
+com.enderio.enderio.gametests.machines.FarmingStationHarvestTests
 com.enderio.enderio.gametests.regressions.issues.Issue1033
 com.enderio.enderio.gametests.regressions.issues.Issue1171
 com.enderio.enderio.gametests.regressions.issues.Issue1190

@@ -3,12 +3,13 @@ package com.enderio.enderio.foundation.util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class TreeHelper {
@@ -17,29 +18,32 @@ public class TreeHelper {
         return blockState.is(BlockTags.LOGS) || blockState.is(BlockTags.LEAVES);
     }
 
-    public static Set<BlockPos> getTree(BlockGetter level, BlockPos bottom, Predicate<BlockPos> inRange) {
-        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-        HashSet<BlockPos> tree = new HashSet<>();
-        HashSet<BlockPos> seen = new HashSet<>();
+    public static List<BlockPos> getTreeHarvestOrder(BlockGetter level, BlockPos bottom, Predicate<BlockPos> inRange) {
+        var queue = new ArrayDeque<BlockPos>();
+        var tree = new ArrayList<BlockPos>();
+        var seen = new HashSet<BlockPos>();
 
         queue.add(bottom);
+        seen.add(bottom);
 
         while (!queue.isEmpty()) {
             BlockPos pos = queue.removeFirst();
-            BlockState state = level.getBlockState(pos);
+            if (!inRange.test(pos) || !isTree(level.getBlockState(pos))) {
+                continue;
+            }
 
-            if (isTree(state) && inRange.test(pos)) {
-                tree.add(pos);
-                BlockPos.betweenClosedStream(pos.offset(-1, -1, -1), pos.offset(1, 1, 1)).forEach(next -> {
-                    if (seen.contains(next))
-                        return;
-
-                    var immutable = next.immutable();
-                    seen.add(immutable);
-                    queue.add(immutable);
-                });
+            tree.add(pos);
+            for (BlockPos next : BlockPos.betweenClosed(pos.offset(-1, -1, -1), pos.offset(1, 1, 1))) {
+                BlockPos neighbor = next.immutable();
+                if (seen.add(neighbor)) {
+                    queue.addLast(neighbor);
+                }
             }
         }
+
+        // Each block was discovered through an earlier neighbor. Removing those neighbors last
+        // keeps every remaining block connected to the base if the harvest has to pause.
+        Collections.reverse(tree);
         return tree;
     }
 }

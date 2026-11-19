@@ -267,7 +267,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 078: Farming Station output conservation | Yield occupied wheat plots to harvesting. Stage seed and output slots together and retry a blocked crop | The build passes 79 unit and 457 native tests. Eight packaged assertions verify full-output retries, wheat replanting, two server restarts and extraction by a vanilla hopper. [Evidence and commands](porting/1.20.1/cycle-078.md) | `8c8b52112` |
 
-| 079: Farming Station soul rules | Store bound souls in the Binder output. Resolve live Fortune and fertilizer bonuses, support clearing the binding and require a capacitor to harvest | The build passes 79 unit and 461 native tests. Eleven packaged assertions verify binding, fertilizer, tool and hand Fortune, live reload and restart. The eight crop conservation assertions still pass. [Evidence and commands](porting/1.20.1/cycle-079.md) | Commit containing cycle 079 |
+| 079: Farming Station soul rules | Store bound souls in the Binder output. Resolve live Fortune and fertilizer bonuses, support clearing the binding and require a capacitor to harvest | The build passes 79 unit and 461 native tests. Eleven packaged assertions verify binding, fertilizer, tool and hand Fortune, live reload and restart. The eight crop conservation assertions still pass. [Evidence and commands](porting/1.20.1/cycle-079.md) | `4abda4e62` |
+
+| 080: Farming Station trees and tall crops | Preserve a connected trunk during interrupted harvests and trim capped cane, bamboo and cactus | The build passes 79 unit and 464 native tests. Nine packaged assertions verify connected tree recovery, working tool damage, sapling replacement, capped stalk harvests, chunk reload and server restart. [Evidence and commands](porting/1.20.1/cycle-080.md) | Commit containing cycle 080 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 
