@@ -254,8 +254,10 @@ public class ConduitMenu extends BaseEnderMenu {
             var stack = conduitInventory.getStackInSlot(slot);
             var menuProvider = stack.getCapability(EnderIOCapabilities.FILTER_MENU_PROVIDER).orElse(null);
             if (menuProvider != null) {
-                menuProvider.openMenu(serverPlayer, conduitInventory, slot, () -> openConduitMenu(serverPlayer,
-                        (ConduitBundleBlockEntity) connectionAccessor, side, conduit));
+                var bundle = (ConduitBundleBlockEntity) connectionAccessor;
+                menuProvider.openMenu(serverPlayer, conduitInventory, slot,
+                    () -> openConduitMenu(serverPlayer, bundle, side, conduit),
+                    () -> stillValid(serverPlayer) && bundle.getConnectionInventory(conduit, side) == conduitInventory);
             }
         } else {
             EIONetwork.sendToServer(new ServerboundOpenConduitFilterMenu(containerId, slot));

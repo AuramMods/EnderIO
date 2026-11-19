@@ -43,4 +43,4 @@ run_stock_filter_client cycle-125-verified 25958 enderio/build/libs/enderio-8.2.
 
 ## Remaining verification
 
-This cycle exercises handheld editors and installs the exact edited items into the fixture using native server commands. Crafting these filter tiers and configuring them from conduit screens still need dedicated runtime coverage.
+This cycle exercises handheld editors and installs the exact edited items into the fixture using native server commands. Crafting these filter tiers and configuring them from conduit screens are exercised in [cycle 126](cycle-126.md).

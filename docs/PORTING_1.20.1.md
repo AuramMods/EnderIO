@@ -359,7 +359,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 124: Item and fluid filter menus | Bind handheld edits to the opening hand and expose the installed fluid configure button | The build passes 79 unit cases and 489 native runs. Packaged multiplayer passes 11 client and 12 server checks, including exact item and fluid routing before and after a dedicated restart. [Evidence and commands](porting/1.20.1/cycle-124.md) | `c68ba9611` |
 
-| 125: Limited and large item filters | Preserve integer stock targets in multiplayer and verify both 36-slot editors | The build passes 79 unit cases and 489 native runs. Two packaged connections pass 17 client checks and 31 server assertions across exact stock routing, a damage threshold, reconnect and restart. [Evidence and commands](porting/1.20.1/cycle-125.md) | Commit containing cycle 125 |
+| 125: Limited and large item filters | Preserve integer stock targets in multiplayer and verify both 36-slot editors | The build passes 79 unit cases and 489 native runs. Two packaged connections pass 17 client checks and 31 server assertions across exact stock routing, a damage threshold, reconnect and restart. [Evidence and commands](porting/1.20.1/cycle-125.md) | `8ea71c268` |
+
+| 126: Filter crafting progression and conduit editor reach | Craft every shipped filter recipe, edit the three larger filters in place and close the installed editor when its endpoint is out of reach | The build passes 79 unit cases and 489 native runs. Packaged Forge passes 88 client checks and 59 server assertions, including 35 survival crafts and live routes after a dedicated restart. [Evidence and commands](porting/1.20.1/cycle-126.md) | Commit containing cycle 126 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

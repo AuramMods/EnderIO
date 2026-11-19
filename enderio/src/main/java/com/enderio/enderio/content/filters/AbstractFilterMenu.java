@@ -16,6 +16,7 @@ import net.minecraftforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
 public abstract class AbstractFilterMenu<T> extends BaseEnderMenu {
@@ -191,13 +192,20 @@ public abstract class AbstractFilterMenu<T> extends BaseEnderMenu {
         private final IItemHandlerModifiable itemHandler;
         private final int slot;
         private final @Nullable Runnable goBackRunnable;
+        private final BooleanSupplier inventoryStillValid;
 
         public InventoryFilterAccess(ItemStack stack, IItemHandlerModifiable itemHandler, int slot,
                 @Nullable Runnable goBackRunnable) {
+            this(stack, itemHandler, slot, goBackRunnable, () -> true);
+        }
+
+        public InventoryFilterAccess(ItemStack stack, IItemHandlerModifiable itemHandler, int slot,
+                @Nullable Runnable goBackRunnable, BooleanSupplier inventoryStillValid) {
             this.stack = stack;
             this.itemHandler = itemHandler;
             this.slot = slot;
             this.goBackRunnable = goBackRunnable;
+            this.inventoryStillValid = inventoryStillValid;
         }
 
         @Override
@@ -215,7 +223,7 @@ public abstract class AbstractFilterMenu<T> extends BaseEnderMenu {
 
         @Override
         public boolean stillValid(Player player) {
-            return itemHandler.getStackInSlot(slot).equals(stack);
+            return inventoryStillValid.getAsBoolean() && itemHandler.getStackInSlot(slot).equals(stack);
         }
 
         @Override

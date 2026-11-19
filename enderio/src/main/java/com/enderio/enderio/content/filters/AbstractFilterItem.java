@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.Nullable;
 
@@ -67,6 +68,12 @@ public abstract class AbstractFilterItem<T> extends Item implements FilterMenuPr
 
     @Override
     public void openMenu(ServerPlayer player, IItemHandlerModifiable itemHandler, int slot, @Nullable Runnable goBackRunnable) {
+        openMenu(player, itemHandler, slot, goBackRunnable, () -> true);
+    }
+
+    @Override
+    public void openMenu(ServerPlayer player, IItemHandlerModifiable itemHandler, int slot,
+            @Nullable Runnable goBackRunnable, BooleanSupplier inventoryStillValid) {
         var filterStack = itemHandler.getStackInSlot(slot);
 
         player.openMenu(new MenuProvider() {
@@ -78,7 +85,7 @@ public abstract class AbstractFilterItem<T> extends Item implements FilterMenuPr
             @Override
             public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
                 return AbstractFilterItem.this.createMenu(containerId, inventory,
-                    new AbstractFilterMenu.InventoryFilterAccess(filterStack, itemHandler, slot, goBackRunnable));
+                    new AbstractFilterMenu.InventoryFilterAccess(filterStack, itemHandler, slot, goBackRunnable, inventoryStillValid));
             }
 
             public boolean shouldTriggerClientSideContainerClosingOnOpen() {
