@@ -1,5 +1,13 @@
 {
   "values": [
-    "enderio:yeta_wrench"
+    "enderio:yeta_wrench",
+    {
+      "id": "#forge:tools/wrench",
+      "required": false
+    },
+    {
+      "id": "#forge:tools/wrenches",
+      "required": false
+    }
   ]
 }

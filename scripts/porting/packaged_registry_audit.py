@@ -13,9 +13,11 @@ from zipfile import ZipFile
 
 sys.dont_write_bytecode = True
 from packaged_server_smoke import ROOT, digest
+from packaged_legacy_transfer_filters import wait_ticks
 from packaged_sag_progression import charge, data_read, feed, inputs, mill, output
 from packaged_spawners import WORLD, prepare_profile, run_stage
 from packaged_starter_progression import hopper_item
+from packaged_vat_automation import Batch, WATER, configure, drained, fluid, tank_fields
 
 
 BASELINE = ROOT / "docs" / "porting" / "1.20.1" / "baseline.json"
@@ -83,7 +85,7 @@ def satisfied(condition, runtime):
     if kind == "mod_loaded":
         return condition["modid"] in runtime["mods"]
     if kind == "tag_empty":
-        return runtime["tags"]["item"].get(condition["tag"], 0) == 0
+        return not runtime["tags"]["item"].get(condition["tag"])
     if kind == "not":
         return not satisfied(condition["value"], runtime)
     raise ValueError(f"Unhandled resource condition {condition}")
@@ -232,6 +234,56 @@ def grind_aluminum(server, results):
                             f"{hopper_item(output(x), product, quantity)}", results)
 
 
+def tag_progression(server, results):
+    crops = ("cactus", "cocoa_beans", "melon", "pumpkin", "sugar_cane")
+    vats = [Batch(4490 + 5 * index, "hootch", WATER, 1000, ("minecraft:wheat_seeds", f"minecraft:{crop}"),
+                  125 if crop == "sugar_cane" else 250) for index, crop in enumerate(crops)]
+    vats.append(Batch(4515, "hootch", WATER, 1000, ("minecraft:torchflower_seeds", "minecraft:wheat"), 250))
+    server.command("forceload add 4480 0 4527 15")
+    server.assert_state("vat_and_wrench_chunks_loaded", "if loaded 4490 80 8 if loaded 4515 80 8", results)
+    for batch in vats:
+        configure(server, batch)
+
+    runtime = json.loads((server.directory / "registry-snapshot.json").read_text())
+    wrenches = ["enderio:yeta_wrench"]
+    for mod, tools in (("ae2", ("certus_quartz_wrench", "nether_quartz_wrench", "network_tool")),
+                       ("laserio", ("laser_wrench",)), ("mekanism", ("configurator",))):
+        if mod in runtime["mods"]:
+            wrenches.extend(f"{mod}:{item}" for item in tools)
+
+    failures = []
+
+    def check(name, conditions):
+        try:
+            server.assert_state(name, conditions, results, timeout=0)
+        except AssertionError as error:
+            failures.append(str(error))
+
+    for index, item in enumerate([*wrenches, "minecraft:stick"]):
+        pos = f"{4490 + 3 * index} 80 3"
+        server.command(f"setblock {pos} enderio:alloy_smelter[facing=south]")
+        reply = server.command(f"port_use_fixture_item {pos} {item}")
+        if "Native fixture item used" not in reply:
+            failures.append(reply)
+        # The east world face is stored as west in this machine's relative configuration.
+        result = (f'if data block {pos} {{IOConfig:{{Modes:{{west:"push"}}}}}}' if item in wrenches else
+                  f'unless data block {pos} IOConfig.Modes.west')
+        untouched = " ".join(f"unless data block {pos} IOConfig.Modes.{side}"
+                             for side in ("north", "south", "east", "up", "down"))
+        check(f"{item.replace(':', '_')}_affects_only_the_intended_face", f"{result} {untouched}")
+
+    wait_ticks(server, 235)
+    for batch in vats:
+        seed, crop = batch.reagents
+        status = tank_fields(fluid(batch.output, batch.output_amount))
+        check(f"{seed.split(':')[1]}_and_{crop.split(':')[1]}_ferment_with_the_stock_multiplier",
+              f'if data block {batch.receiver} {{{status}}} {drained(batch.supply)} {drained(batch.vat)} '
+              f'{drained(batch.vat, 1)} unless data block {batch.vat} Items.Items[0] '
+              f'unless data block {batch.x - 1} 80 8 Items[0] unless data block {batch.x + 1} 80 8 Items[0]')
+    if failures:
+        raise AssertionError("\n".join(failures))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True)
@@ -239,6 +291,7 @@ def main():
     parser.add_argument("--mod", action="append", default=[], type=Path)
     parser.add_argument("--experiments", action="store_true", help="Enable the three built-in experimental packs at world creation")
     parser.add_argument("--aluminum-fixture", action="store_true", help="Supply Forge aluminum tags and run the three SAG recipes")
+    parser.add_argument("--tag-progression", action="store_true", help="Run the stock VAT variants and use native Forge wrenches")
     for path in ("java", "forge-server", "jar", "probe"):
         parser.add_argument(f"--{path}", required=True, type=Path)
     args = parser.parse_args()
@@ -266,6 +319,8 @@ def main():
         snapshot(server, results)
         if args.aluminum_fixture:
             grind_aluminum(server, results)
+        if args.tag_progression:
+            tag_progression(server, results)
 
     try:
         run_stage(args, directory, report, "audit", exercise)

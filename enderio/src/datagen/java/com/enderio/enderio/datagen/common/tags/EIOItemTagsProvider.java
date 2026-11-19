@@ -220,7 +220,16 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
         tag(EIOTags.Items.STORAGE_BLOCKS_AMETHYST).add(Items.AMETHYST_BLOCK);
 
         tag(EIOTags.Items.SILICON).add(EIOItems.SILICON.get());
-        tag(EIOTags.Items.WRENCH).add(EIOItems.YETA_WRENCH.get());
+        addWrenchTags();
+    }
+
+    private void addWrenchTags() {
+        var wrench = EIOItems.YETA_WRENCH.get();
+        var forgeWrench = EIOTags.Items.forgeEquivalent(EIOTags.Items.WRENCH);
+        var forgeWrenches = ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "tools/wrenches"));
+        tag(forgeWrench).add(wrench);
+        tag(forgeWrenches).add(wrench);
+        tag(EIOTags.Items.WRENCH).add(wrench).addOptionalTag(forgeWrench.location()).addOptionalTag(forgeWrenches.location());
     }
 
     private void addHideFacadesTags() {
@@ -234,8 +243,12 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
     }
 
     private void addReagentTags() {
-        tag(EIOTags.Items.CROPS).addTag(Tags.Items.CROPS);
-        tag(EIOTags.Items.SEEDS).addTag(Tags.Items.SEEDS);
+        var commonCrops = ItemTags.create(ResourceLocation.fromNamespaceAndPath(EIOTags.COMMON, "crops"));
+        var commonSeeds = ItemTags.create(ResourceLocation.fromNamespaceAndPath(EIOTags.COMMON, "seeds"));
+        tag(commonCrops).addTag(Tags.Items.CROPS).add(Items.CACTUS, Items.COCOA_BEANS, Items.MELON, Items.PUMPKIN, Items.SUGAR_CANE);
+        tag(commonSeeds).addTag(Tags.Items.SEEDS).add(Items.TORCHFLOWER_SEEDS);
+        tag(EIOTags.Items.CROPS).addTag(commonCrops);
+        tag(EIOTags.Items.SEEDS).addTag(commonSeeds);
         tag(EIOTags.Items.MEAT).add(Items.BEEF, Items.CHICKEN, Items.COOKED_BEEF, Items.COOKED_CHICKEN,
             Items.COOKED_MUTTON, Items.COOKED_PORKCHOP, Items.COOKED_RABBIT, Items.MUTTON,
             Items.PORKCHOP, Items.RABBIT, Items.ROTTEN_FLESH);

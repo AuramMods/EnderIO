@@ -3,14 +3,23 @@ package porting.registryprobe;
 import com.google.gson.GsonBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.storage.loot.LootDataType;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
@@ -40,6 +49,28 @@ public class RegistryProbe {
     private void register(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("port_dump_registries").requires(source -> source.hasPermission(4))
             .executes(context -> dump(context.getSource())));
+        event.getDispatcher().register(Commands.literal("port_use_fixture_item").requires(source -> source.hasPermission(4))
+            .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                .then(Commands.argument("item", ResourceLocationArgument.id())
+                    .executes(context -> useItem(context.getSource(), BlockPosArgument.getLoadedBlockPos(context, "pos"),
+                        ResourceLocationArgument.getId(context, "item"))))));
+    }
+
+    private int useItem(CommandSourceStack source, BlockPos pos, ResourceLocation itemId) {
+        var item = ForgeRegistries.ITEMS.getValue(itemId);
+        if (item == null) {
+            source.sendFailure(Component.literal("Fixture item unavailable: " + itemId));
+            return 0;
+        }
+        var level = source.getLevel();
+        var player = FakePlayerFactory.getMinecraft(level);
+        player.moveTo(pos.getX() + 2.0, pos.getY(), pos.getZ() + 0.5, 90, 0);
+        var stack = new ItemStack(item);
+        player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+        var hit = new BlockHitResult(Vec3.atCenterOf(pos).relative(Direction.EAST, 0.5), Direction.EAST, pos, false);
+        var result = player.gameMode.useItemOn(player, level, stack, InteractionHand.MAIN_HAND, hit);
+        source.sendSuccess(() -> Component.literal("Native fixture item used: " + result), false);
+        return 1;
     }
 
     private int dump(CommandSourceStack source) {
@@ -58,12 +89,13 @@ public class RegistryProbe {
         server.registryAccess().registries().forEach(entry ->
             registries.put(entry.key().location().toString(), enderIOIds(entry.value().keySet().stream())));
 
-        var tags = new TreeMap<String, Map<String, Integer>>();
-        collectTags(tags, BuiltInRegistries.BLOCK);
-        collectTags(tags, BuiltInRegistries.ITEM);
-        collectTags(tags, BuiltInRegistries.FLUID);
-        collectTags(tags, BuiltInRegistries.ENTITY_TYPE);
-        server.registryAccess().registries().forEach(entry -> collectTags(tags, entry.value()));
+        var tags = new TreeMap<String, Map<String, List<String>>>();
+        var taggedRegistries = new TreeMap<String, List<String>>();
+        collectTags(tags, taggedRegistries, BuiltInRegistries.BLOCK);
+        collectTags(tags, taggedRegistries, BuiltInRegistries.ITEM);
+        collectTags(tags, taggedRegistries, BuiltInRegistries.FLUID);
+        collectTags(tags, taggedRegistries, BuiltInRegistries.ENTITY_TYPE);
+        server.registryAccess().registries().forEach(entry -> collectTags(tags, taggedRegistries, entry.value()));
 
         var snapshot = new TreeMap<String, Object>();
         snapshot.put("mods", ModList.get().getMods().stream().map(IModInfo::getModId).sorted().toList());
@@ -76,6 +108,7 @@ public class RegistryProbe {
             .map(recipe -> recipe.getId().toString()).sorted().toList());
         snapshot.put("registries", registries);
         snapshot.put("tags", tags);
+        snapshot.put("tagRegistryIds", taggedRegistries);
         snapshot.put("enabledBlocks", enderIOIds(ForgeRegistries.BLOCKS.getEntries().stream()
             .filter(entry -> entry.getValue().isEnabled(flags)).map(entry -> entry.getKey().location())));
         snapshot.put("enabledItems", enderIOIds(ForgeRegistries.ITEMS.getEntries().stream()
@@ -98,10 +131,14 @@ public class RegistryProbe {
         if (registry != null) registries.put(key.toString(), enderIOIds(registry.getKeys().stream()));
     }
 
-    private static void collectTags(Map<String, Map<String, Integer>> tags, Registry<?> registry) {
-        var entries = new TreeMap<String, Integer>();
-        registry.getTags().forEach(tag -> entries.put(tag.getFirst().location().toString(), tag.getSecond().size()));
-        if (!entries.isEmpty()) tags.put(registry.key().location().getPath(), entries);
+    private static <T> void collectTags(Map<String, Map<String, List<String>>> tags,
+            Map<String, List<String>> taggedRegistries, Registry<T> registry) {
+        var entries = new TreeMap<String, List<String>>();
+        registry.getTags().forEach(tag -> entries.put(tag.getFirst().location().toString(), tag.getSecond().stream()
+            .map(holder -> registry.getKey(holder.value()).toString()).sorted().toList()));
+        var path = registry.key().location().getPath();
+        if (!entries.isEmpty()) tags.put(path, entries);
+        taggedRegistries.put(path, registry.keySet().stream().map(ResourceLocation::toString).sorted().toList());
     }
 
     private static List<String> enderIOIds(Stream<ResourceLocation> ids) {
