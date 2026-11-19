@@ -19,7 +19,6 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -35,6 +34,7 @@ import org.apache.logging.log4j.LogManager;
 import java.util.List;
 
 public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
+    private static final int FUEL_PER_IGNITION = 10;
 
     public static final BiFunction<ItemStack, Direction, IFluidHandlerItem> FLUID_HANDLER_PROVIDER =
         (stack, v) -> new StrictFluidHandlerItemStack(EIODataComponents.ITEM_FLUID_CONTENT, stack, 1000, EIOTags.Fluids.COLD_FIRE_IGNITER_FUEL);
@@ -45,31 +45,33 @@ public class ColdFireIgniter extends Item implements ICustomCreativeTabEntries {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        ItemStack itemstack = context.getItemInHand();
+        ItemStack stack = context.getItemInHand();
+        var fluidHandler = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
+        if (fluidHandler == null) {
+            LogManager.getLogger().warn("could not find FluidCapability on ColdFireIgniter");
+            return super.useOn(context);
+        }
 
-        var fluidHandler = itemstack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
-        if (fluidHandler != null) {
-            if (fluidHandler.drain(10, IFluidHandler.FluidAction.SIMULATE).getAmount() == 10) {
-                fluidHandler.drain(10, IFluidHandler.FluidAction.EXECUTE);
-                Player player = context.getPlayer();
-                Level level = context.getLevel();
-                BlockPos blockpos = context.getClickedPos().relative(context.getClickedFace());
-                BlockState coldFireState = EIOBlocks.COLD_FIRE.get().getStateForPlacement(new BlockPlaceContext(context));
-                if (coldFireState.canSurvive(context.getLevel(), blockpos)) {
-                    level.playSound(player, blockpos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, level.getRandom().nextFloat() * 0.4F + 0.8F);
-                    level.setBlock(blockpos, coldFireState, Block.UPDATE_ALL_IMMEDIATE);
-                    level.gameEvent(player, GameEvent.BLOCK_PLACE, blockpos);
-                    if (player instanceof ServerPlayer serverPlayer) {
-                        CriteriaTriggers.PLACED_BLOCK.trigger(serverPlayer, blockpos, itemstack);
-                    }
-                    return InteractionResult.sidedSuccess(level.isClientSide());
-                }
-            }
+        Player player = context.getPlayer();
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos().relative(context.getClickedFace());
+        BlockState fire = EIOBlocks.COLD_FIRE.get().getStateWithAge(level, pos, 0);
+        if (!level.isEmptyBlock(pos) || !fire.canSurvive(level, pos)
+            || fluidHandler.drain(FUEL_PER_IGNITION, IFluidHandler.FluidAction.SIMULATE).getAmount() != FUEL_PER_IGNITION) {
             return InteractionResult.FAIL;
         }
 
-        LogManager.getLogger().warn("could not find FluidCapability on ColdFireIgniter");
-        return super.useOn(context);
+        if (!level.isClientSide()) {
+            if (!level.setBlock(pos, fire, Block.UPDATE_ALL_IMMEDIATE)) return InteractionResult.FAIL;
+            fluidHandler.drain(FUEL_PER_IGNITION, IFluidHandler.FluidAction.EXECUTE);
+            level.gameEvent(player, GameEvent.BLOCK_PLACE, pos);
+            if (player instanceof ServerPlayer serverPlayer) {
+                CriteriaTriggers.PLACED_BLOCK.trigger(serverPlayer, pos, stack);
+            }
+        }
+        level.playSound(player, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F,
+            level.getRandom().nextFloat() * 0.4F + 0.8F);
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
