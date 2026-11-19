@@ -43,19 +43,9 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
 
     @Override
     public List<OutputStack> craft(Input input, RegistryAccess registryAccess) {
-        ItemStack firstInput = input.getItem(0);
-        ItemStack secondInput = input.getItem(1);
-
-        // Build modifier, ensure we use the correct item for each reagent
-        double modifier;
-        if (firstInput.is(firstReagent) && secondInput.is(secondReagent)) {
-            modifier = getModifier(input.level(), firstInput, firstReagent);
-            modifier *= getModifier(input.level(), secondInput, secondReagent);
-        } else {
-            modifier = getModifier(input.level(), secondInput, firstReagent);
-            modifier *= getModifier(input.level(), firstInput, secondReagent);
-        }
-
+        ItemStack left = input.getItem(0);
+        ItemStack right = input.getItem(1);
+        double modifier = getSlotModifier(input.level(), left, right, 0) * getSlotModifier(input.level(), left, right, 1);
         return List.of(OutputStack.of(EnderFluidUtil.copyWithAmount(output, (int) (output.getAmount() * modifier))));
     }
 
@@ -74,9 +64,17 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
         ItemStack firstInput = input.getItem(0);
         ItemStack secondInput = input.getItem(1);
 
-        // Order independent check
-        return (firstInput.is(firstReagent) && secondInput.is(secondReagent)) ||
-            (firstInput.is(secondReagent) && secondInput.is(firstReagent));
+        return matchesReagentOrder(firstInput, secondInput) || matchesReagentOrder(secondInput, firstInput);
+    }
+
+    private boolean matchesReagentOrder(ItemStack first, ItemStack second) {
+        return first.is(firstReagent) && second.is(secondReagent);
+    }
+
+    public double getSlotModifier(Level level, ItemStack left, ItemStack right, int slot) {
+        boolean leftSlot = slot == 0;
+        boolean forward = matchesReagentOrder(left, right);
+        return getModifier(level, leftSlot ? left : right, leftSlot == forward ? firstReagent : secondReagent);
     }
 
     @Override

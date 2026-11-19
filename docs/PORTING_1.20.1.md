@@ -343,7 +343,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 116: Sided VAT production | Restore a Forge reagent for Concentrated Cloud Seed and retain tagged fluid outputs | Datagen, 79 unit cases and 483 native runs pass. The packaged server runs all ten recipes through real hoppers and sided tanks. Seventeen assertions verify stock batches, tagged output backpressure and two restarts. [Evidence and commands](porting/1.20.1/cycle-116.md) | `6211ed384` |
 
-| 117: VAT batches larger than the tank | Publish and save the paid part of an oversized VAT result until the output has room | Full build passes and all 162 gameplay cases execute, including native VAT carry. Packaged Forge passes nine large-batch assertions and 17 stock regressions. Two restarts preserve the full 81,000 mB Blue Ice batch and the following 110 mB snowball batch. [Evidence and commands](porting/1.20.1/cycle-117.md) | Commit containing cycle 117 |
+| 117: VAT batches larger than the tank | Publish and save the paid part of an oversized VAT result until the output has room | Full build passes and all 162 gameplay cases execute, including native VAT carry. Packaged Forge passes nine large-batch assertions and 17 stock regressions. Two restarts preserve the full 81,000 mB Blue Ice batch and the following 110 mB snowball batch. [Evidence and commands](porting/1.20.1/cycle-117.md) | `efb9cd5b2` |
+
+| 118: VAT multiplayer controls | Display actual reagent multipliers and synchronize the paid queue and redstone backpressure | Datagen, 79 unit cases and 484 Forge executions pass. Packaged Forge passes seven server assertions and 17 guarded client checks across reversed reagent rendering, pause, external extraction, a physical redstone signal and restart. [Evidence and commands](porting/1.20.1/cycle-118.md) | Commit containing cycle 118 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

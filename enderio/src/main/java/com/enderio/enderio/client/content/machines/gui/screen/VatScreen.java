@@ -1,6 +1,7 @@
 package com.enderio.enderio.client.content.machines.gui.screen;
 
 import com.enderio.core.client.GuiSprites;
+import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.client.content.machines.gui.screen.base.MachineScreen;
 import com.enderio.enderio.client.content.machines.gui.widget.ActivityWidget;
@@ -22,6 +23,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class VatScreen extends MachineScreen<VatMenu> {
 
@@ -45,7 +49,17 @@ public class VatScreen extends MachineScreen<VatMenu> {
     protected void init() {
         super.init();
         addRenderableOnly(FluidStackWidget.legacy(30 + leftPos, 12 + topPos, 15, 47, this::wrappedInputTank));
-        addRenderableOnly(new FluidStackWidget(132 + leftPos, 12 + topPos, 15, 47, menu::getOutputTank));
+        addRenderableOnly(new FluidStackWidget(132 + leftPos, 12 + topPos, 15, 47, menu::getOutputTank) {
+            @Override
+            protected List<Component> getTooltipLines() {
+                var lines = super.getTooltipLines();
+                var pending = menu.getPendingOutput();
+                if (pending.isEmpty()) return lines;
+                var expanded = new ArrayList<>(lines);
+                expanded.add(TooltipUtil.withArgs(MachinesLang.VAT_PENDING_OUTPUT, pending.getAmount(), pending.getDisplayName()));
+                return expanded;
+            }
+        });
 
         addRenderableOnly(new FermentationWidget(this::isCrafting, this::inputFluidStack, this::outputFluidStack,
                 menu::getCraftingProgress, 76 + leftPos, 34 + topPos, 26, 28));
@@ -132,19 +146,12 @@ public class VatScreen extends MachineScreen<VatMenu> {
             return;
         }
 
-        // left modifier
-        ItemStack item = getMenu().getSlot(0).getItem();
-        double modifier = FermentingRecipe.getModifier(minecraft.level, item, recipe.firstReagent());
-        String text = "x" + modifier;
-        int x = getGuiLeft() + 63 - minecraft.font.width(text) / 2;
-        guiGraphics.drawString(minecraft.font, text, x, getGuiTop() + 32, 4210752, false);
-
-        // right modifier
-        item = getMenu().getSlot(1).getItem();
-        modifier = FermentingRecipe.getModifier(minecraft.level, item, recipe.secondReagent());
-        text = "x" + modifier;
-        x = getGuiLeft() + 113 - minecraft.font.width(text) / 2;
-        guiGraphics.drawString(minecraft.font, text, x, getGuiTop() + 32, 4210752, false);
-
+        ItemStack left = menu.getSlot(0).getItem();
+        ItemStack right = menu.getSlot(1).getItem();
+        for (int slot = 0; slot < 2; slot++) {
+            String text = "x" + recipe.getSlotModifier(minecraft.level, left, right, slot);
+            int x = getGuiLeft() + 63 + slot * 50 - minecraft.font.width(text) / 2;
+            guiGraphics.drawString(minecraft.font, text, x, getGuiTop() + 32, 4210752, false);
+        }
     }
 }

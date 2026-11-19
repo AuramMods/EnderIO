@@ -76,6 +76,7 @@ public class MachinesLang {
 
     public static final MutableComponent VAT_TRANSFER_TANK = gui("vat/transfer_tank");
     public static final MutableComponent VAT_DUMP_TANK = gui("vat/dump_tank");
+    public static final MutableComponent VAT_PENDING_OUTPUT = gui("vat/pending_output");
 
     // endregion
 

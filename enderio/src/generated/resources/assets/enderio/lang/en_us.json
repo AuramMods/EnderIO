@@ -363,6 +363,7 @@
   "gui.enderio.machine.range.max": "Maximum Range",
   "gui.enderio.machine.range.show": "Show Range",
   "gui.enderio.machine.vat.dump_tank": "Void tank contents",
+  "gui.enderio.machine.vat.pending_output": "Waiting to output %s mB of %s",
   "gui.enderio.machine.vat.transfer_tank": "Transfer tank contents",
   "gui.enderio.machine.xp_obelisk.button.retrieve.10_levels": "Retrieve 10 levels of XP",
   "gui.enderio.machine.xp_obelisk.button.retrieve.1_level": "Retrieve 1 level of XP",

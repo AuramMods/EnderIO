@@ -86,20 +86,20 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     public void serverTick() {
         super.serverTick();
 
-        if (canAct()) {
-            if (!pendingOutput.isEmpty()) publishPendingOutput();
-            if (pendingOutput.isEmpty()) craftingTaskHost.tick();
-        }
+        boolean running = canAct();
+        if (!pendingOutput.isEmpty()) tickPendingOutput(running);
+        if (running && pendingOutput.isEmpty()) craftingTaskHost.tick();
         updateMachineState(MachineState.ACTIVE, isActive());
     }
 
-    private void publishPendingOutput() {
-        int accepted = getOutputTank().fill(pendingOutput, IFluidHandler.FluidAction.EXECUTE);
+    private void tickPendingOutput(boolean running) {
+        var tank = getOutputTank();
+        int accepted = running ? tank.fill(pendingOutput, IFluidHandler.FluidAction.EXECUTE) : 0;
         if (accepted > 0) {
             pendingOutput = EnderFluidUtil.copyWithAmount(pendingOutput, pendingOutput.getAmount() - accepted);
             setChanged();
         }
-        boolean blocked = !pendingOutput.isEmpty();
+        boolean blocked = !pendingOutput.isEmpty() && tank.fill(pendingOutput, IFluidHandler.FluidAction.SIMULATE) == 0;
         if (getMachineStates().contains(MachineState.FULL_OUTPUT) != blocked) {
             updateMachineState(MachineState.FULL_OUTPUT, blocked);
         }
@@ -190,6 +190,10 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
 
     public MachineFluidTank getOutputTank() {
         return OUTPUT_TANK.getTank(this);
+    }
+
+    FluidStack getPendingOutput() {
+        return pendingOutput;
     }
 
     public float getCraftingProgress() {

@@ -396,6 +396,7 @@ public class EIOLanguageProvider extends LanguageProvider {
 
         add(MachinesLang.VAT_TRANSFER_TANK, "Transfer tank contents");
         add(MachinesLang.VAT_DUMP_TANK, "Void tank contents");
+        add(MachinesLang.VAT_PENDING_OUTPUT, "Waiting to output %s mB of %s");
 
         add(MachinesLang.POWERED_SPAWNER_STATUS_OVERCROWDED_MOBS, "Too many mobs");
         add(MachinesLang.POWERED_SPAWNER_STATUS_OVERCROWDED_SPAWNERS, "Too many spawners");

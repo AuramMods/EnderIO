@@ -1,6 +1,7 @@
 package com.enderio.enderio.content.machines.vat;
 
 import com.enderio.core.common.network.menu.FloatSyncSlot;
+import com.enderio.core.common.network.menu.FluidStackSyncSlot;
 import com.enderio.core.common.network.menu.RecipeSyncSlot;
 import com.enderio.enderio.foundation.fluid.FluidStorageInfo;
 import com.enderio.enderio.foundation.fluid.FluidStorageSyncSlot;
@@ -12,6 +13,7 @@ import com.enderio.enderio.init.EIORecipes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
 public class VatMenu extends MachineMenu<VatBlockEntity> {
@@ -26,6 +28,7 @@ public class VatMenu extends MachineMenu<VatBlockEntity> {
     private final FluidStorageSyncSlot inputTankSlot;
     private final FluidStorageSyncSlot outputTankSlot;
     private final RecipeSyncSlot<FermentingRecipe> recipeSlot;
+    private final FluidStackSyncSlot pendingOutputSlot;
 
     public VatMenu(int containerId, Inventory inventory, VatBlockEntity blockEntity) {
         super(EIOMenus.VAT.get(), containerId, inventory, blockEntity);
@@ -38,6 +41,7 @@ public class VatMenu extends MachineMenu<VatBlockEntity> {
                 FluidStorageSyncSlot.readOnly(() -> FluidStorageInfo.of(blockEntity.getOutputTank())));
         recipeSlot = addSyncSlot(
                 RecipeSyncSlot.readOnly(EIORecipes.VAT_FERMENTING.type().get(), blockEntity::getRecipe));
+        pendingOutputSlot = addSyncSlot(FluidStackSyncSlot.readOnly(blockEntity::getPendingOutput));
     }
 
     public VatMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
@@ -48,6 +52,7 @@ public class VatMenu extends MachineMenu<VatBlockEntity> {
         inputTankSlot = addSyncSlot(FluidStorageSyncSlot.standalone());
         outputTankSlot = addSyncSlot(FluidStorageSyncSlot.standalone());
         recipeSlot = addSyncSlot(RecipeSyncSlot.standalone(EIORecipes.VAT_FERMENTING.type().get()));
+        pendingOutputSlot = addSyncSlot(FluidStackSyncSlot.standalone());
     }
 
     private void addSlots() {
@@ -67,6 +72,10 @@ public class VatMenu extends MachineMenu<VatBlockEntity> {
 
     public FluidStorageInfo getOutputTank() {
         return outputTankSlot.get();
+    }
+
+    public FluidStack getPendingOutput() {
+        return pendingOutputSlot.get();
     }
 
     @Nullable

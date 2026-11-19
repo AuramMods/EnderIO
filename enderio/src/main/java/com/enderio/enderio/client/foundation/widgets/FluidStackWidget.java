@@ -17,7 +17,6 @@ import net.minecraft.util.FastColor;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -93,20 +92,13 @@ public class FluidStackWidget extends EIOWidget {
 
     public void renderToolTip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         if (isHovered(mouseX, mouseY)) {
-            Minecraft minecraft = Minecraft.getInstance();
-
-            var storage = fluidStorageSupplier.get();
-
-            if (storage.contents().isEmpty()) {
-                guiGraphics.renderComponentTooltip(minecraft.font, List.of(MachinesLang.GUI_NO_FLUID), mouseX,
-                        mouseY);
-            } else {
-                guiGraphics.renderTooltip(minecraft.font,
-                        Arrays.asList(storage.contents().getDisplayName().getVisualOrderText(),
-                                Component.literal(storage.contents().getAmount() + "mB").getVisualOrderText()),
-                        mouseX, mouseY);
-            }
-
+            guiGraphics.renderComponentTooltip(Minecraft.getInstance().font, getTooltipLines(), mouseX, mouseY);
         }
+    }
+
+    protected List<Component> getTooltipLines() {
+        var contents = fluidStorageSupplier.get().contents();
+        if (contents.isEmpty()) return List.of(MachinesLang.GUI_NO_FLUID);
+        return List.of(contents.getDisplayName(), Component.literal(contents.getAmount() + "mB"));
     }
 }
