@@ -339,7 +339,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 114: Staff of Levity | Restore Forge 6 fuel and toggle data, and charge the full server cost for levitation | All 79 unit cases and 483 native tests pass. Packaged Forge passes 12 server assertions and 15 guarded client checks across migration, tank refuelling, native flight, both resource limits and restart. [Evidence and commands](porting/1.20.1/cycle-114.md) | `ed652dcba` |
 
-| 115: Staff and VAT progression | Unlock the Staff recipe from its crafting ingredient and exercise the production chain in packaged single-player | Datagen, 79 unit cases, 483 native runs and 23 guarded single-player checks pass. Two disk reopens preserve the Vapor job and the cancelled Staff's exact resource balances. [Evidence and commands](porting/1.20.1/cycle-115.md) | Commit containing cycle 115 |
+| 115: Staff and VAT progression | Unlock the Staff recipe from its crafting ingredient and exercise the production chain in packaged single-player | Datagen, 79 unit cases, 483 native runs and 23 guarded single-player checks pass. Two disk reopens preserve the Vapor job and the cancelled Staff's exact resource balances. [Evidence and commands](porting/1.20.1/cycle-115.md) | `5ccc9ee07` |
+
+| 116: Sided VAT production | Restore a Forge reagent for Concentrated Cloud Seed and retain tagged fluid outputs | Datagen, 79 unit cases and 483 native runs pass. The packaged server runs all ten recipes through real hoppers and sided tanks. Seventeen assertions verify stock batches, tagged output backpressure and two restarts. [Evidence and commands](porting/1.20.1/cycle-116.md) | Commit containing cycle 116 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

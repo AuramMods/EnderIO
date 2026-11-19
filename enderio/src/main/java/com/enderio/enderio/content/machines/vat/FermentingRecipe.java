@@ -1,6 +1,7 @@
 package com.enderio.enderio.content.machines.vat;
 
 import com.enderio.core.common.recipes.OutputStack;
+import com.enderio.core.common.capability.EnderFluidUtil;
 import com.enderio.enderio.foundation.MachineRecipe;
 import com.enderio.enderio.foundation.datamap.VatReagent;
 import com.enderio.core.common.recipes.RecipeRegistry;
@@ -55,7 +56,7 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
             modifier *= getModifier(input.level(), firstInput, secondReagent);
         }
 
-        return List.of(OutputStack.of(new FluidStack(output.getFluid(), (int) (output.getAmount() * modifier))));
+        return List.of(OutputStack.of(EnderFluidUtil.copyWithAmount(output, (int) (output.getAmount() * modifier))));
     }
 
     @Override

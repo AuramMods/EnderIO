@@ -249,7 +249,8 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
         tag(EIOTags.Items.CLOUD_COLD).add(Items.SNOW, Items.SNOW_BLOCK, Items.SNOWBALL, Items.ICE, Items.PACKED_ICE,
             Items.BLUE_ICE);
         tag(EIOTags.Items.LIGHTNING_ROD).add(Items.LIGHTNING_ROD);
-        tag(EIOTags.Items.WIND_CHARGES).addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "wind_charge"));
+        tag(EIOTags.Items.WIND_CHARGES).add(Items.FIREWORK_ROCKET)
+            .addOptional(new net.minecraft.resources.ResourceLocation("minecraft", "wind_charge"));
     }
 
     private void addBlockItemTags() {
