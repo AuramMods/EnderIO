@@ -287,14 +287,14 @@ public class MaterialRecipeProvider extends SubRecipeProvider {
                 .pattern("III")
                 .pattern("III")
                 .define('I', ingot)
-                .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(block.asItem()))
+                .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(ingot))
                 .save(recipeOutput);
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ingot)
                 .pattern("NNN")
                 .pattern("NNN")
                 .pattern("NNN")
                 .define('N', nugget)
-                .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(ingot))
+                .unlockedBy("has_ingredient", InventoryChangeTrigger.TriggerInstance.hasItems(nugget))
                 .save(recipeOutput, EnderIO.rl(nugget.getDescriptionId() + "_to_ingot"));
     }
 

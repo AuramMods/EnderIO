@@ -137,6 +137,7 @@ public final class ClientSmoke {
             case "facade-shader-passes" -> new ClientFacadeShaderPassSmoke(false);
             case "facade-shader-toggle" -> new ClientFacadeShaderPassSmoke(true);
             case "glass-progression" -> new ClientGlassProgressionSmoke();
+            case "alloy-progression" -> new ClientAlloyProgressionSmoke();
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "natural-spawns" -> new ClientNaturalSpawnSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();
