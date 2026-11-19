@@ -55,6 +55,7 @@ public class EIOTags {
         public static final TagKey<Item> ORES_TIN = commonTag("ores/tin");
         public static final TagKey<Item> INGOTS_TIN = commonTag("ingots/tin");
         public static final TagKey<Item> DUSTS_TIN = commonTag("dusts/tin");
+        public static final TagKey<Item> DUSTS_COBALT = commonTag("dusts/cobalt");
         public static final TagKey<Item> RAW_MATERIALS_TIN = commonTag("raw_materials/tin");
 
         public static final TagKey<Item> ORES_URANIUM = commonTag("ores/uranium");
@@ -102,6 +103,8 @@ public class EIOTags {
 
         public static final TagKey<Item> SILICON = commonTag("silicon");
         public static final TagKey<Item> GEARS = commonTag("gears");
+        public static final TagKey<Item> GEARS_WOOD = commonTag("gears/wood");
+        public static final TagKey<Item> GEARS_STONE = commonTag("gears/stone");
         public static final TagKey<Item> GEARS_IRON = commonTag("gears/iron");
         public static final TagKey<Item> GEARS_ENERGIZED = commonTag("gears/energized");
         public static final TagKey<Item> GEARS_VIBRANT = commonTag("gears/vibrant");

@@ -451,6 +451,8 @@ public class EIOLanguageProvider extends LanguageProvider {
         add(EIOItems.CONDUIT_BINDER.get(), "Conduit Binder");
 
         // TODO: Does Bimetal make sense anymore?
+        add(EIOItems.GEAR_WOOD.get(), "Wooden Gear");
+        add(EIOItems.GEAR_STONE.get(), "Stone Compound Gear");
         add(EIOItems.GEAR_IRON.get(), "Infinity Bimetal Gear");
         add(EIOItems.GEAR_ENERGIZED.get(), "Energized Bimetal Gear");
         add(EIOItems.GEAR_VIBRANT.get(), "Vibrant Bimetal Gear");
@@ -485,6 +487,7 @@ public class EIOLanguageProvider extends LanguageProvider {
         add(EIOItems.POWDERED_GOLD.get(), "Powdered Gold");
         add(EIOItems.POWDERED_COPPER.get(), "Powdered Copper");
         add(EIOItems.POWDERED_TIN.get(), "Powdered Tin");
+        add(EIOItems.POWDERED_COBALT.get(), "Powdered Cobalt");
         add(EIOItems.POWDERED_ENDER_PEARL.get(), "Powdered Ender Pearl");
         add(EIOItems.POWDERED_OBSIDIAN.get(), "Powdered Obsidian");
         add(EIOItems.POWDERED_LAPIS_LAZULI.get(), "Powdered Lapis Lazuli");
@@ -499,6 +502,7 @@ public class EIOLanguageProvider extends LanguageProvider {
         add(EIOItems.WITHERING_POWDER.get(), "Withering Powder");
 
         // Misc Materials
+        add(EIOItems.BLACK_PAPER.get(), "Black Paper");
         add(EIOItems.PHOTOVOLTAIC_PLATE.get(), "Photovoltaic Plate");
         add(EIOItems.NUTRITIOUS_STICK.get(), "Nutritious Stick");
         add(EIOItems.PLANT_MATTER_GREEN.get(), "Clippings and Trimmings");
@@ -573,6 +577,10 @@ public class EIOLanguageProvider extends LanguageProvider {
 
         // Creative Tab Icon
         add(EIOItems.CREATIVE_ICON.get(), "Internal Item - Unobtainable");
+        for (var icon : EIOItems.LEGACY_CREATIVE_ICONS) {
+            var variant = icon.getId().getPath().substring("enderface_".length());
+            add(icon.get(), "Enderface " + Character.toUpperCase(variant.charAt(0)) + variant.substring(1));
+        }
     }
 
     private void addBlocks() {

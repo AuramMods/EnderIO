@@ -98,7 +98,10 @@ public class EIOItems {
     public static final ItemDeferredHolder<Item> INFINITY_ROD = basic("infinity_rod");
     public static final ItemDeferredHolder<Item> CONDUIT_BINDER_COMPOSITE = basic("conduit_binder_composite");
     public static final ItemDeferredHolder<Item> CONDUIT_BINDER = basic("conduit_binder");
+    public static final ItemDeferredHolder<Item> BLACK_PAPER = basic("black_paper");
 
+    public static final ItemDeferredHolder<Item> GEAR_WOOD = basic("wood_gear");
+    public static final ItemDeferredHolder<Item> GEAR_STONE = basic("stone_gear");
     public static final ItemDeferredHolder<Item> GEAR_IRON = basic("iron_gear");
     public static final ItemDeferredHolder<Item> GEAR_ENERGIZED = basic("energized_gear");
     public static final ItemDeferredHolder<Item> GEAR_VIBRANT = basic("vibrant_gear");
@@ -148,6 +151,7 @@ public class EIOItems {
     public static final ItemDeferredHolder<Item> POWDERED_IRON = basic("powdered_iron");
     public static final ItemDeferredHolder<Item> POWDERED_GOLD = basic("powdered_gold");
     public static final ItemDeferredHolder<Item> POWDERED_COPPER = basic("powdered_copper");
+    public static final ItemDeferredHolder<Item> POWDERED_COBALT = basic("powdered_cobalt");
     public static final ItemDeferredHolder<Item> POWDERED_TIN = basic("powdered_tin");
     public static final ItemDeferredHolder<Item> POWDERED_ENDER_PEARL = basic("powdered_ender_pearl");
     public static final ItemDeferredHolder<Item> POWDERED_OBSIDIAN = basic("powdered_obsidian");
@@ -295,6 +299,12 @@ public class EIOItems {
 
     public static final ItemDeferredHolder<CreativeTabIconItem> CREATIVE_ICON = ITEMS.registerItem("creative_tab_icon",
         CreativeTabIconItem::new);
+
+    // Keep the original inventory IDs and appearance for Forge 6 saves.
+    public static final List<ItemDeferredHolder<CreativeTabIconItem>> LEGACY_CREATIVE_ICONS =
+        List.of("none", "items", "materials", "machines", "conduits", "mobs", "invpanel").stream()
+            .map(variant -> ITEMS.registerItem("enderface_" + variant, CreativeTabIconItem::new))
+            .toList();
 
     // endregion
 

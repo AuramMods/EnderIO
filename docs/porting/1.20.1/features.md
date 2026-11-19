@@ -325,6 +325,7 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | Painted slabs | A placed two-color slab and both native Forge 6 drops retain their colors through conversion and restart. Both drops render and replant as separate slab halves in survival. Modern loot returns one item per half. | [Cycle 084](cycle-084.md) |
 | Painting Machine | A placed machine and an old machine item with an original slab in output both resume a 600-of-2,400 FE slab job. The carried machine preserves 1,800 FE, redstone, east pull, capacitor and every slot. Native hopper and menu transfer recover both matching slabs. The replanted machine, hopper and painted block retain their expected state after restart. | [Cycle 085](cycle-085.md) |
 | Enchanter | The copied world restores a placed machine without a saved preview and a native `BlockEntityTag` drop. Both preserve a writable book page and the exact ingredient counts. Survival placement and native menu collection spend 11 levels and the correct ingredients per book. Both paid states and the copied datapack's original-format Mending preview survive restart. | [Cycle 107](cycle-107.md) |
+| Materials and creative tab icons | Black paper, wooden and stone compound gears, powdered cobalt, and seven distinct Enderface icons retain their original IDs, counts and tags in converted inventories and after restarts. Native predicates verify both namespaces for gears and cobalt. A vanilla hopper moves a saved cobalt stack without losing its tag. | [Cycle 108](cycle-108.md) |
 
 ## Shared state and presentation
 

@@ -68,6 +68,9 @@ public class EIOItemModelProvider extends ItemModelProvider {
         basicItem(EIOItems.CONDUIT_BINDER_COMPOSITE.get());
         basicItem(EIOItems.CONDUIT_BINDER.get());
 
+        basicItem(EIOItems.BLACK_PAPER.get());
+        basicItem(EIOItems.GEAR_WOOD.get());
+        basicItem(EIOItems.GEAR_STONE.get());
         basicItem(EIOItems.GEAR_IRON.get());
         basicItem(EIOItems.GEAR_ENERGIZED.get());
         basicItem(EIOItems.GEAR_VIBRANT.get());
@@ -102,6 +105,7 @@ public class EIOItemModelProvider extends ItemModelProvider {
         basicItem(EIOItems.POWDERED_GOLD.get());
         basicItem(EIOItems.POWDERED_COPPER.get());
         basicItem(EIOItems.POWDERED_TIN.get());
+        basicItem(EIOItems.POWDERED_COBALT.get());
         basicItem(EIOItems.POWDERED_ENDER_PEARL.get());
         basicItem(EIOItems.POWDERED_OBSIDIAN.get());
         basicItem(EIOItems.POWDERED_LAPIS_LAZULI.get());
@@ -220,6 +224,7 @@ public class EIOItemModelProvider extends ItemModelProvider {
 
         // Creative Tab Icon
         basicItem(EIOItems.CREATIVE_ICON.get());
+        EIOItems.LEGACY_CREATIVE_ICONS.forEach(icon -> basicItem(icon.get()));
 
         // Buckets
         for (var item : EIOFluids.FLUIDS.itemsRegister().getEntries()) {

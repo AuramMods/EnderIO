@@ -141,6 +141,7 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
         addSharedMaterial(EIOTags.Items.DUSTS_IRON, EIOItems.POWDERED_IRON.get());
         addSharedMaterial(EIOTags.Items.DUSTS_GOLD, EIOItems.POWDERED_GOLD.get());
         addSharedMaterial(EIOTags.Items.DUSTS_COPPER, EIOItems.POWDERED_COPPER.get());
+        addSharedMaterial(EIOTags.Items.DUSTS_COBALT, EIOItems.POWDERED_COBALT.get());
         addSharedMaterial(EIOTags.Items.DUSTS_TIN, EIOItems.POWDERED_TIN.get());
         tag(EIOTags.Items.DUSTS_ENDER).add(EIOItems.POWDERED_ENDER_PEARL.get());
         tag(EIOTags.Items.DUSTS_OBSIDIAN).add(EIOItems.POWDERED_OBSIDIAN.get());
@@ -159,6 +160,7 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
             .addTag(EIOTags.Items.DUSTS_IRON)
             .addTag(EIOTags.Items.DUSTS_GOLD)
             .addTag(EIOTags.Items.DUSTS_COPPER)
+            .addTag(EIOTags.Items.DUSTS_COBALT)
             .addTag(EIOTags.Items.DUSTS_TIN)
             .addTag(EIOTags.Items.DUSTS_ENDER)
             .addTag(EIOTags.Items.DUSTS_OBSIDIAN)
@@ -193,12 +195,16 @@ public class EIOItemTagsProvider extends ItemTagsProvider {
     }
 
     private void addGearTags() {
+        addSharedMaterial(EIOTags.Items.GEARS_WOOD, EIOItems.GEAR_WOOD.get());
+        addSharedMaterial(EIOTags.Items.GEARS_STONE, EIOItems.GEAR_STONE.get());
         tag(EIOTags.Items.GEARS_IRON).add(EIOItems.GEAR_IRON.get());
         tag(EIOTags.Items.GEARS_ENERGIZED).add(EIOItems.GEAR_ENERGIZED.get());
         tag(EIOTags.Items.GEARS_VIBRANT).add(EIOItems.GEAR_VIBRANT.get());
         tag(EIOTags.Items.GEARS_DARK_STEEL).add(EIOItems.GEAR_DARK_STEEL.get());
 
         tag(EIOTags.Items.GEARS)
+            .addTag(EIOTags.Items.GEARS_WOOD)
+            .addTag(EIOTags.Items.GEARS_STONE)
             .addTag(EIOTags.Items.GEARS_IRON)
             .addTag(EIOTags.Items.GEARS_VIBRANT)
             .addTag(EIOTags.Items.GEARS_ENERGIZED)
