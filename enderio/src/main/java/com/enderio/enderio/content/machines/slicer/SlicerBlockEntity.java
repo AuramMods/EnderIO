@@ -62,8 +62,7 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
                 this::createTask, this::createRecipeInput) {
             @Override
             protected @Nullable CraftingMachineTask<SlicingRecipe, SlicingRecipe.Input> getNewTask() {
-                if (AXE.getItemStack(SlicerBlockEntity.this).isEmpty()
-                        || SHEARS.getItemStack(SlicerBlockEntity.this).isEmpty()) {
+                if (!hasTools()) {
                     return null;
                 }
 
@@ -82,7 +81,7 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
     public void serverTick() {
         super.serverTick();
 
-        if (canAct()) {
+        if (canAct() && hasTools()) {
             craftingTaskHost.tick();
         }
     }
@@ -178,9 +177,13 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
         return craftingTaskHost.getProgress();
     }
 
+    private boolean hasTools() {
+        return !AXE.getItemStack(this).isEmpty() && !SHEARS.getItemStack(this).isEmpty();
+    }
+
     @Override
     public boolean isActive() {
-        return canAct() && hasEnergy() && craftingTaskHost.hasTask();
+        return canAct() && hasTools() && hasEnergy() && craftingTaskHost.hasTask();
     }
 
     protected PoweredCraftingMachineTask<SlicingRecipe, SlicingRecipe.Input> createTask(Level level,
