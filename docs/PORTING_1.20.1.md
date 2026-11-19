@@ -349,7 +349,9 @@ Compilation, a title-screen launch or a single working machine does not meet thi
 
 | 119: Redstone conduit filter state | Restore timer periods, toggle and counting edges, and Forge 6.2 filter configuration | The build passes 79 unit cases and 486 native runs. The packaged migrated world passes 27 assertions covering four saved filters, two cross-chunk routes and restart. Twenty-one bundled redstone assertions also pass with CC:Tweaked. [Evidence and commands](porting/1.20.1/cycle-119.md) | `7d78d144a` |
 
-| 120: Redstone filter menus | Bind handheld filter edits to the item that opened the menu | The build passes 79 unit cases and 486 native runs. Packaged multiplayer passes 16 client checks and 18 server assertions across the timer, offhand counter, AND gate and dedicated restart. [Evidence and commands](porting/1.20.1/cycle-120.md) | Commit containing cycle 120 |
+| 120: Redstone filter menus | Bind handheld filter edits to the item that opened the menu | The build passes 79 unit cases and 486 native runs. Packaged multiplayer passes 16 client checks and 18 server assertions across the timer, offhand counter, AND gate and dedicated restart. [Evidence and commands](porting/1.20.1/cycle-120.md) | `3762b8b72` |
+
+| 121: Conduit filter slots and redstone outputs | Restore shift-click and refresh strong redstone receivers when an installed filter changes | The build passes 79 unit cases and 486 native runs. Packaged Forge passes eight client checks and 41 server assertions, including all six gate truth tables, both NOT filter directions, analog sensing and restart. [Evidence and commands](porting/1.20.1/cycle-121.md) | Commit containing cycle 121 |
 
 For each later cycle add: objective, changes, exact commands and exit/results, evidence paths, unresolved failures, next step and commit reference. A commit can identify its own entry by cycle number; add its hash in the following cycle if useful. Do not amend/squash earlier cycle commits merely to fill this table.
 

@@ -113,7 +113,13 @@ public class ConduitMenu extends BaseEnderMenu {
         if (conduitInventory != null) {
             for (int i = 0; i < conduit.value().getInventorySize(); i++) {
                 var pos = conduit.value().getInventorySlotPosition(i);
-                addSlot(new SlotItemHandler(conduitInventory, i, pos.x, pos.y));
+                addSlot(new SlotItemHandler(conduitInventory, i, pos.x, pos.y) {
+                    @Override
+                    public int getMaxStackSize(ItemStack stack) {
+                        // The Forge default clears and restores the real handler slot to probe capacity.
+                        return mayPlace(stack) ? Math.min(getMaxStackSize(), stack.getMaxStackSize()) : 0;
+                    }
+                });
             }
         }
 
@@ -218,10 +224,28 @@ public class ConduitMenu extends BaseEnderMenu {
         return super.clickMenuButton(player, id);
     }
 
-    // TODO
     @Override
-    public ItemStack quickMoveStack(Player player, int i) {
-        return ItemStack.EMPTY;
+    public ItemStack quickMoveStack(Player player, int index) {
+        if (conduitInventory == null || index < 0 || index >= slots.size()) return ItemStack.EMPTY;
+
+        var source = slots.get(index);
+        if (!source.hasItem() || !source.mayPickup(player)) return ItemStack.EMPTY;
+
+        var original = source.getItem().copy();
+        var remaining = original.copy();
+        int conduitEnd = conduitInventory.getSlots();
+        if (index < conduitEnd) {
+            if (!moveItemStackTo(remaining, conduitEnd, slots.size(), true)) return ItemStack.EMPTY;
+        } else {
+            for (int slot = 0; slot < conduitEnd && !remaining.isEmpty(); slot++) {
+                remaining = conduitInventory.insertItem(slot, remaining, false);
+            }
+            if (remaining.getCount() == original.getCount()) return ItemStack.EMPTY;
+        }
+
+        source.setByPlayer(remaining);
+        source.onTake(player, remaining);
+        return original;
     }
 
     public void tryOpenFilterMenu(int slot) {

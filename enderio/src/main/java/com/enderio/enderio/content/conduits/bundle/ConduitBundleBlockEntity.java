@@ -32,6 +32,8 @@ import com.enderio.enderio.content.conduits.legacy.StaticConnectionStates;
 import com.enderio.enderio.content.conduits.menu.ConduitMenu;
 import com.enderio.enderio.content.conduits.network.ConduitNetworkSavedData;
 import com.enderio.enderio.content.conduits.network.ConduitNodeImpl;
+import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduit;
+import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduitConnectionConfig;
 import com.enderio.enderio.content.conduits.network.IConduitNodeAttachment;
 import com.enderio.enderio.content.conduits.type.item.ItemConduitConnectionConfig;
 import com.enderio.enderio.foundation.EIONBTKeys;
@@ -1742,7 +1744,7 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
                 return null;
             }
 
-            return inventories.computeIfAbsent(side, s -> new ConnectionInventory());
+            return inventories.computeIfAbsent(side, ConnectionInventory::new);
         }
 
         @Override
@@ -1798,8 +1800,11 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
         }
 
         private class ConnectionInventory extends ItemStackHandler {
-            public ConnectionInventory() {
+            private final Direction side;
+
+            public ConnectionInventory(Direction side) {
                 super(conduit.value().getInventorySize());
+                this.side = side;
             }
 
             @Override
@@ -1814,8 +1819,12 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
 
             @Override
             protected void onContentsChanged(int slot) {
-                if (level != null) {
-                    bundleChanged();
+                bundleChanged();
+                // A filter can change emitted power while the raw channel signals stay constant.
+                if (level != null && !level.isClientSide && !isLoading && slot == RedstoneConduit.INSERT_FILTER_SLOT
+                        && getConnectionConfig(side) instanceof RedstoneConduitConnectionConfig config
+                        && config.isInsert() && config.isStrongOutputSignal()) {
+                    redstoneConduitChanged(side);
                 }
             }
         }
