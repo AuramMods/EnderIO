@@ -83,7 +83,7 @@ def set_mode(server, pos, side, mode):
     server.command(f'data merge block {pos} {{IOConfig:{{Modes:{{{side}:"{mode}"}}}}}}')
 
 
-def configure(server, batch, *, tagged=False):
+def configure(server, batch, *, tagged=False, reagent_count=1):
     server.command(f"setblock {batch.supply} enderio:fluid_tank[facing=south]")
     server.command(f"setblock {batch.receiver} enderio:fluid_tank[facing=south]")
     server.command(f"setblock {batch.vat} enderio:vat[facing=south]")
@@ -98,7 +98,7 @@ def configure(server, batch, *, tagged=False):
         set_mode(server, batch.supply, "south", "push")
     for offset, heading, reagent in zip((-1, 1), ("east", "west"), batch.reagents):
         server.command(f'setblock {batch.x + offset} 80 8 minecraft:hopper[facing={heading}]'
-                       f'{{Items:[{{Slot:0b,id:"{reagent}",Count:1b}}]}}')
+                       f'{{Items:[{{Slot:0b,id:"{reagent}",Count:{reagent_count}b}}]}}')
 
 
 def write_pack(directory):

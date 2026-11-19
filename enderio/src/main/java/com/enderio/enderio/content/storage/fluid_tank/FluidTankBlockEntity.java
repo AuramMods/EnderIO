@@ -251,57 +251,35 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
 
             switch (recipe.mode()) {
             case EMPTY -> {
-                ItemStack outputStack = FLUID_FILL_OUTPUT.getItemStack(this);
+                if (!FLUID_FILL_OUTPUT.insertItem(this, recipeResultStack, true).isEmpty()) {
+                    return;
+                }
 
-                if (outputStack.isEmpty() || (outputStack.is(recipeResultStack.getItem())
-                        && outputStack.getCount() < outputStack.getMaxStackSize())) {
-
-                    // Get the first matching fluid from the ingredient (for EMPTY mode, we're adding fluid to tank)
-                    List<FluidStack> possibleFluids = SizedFluidIngredientHelper.getFluidStacksInPreferredOrder(recipe.fluid());
-                    FluidStack fluidToFill = FluidStack.EMPTY;
-                    for (FluidStack fluidToTry : possibleFluids) {
-                        int filled = TANK.fill(this, fluidToTry, IFluidHandler.FluidAction.SIMULATE);
-                        if (filled == recipe.fluid().amount()) {
-                            fluidToFill = fluidToTry;
-                            break;
-                        }
-                    }
-
-                    if (fluidToFill.isEmpty()) {
-                        return;
-                    }
-
-                    TANK.fill(this, fluidToFill, IFluidHandler.FluidAction.EXECUTE);
-                    FLUID_FILL_INPUT.getItemStack(this).shrink(1);
-
-                    if (outputStack.isEmpty()) {
-                        FLUID_FILL_OUTPUT.setStackInSlot(this, recipeResultStack.copy());
-                    } else {
-                        FLUID_FILL_OUTPUT.getItemStack(this).grow(1);
+                // Get the first matching fluid that fits in the tank.
+                List<FluidStack> possibleFluids = SizedFluidIngredientHelper.getFluidStacksInPreferredOrder(recipe.fluid());
+                for (FluidStack fluidToTry : possibleFluids) {
+                    int filled = TANK.fill(this, fluidToTry, IFluidHandler.FluidAction.SIMULATE);
+                    if (filled == recipe.fluid().amount()) {
+                        TANK.fill(this, fluidToTry, IFluidHandler.FluidAction.EXECUTE);
+                        FLUID_FILL_INPUT.extractItem(this, 1, false);
+                        FLUID_FILL_OUTPUT.insertItem(this, recipeResultStack, false);
+                        break;
                     }
                 }
             }
             case FILL -> {
-                ItemStack outputStack = FLUID_DRAIN_OUTPUT.getItemStack(this);
-
-                if (outputStack.isEmpty() || (outputStack.is(recipeResultStack.getItem())
-                        && outputStack.getCount() < outputStack.getMaxStackSize())) {
-
-                    // For FILL mode, we drain from tank - need to check what's actually in the tank
-                    var drained = TANK.drain(this, (int) recipe.fluid().amount(), IFluidHandler.FluidAction.SIMULATE);
-                    if (!recipe.fluid().test(drained) || drained.getAmount() != recipe.fluid().amount()) {
-                        return;
-                    }
-
-                    TANK.drain(this, (int) recipe.fluid().amount(), IFluidHandler.FluidAction.EXECUTE);
-                    FLUID_DRAIN_INPUT.getItemStack(this).shrink(1);
-
-                    if (outputStack.isEmpty()) {
-                        FLUID_DRAIN_OUTPUT.setStackInSlot(this, recipeResultStack.copy());
-                    } else {
-                        FLUID_DRAIN_OUTPUT.getItemStack(this).grow(1);
-                    }
+                if (!FLUID_DRAIN_OUTPUT.insertItem(this, recipeResultStack, true).isEmpty()) {
+                    return;
                 }
+
+                var drained = TANK.drain(this, recipe.fluid().amount(), IFluidHandler.FluidAction.SIMULATE);
+                if (!recipe.fluid().test(drained) || drained.getAmount() != recipe.fluid().amount()) {
+                    return;
+                }
+
+                TANK.drain(this, recipe.fluid().amount(), IFluidHandler.FluidAction.EXECUTE);
+                FLUID_DRAIN_INPUT.extractItem(this, 1, false);
+                FLUID_DRAIN_OUTPUT.insertItem(this, recipeResultStack, false);
             }
             default -> throw new NotImplementedException();
             }
