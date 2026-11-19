@@ -5,8 +5,6 @@ import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -63,14 +61,9 @@ public class ClientFacadeVisibility {
             if (chunkFacades == null) return;
 
             var sections = new LongOpenHashSet(chunkFacades.keySet());
-            // An ordinary glass block across a section boundary can gain or lose its shared face.
+            // Connected textures also read diagonally across section boundaries.
             for (var positions : chunkFacades.values()) {
-                positions.forEach((long position) -> {
-                    BlockPos pos = BlockPos.of(position);
-                    for (Direction side : Direction.values()) {
-                        sections.add(SectionPos.asLong(pos.relative(side)));
-                    }
-                });
+                positions.forEach((long position) -> SectionPos.aroundAndAtBlockPos(position, sections::add));
             }
             sections.forEach((long section) -> minecraft.levelRenderer.setSectionDirty(
                 SectionPos.x(section), SectionPos.y(section), SectionPos.z(section)));

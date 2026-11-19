@@ -126,6 +126,9 @@ public final class ClientSmoke {
             case "facade-ctm-oculus" -> new ClientFacadeCtmSmoke(ClientFacadeCtmSmoke.Renderer.OCULUS);
             case "facade-ctm-oculus-shader" -> new ClientFacadeCtmSmoke(ClientFacadeCtmSmoke.Renderer.OCULUS_SHADER);
             case "facade-ctm-oculus-terrain" -> new ClientFacadeCtmSmoke(ClientFacadeCtmSmoke.Renderer.OCULUS_TERRAIN);
+            case "facade-corners-core" -> new ClientFacadeCornerSmoke(false, false);
+            case "facade-corners-athena" -> new ClientFacadeCornerSmoke(true, false);
+            case "facade-corners-shader" -> new ClientFacadeCornerSmoke(true, true);
             case "legacy-aversion" -> new ClientLegacyAversionSmoke();
             case "natural-spawns" -> new ClientNaturalSpawnSmoke();
             case "wireless-charge" -> new ClientWirelessChargeSmoke();
@@ -162,6 +165,10 @@ public final class ClientSmoke {
     }
 
     static Map<String, Object> capture(String imageName) throws java.io.IOException {
+        return capture(imageName, 100);
+    }
+
+    static Map<String, Object> capture(String imageName, int minimumDistinctPixels) throws java.io.IOException {
         var minecraft = Minecraft.getInstance();
         var result = new LinkedHashMap<String, Object>();
         var output = Path.of(System.getProperty("enderio.clientqa.output"));
@@ -207,7 +214,7 @@ public final class ClientSmoke {
             && java.util.Arrays.stream(requiredMods).allMatch(loadedMods::containsKey)
             && Boolean.FALSE.equals(result.get("visible")) && Boolean.FALSE.equals(result.get("focused"))
             && Boolean.FALSE.equals(result.get("fullscreen")) && Boolean.FALSE.equals(result.get("cursorCaptured"))
-            && ((Long) result.get("distinctPixels")) > 100;
+            && ((Long) result.get("distinctPixels")) > minimumDistinctPixels;
         result.put("passed", passed);
         return result;
     }
