@@ -328,6 +328,7 @@ Load, match, execute, consume/produce correct amounts, synchronize and reload.
 | Materials and creative tab icons | Black paper, wooden and stone compound gears, powdered cobalt, and seven distinct Enderface icons retain their original IDs, counts and tags in converted inventories and after restarts. Native predicates verify both namespaces for gears and cobalt. A vanilla hopper moves a saved cobalt stack without losing its tag. | [Cycle 108](cycle-108.md) |
 | Soulbound | A Forge 6 pickaxe, chestplate and shield retain the original enchantment, damage, other enchantments and tags through death, respawn, disconnect and a dedicated restart before respawn. Ordinary items and a book with the stored enchantment drop normally. | [Cycle 109](cycle-109.md) |
 | Auto Smelt | A Forge 6 pickaxe retains the enchantment and smelts ancient debris during survival mining before and after a dedicated restart. Native commands confirm the Silk Touch conflict and Fortune compatibility. Tagged furnace results keep exact quantities and stack limits across a live reload and restart. | [Cycle 110](cycle-110.md) |
+| Withering and Repellent | A Forge 6 sword applies Wither I on a native melee hit, and the original bow supplies Withering on a player-owned arrow impact while held. An offhand-only sword leaves the target unwithered. The original Repellent IV chestplate teleports a zombie after a melee hit within the established configuration bounds. The saved gear and both effects survive restart. | [Cycle 111](cycle-111.md) |
 
 ## Shared state and presentation
 
