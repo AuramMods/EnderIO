@@ -87,6 +87,7 @@ public final class GlassTests {
             var fixture = FixtureBuilder.withSize(23, 7, 5);
             for (BlockPos shaft : List.of(CLEAR_GLASS_SHAFT, QUARTZ_SHAFT)) {
                 fixture.set(shaft.getX(), 0, shaft.getZ(), Blocks.STONE.defaultBlockState());
+                fixture.set(shaft.getX(), 6, shaft.getZ(), Blocks.STONE.defaultBlockState());
                 for (int y = 1; y <= 5; y++) {
                     for (var side : Direction.Plane.HORIZONTAL) {
                         fixture.set(shaft.getX() + side.getStepX(), y, shaft.getZ() + side.getStepZ(),
