@@ -1,0 +1,6 @@
+{
+  "name": "Integrations",
+  "description": "Use extra conduit types, client helpers and optional world experiments when their requirements are available.",
+  "icon": "minecraft:comparator",
+  "sortnum": 6
+}

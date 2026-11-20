@@ -1,0 +1,20 @@
+{
+  "name": "Machine Job Waiting",
+  "icon": "enderio:sag_mill",
+  "category": "enderio:help",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Check power or fuel, the capacitor slot and redstone mode. If the recipe has extra requirements, verify the tools, both reagent slots, or the XP fluid tank before moving anything."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Look in every output slot or tank. A secondary product can block the whole recipe. Pull out the result, empty the receiving storage and check the output face. A job can wait after paying its processing cost."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Try one recipe with the input and output accessible by hand. Then add the hopper or conduit again. See $(l:enderio:machines/automation)Automating Machines$(/l) for a small working layout."
+    }
+  ]
+}

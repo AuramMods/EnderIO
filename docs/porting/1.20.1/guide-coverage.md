@@ -10,8 +10,8 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 | Workshop Machines | Alloys and powders, mills and grinding balls, Slice’N’Splice, VAT, tanks, painting, Enchanter, Crafter and hoppers, farming and collection, weather and redstone controls | Twelve entries authored |
 | Souls and Obelisks | Vials, Soul Binder, soul components and fuels, Powered Spawner, XP, attraction, aversion, relocation and teleport inhibition | Nine entries authored |
 | Tools and Building | Travel blocks and staff, gliders and mobility, magnets, XP equipment and enchantments, field tools, painted and steel construction, fused glass, hidden redstone | Nine entries authored |
-| Integrations and Experiments | AE2, Mekanism, RS, LaserIO, CC:Tweaked, Jade, Curios, FTB Ultimine, JEI, Enderface and Niard settings and dependencies | Pending |
-| Troubleshooting | Energy, blocked outputs, connection sides, channels and redstone, recipe tags and optional dependencies | Pending |
+| Integrations and Experiments | AE2, Mekanism, RS, LaserIO, CC:Tweaked, Jade, Curios, FTB Ultimine, JEI, Enderface and Niard settings and dependencies | Eight entries authored |
+| Troubleshooting | Energy, blocked outputs, connection sides, channels and redstone, recipe tags and optional dependencies | Six entries authored |
 
 ## Cycle 001
 
@@ -52,3 +52,10 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 - Added nine entries for travel, flight, a worked three-stage Vapor of Levity chain, XP tools, magnets and utility items, steel and enchantments, fused glass, painted construction and workshop food.
 - The candidate has six categories, 51 entries, 250 pages, 107 recipe references and 49 entry links. The guarded Patchouli-only tour passed 805 client checks and four server assertions, with 149 captures and successful clicks across three different entry links. Reviewed the travel and building chapter list and representative glass and levitation pages. See `build/port-evidence/guide-cycle-006-tools/`.
 - Next verify the optional integrations and troubleshooting chapters with their dependencies absent and complete the release checks.
+
+## Cycle 007
+
+- Added eight integration and experiment entries and six troubleshooting entries. The optional craft patterns and setup instructions remain readable with the associated mods absent.
+- The packaged Patchouli-only guide opened all eight categories and 65 entries. After an initial loopback login timeout, the same jar passed 899 client checks and four dedicated server assertions in a fresh profile. The 175 captures include the integration and troubleshooting menus and the reopened book after resource reload. See `build/port-evidence/guide-cycle-007-complete-retry/`.
+- Retested the first-login tome with the relevant Auram mods, including Caelus. The four live inventory assertions passed. The starter tome contained the other guides, had no Ender IO guide, and the player could craft the Ender IO guide afterward. The guide client passed its checks and focus observation. Its combined status reports unrelated ProjectRed and Terramity resource diagnostics. See `build/port-runtime/guide-cycle-006-auram-login/login-results.json` and `build/port-evidence/guide-cycle-006-auram-login/summary.json`.
+- Next verify the final advanced component and fuel pages, then prepare the release.

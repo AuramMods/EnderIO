@@ -1,0 +1,24 @@
+{
+  "name": "Applied Energistics 2",
+  "icon": "minecraft:quartz",
+  "category": "enderio:integrations",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Requires Applied Energistics 2 and the libraries its Forge release requires, including GuideME for the tested release. ME Conduits connect compatible parts of an AE2 network through a conduit bundle."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use six Conduit Binders in the top and bottom rows of a crafting grid and three AE2 Glass Cables in the middle row to make three ME Conduits. Use Covered Dense Cable in the middle for three Dense ME Conduits."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Run the conduit between a powered ME network and your device. Normal conduits carry up to eight channels and Dense ME Conduits up to 32. Check every connecting segment and the AE2 channel settings."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use the connection color controls where available. A disabled connection or incompatible cable color can split the grid. Start with one terminal or drive on a known powered route, then expand it."
+    }
+  ]
+}

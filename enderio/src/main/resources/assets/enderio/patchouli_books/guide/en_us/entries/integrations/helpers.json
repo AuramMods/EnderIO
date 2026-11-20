@@ -1,0 +1,24 @@
+{
+  "name": "Client and Pack Helpers",
+  "icon": "minecraft:spyglass",
+  "category": "enderio:integrations",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "JEI can show loaded recipes and uses, including custom machine categories. Check Controls for its keys. Hover the item you have to look up uses, or the item you want to look up recipes."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Jade can show live machine details, such as a bound soul. Seeing the paint of a covered bundle is expected. Hold a Yeta Wrench to expose the conduit. Athena and Ender IO’s built-in Athena resource pack can add connected textures."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Curios can equip and wirelessly charge compatible tools. Use FTB Ultimine’s normal key and shape controls to mine a set of matching blocks or conduit parts. Use the wrench to expose parts hidden by a facade."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Inventory Sorter can sort ordinary storage while protected machine template slots stay in place. Almost Unified may change which mod’s dust or ingot appears in a processing recipe. Check the actual result before setting a filter."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "LaserIO Filters",
+  "icon": "enderio:basic_item_filter",
+  "category": "enderio:integrations",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "With a compatible LaserIO release, its Basic Filter can be used in supported Ender IO conduit filter slots. Set the filter samples in the LaserIO editor first. Item and fluid routes can also use supported filter-bearing cards."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use the editor’s list polarity and stored samples to control matching. The Mekanism bridge also reads compatible chemical samples when both add-ons are installed. Keep an unfiltered test route handy while checking a new filter."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "World Experiments",
+  "icon": "minecraft:crafting_table",
+  "category": "enderio:integrations",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Enderface and Niard are optional experiments. On the Create World screen, open Data Packs and enable the built-in Ender IO pack for the feature before creating the world. A Farming Station works in a default world."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "On a dedicated server, add the matching built-in pack to initial-enabled-packs before world creation. Both IDs start with mod/enderio:data/enderio/datapacks/ and end in enderface or niard. Enable only the experiments you want."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "In an Enderface-enabled world, the creative block labeled Ender IO is the preview point. Place it near the storage you want to access. Aim a charged Staff of Travelling at it and use the staff to open the preview."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Rotate or zoom the preview to see a target such as a chest or tank. Use the target inside the preview to open its normal menu. It must be within reach of the Enderface and have a clear path."
+    }
+  ]
+}

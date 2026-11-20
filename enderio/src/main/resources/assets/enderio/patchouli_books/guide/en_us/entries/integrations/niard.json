@@ -1,0 +1,20 @@
+{
+  "name": "Niard",
+  "icon": "minecraft:water_bucket",
+  "category": "enderio:integrations",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Enable the Niard experiment when creating the world. The Niard places fluid sources. Fit a capacitor, supply FE and feed the fluid by bucket or pipe. Set the radius and use the display to see the placement area."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Try the Niard at radius zero over an empty basin. Each successful water source uses 1,000 mB and 1,500 FE at stock values. Increase the radius to fill a wider area when the first placement works."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "In a Niard-enabled world, craft with Bucket, Fluid Tank, Bucket across the top. Put Piston, Void Chassis, Piston in the middle. Use Dark Steel Ingot, Dark Steel Bars, Dark Steel Ingot along the bottom."
+    }
+  ]
+}

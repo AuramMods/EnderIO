@@ -1,0 +1,20 @@
+{
+  "name": "No Power",
+  "icon": "enderio:basic_capacitor",
+  "category": "enderio:help",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Start at the source. Put fuel and a capacitor in the Stirling Generator. Check for stored FE. On a photovoltaic array, check sky access, time, and any soul or fluid conditions."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "For a direct connection, choose Push on the source face and Pull on the receiver face. Banks with blank faces allow external requests. Set a bank to Push or Push / Pull where it should send FE itself."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Check the capacitor slot of the receiving machine. Verify the route’s conduit endpoints and that no face is Disabled. Try a single working source and receiver using $(l:enderio:power/energy_transfer)Moving Energy$(/l)."
+    }
+  ]
+}

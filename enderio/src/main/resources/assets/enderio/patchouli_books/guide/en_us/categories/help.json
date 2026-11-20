@@ -1,0 +1,6 @@
+{
+  "name": "Troubleshooting",
+  "description": "Find a stalled connection, missing recipe, blocked result or machine that is waiting for power.",
+  "icon": "minecraft:redstone_torch",
+  "sortnum": 7
+}

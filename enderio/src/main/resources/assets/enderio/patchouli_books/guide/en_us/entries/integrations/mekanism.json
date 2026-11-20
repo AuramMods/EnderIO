@@ -1,0 +1,24 @@
+{
+  "name": "Mekanism",
+  "icon": "minecraft:blaze_powder",
+  "category": "enderio:integrations",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Requires Mekanism 10.4 on Forge 1.20.1. Chemical Conduits support the gas, infusion, pigment and slurry handlers. Each endpoint must expose a compatible Mekanism side and stored chemical."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Put three Basic Pressurized Tubes between two rows of Conduit Binders for three Chemical Conduits. Use Advanced or Elite tubes for higher tiers. Match both channel colors and set extraction to Always Active for the first test."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Craft a Basic Chemical Filter with one Osmium Ingot in the center and four Paper around it. Configure it with a sample from a filled chemical container. Install it on the side of the transfer to control."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "For Heat Conduits, use three Advanced Thermodynamic Conductors between two rows of binders. Connect compatible heat ports, allow transfer and check the direction and redstone settings as temperatures approach equilibrium."
+    }
+  ]
+}

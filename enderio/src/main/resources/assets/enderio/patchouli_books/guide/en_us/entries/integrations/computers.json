@@ -1,0 +1,16 @@
+{
+  "name": "CC:Tweaked Signals",
+  "icon": "minecraft:redstone",
+  "category": "enderio:integrations",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "With CC:Tweaked installed, a computer, turtle or redstone relay can read a conduit’s bundled signals. Put the receiver against the configured endpoint and use the computer side that touches it."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Set colors on the redstone route. On a computer whose back touches the conduit, read redstone.getBundledInput(\"back\"). Use testBundledInput with a color to check a single channel. Verify the matching analog output separately."
+    }
+  ]
+}

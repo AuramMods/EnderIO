@@ -1,0 +1,20 @@
+{
+  "name": "Stalled Transfer",
+  "icon": "enderio:conduit_probe",
+  "category": "enderio:help",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Open both endpoint menus. Choose the same resource type, enable Extract at the source and Insert at the destination, then match the colors for item or fluid routing."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Check the extraction mode. Try Always Active while testing an isolated route. For signal-controlled transfer, follow the $(l:enderio:conduits/redstone)lever example$(/l) and check the signal color."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Temporarily test without a filter. Ensure the destination has capacity and accepts the item or liquid on its connected face. Test a single route before checking priority and round robin."
+    }
+  ]
+}

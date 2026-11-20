@@ -1,0 +1,20 @@
+{
+  "name": "Moving or Resetting",
+  "icon": "enderio:yeta_wrench",
+  "category": "enderio:help",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Before moving a machine, remove its stored inputs and outputs if you need those resources separately. Some machine drops keep charge, inventory, or settings. Read the carried item’s tooltip."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Many machines have a shapeless reset recipe that takes the carried machine by itself. The reset discards the saved contents and settings. Check the output preview before taking it."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "To rebuild a conduit line, keep the configured filters and use the $(l:enderio:conduits/tools)Conduit Probe$(/l) to copy endpoint settings. Restore the connected face, then verify the path with a few resources."
+    }
+  ]
+}

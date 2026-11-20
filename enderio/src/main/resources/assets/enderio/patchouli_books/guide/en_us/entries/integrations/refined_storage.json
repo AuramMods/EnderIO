@@ -1,0 +1,16 @@
+{
+  "name": "Refined Storage",
+  "icon": "minecraft:chest",
+  "category": "enderio:integrations",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Requires Refined Storage 1.x for Forge 1.20.1. Place three Refined Storage Cables in the middle row between six Conduit Binders to make three Refined Storage Conduits."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Connect a powered Refined Storage Controller to a Grid or Disk Drive through the conduit. Check that the Grid can see the expected storage. The network conduit can share space with an independent energy line in the same bundle."
+    }
+  ]
+}

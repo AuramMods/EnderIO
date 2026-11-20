@@ -1,0 +1,16 @@
+{
+  "name": "Opening the Guide",
+  "icon": "minecraft:book",
+  "category": "enderio:help",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Use a book and redstone in a crafting grid to make this guide when Patchouli is installed. Ender IO’s gameplay also works without Patchouli. To return to the landing page, use the book’s back arrows."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "If the guide shows raw keys or old pages after updating, check the installed Ender IO version and that the server and client use the same build. Reload client resources or restart the game."
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Missing Recipe",
+  "icon": "minecraft:crafting_table",
+  "category": "enderio:help",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Read the recipe card and verify the exact item, tag and machine. For example, the SAG Mill recipes for an ore, its raw metal and its ingot can have different inputs and results."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Check whether your pack supplies the item or tag. Some recipes and bonus outputs depend on other mods. If JEI is installed, compare the live recipe and uses against the stock examples here."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "See $(l:enderio:integrations/experiments)World Experiments$(/l) for gated machines. A standard world includes the Farming Station. Enable its respective built-in pack at world creation for Enderface or Niard."
+    }
+  ]
+}
