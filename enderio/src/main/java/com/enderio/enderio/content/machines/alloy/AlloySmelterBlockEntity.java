@@ -208,6 +208,8 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
 
     protected static class AlloySmeltingMachineTask
             extends PoweredCraftingMachineTask<AlloySmeltingRecipe, AlloySmeltingRecipe.Input> {
+        private static final int MAX_SMELTING_BATCH = 3;
+
         private final MultiSlotAccess inputs;
         private int inputsConsumed;
 
@@ -219,26 +221,34 @@ public class AlloySmelterBlockEntity extends PoweredMachineBlockEntity {
         }
 
         @Override
+        protected AlloySmeltingRecipe.Input getCurrentRecipeInput() {
+            return new AlloySmeltingRecipe.Input(inputs.getItemStacks(getInventory()), 1);
+        }
+
+        @Override
+        protected boolean canReuseOutputs(AlloySmeltingRecipe.Input currentInput) {
+            var recipe = getRecipe();
+            // Keep the original batch as an upper bound while it is waiting to finish.
+            return recipe == null || !recipe.isSmelting()
+                    || (inputsConsumed > 0 && inputsConsumed <= countSmeltingInputs(recipe, currentInput));
+        }
+
+        @Override
         protected AlloySmeltingRecipe.Input prepareToDetermineOutputs(AlloySmeltingRecipe recipe,
                 AlloySmeltingRecipe.Input recipeInput) {
-            // This handles the output multiplication for vanilla smelting recipes.
-            if (recipe.isSmelting()) {
-                SizedIngredient input = recipe.inputs().get(0);
+            inputsConsumed = recipe.isSmelting() ? countSmeltingInputs(recipe, recipeInput) : 1;
+            return recipeInput.withInputsConsumed(inputsConsumed);
+        }
 
-                int inputCount = 0;
-                for (int i = inputs.size() - 1; i >= 0; i--) {
-                    ItemStack itemStack = inputs.get(i).getItemStack(getInventory());
-                    if (input.test(itemStack)) {
-                        inputCount += Math.min(3 - inputCount, itemStack.getCount());
-                    }
+        private static int countSmeltingInputs(AlloySmeltingRecipe recipe, AlloySmeltingRecipe.Input recipeInput) {
+            SizedIngredient ingredient = recipe.inputs().get(0);
+            int count = 0;
+            for (ItemStack stack : recipeInput.inputs()) {
+                if (ingredient.test(stack)) {
+                    count += Math.min(MAX_SMELTING_BATCH - count, stack.getCount());
                 }
-
-                inputsConsumed = inputCount;
-                return recipeInput.withInputsConsumed(inputsConsumed);
-            } else {
-                inputsConsumed = 1;
-                return recipeInput;
             }
+            return count;
         }
 
         @Override

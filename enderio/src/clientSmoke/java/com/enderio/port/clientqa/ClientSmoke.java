@@ -135,6 +135,7 @@ public final class ClientSmoke {
             case "legacy-slicer" -> new ClientLegacySlicerSmoke();
             case "slicer-jei" -> new ClientSlicerJeiSmoke();
             case "alloy-jei" -> new ClientAlloyJeiSmoke();
+            case "alloy-backpressure" -> new ClientAlloyBackpressureSmoke();
             case "tank-jei" -> new ClientTankJeiSmoke();
             case "vat-jei" -> new ClientVatJeiSmoke();
             case "vat-jei-shared" -> new ClientVatSharedJeiSmoke();
