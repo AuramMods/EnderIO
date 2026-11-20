@@ -18,7 +18,7 @@
     },
     {
       "type": "patchouli:text",
-      "text": "Set an output face to Push or connect an energy conduit. Let the engine’s buffer feed a $(l:enderio:power/banks)Capacitor Bank$(/l). Make the crafted fuels in the $(l:enderio:machines/vat)VAT$(/l)."
+      "text": "Set an output face to Push or connect an energy conduit. Feed a $(l:enderio:power/banks)Capacitor Bank$(/l) to store the output. The $(l:enderio:machines/advanced_fluids)fuel recipes$(/l) explain how to make Rocket Fuel and other liquids."
     },
     {
       "type": "patchouli:text",

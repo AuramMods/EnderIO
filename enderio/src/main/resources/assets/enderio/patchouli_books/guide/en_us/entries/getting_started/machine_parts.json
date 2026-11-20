@@ -13,6 +13,10 @@
       "type": "patchouli:crafting",
       "recipe": "enderio:basic_capacitor",
       "text": "Make four Infinity Bimetal Gears, two Void Chassis, and two Basic Capacitors for your $(l:enderio:getting_started/first_machines)first machines$(/l). Keep the capacitors for the machines’ upgrade slots."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "When you have a working Alloy Smelter, use it to make the alloy ingredients for $(l:enderio:getting_started/advanced_parts)Advanced Parts$(/l)."
     }
   ]
 }

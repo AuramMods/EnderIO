@@ -1,0 +1,30 @@
+{
+  "name": "Advanced Parts",
+  "icon": "enderio:energized_gear",
+  "category": "enderio:getting_started",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:energized_gear",
+      "title": "Energized Gear"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:dark_bimetal_gear"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Work up from the Infinity Bimetal Gear to the Energetic Alloy and Dark Steel versions shown here. Make those alloys in the $(l:enderio:machines/alloying)Alloy Smelter$(/l) and keep a few gears for advanced machine recipes."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:powdered_lapis_lazuli",
+      "text": "The SAG Mill turns one Lapis Lazuli into one Powdered Lapis Lazuli for 2,400 FE. Use that powder, Powdered Coal and Silicon to craft the $(l:enderio:power/photovoltaics)solar composite$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Compress nine alloy ingots into a storage block. Craft it back into ingots when you need them. An ingot can also split into nine nuggets for smaller parts such as crystals and rods."
+    }
+  ]
+}

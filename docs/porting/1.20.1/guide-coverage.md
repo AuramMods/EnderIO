@@ -4,10 +4,10 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 
 | Chapter | Coverage to verify | Status |
 | --- | --- | --- |
-| Getting Started | Guide craft, fire and grains, starter parts, powered machines, conductive alloy and binders, first energy line | Six entries authored |
+| Getting Started | Guide craft, fire and grains, starter and advanced parts, powered machines, conductive alloy and binders, first energy line | Seven entries authored |
 | Power and Storage | Stirling fuel, capacitors, photovoltaics, banks, wired and wireless charging, energy tiers and sided transfer | Six entries authored |
 | Conduits and Filters | Placing and splitting bundles, item and fluid movement, redstone signals, upgrades and filters, facades, wrench and probe, worked networks | Nine entries authored |
-| Workshop Machines | Alloys and powders, mills and grinding balls, Slice’N’Splice, VAT, tanks, painting, Enchanter, Crafter and hoppers, farming and collection, weather and redstone controls | Twelve entries authored |
+| Workshop Machines | Alloys and powders, mills and grinding balls, Slice’N’Splice, VAT and all ten stock fluids, tanks, painting, Enchanter, Crafter and hoppers, farming and collection, weather and redstone controls | Thirteen entries authored |
 | Souls and Obelisks | Vials, Soul Binder, soul components and fuels, Powered Spawner, XP, attraction, aversion, relocation and teleport inhibition | Nine entries authored |
 | Tools and Building | Travel blocks and staff, gliders and mobility, magnets, XP equipment and enchantments, field tools, painted and steel construction, fused glass, hidden redstone | Nine entries authored |
 | Integrations and Experiments | AE2, Mekanism, RS, LaserIO, CC:Tweaked, Jade, Curios, FTB Ultimine, JEI, Enderface and Niard settings and dependencies | Eight entries authored |
@@ -59,3 +59,10 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 - The packaged Patchouli-only guide opened all eight categories and 65 entries. After an initial loopback login timeout, the same jar passed 899 client checks and four dedicated server assertions in a fresh profile. The 175 captures include the integration and troubleshooting menus and the reopened book after resource reload. See `build/port-evidence/guide-cycle-007-complete-retry/`.
 - Retested the first-login tome with the relevant Auram mods, including Caelus. The four live inventory assertions passed. The starter tome contained the other guides, had no Ender IO guide, and the player could craft the Ender IO guide afterward. The guide client passed its checks and focus observation. Its combined status reports unrelated ProjectRed and Terramity resource diagnostics. See `build/port-runtime/guide-cycle-006-auram-login/login-results.json` and `build/port-evidence/guide-cycle-006-auram-login/summary.json`.
 - Next verify the final advanced component and fuel pages, then prepare the release.
+
+## Cycle 008
+
+- Added advanced gears and the missing VAT fuel and weather examples, with cross-links to the machines and tools that use them. Added the plant-dye example and clarified the Experience Rod’s normal and sneaking transfers.
+- The complete English guide has eight categories, 67 entries and 305 pages. The package audit verified 109 recipe references, 62 inline links, 83 distinct item IDs, the source resources, the English strings and the optional survival recipe. The production archive contains no client QA classes.
+- Forge 47.4.10 with Patchouli 1.20.1-84.1-forge and JEI 15.20.0.129 passed 933 client checks and four dedicated server assertions. It captured 183 rendered spreads and interfaces, including three tested links and the reopened guide. Image review identified a long heading, which was shortened for release. The client recorded zero focus, foreground or onscreen changes with sound and narrator off. See `build/port-evidence/guide-cycle-008-final-content/` and `build/port-evidence/guide-cycle-008-build/package.json`.
+- Next build and verify the exact tagged runtime, then publish it and install the downloaded artifact in Auram.

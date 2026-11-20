@@ -37,6 +37,11 @@
     {
       "type": "patchouli:text",
       "text": "Use separate extraction filters or leave a large barrel for the extra products. Even a low-chance bonus can fill its output slot and stop the next operation."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Plant Dyes",
+      "text": "The SAG Mill can grind ferns into Clippings and Trimmings. Save six clippings, then alloy them with one Egg to make Green Dye for 1,000 FE. Other plant matter can supply additional dyes."
     }
   ]
 }

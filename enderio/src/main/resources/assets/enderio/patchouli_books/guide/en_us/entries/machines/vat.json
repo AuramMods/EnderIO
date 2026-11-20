@@ -31,6 +31,10 @@
     {
       "type": "patchouli:text",
       "text": "Feed liquid from a second tank or a $(l:enderio:conduits/fluids)fluid line$(/l). Use item filters to separate the solid reagents from the liquid path. Check redstone control and output space if a batch is waiting."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "For Hootch, Rocket Fuel and the thunder recipe, see $(l:enderio:machines/advanced_fluids)Fuel and Weather Fluids$(/l). The $(l:enderio:tools/vapor)Vapor of Levity chain$(/l) covers the three fluids used for flight."
     }
   ]
 }

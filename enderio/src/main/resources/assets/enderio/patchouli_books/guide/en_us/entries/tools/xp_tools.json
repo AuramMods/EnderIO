@@ -10,7 +10,7 @@
     },
     {
       "type": "patchouli:text",
-      "text": "Use the Experience Rod on an XP tank to withdraw experience. Sneak-use it to deposit yours. Select the quantity in its mode controls and try a small transfer first. Check the tank’s space when depositing."
+      "text": "Use the Experience Rod on an XP tank to withdraw up to a level’s worth of experience. Sneak-use to deposit your XP until you run out or the tank is full."
     },
     {
       "type": "patchouli:text",

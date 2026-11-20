@@ -1,0 +1,32 @@
+{
+  "name": "Fuel and Weather Fluids",
+  "icon": "minecraft:bucket",
+  "category": "enderio:machines",
+  "sortnum": 12,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Hootch",
+      "text": "Use 1,000 mB of water, one Wheat Seed and one Wheat in the VAT. This stock batch makes 250 mB of Hootch in 200 ticks. Save four batches for each recipe that uses 1,000 mB."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rocket Fuel",
+      "text": "Ferment 1,000 mB of Hootch with one Fire Charge and one Redstone Dust. Stock reagent values yield 500 mB of Rocket Fuel in 400 ticks. Feed it to a $(l:enderio:souls/engine)Creeper-bound engine$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Fire Water",
+      "text": "Use 1,000 mB of Hootch, one Blaze Powder and one Redstone Dust for 1,000 mB of Fire Water in 400 ticks at stock values."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Thunder Fluid",
+      "text": "Ferment 1,000 mB of Cloud Seed with one Lightning Rod and one Firework Rocket. This makes 500 mB of Concentrated Cloud Seed in 600 ticks. A $(l:enderio:machines/world_controls)Weather Obelisk$(/l) needs two stock batches for thunder."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use the $(l:enderio:tools/vapor)Vapor of Levity chain$(/l) for Nutrient Distillation, Dew of the Void and Vapor. Move each output to its own tank so the next batch has room."
+    }
+  ]
+}
