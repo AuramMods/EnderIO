@@ -15,7 +15,7 @@ parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-har
 parser.add_argument("--scenario",
                     choices=("title", "model-inventory", "xp-tools", "xp-tool-crafting", "special-enderios",
                              "singleplayer", "multiplayer", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
-                             "primitive-smelter", "stirling", "soul-binder", "soul-components", "soul-vials", "soul-engine", "soul-engine-fuels",
+                             "primitive-smelter", "stirling", "soul-binder", "soul-binder-jei", "soul-components", "soul-vials", "soul-engine", "soul-engine-fuels",
                              "powered-spawner", "spawner-crafting", "spawner-rules", "mind-killer", "obelisks", "weather-progression", "entity-obelisks",
                              "attractor-progression", "obelisk-carry", "farming-station", "farming-station-crafting", "block-detector",
                              "fluid-buckets-place", "fluid-buckets-collect", "machine-resets", "weather-jei", "tank-jei", "vat-jei", "vat-jei-shared",

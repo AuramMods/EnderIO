@@ -11,15 +11,12 @@ import com.enderio.enderio.compat.jei_machines_to_merge.util.RecipeUtil;
 import com.enderio.enderio.content.machines.soul_binder.SoulBindingRecipe;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
-import com.enderio.enderio.foundation.souldata.SoulData;
-import com.enderio.enderio.foundation.souldata.SoulDataReloadListener;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOItems;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.recipe.IFocus;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.client.Minecraft;
@@ -28,12 +25,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 import static mezz.jei.api.recipe.RecipeIngredientRole.INPUT;
 import static mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT;
@@ -72,60 +68,19 @@ public class SoulBindingCategory extends MachineRecipeCategory<SoulBindingRecipe
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, SoulBindingRecipe recipe, IFocusGroup focuses) {
-        List<ItemStack> vials = new ArrayList<>();
-        Optional<IFocus<ItemStack>> output = focuses.getItemStackFocuses(OUTPUT).findFirst();
-        Optional<IFocus<ItemStack>> input = focuses.getItemStackFocuses(INPUT)
-                .filter(f -> f.getTypedValue().getItemStack().get().is(EIOItems.SOUL_VIAL.asItem()))
+        var inputs = focuses.getItemStackFocuses(INPUT)
+                .map(focus -> focus.getTypedValue().getIngredient())
+                .filter(stack -> stack.is(EIOItems.SOUL_VIAL.get()));
+        var outputs = focuses.getItemStackFocuses(OUTPUT)
+                .map(focus -> focus.getTypedValue().getIngredient())
+                .filter(stack -> stack.is(recipe.output().getItem()));
+        var focusedSoul = Stream.concat(inputs, outputs)
+                .map(SoulBoundUtils::getBoundSoul)
+                .filter(recipe::acceptsSoul)
                 .findFirst();
-
-        if (input.isPresent()) {
-            vials.add(input.get().getTypedValue().getIngredient());
-        } else if (recipe.entityType().isPresent()) {
-            vials.add(SoulVialItem.forSoul(Soul.of(recipe.entityType().get())));
-        } else if (recipe.mobCategory().isPresent()) {
-
-            var allEntitiesOfCategory = BuiltInRegistries.ENTITY_TYPE.stream()
-                    .filter(e -> e.getCategory().equals(recipe.mobCategory().get()))
-                    .map(BuiltInRegistries.ENTITY_TYPE::getKey)
-                    .toList();
-
-            for (ResourceLocation entity : allEntitiesOfCategory) {
-                vials.add(SoulVialItem.forSoul(Soul.of(entity)));
-            }
-
-        } else if (recipe.soulData().isPresent()) {
-            if (output.isPresent()) {
-                var outputStack = output.get().getTypedValue().getIngredient();
-                var soul = SoulBoundUtils.getBoundSoul(outputStack);
-
-                if (soul.hasEntity()) {
-                    vials.add(SoulVialItem.forSoul(Soul.of(soul.entityType())));
-                }
-            } else {
-                SoulDataReloadListener<? extends SoulData> soulDataReloadListener = SoulDataReloadListener
-                        .fromString(recipe.soulData().get());
-
-                var allEntitiesOfSoulData = BuiltInRegistries.ENTITY_TYPE.keySet()
-                        .stream()
-                        .filter(r -> soulDataReloadListener.map.containsKey(r))
-                        .toList();
-
-                for (ResourceLocation entity : allEntitiesOfSoulData) {
-                    vials.add(SoulVialItem.forSoul(Soul.of(entity)));
-                }
-            }
-        } else {
-            if (output.isPresent()) {
-                var outputStack = output.get().getTypedValue().getIngredient();
-                var soul = SoulBoundUtils.getBoundSoul(outputStack);
-
-                if (soul.hasEntity()) {
-                    vials.add(SoulVialItem.forSoul(Soul.of(soul.entityType())));
-                }
-            } else {
-                vials.addAll(SoulVialItem.getAllFilled());
-            }
-        }
+        List<ItemStack> vials = focusedSoul
+                .map(soul -> List.of(SoulVialItem.forSoul(soul.copy())))
+                .orElseGet(() -> getRecipeVials(recipe));
 
         builder.addSlot(INPUT, 3, 4).addItemStacks(vials);
 
@@ -140,7 +95,7 @@ public class SoulBindingCategory extends MachineRecipeCategory<SoulBindingRecipe
                 var soul = SoulBoundUtils.getBoundSoul(vial);
                 if (!soul.isEmpty()) {
                     var result = resultStack.copy();
-                    if (SoulBoundUtils.tryBindSoul(result, Soul.of(soul.entityType()))) {
+                    if (SoulBoundUtils.tryBindSoul(result, soul.copy())) {
                         results.add(result);
                     }
                 }
@@ -155,6 +110,20 @@ public class SoulBindingCategory extends MachineRecipeCategory<SoulBindingRecipe
         builder.addSlot(OUTPUT, 77, 4).addItemStack(new ItemStack(EIOItems.SOUL_VIAL.get()));
 
         builder.addSlot(OUTPUT, 99, 4).addItemStacks(results);
+    }
+
+    private static List<ItemStack> getRecipeVials(SoulBindingRecipe recipe) {
+        if (recipe.entityType().isPresent()) {
+            return List.of(SoulVialItem.forSoul(Soul.of(recipe.entityType().get())));
+        }
+        if (recipe.mobCategory().isPresent() || recipe.soulData().isPresent()) {
+            return BuiltInRegistries.ENTITY_TYPE.stream()
+                    .map(Soul::of)
+                    .filter(recipe::acceptsSoul)
+                    .map(SoulVialItem::forSoul)
+                    .toList();
+        }
+        return SoulVialItem.getAllFilled();
     }
 
     @Override

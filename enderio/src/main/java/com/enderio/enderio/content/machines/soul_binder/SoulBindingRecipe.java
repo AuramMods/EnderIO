@@ -3,6 +3,8 @@ package com.enderio.enderio.content.machines.soul_binder;
 import com.enderio.core.common.recipes.OutputStack;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.network.MassiveStreamCodec;
+import com.enderio.enderio.api.soul.Soul;
+import com.enderio.enderio.api.soul.SoulBoundUtils;
 import com.enderio.enderio.api.soul.binding.ingredients.FilledSoulStorageIngredient;
 import com.enderio.enderio.foundation.MachineRecipe;
 import com.enderio.enderio.foundation.recipe.FluidRecipeInput;
@@ -29,7 +31,6 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, int experience,
@@ -94,42 +95,22 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
             return false;
         }
 
-        var soulBindable = recipeInput.getItem(0).getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
-        if (soulBindable == null || !soulBindable.hasSoul()) {
-            return false;
-        }
+        return acceptsSoul(SoulBoundUtils.getBoundSoul(recipeInput.getItem(0)))
+                && ExperienceUtil.getLevelFromFluid(recipeInput.getFluid(2).getAmount()) >= experience;
+    }
 
-        var soul = soulBindable.getBoundSoul();
+    public boolean acceptsSoul(Soul soul) {
         if (soul.isEmpty()) {
             return false;
         }
 
-        var entityType = Objects.requireNonNull(soul.entityType());
-
-        if (soulData.isPresent()) { // is in the selected souldata
-            if (SoulDataReloadListener.fromString(soulData.get())
-                    .matches(soul.entityType())
-                    .isEmpty()) {
-                return false;
-            }
-
-            return ExperienceUtil.getLevelFromFluid(recipeInput.getFluid(2).getAmount()) >= experience;
+        if (soulData.isPresent()) {
+            var listener = SoulDataReloadListener.fromString(soulData.get());
+            return listener != null && listener.matches(soul.entityTypeId()).isPresent();
         }
 
-        if (mobCategory.isPresent()) {
-            if (!entityType.getCategory().equals(mobCategory.get())) {
-                return false;
-            }
-        }
-
-        if (this.entityType.isPresent()) {
-            var entityTypeId = soul.entityTypeId();
-            if (!Objects.requireNonNull(entityTypeId).equals(this.entityType.get())) {
-                return false;
-            }
-        }
-
-        return ExperienceUtil.getLevelFromFluid(recipeInput.getFluid(2).getAmount()) >= experience;
+        return (mobCategory.isEmpty() || soul.entityType().getCategory() == mobCategory.get())
+                && (entityType.isEmpty() || entityType.get().equals(soul.entityTypeId()));
     }
 
     @Override
