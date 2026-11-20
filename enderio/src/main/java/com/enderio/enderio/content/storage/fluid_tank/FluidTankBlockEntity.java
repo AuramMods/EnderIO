@@ -35,7 +35,6 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Optional;
 
 // TODO: Rewrite this with tasks?
 //       Could implement a task for each thing it currently has in the If's
@@ -71,9 +70,6 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
     private final MachineFluidHandler fluidHandler;
     public static final TankAccess TANK = new TankAccess();
 
-    // TODO: Swap from optional to nullable?
-    private Optional<TankRecipe> currentRecipe = Optional.empty();
-
     public static final SingleSlotAccess FLUID_FILL_INPUT = new SingleSlotAccess();
     public static final SingleSlotAccess FLUID_FILL_OUTPUT = new SingleSlotAccess();
     public static final SingleSlotAccess FLUID_DRAIN_INPUT = new SingleSlotAccess();
@@ -87,9 +83,8 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
     @Override
     public void onLoad() {
         super.onLoad();
-        // Inventory/fluid callbacks run before the level exists during native loading.
-        // Rebuild the transient recipe and state once registry/world access is available.
-        onTankContentsChanged();
+        // Native loading restores fluid before the level is available to update its light.
+        checkFluidLight();
         if (!level.isClientSide()) {
             updateMachineState(MachineState.EMPTY_TANK, getFluidTank().isEmpty());
         }
@@ -184,18 +179,6 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
                 .build();
     }
 
-    @Override
-    protected void onInventoryContentsChanged(int slot) {
-        super.onInventoryContentsChanged(slot);
-
-        if (level != null) {
-            if (!level.isClientSide()) {
-                currentRecipe = level.getRecipeManager()
-                        .getRecipeFor(EIORecipes.TANK.type().get(), createRecipeInput(), level);
-            }
-        }
-    }
-
     // endregion
 
     @Override
@@ -208,7 +191,7 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
         return new MachineFluidHandler(this, getTankLayout()) {
             @Override
             protected void onContentsChanged(int slot) {
-                onTankContentsChanged();
+                checkFluidLight();
                 setChanged();
                 super.onContentsChanged(slot);
                 updateMachineState(MachineState.EMPTY_TANK, TANK.getFluidAmount(this) <= 0);
@@ -240,59 +223,55 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
     // endregion
 
     private void tryTankRecipe() {
-        currentRecipe.ifPresent(recipe -> {
-            // Ensure the recipe is still valid.
-            // Fixes GH-1302.
-            if (!recipe.matches(createRecipeInput(), level)) {
+        var input = createRecipeInput();
+        if (input.fillItem().isEmpty() && input.emptyItem().isEmpty()) {
+            return;
+        }
+        // A datapack reload can replace the matching recipe while a tank is paused.
+        var recipe = level.getRecipeManager().getRecipeFor(EIORecipes.TANK.type().get(), input, level).orElse(null);
+        if (recipe == null) {
+            return;
+        }
+
+        ItemStack recipeResultStack = recipe.output().copy();
+        switch (recipe.mode()) {
+        case EMPTY -> {
+            if (!FLUID_FILL_OUTPUT.insertItem(this, recipeResultStack, true).isEmpty()) {
                 return;
             }
 
-            ItemStack recipeResultStack = recipe.output().copy();
-
-            switch (recipe.mode()) {
-            case EMPTY -> {
-                if (!FLUID_FILL_OUTPUT.insertItem(this, recipeResultStack, true).isEmpty()) {
-                    return;
-                }
-
-                // Get the first matching fluid that fits in the tank.
-                List<FluidStack> possibleFluids = SizedFluidIngredientHelper.getFluidStacksInPreferredOrder(recipe.fluid());
-                for (FluidStack fluidToTry : possibleFluids) {
-                    int filled = TANK.fill(this, fluidToTry, IFluidHandler.FluidAction.SIMULATE);
-                    if (filled == recipe.fluid().amount()) {
-                        TANK.fill(this, fluidToTry, IFluidHandler.FluidAction.EXECUTE);
-                        FLUID_FILL_INPUT.extractItem(this, 1, false);
-                        FLUID_FILL_OUTPUT.insertItem(this, recipeResultStack, false);
-                        break;
-                    }
+            // Get the first matching fluid that fits in the tank.
+            List<FluidStack> possibleFluids = SizedFluidIngredientHelper.getFluidStacksInPreferredOrder(recipe.fluid());
+            for (FluidStack fluidToTry : possibleFluids) {
+                int filled = TANK.fill(this, fluidToTry, IFluidHandler.FluidAction.SIMULATE);
+                if (filled == recipe.fluid().amount()) {
+                    TANK.fill(this, fluidToTry, IFluidHandler.FluidAction.EXECUTE);
+                    FLUID_FILL_INPUT.extractItem(this, 1, false);
+                    FLUID_FILL_OUTPUT.insertItem(this, recipeResultStack, false);
+                    break;
                 }
             }
-            case FILL -> {
-                if (!FLUID_DRAIN_OUTPUT.insertItem(this, recipeResultStack, true).isEmpty()) {
-                    return;
-                }
-
-                var drained = TANK.drain(this, recipe.fluid().amount(), IFluidHandler.FluidAction.SIMULATE);
-                if (!recipe.fluid().test(drained) || drained.getAmount() != recipe.fluid().amount()) {
-                    return;
-                }
-
-                TANK.drain(this, recipe.fluid().amount(), IFluidHandler.FluidAction.EXECUTE);
-                FLUID_DRAIN_INPUT.extractItem(this, 1, false);
-                FLUID_DRAIN_OUTPUT.insertItem(this, recipeResultStack, false);
+        }
+        case FILL -> {
+            if (!FLUID_DRAIN_OUTPUT.insertItem(this, recipeResultStack, true).isEmpty()) {
+                return;
             }
-            default -> throw new NotImplementedException();
+
+            var drained = TANK.drain(this, recipe.fluid().amount(), IFluidHandler.FluidAction.SIMULATE);
+            if (!recipe.fluid().test(drained) || drained.getAmount() != recipe.fluid().amount()) {
+                return;
             }
-        });
+
+            TANK.drain(this, recipe.fluid().amount(), IFluidHandler.FluidAction.EXECUTE);
+            FLUID_DRAIN_INPUT.extractItem(this, 1, false);
+            FLUID_DRAIN_OUTPUT.insertItem(this, recipeResultStack, false);
+        }
+        default -> throw new NotImplementedException();
+        }
     }
 
-    private void onTankContentsChanged() {
+    private void checkFluidLight() {
         if (level != null) {
-            if (!level.isClientSide()) {
-                currentRecipe = level.getRecipeManager()
-                        .getRecipeFor(EIORecipes.TANK.type().get(), createRecipeInput(), level);
-            }
-
             level.getLightEngine().checkBlock(worldPosition);
         }
     }
