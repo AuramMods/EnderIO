@@ -1,17 +1,25 @@
+local input = redstone
+if fs.exists("port-relay") then
+    while peripheral.getType("bottom") ~= "redstone_relay" do
+        os.pullEvent("peripheral")
+    end
+    input = assert(peripheral.wrap("bottom"))
+end
+
 local function record()
     local otherSides = {}
     for _, side in ipairs(redstone.getSides()) do
         if side ~= "back" then
-            otherSides[side] = redstone.getBundledInput(side)
+            otherSides[side] = input.getBundledInput(side)
         end
     end
     local sample = {
-        bundled = redstone.getBundledInput("back"),
-        analog = redstone.getAnalogInput("back"),
-        white = redstone.testBundledInput("back", colors.white),
-        black = redstone.testBundledInput("back", colors.black),
-        red = redstone.testBundledInput("back", colors.red),
-        both = redstone.testBundledInput("back", colors.combine(colors.white, colors.black)),
+        bundled = input.getBundledInput("back"),
+        analog = input.getAnalogInput("back"),
+        white = input.testBundledInput("back", colors.white),
+        black = input.testBundledInput("back", colors.black),
+        red = input.testBundledInput("back", colors.red),
+        both = input.testBundledInput("back", colors.combine(colors.white, colors.black)),
         otherSides = otherSides,
     }
     local log = assert(fs.open("port-input.jsonl", "a"))
