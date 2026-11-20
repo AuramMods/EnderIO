@@ -16,7 +16,7 @@ public record EnergyConduitStorage(Direction side, ConduitNode node) implements 
             return 0;
         }
 
-        if (!node.getConnectionConfig(side, EnergyConduitConnectionConfig.TYPE).canExtract(node::hasRedstoneSignal)) {
+        if (!node.getConnectionConfig(side, EnergyConduitConnectionConfig.TYPE).canExtract(node)) {
             return 0;
         }
 

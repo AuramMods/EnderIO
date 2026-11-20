@@ -78,15 +78,7 @@ public record FluidConduitConnectionConfig(boolean isInsert, DyeColor insertChan
 
     @Override
     public boolean canExtract(ConduitRedstoneSignalAware signalAware) {
-        if (!isExtract()) {
-            return false;
-        }
-
-        if (extractRedstoneControl.isRedstoneSensitive()) {
-            return extractRedstoneControl.isActive(signalAware.hasRedstoneSignal(extractRedstoneChannel));
-        } else {
-            return extractRedstoneControl == RedstoneControl.ALWAYS_ACTIVE;
-        }
+        return isExtract() && signalAware.isRedstoneControlActive(extractRedstoneControl, extractRedstoneChannel);
     }
 
     @Override

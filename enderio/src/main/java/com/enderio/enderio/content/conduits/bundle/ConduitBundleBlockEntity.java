@@ -20,6 +20,7 @@ import com.enderio.enderio.api.conduits.connection.config.ConnectionConfig;
 import com.enderio.enderio.api.conduits.connection.config.ConnectionConfigType;
 import com.enderio.enderio.api.conduits.facade.FacadeType;
 import com.enderio.enderio.api.conduits.network.node.NodeData;
+import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.client.content.conduits.model.bundle.ConduitBundleRenderState;
 import com.enderio.enderio.content.conduits.ConduitBlockItem;
 import com.enderio.enderio.content.conduits.ConduitSorter;
@@ -34,6 +35,7 @@ import com.enderio.enderio.content.conduits.network.ConduitNetworkSavedData;
 import com.enderio.enderio.content.conduits.network.ConduitNodeImpl;
 import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduit;
 import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduitConnectionConfig;
+import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduitNetworkContext;
 import com.enderio.enderio.content.conduits.network.IConduitNodeAttachment;
 import com.enderio.enderio.content.conduits.type.item.ItemConduitConnectionConfig;
 import com.enderio.enderio.foundation.EIONBTKeys;
@@ -1109,18 +1111,31 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
             return false;
         }
 
-        var node = getConduitNode(redstoneConduit);
-        var network = node.getNetwork();
-        if (network == null) {
-            return false;
+        var context = getBundledRedstoneContext(redstoneConduit);
+        return context != null && context.isActive(signalColor);
+    }
+
+    @Override
+    public boolean isRedstoneControlActive(RedstoneControl control, @Nullable DyeColor signalColor) {
+        if (!control.isRedstoneSensitive() || hasRedstoneSignal || signalColor == null) {
+            return control.isActive(hasRedstoneSignal);
         }
 
-        var context = network.getContext(EIOConduitTypes.ContextTypes.REDSTONE.get());
-        if (context == null) {
-            return false;
+        var redstoneConduit = getConduitByType(EIOConduitTypes.REDSTONE.get());
+        if (redstoneConduit == null) {
+            return control.isActive(false);
         }
 
-        return context.isActive(signalColor);
+        // A loaded network's first sample can still contain power from another chunk.
+        var context = getBundledRedstoneContext(redstoneConduit);
+        return context != null && context.hasSample() && control.isActive(context.isActive(signalColor));
+    }
+
+    @Nullable
+    private RedstoneConduitNetworkContext getBundledRedstoneContext(Holder<Conduit<?, ?>> conduit) {
+        var node = getConduitNode(conduit);
+        var network = node == null ? null : node.getNetwork();
+        return network == null ? null : network.getContext(EIOConduitTypes.ContextTypes.REDSTONE.get());
     }
 
     // endregion

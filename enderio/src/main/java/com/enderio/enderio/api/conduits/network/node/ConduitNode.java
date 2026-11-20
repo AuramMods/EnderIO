@@ -2,6 +2,7 @@ package com.enderio.enderio.api.conduits.network.node;
 
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.ConduitCapabilityAccessor;
+import com.enderio.enderio.api.conduits.ConduitRedstoneSignalAware;
 import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.connection.ConnectionReader;
 import com.enderio.enderio.api.conduits.connection.ConnectionStatus;
@@ -23,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * Each node represents a single conduit within a bundle, and can have up to six connections in any {@link Direction}.
  */
 @ApiStatus.AvailableSince("8.0.0")
-public interface ConduitNode extends ConduitCapabilityAccessor, ConnectionReader {
+public interface ConduitNode extends ConduitCapabilityAccessor, ConnectionReader, ConduitRedstoneSignalAware {
     /**
      * @return the conduit the node represents.
      * @apiNote Currently the node must be valid (loaded, attached etc.) for this to not throw an exception.
@@ -125,6 +126,7 @@ public interface ConduitNode extends ConduitCapabilityAccessor, ConnectionReader
      * @return whether there is a redstone signal.
      * @throws IllegalStateException if this node is not loaded
      */
+    @Override
     boolean hasRedstoneSignal(@Nullable DyeColor signalColor);
 
     /**

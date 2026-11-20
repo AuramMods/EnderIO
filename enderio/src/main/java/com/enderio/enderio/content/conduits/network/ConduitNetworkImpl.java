@@ -423,8 +423,8 @@ public class ConduitNetworkImpl extends Network<ConduitNetworkImpl, ConduitNodeI
             var config = node.getConnectionConfig(side);
             if (config instanceof IOConnectionConfig ioConnectionConfig) {
                 // First add sending and receiving connections
-                boolean canInsert = ioConnectionConfig.canInsert(node::hasRedstoneSignal);
-                boolean canExtract = ioConnectionConfig.canExtract(node::hasRedstoneSignal);
+                boolean canInsert = ioConnectionConfig.canInsert(node);
+                boolean canExtract = ioConnectionConfig.canExtract(node);
 
                 if (canInsert) {
                     insertConnections.add(connection);

@@ -18,6 +18,7 @@ public class RedstoneConduitNetworkContext implements ConduitNetworkContext<Reds
             RedstoneConduitNetworkContext::new);
 
     private boolean isActive;
+    private boolean hasSample;
     private Map<DyeColor, Integer> previousChannelSignals = new HashMap<>();
     private Map<DyeColor, Integer> channelSignals = new HashMap<>();
 
@@ -56,8 +57,16 @@ public class RedstoneConduitNetworkContext implements ConduitNetworkContext<Reds
         return !channelSignals.equals(previousChannelSignals);
     }
 
-    public boolean activeChannelsChanged() {
-        return !channelSignals.keySet().equals(previousChannelSignals.keySet());
+    public boolean hasSample() {
+        return hasSample;
+    }
+
+    /** Whether signal-dependent routes need updating after the input sample. */
+    public boolean finishSample(boolean sampleReady) {
+        boolean refreshRoutes = sampleReady
+            && (!hasSample || !channelSignals.keySet().equals(previousChannelSignals.keySet()));
+        hasSample = sampleReady;
+        return refreshRoutes;
     }
 
     public void nextTick() {

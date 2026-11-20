@@ -10,6 +10,7 @@ import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOConduitTypes;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 
 import java.util.List;
 
@@ -53,8 +54,11 @@ public class RedstoneConduitTicker extends ConduitTickerBase<RedstoneConduit> {
             }
         }
 
-        if (context.activeChannelsChanged()) {
-            for (var node : network.tickingNodes()) {
+        var tickingNodes = network.tickingNodes();
+        boolean sampleReady = !tickingNodes.isEmpty()
+            && (context.hasSample() || tickingNodes.size() == network.nodeCount() || !hasNodesWaitingToTick(level, network));
+        if (context.finishSample(sampleReady)) {
+            for (var node : tickingNodes) {
                 if (level.getBlockEntity(node.pos()) instanceof ConduitBundleBlockEntity bundle) {
                     bundle.updateRedstoneRouting();
                 }
@@ -90,9 +94,24 @@ public class RedstoneConduitTicker extends ConduitTickerBase<RedstoneConduit> {
 
         // Mark all nodes as dirty if the active state changes (update block models).
         if (context.isNew() || context.isActive() != isActiveBeforeTick) {
-            for (var node : network.tickingNodes()) {
+            for (var node : tickingNodes) {
                 node.markDirty();
             }
         }
+    }
+
+    private static boolean hasNodesWaitingToTick(ServerLevel level, ConduitNetwork network) {
+        var forcedChunks = level.getForcedChunks();
+        for (var node : network.nodes()) {
+            if (node.isTicking()) continue;
+
+            var pos = node.pos();
+            // Chunks can be scheduled to tick before Forge attaches their block entities.
+            if ((forcedChunks.contains(ChunkPos.asLong(pos)) || level.shouldTickBlocksAt(pos))
+                    && (!level.isLoaded(pos) || level.getBlockState(pos).is(EIOBlocks.CONDUIT_BUNDLE.get()))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

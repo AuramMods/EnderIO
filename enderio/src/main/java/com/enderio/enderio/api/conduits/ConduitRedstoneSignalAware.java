@@ -1,5 +1,6 @@
 package com.enderio.enderio.api.conduits;
 
+import com.enderio.enderio.api.io.RedstoneControl;
 import net.minecraft.world.item.DyeColor;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,4 +16,9 @@ public interface ConduitRedstoneSignalAware {
      * @return whether there is a redstone signal to this block.
      */
     boolean hasRedstoneSignal(@Nullable DyeColor signalColor);
+
+    /** Whether the control allows transfer with the currently observed signal. */
+    default boolean isRedstoneControlActive(RedstoneControl control, @Nullable DyeColor signalColor) {
+        return control.isActive(control.isRedstoneSensitive() && hasRedstoneSignal(signalColor));
+    }
 }

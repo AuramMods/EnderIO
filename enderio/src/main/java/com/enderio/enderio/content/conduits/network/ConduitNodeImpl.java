@@ -8,6 +8,7 @@ import com.enderio.enderio.api.conduits.connection.config.ConnectionConfigType;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
 import com.enderio.enderio.api.conduits.network.node.NodeData;
 import com.enderio.enderio.api.conduits.network.node.NodeDataType;
+import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.content.conduits.legacy.ConduitDataContainer;
 import com.google.common.base.Preconditions;
 import com.mojang.serialization.Codec;
@@ -255,6 +256,13 @@ public final class ConduitNodeImpl implements INetworkNode<ConduitNetworkImpl, C
         ensureValid();
         // noinspection DataFlowIssue
         return conduitBundle.hasRedstoneSignal(signalColor);
+    }
+
+    @Override
+    public boolean isRedstoneControlActive(RedstoneControl control, @Nullable DyeColor signalColor) {
+        ensureValid();
+        // noinspection DataFlowIssue
+        return conduitBundle.isRedstoneControlActive(control, signalColor);
     }
 
     // endregion

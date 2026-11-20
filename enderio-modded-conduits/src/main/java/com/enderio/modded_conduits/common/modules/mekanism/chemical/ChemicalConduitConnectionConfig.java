@@ -74,15 +74,7 @@ public record ChemicalConduitConnectionConfig(boolean isInsert, DyeColor insertC
 
     @Override
     public boolean canExtract(ConduitRedstoneSignalAware signalAware) {
-        if (!isExtract()) {
-            return false;
-        }
-
-        if (extractRedstoneControl.isRedstoneSensitive()) {
-            return extractRedstoneControl.isActive(signalAware.hasRedstoneSignal(extractRedstoneChannel));
-        } else {
-            return extractRedstoneControl == RedstoneControl.ALWAYS_ACTIVE;
-        }
+        return isExtract() && signalAware.isRedstoneControlActive(extractRedstoneControl, extractRedstoneChannel);
     }
 
     @Override

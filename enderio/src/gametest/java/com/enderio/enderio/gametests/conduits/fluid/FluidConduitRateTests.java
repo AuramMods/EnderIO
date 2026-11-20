@@ -7,6 +7,7 @@ import com.enderio.enderio.content.conduits.type.fluid.FluidConduit;
 import com.enderio.enderio.content.conduits.type.fluid.FluidConduitConnectionConfig;
 import com.enderio.enderio.content.conduits.type.fluid.FluidConduitTicker;
 import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduitConnectionConfig;
+import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduitTicker;
 import com.enderio.enderio.content.filters.fluid.EnderFluidFilter;
 import com.enderio.enderio.content.storage.fluid_tank.FluidTankBlockEntity;
 import com.enderio.enderio.gametests.conduits.ConduitGameTestHelper;
@@ -278,6 +279,49 @@ public class FluidConduitRateTests {
                     helper.assertContainerHasExactly(0, 1, 1, Fluids.WATER, 2000);
                     helper.assertContainerHasExactly(3, 1, 1, Fluids.WATER, 6000);
                 }).thenSucceed();
+        });
+    }
+
+    @GameTest
+    public static void invertedGateWaitsForTheFirstBundledSampleEvenWithoutPower(GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(3, 1, 2)
+            .set(0, 0, 0, EIOBlocks.PRESSURIZED_FLUID_TANK.get().defaultBlockState())
+            .set(2, 0, 0, EIOBlocks.PRESSURIZED_FLUID_TANK.get().defaultBlockState()));
+        test.onGameTest(ConduitGameTestHelper.class, helper -> {
+            var fluid = helper.getConduit(EIOConduits.ENERGETIC_FLUID);
+            var redstone = helper.getConduit(EIOConduits.REDSTONE);
+            helper.startSequence().thenExecute(() -> {
+                prepareSimpleNetwork(helper, fluid);
+                var bundle = helper.getConduitBundle(1, 1, 0, false);
+                bundle.addConduit(redstone, null, helper.getPlayer());
+                helper.placeConduit(redstone, 1, 1, 1);
+                bundle.setConnectionConfig(fluid, Direction.WEST, FluidConduitConnectionConfig.DEFAULT
+                    .withExtractRedstoneControl(RedstoneControl.ACTIVE_WITHOUT_SIGNAL).withExtractRedstoneChannel(DyeColor.BLUE));
+                helper.fillContainer(0, 1, 0, Fluids.WATER, 6000);
+
+                var remoteBundle = helper.getConduitBundle(1, 1, 1, false);
+                var remoteNode = remoteBundle.getConduitNode(redstone);
+                var signals = bundle.getConduitNode(redstone).getNetwork();
+                var level = helper.getLevel();
+                int offset = (int) Math.floorMod(-level.getGameTime(), 20);
+                helper.assertTrue(signals.contains(remoteNode), "The bundled graph also includes the attaching node");
+                remoteNode.detach();
+                try {
+                    signals.ensureCachesReady();
+                    RedstoneConduitTicker.INSTANCE.tick(level, signals, offset);
+                    tick(helper, fluid, 1, 0);
+                    helper.assertContainerHasExactly(0, 1, 0, Fluids.WATER, 6000);
+                    helper.assertContainerHasExactly(2, 1, 0, Fluids.WATER, 0);
+                } finally {
+                    remoteNode.attach(remoteBundle);
+                }
+
+                signals.ensureCachesReady();
+                RedstoneConduitTicker.INSTANCE.tick(level, signals, offset);
+                tick(helper, fluid, 1, 0);
+                helper.assertContainerHasExactly(0, 1, 0, Fluids.WATER, 1000);
+                helper.assertContainerHasExactly(2, 1, 0, Fluids.WATER, 5000);
+            }).thenSucceed();
         });
     }
 
