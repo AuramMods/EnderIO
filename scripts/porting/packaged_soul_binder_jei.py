@@ -14,6 +14,7 @@ from client.run_multiplayer import stop_client, wait_signal
 from packaged_legacy_painting import stack
 from packaged_nutritious_stick import advance
 from packaged_server_smoke import ROOT, digest
+from packaged_silverfish_binding import COST as SILVERFISH_FE, JOBS as SILVERFISH_JOBS, capture
 from packaged_soul_binder import VIAL, xp_tank
 from packaged_spawners import WORLD, prepare_profile, run_stage
 from packaged_starter_progression import PLAYER
@@ -37,6 +38,11 @@ class Fixture:
     xp: int
     fe: int
     decoy: str = "zombie"
+    health: int = 16
+
+    @property
+    def initial_xp(self):
+        return max(0, self.xp - 1)
 
     def pos(self, offset=0):
         return f"{self.x + offset} 80 8"
@@ -44,7 +50,7 @@ class Fixture:
     def soul_tag(self):
         name = json.dumps({"text": self.soul_name}, separators=(",", ":"))
         return (f'{{"enderio:data":{{"enderio:soul":{{entity_type:"minecraft:{self.entity}",'
-                f"entity_tag:{{CustomName:'{name}',Health:16.0f}}}}}}}}")
+                f"entity_tag:{{CustomName:'{name}',Health:{self.health}.0f}}}}}}}}")
 
     def decoy_tag(self):
         return f'{{"enderio:data":{{"enderio:soul":{{entity_type:"minecraft:{self.decoy}",entity_tag:{{}}}}}}}}'
@@ -71,6 +77,8 @@ RULE_FIXTURES = (
     Fixture("stock", 4858, ENGINE, ENGINE, "blaze", "Ember", 1100, 188000, "cow"),
     Fixture("reloaded", 4866, ENGINE, ENGINE, "cow", "Clover", 1100, 188000, "blaze"),
 )
+SILVERFISH_FIXTURES = tuple(Fixture(job.host, job.x, f"minecraft:{job.host}", job.result, job.mob, job.name,
+                                   0, SILVERFISH_FE, "endermite", 8) for job in SILVERFISH_JOBS)
 RULE_PACK = "soul-binder-rules"
 
 
@@ -89,13 +97,16 @@ def prepare(server, results, fixtures):
     server.command(f"setworldspawn {first} 80 11")
     for fixture in fixtures:
         server.command(f"setblock {fixture.pos()} enderio:soul_binder[facing=south]")
-        server.command(f"data merge block {fixture.pos()} {{EnergyStored:{INITIAL_FE},{xp_tank(fixture.xp - 1)},"
+        fluid = xp_tank(fixture.initial_xp) + "," if fixture.initial_xp else ""
+        server.command(f"data merge block {fixture.pos()} {{EnergyStored:{INITIAL_FE},{fluid}"
                        f"Items:{{Size:5,Items:[{stack(4, 1, CAPACITOR)}]}}}}")
 
 
 def queued(fixture):
+    if fixture.xp == 0:
+        return pending(fixture, fluid=0)
     pos = fixture.pos()
-    return (f"if data block {pos} {{EnergyStored:{INITIAL_FE},{xp_tank(fixture.xp - 1)},{fixture.inputs()}}} "
+    return (f"if data block {pos} {{EnergyStored:{INITIAL_FE},{xp_tank(fixture.initial_xp)},{fixture.inputs()}}} "
             f"unless data block {pos} Task unless data block {pos} Items.Items[{{Slot:2}}] "
             f"unless data block {pos} Items.Items[{{Slot:3}}]")
 
@@ -113,7 +124,11 @@ def fill_from_hoppers(server, results, fixtures):
 def client_session(args, server, report, fixtures):
     evidence = ROOT / "build/port-evidence" / f"{args.name}-client"
     summary_path = evidence / "summary.json"
-    scenario = "soul-binder-jei-rules" if args.rules else "soul-binder-jei"
+    scenario = "soul-binder-jei"
+    if args.rules:
+        scenario += "-rules"
+    elif args.silverfish:
+        scenario += "-silverfish"
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"), "--launch", str(args.launch.resolve()),
                "--scenario", scenario, "--server", f"127.0.0.1:{args.port}", "--output", str(evidence), "--timeout", "240"]
     with (server.directory / "soul-binder-jei-client.log").open("w") as log:
@@ -122,12 +137,19 @@ def client_session(args, server, report, fixtures):
             wait_signal(client, evidence, "connected")
             if args.client_only:
                 (evidence / "server-client-only").touch()
-            for fixture in fixtures:
+            for index, fixture in enumerate(fixtures):
                 server.command(f"clear {PLAYER}")
                 server.command(f"tp {PLAYER} {fixture.x + .5} 80 10.5 180 15")
                 server.command(f"item replace entity {PLAYER} hotbar.1 with {VIAL}{fixture.decoy_tag()}")
                 server.command(f"item replace entity {PLAYER} hotbar.2 with {VIAL}")
-                server.command(f"item replace entity {PLAYER} hotbar.3 with {VIAL}{fixture.soul_tag()}")
+                if args.silverfish:
+                    job = SILVERFISH_JOBS[index]
+                    capture(server, report["assertions"], job)
+                    dispenser = job.pos(82)
+                    server.command(f"item replace entity {PLAYER} hotbar.3 from block {dispenser} container.0")
+                    server.command(f"item replace block {dispenser} container.0 with minecraft:air")
+                else:
+                    server.command(f"item replace entity {PLAYER} hotbar.3 with {VIAL}{fixture.soul_tag()}")
                 server.command(f"item replace entity {PLAYER} hotbar.5 with {fixture.material}{MATERIAL_TAG} 2")
                 (evidence / f"server-{fixture.name}-initial").touch()
                 wait_signal(client, evidence, f"{fixture.name}-queued")
@@ -157,9 +179,13 @@ def client_session(args, server, report, fixtures):
             report["client"] = json.loads(summary_path.read_text()) if summary_path.exists() else None
 
 
-def pending(fixture):
+def pending(fixture, *, fluid=None):
+    if fluid is None:
+        fluid = fixture.xp + REMAINING_XP
+    pos = fixture.pos()
+    tank = f'if data block {pos} {{{xp_tank(fluid)}}}' if fluid else f'unless data block {pos} Fluids.Tanks[0].Contents.Amount'
     recipe = "enderio:soulbinding/" + fixture.product.split(":")[1]
-    return (f'if data block {fixture.pos()} {{EnergyStored:0,{xp_tank(fixture.xp + REMAINING_XP)},{fixture.inputs()},'
+    return (f'{tank} if data block {pos} {{EnergyStored:0,{fixture.inputs()},'
             f'Task:{{RecipeId:"{recipe}",ProgressMade:{INITIAL_FE},ProgressRequired:{fixture.fe}}}}} '
             f"unless data block {fixture.pos()} Items.Items[{{Slot:2}}] "
             f"unless data block {fixture.pos()} Items.Items[{{Slot:3}}]")
@@ -178,7 +204,11 @@ def verify_partial(server, results, fixtures):
     for fixture in fixtures:
         if fixture.name == "stock":
             continue
-        server.assert_state(f"{fixture.name}_holds_both_inputs_at_one_mb_below_cost", queued(fixture), results)
+        if fixture.xp == 0:
+            check = f"{fixture.name}_starts_the_job_with_an_empty_xp_tank"
+        else:
+            check = f"{fixture.name}_holds_both_inputs_at_one_mb_below_cost"
+        server.assert_state(check, queued(fixture), results)
         server.command(f"data merge block {fixture.pos()} {{{xp_tank(fixture.xp + REMAINING_XP)}}}")
         server.assert_state(f"{fixture.name}_retains_inputs_and_fluid_during_partial_progress", pending(fixture), results)
 
@@ -235,7 +265,9 @@ def main():
     parser.add_argument("--launch", type=Path)
     parser.add_argument("--jei", type=Path)
     parser.add_argument("--client-only", action="store_true", help="Install JEI only on the client and load the inputs by hand")
-    parser.add_argument("--rules", action="store_true", help="Use the stock Animal Token and reloadable Soul Engine rule")
+    catalogs = parser.add_mutually_exclusive_group()
+    catalogs.add_argument("--rules", action="store_true", help="Use the stock Animal Token and reloadable Soul Engine rule")
+    catalogs.add_argument("--silverfish", action="store_true", help="Use all seven zero-XP silverfish recipes")
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a directory name")
@@ -246,7 +278,11 @@ def main():
 
     directory = ROOT / "build/port-runtime" / args.name
     prepare_profile(args, directory, args.jar)
-    fixtures = RULE_FIXTURES if args.rules else FIXTURES
+    fixtures = FIXTURES
+    if args.rules:
+        fixtures = RULE_FIXTURES
+    elif args.silverfish:
+        fixtures = SILVERFISH_FIXTURES
     if args.rules:
         pack = directory / WORLD / "datapacks" / RULE_PACK
         pack.mkdir(parents=True)

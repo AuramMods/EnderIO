@@ -75,7 +75,6 @@ def capture(server, results, job):
                         f"unless entity {mob} "
                         f"if data block {dispenser} Items[{item(0, VIAL, job.soul_tag, vanilla=True)}]", results)
     server.command(f"setblock {power} minecraft:air")
-    server.command(f"setblock {job.pos(81)} minecraft:hopper[facing=down]")
 
 
 def feed(server, results, job, energy):
@@ -86,6 +85,7 @@ def feed(server, results, job, energy):
     server.command(f"setblock {side} minecraft:hopper[facing=east]")
     server.command(f"item replace block {side} container.0 with minecraft:{job.host}{{PortHost:{job.x}}}")
     capture(server, results, job)
+    server.command(f"setblock {job.pos(81)} minecraft:hopper[facing=down]")
 
 
 def xp_condition(pos, amount):

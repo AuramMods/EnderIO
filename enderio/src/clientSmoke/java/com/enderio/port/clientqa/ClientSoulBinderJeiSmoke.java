@@ -26,6 +26,7 @@ import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
@@ -45,30 +46,45 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 final class ClientSoulBinderJeiSmoke {
+    enum Catalog { EXACT, RULES, SILVERFISH }
+
     private enum Stage { TITLE, JOIN, OPEN, MENU, RECIPE, MANUAL, QUEUED, VERIFIED, DONE }
 
     private record Fixture(String name, int x, ResourceLocation id, Supplier<? extends ItemLike> input, Supplier<? extends ItemLike> result,
                            EntityType<?> soul, String soulName, EntityType<?> decoy,
-                           int experience, int energy, int initialFluid) {
+                           int experience, int energy, int initialFluid, float health) {
         BlockPos pos() { return new BlockPos(x, 80, 8); }
     }
 
     private static final List<Fixture> EXACT = List.of(
         new Fixture("crystal", 4834, ResourceLocation.parse("enderio:soulbinding/ender_crystal"),
-            EIOItems.VIBRANT_CRYSTAL::get, EIOItems.ENDER_CRYSTAL::get, EntityType.ENDERMAN, "West", EntityType.ZOMBIE, 6, 76800, 1439),
+            EIOItems.VIBRANT_CRYSTAL::get, EIOItems.ENDER_CRYSTAL::get, EntityType.ENDERMAN, "West", EntityType.ZOMBIE, 6, 76800, 1439, 16),
         new Fixture("panel", 4842, ResourceLocation.parse("enderio:soulbinding/energetic_photovoltaic_module"),
             () -> EIOBlocks.SOLAR_PANELS.get(SolarPanelTier.ENERGETIC).get(), () -> EIOBlocks.SOLAR_PANELS.get(SolarPanelTier.ENERGETIC).get(),
-            EntityType.PHANTOM, "Sky", EntityType.ZOMBIE, 8, 12800, 2239));
+            EntityType.PHANTOM, "Sky", EntityType.ZOMBIE, 8, 12800, 2239, 16));
     private static final ResourceLocation ENGINE_RULE = ResourceLocation.parse("enderio:soulbinding/soul_engine");
     private static final List<Fixture> RULES = List.of(
         new Fixture("animal", 4850, ResourceLocation.parse("enderio:soulbinding/animal_token"),
-            EIOItems.SOULARIUM_BALL::get, EIOItems.ANIMAL_TOKEN::get, EntityType.COW, "Meadow", EntityType.ZOMBIE, 1, 12800, 139),
+            EIOItems.SOULARIUM_BALL::get, EIOItems.ANIMAL_TOKEN::get, EntityType.COW, "Meadow", EntityType.ZOMBIE, 1, 12800, 139, 16),
         new Fixture("stock", 4858, ENGINE_RULE,
-            EIOBlocks.SOUL_ENGINE::get, EIOBlocks.SOUL_ENGINE::get, EntityType.BLAZE, "Ember", EntityType.COW, 5, 188000, 1099),
+            EIOBlocks.SOUL_ENGINE::get, EIOBlocks.SOUL_ENGINE::get, EntityType.BLAZE, "Ember", EntityType.COW, 5, 188000, 1099, 16),
         new Fixture("reloaded", 4866, ENGINE_RULE,
-            EIOBlocks.SOUL_ENGINE::get, EIOBlocks.SOUL_ENGINE::get, EntityType.COW, "Clover", EntityType.BLAZE, 5, 188000, 1099));
+            EIOBlocks.SOUL_ENGINE::get, EIOBlocks.SOUL_ENGINE::get, EntityType.COW, "Clover", EntityType.BLAZE, 5, 188000, 1099, 16));
+    private static final List<Fixture> SILVERFISH = List.of(
+        infestation("stone", 5378), infestation("cobblestone", 5386), infestation("deepslate", 5394),
+        infestation("stone_bricks", 5402), infestation("mossy_stone_bricks", 5410),
+        infestation("cracked_stone_bricks", 5418), infestation("chiseled_stone_bricks", 5426));
+
+    private static Fixture infestation(String host, int x) {
+        var block = ResourceLocation.withDefaultNamespace(host);
+        var infested = ResourceLocation.withDefaultNamespace("infested_" + host);
+        return new Fixture(host, x, ResourceLocation.fromNamespaceAndPath("enderio", "soulbinding/" + infested.getPath()),
+            () -> BuiltInRegistries.BLOCK.get(block), () -> BuiltInRegistries.BLOCK.get(infested),
+            EntityType.SILVERFISH, "silverfish_" + host, EntityType.ENDERMITE, 0, 10000, 0, 8);
+    }
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
@@ -80,8 +96,12 @@ final class ClientSoulBinderJeiSmoke {
     private long titleAt;
     private int index;
 
-    ClientSoulBinderJeiSmoke(boolean rules) {
-        fixtures = rules ? RULES : EXACT;
+    ClientSoulBinderJeiSmoke(Catalog catalog) {
+        fixtures = switch (catalog) {
+            case EXACT -> EXACT;
+            case RULES -> RULES;
+            case SILVERFISH -> SILVERFISH;
+        };
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -147,6 +167,13 @@ final class ClientSoulBinderJeiSmoke {
                     if (!(minecraft.screen instanceof SoulBinderScreen screen)) return;
                     var menu = screen.getMenu();
                     if (menu.getSlot(1).getItem().isEmpty() || menu.getSlot(2).getItem().isEmpty()) return;
+                    if (fixture.experience() == 0) {
+                        if (menu.getEnergyStorage() == null || menu.getCraftingProgress() == 0) return;
+                        check(fixture.name() + "_native_binder_shows_zero_xp_and_exact_progress",
+                            menu.getExperience() == 0 && menu.getFluidTank().contents().isEmpty()
+                                && Math.abs(menu.getCraftingProgress() - 400f / fixture.energy()) < 0.00001f
+                                && menu.getEnergyStorage().getEnergyStored() == 0);
+                    }
                     check(fixture.name() + "_moves_the_original_named_vial_and_one_tagged_ingredient",
                         namedSoul(menu.getSlot(1).getItem(), fixture) && menu.getSlot(1).getItem().getCount() == 1
                             && menu.getSlot(2).getItem().is(fixture.input().get().asItem()) && menu.getSlot(2).getItem().getCount() == 1
@@ -190,6 +217,16 @@ final class ClientSoulBinderJeiSmoke {
             !finds(runtime, fixture, RecipeIngredientRole.INPUT, minecraft.player.getInventory().getItem(1))
                 && !finds(runtime, fixture, RecipeIngredientRole.INPUT, minecraft.player.getInventory().getItem(2)));
         check(fixture.name() + "_recipe_has_the_stock_xp_and_fe_cost", recipe.experience() == fixture.experience() && recipe.energy() == fixture.energy());
+        if (fixture.experience() == 0) {
+            var matching = mgr.createRecipeLookup(SoulBindingCategory.TYPE).limitFocus(List.of(focus)).get()
+                .filter(r -> r.entityType().equals(recipe.entityType()))
+                .map(SoulBindingRecipe::getId).collect(Collectors.toSet());
+            var expected = SILVERFISH.stream().map(Fixture::id).collect(Collectors.toSet());
+            check(fixture.name() + "_captured_vial_indexes_all_seven_silverfish_recipes", matching.equals(expected));
+            check(fixture.name() + "_infested_block_finds_the_recipe",
+                finds(runtime, fixture, RecipeIngredientRole.OUTPUT, new ItemStack(fixture.result().get())));
+            check(fixture.name() + "_viewer_opens_at_player_experience_level_zero", minecraft.player.experienceLevel == 0);
+        }
         if (fixture.name().equals("panel") || fixture.id().equals(ENGINE_RULE)) {
             var view = mgr.createRecipeLayoutDrawable(category, recipe, focuses.createFocusGroup(List.of(focus))).orElseThrow().getRecipeSlotsView();
             var bound = view.getSlotViews(RecipeIngredientRole.OUTPUT).get(1).getDisplayedItemStack().orElseThrow();
@@ -259,7 +296,7 @@ final class ClientSoulBinderJeiSmoke {
     private static boolean namedSoul(ItemStack stack, Fixture fixture) {
         var soul = SoulBoundUtils.getBoundSoul(stack);
         return soul.entityType() == fixture.soul() && soul.entityTag().getString("CustomName").contains(fixture.soulName())
-            && soul.entityTag().getFloat("Health") == 16;
+            && soul.entityTag().getFloat("Health") == fixture.health();
     }
 
     private void connect() {
