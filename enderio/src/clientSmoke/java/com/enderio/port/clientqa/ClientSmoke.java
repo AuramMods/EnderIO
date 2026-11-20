@@ -57,6 +57,8 @@ public final class ClientSmoke {
             case "farming-station" -> new ClientFarmingStationSmoke();
             case "farming-station-crafting" -> new ClientFarmingStationCraftingSmoke();
             case "block-detector" -> new ClientBlockDetectorSmoke();
+            case "fluid-buckets-place" -> new ClientFluidBucketsSmoke(false);
+            case "fluid-buckets-collect" -> new ClientFluidBucketsSmoke(true);
             case "painting-machine" -> new ClientPaintingMachineSmoke();
             case "painted-sand" -> new ClientPaintedSandSmoke();
             case "painted-redstone" -> new ClientPaintedRedstoneSmoke();
