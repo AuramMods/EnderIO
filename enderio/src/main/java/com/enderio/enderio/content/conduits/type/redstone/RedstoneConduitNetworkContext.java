@@ -56,6 +56,10 @@ public class RedstoneConduitNetworkContext implements ConduitNetworkContext<Reds
         return !channelSignals.equals(previousChannelSignals);
     }
 
+    public boolean activeChannelsChanged() {
+        return !channelSignals.keySet().equals(previousChannelSignals.keySet());
+    }
+
     public void nextTick() {
         if (newNetworkDelay == NewNetworkDelay.NEW) {
             newNetworkDelay = NewNetworkDelay.NEW_DECAY;

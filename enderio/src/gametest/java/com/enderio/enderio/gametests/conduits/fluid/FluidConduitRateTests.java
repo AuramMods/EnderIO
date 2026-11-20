@@ -6,6 +6,7 @@ import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.content.conduits.type.fluid.FluidConduit;
 import com.enderio.enderio.content.conduits.type.fluid.FluidConduitConnectionConfig;
 import com.enderio.enderio.content.conduits.type.fluid.FluidConduitTicker;
+import com.enderio.enderio.content.conduits.type.redstone.RedstoneConduitConnectionConfig;
 import com.enderio.enderio.content.filters.fluid.EnderFluidFilter;
 import com.enderio.enderio.content.storage.fluid_tank.FluidTankBlockEntity;
 import com.enderio.enderio.gametests.conduits.ConduitGameTestHelper;
@@ -23,7 +24,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
@@ -235,6 +238,46 @@ public class FluidConduitRateTests {
                 helper.assertContainerHasExactly(0, 1, 0, Fluids.WATER, 4000);
                 helper.assertContainerHasExactly(2, 1, 0, Fluids.WATER, 2000);
             }).thenSucceed();
+        });
+    }
+
+    @GameTest(timeoutTicks = 100)
+    public static void remoteBundledSignalUpdatesFluidRoutingWithoutReopeningTheMenu(GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(4, 1, 2)
+            .set(0, 0, 1, EIOBlocks.PRESSURIZED_FLUID_TANK.get().defaultBlockState())
+            .set(3, 0, 1, EIOBlocks.PRESSURIZED_FLUID_TANK.get().defaultBlockState()));
+        test.onGameTest(ConduitGameTestHelper.class, helper -> {
+            var ender = helper.getConduit(EIOConduits.VIBRANT_FLUID);
+            var pressurized = helper.getConduit(EIOConduits.ENERGETIC_FLUID);
+            var redstone = helper.getConduit(EIOConduits.REDSTONE);
+            var lever = Blocks.LEVER.defaultBlockState().setValue(LeverBlock.FACE, AttachFace.FLOOR);
+            helper.startSequence().thenExecute(() -> {
+                helper.setBlock(2, 0, 0, Blocks.STONE);
+                helper.setBlock(2, 1, 0, lever);
+                helper.placeConduit(ender, 1, 1, 1);
+                helper.placeConduit(pressurized, 2, 1, 1);
+                var source = helper.getConduitBundle(1, 1, 1, false);
+                var target = helper.getConduitBundle(2, 1, 1, false);
+                source.addConduit(redstone, null, helper.getPlayer());
+                target.addConduit(redstone, null, helper.getPlayer());
+                source.setConnectionConfig(ender, Direction.WEST, FluidConduitConnectionConfig.DEFAULT
+                    .withExtractRedstoneControl(RedstoneControl.ACTIVE_WITH_SIGNAL).withExtractRedstoneChannel(DyeColor.BLUE));
+                configure(helper, pressurized, 2, 1, Direction.EAST, false);
+                target.setConnectionConfig(redstone, Direction.NORTH,
+                    RedstoneConduitConnectionConfig.DEFAULT.withExtractChannel(DyeColor.BLUE));
+                helper.fillContainer(0, 1, 1, Fluids.WATER, 6000);
+            }).thenExecuteAfter(12, () -> {
+                helper.assertContainerHasExactly(0, 1, 1, Fluids.WATER, 6000);
+                helper.assertContainerHasExactly(3, 1, 1, Fluids.WATER, 0);
+                helper.setBlock(2, 1, 0, lever.setValue(LeverBlock.POWERED, true));
+            }).thenExecuteAfter(18, () -> {
+                helper.assertContainerHasExactly(3, 1, 1, Fluids.WATER, 6000);
+                helper.setBlock(2, 1, 0, lever);
+            }).thenExecuteAfter(4, () -> helper.fillContainer(0, 1, 1, Fluids.WATER, 2000))
+                .thenExecuteAfter(12, () -> {
+                    helper.assertContainerHasExactly(0, 1, 1, Fluids.WATER, 2000);
+                    helper.assertContainerHasExactly(3, 1, 1, Fluids.WATER, 6000);
+                }).thenSucceed();
         });
     }
 

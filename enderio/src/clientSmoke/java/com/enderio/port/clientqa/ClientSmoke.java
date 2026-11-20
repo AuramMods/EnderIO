@@ -132,6 +132,7 @@ public final class ClientSmoke {
             case "energy-progression" -> new ClientConduitProgressionSmoke(ClientConduitProgressionSmoke.Family.ENERGY);
             case "item-progression" -> new ClientConduitProgressionSmoke(ClientConduitProgressionSmoke.Family.ITEM);
             case "fluid-progression" -> new ClientConduitProgressionSmoke(ClientConduitProgressionSmoke.Family.FLUID);
+            case "fluid-conduit-controls" -> new ClientFluidConduitControlsSmoke();
             case "sag-progression" -> new ClientSagProgressionSmoke(false);
             case "sag-backpressure" -> new ClientSagProgressionSmoke(true);
             case "stock-grinding-balls" -> new ClientGrindingBallSmoke();

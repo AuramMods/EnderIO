@@ -1083,6 +1083,10 @@ public final class ConduitBundleBlockEntity extends RegistryBlockEntity
             hasRedstoneSignal = level.hasNeighborSignal(getBlockPos());
         }
 
+        updateRedstoneRouting();
+    }
+
+    public void updateRedstoneRouting() {
         if (level != null && !level.isClientSide()) {
             for (var node : conduitNodes.values()) {
                 node.onRedstoneChanged();

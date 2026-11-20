@@ -5,6 +5,7 @@ import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.ConduitType;
 import com.enderio.enderio.api.conduits.network.ConduitNetwork;
 import com.enderio.enderio.api.conduits.ticker.ConduitTickerBase;
+import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOConduitTypes;
 import net.minecraft.core.Holder;
@@ -48,6 +49,14 @@ public class RedstoneConduitTicker extends ConduitTickerBase<RedstoneConduit> {
 
                 if (signal > 0) {
                     context.setSignal(channel, signal);
+                }
+            }
+        }
+
+        if (context.activeChannelsChanged()) {
+            for (var node : network.tickingNodes()) {
+                if (level.getBlockEntity(node.pos()) instanceof ConduitBundleBlockEntity bundle) {
+                    bundle.updateRedstoneRouting();
                 }
             }
         }
