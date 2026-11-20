@@ -59,6 +59,7 @@ public final class ClientSmoke {
             case "block-detector" -> new ClientBlockDetectorSmoke();
             case "fluid-buckets-place" -> new ClientFluidBucketsSmoke(false);
             case "fluid-buckets-collect" -> new ClientFluidBucketsSmoke(true);
+            case "machine-resets" -> new ClientMachineResetSmoke();
             case "painting-machine" -> new ClientPaintingMachineSmoke();
             case "painted-sand" -> new ClientPaintedSandSmoke();
             case "painted-redstone" -> new ClientPaintedRedstoneSmoke();
