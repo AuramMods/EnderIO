@@ -33,29 +33,44 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 
 final class ClientHangGliderSmoke {
-    private enum Stage { TITLE, JOIN, SETUP, WING, WING_TAKEN, FRAME, FRAME_TAKEN, EQUIP, READY, FLIGHT, CONTROL_READY, CONTROL, VERIFIED, DONE }
+    private enum Stage { TITLE, JOIN, SETUP, WING, WING_TAKEN, FRAME, FRAME_TAKEN, EQUIP, READY, FLIGHT, CONTROL_READY, CONTROL,
+        CRUISE, DIVE, RECOVER, WATER, VERIFIED, DONE }
 
     private static final BlockPos TABLE = new BlockPos(3968, 80, 4);
     private final Minecraft minecraft = Minecraft.getInstance();
     private final String address = System.getProperty("enderio.clientqa.server");
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final boolean reopened = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase"));
+    private final boolean maneuvers;
     private final long started = System.nanoTime();
     private final LinkedHashMap<String, Boolean> checks = new LinkedHashMap<>();
     private final LinkedHashMap<String, Object> captures = new LinkedHashMap<>();
+    private final LinkedHashMap<String, Double> descent = new LinkedHashMap<>();
     private Stage stage = Stage.TITLE;
     private long titleReady;
     private boolean recipeRequested;
     private boolean airborne;
     private boolean gliding;
+    private boolean retriedJoin;
+    private int sampleTicks;
+    private int waterTicks;
+    private double sampleY;
+    private String pendingCapture;
 
-    ClientHangGliderSmoke() {
+    ClientHangGliderSmoke(boolean maneuvers) {
+        this.maneuvers = maneuvers;
         MinecraftForge.EVENT_BUS.addListener(this::render);
+        if (maneuvers) MinecraftForge.EVENT_BUS.addListener(this::tickManeuvers);
     }
 
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
+            if (maneuvers && stage == Stage.JOIN && minecraft.screen instanceof DisconnectedScreen && !retriedJoin) {
+                retriedJoin = true;
+                startConnection();
+                return;
+            }
             if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > 145_000_000_000L) {
                 throw new AssertionError("Hang Glider client stopped in " + stage);
             }
@@ -65,6 +80,12 @@ final class ClientHangGliderSmoke {
             }
             var player = minecraft.player;
             if (player == null || minecraft.level == null) return;
+            if (pendingCapture != null) {
+                var frame = ClientSmoke.capture(pendingCapture + ".png");
+                check(pendingCapture + "_frame_is_hidden_and_muted", Boolean.TRUE.equals(frame.get("passed")));
+                captures.put(pendingCapture, frame);
+                pendingCapture = null;
+            }
             if (minecraft.screen instanceof CraftingScreen && player.containerMenu instanceof CraftingMenu menu) {
                 craft(player, menu);
                 return;
@@ -76,7 +97,7 @@ final class ClientHangGliderSmoke {
                     check("real_dedicated_survival_connection", !player.isCreative() && !player.isSpectator()
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     signal("connected");
-                    stage = reopened ? Stage.READY : Stage.SETUP;
+                    stage = reopened || maneuvers ? Stage.READY : Stage.SETUP;
                 }
                 case SETUP -> {
                     if (!marker("craft") || player.distanceToSqr(3968.5, 80, 6.5) > 0.1
@@ -101,7 +122,7 @@ final class ClientHangGliderSmoke {
                     check("equipped_item_is_unstackable", player.getItemBySlot(EquipmentSlot.CHEST).getMaxStackSize() == 1);
                     check("held_item_was_consumed", count(player, EIOItems.GLIDER.get()) == 0);
                     signal("ready");
-                    stage = Stage.FLIGHT;
+                    stage = maneuvers ? Stage.CRUISE : Stage.FLIGHT;
                 }
                 case FLIGHT -> flight(player);
                 case CONTROL_READY -> {
@@ -119,6 +140,67 @@ final class ClientHangGliderSmoke {
             failure.printStackTrace();
             finish(failure);
         }
+    }
+
+    private void tickManeuvers(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || minecraft.player == null) return;
+        var player = minecraft.player;
+        try {
+            switch (stage) {
+                case CRUISE -> {
+                    if (!PlayerMovementHandler.isGliding(player)) return;
+                    if (sampleTicks == 0) {
+                        minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+                        minecraft.options.hideGui = true;
+                        minecraft.options.keyUp.setDown(true);
+                    }
+                    if (!sampleDescent(player, "cruise")) return;
+                    check("ordinary_glide_has_the_stock_descent", descent.get("cruise") > 0.04 && descent.get("cruise") < 0.07);
+                    minecraft.options.keySprint.setDown(true);
+                    stage = Stage.DIVE;
+                }
+                case DIVE -> {
+                    check("sprint_dive_stays_in_the_glider_state", PlayerMovementHandler.isGliding(player));
+                    if (!player.isSprinting() || !sampleDescent(player, "sprint-dive")) return;
+                    double ratio = descent.get("sprint-dive") / descent.get("cruise");
+                    check("native_sprint_key_triples_glider_descent", ratio > 2.8 && ratio < 3.2);
+                    minecraft.options.keySprint.setDown(false);
+                    minecraft.options.keyUp.setDown(false);
+                    stage = Stage.RECOVER;
+                }
+                case RECOVER -> {
+                    check("ending_sprint_does_not_stow_the_glider_in_air", PlayerMovementHandler.isGliding(player));
+                    if (player.isSprinting() || !sampleDescent(player, "recovered")) return;
+                    check("ending_sprint_restores_normal_descent", Math.abs(descent.get("recovered") - descent.get("cruise")) < 0.006);
+                    stage = Stage.WATER;
+                }
+                case WATER -> {
+                    if (!player.isInWater()) {
+                        waterTicks = 0;
+                        return;
+                    }
+                    check("water_disables_gliding_with_the_original_item_equipped", !PlayerMovementHandler.isGliding(player)
+                        && player.getItemBySlot(EquipmentSlot.CHEST).is(EIOItems.GLIDER.get()) && player.getHealth() == 20.0F);
+                    if (++waterTicks < 6) return;
+                    pendingCapture = "water";
+                    signal("water");
+                    stage = Stage.VERIFIED;
+                }
+                default -> { }
+            }
+        } catch (Throwable failure) {
+            failure.printStackTrace();
+            finish(failure);
+        }
+    }
+
+    private boolean sampleDescent(LocalPlayer player, String label) {
+        if (sampleTicks++ == 0) sampleY = player.getY();
+        if (sampleTicks < 6) return false;
+        descent.put(label, (sampleY - player.getY()) / (sampleTicks - 1));
+        sampleTicks = 0;
+        pendingCapture = label;
+        return true;
     }
 
     private void craft(LocalPlayer player, CraftingMenu menu) throws IOException {
@@ -190,6 +272,10 @@ final class ClientHangGliderSmoke {
         if (!(minecraft.screen instanceof TitleScreen) || minecraft.getOverlay() != null) return;
         if (titleReady == 0) titleReady = System.nanoTime();
         if (System.nanoTime() - titleReady < 2_000_000_000L) return;
+        startConnection();
+    }
+
+    private void startConnection() {
         ConnectScreen.startConnecting(new TitleScreen(), minecraft, ServerAddress.parseString(address),
             new ServerData("Ender IO Hang Glider", address, true), false);
         stage = Stage.JOIN;
@@ -213,11 +299,19 @@ final class ClientHangGliderSmoke {
     private void finish(Throwable failure) {
         stage = Stage.DONE;
         minecraft.options.keyShift.setDown(false);
+        if (maneuvers) {
+            minecraft.options.keyUp.setDown(false);
+            minecraft.options.keySprint.setDown(false);
+        }
         minecraft.options.hideGui = false;
         var result = new LinkedHashMap<String, Object>();
         result.put("passed", failure == null);
         result.put("checks", checks);
         result.put("captures", captures);
+        if (maneuvers) {
+            result.put("descentBlocksPerTick", descent);
+            result.put("retriedJoin", retriedJoin);
+        }
         if (failure != null) result.put("error", failure.toString());
         ClientSmoke.complete("client_hang_glider", result);
     }

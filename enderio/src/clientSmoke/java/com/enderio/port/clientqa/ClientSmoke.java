@@ -108,7 +108,8 @@ public final class ClientSmoke {
             case "legacy-auto-smelt" -> new ClientAutoSmeltSmoke();
             case "legacy-combat" -> new ClientLegacyCombatSmoke();
             case "legacy-experience" -> new ClientLegacyExperienceSmoke();
-            case "hang-glider" -> new ClientHangGliderSmoke();
+            case "hang-glider" -> new ClientHangGliderSmoke(false);
+            case "hang-glider-maneuvers" -> new ClientHangGliderSmoke(true);
             case "hang-glider-observer" -> new ClientRemoteHangGliderSmoke();
             case "coordinate-printout" -> new ClientCoordinatePrintoutSmoke(false);
             case "cold-fire" -> new ClientColdFireSmoke(false);
