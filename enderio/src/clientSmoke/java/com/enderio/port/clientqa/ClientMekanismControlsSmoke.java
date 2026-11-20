@@ -2,18 +2,21 @@ package com.enderio.port.clientqa;
 
 import com.enderio.core.client.gui.widgets.IconButton;
 import com.enderio.core.client.gui.widgets.ToggleIconButton;
+import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.api.conduits.connection.config.ConnectionConfig;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.client.content.conduits.gui.ConduitScreen;
 import com.enderio.enderio.client.foundation.widgets.RedstoneControlPickerWidget;
 import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
 import com.enderio.enderio.content.filters.FilterSlot;
+import com.enderio.enderio.init.EIOItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.CraftingScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.core.BlockPos;
@@ -21,6 +24,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
@@ -32,30 +36,46 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 final class ClientMekanismControlsSmoke {
-    private enum Stage { TITLE, JOIN, OPEN_CHEMICAL, INSTALL, CONFIGURE, EDIT, CHECK, BACK, OPEN_HEAT, HEAT, HEAT_EDITED, DONE }
+    private enum Stage {
+        TITLE, JOIN, TABLE, RECIPE, RESULT, TAKEN, PLACE_HEAT, HEAT_PLACED,
+        OPEN_CHEMICAL, INSTALL, CONFIGURE, EDIT, CHECK, BACK, OPEN_HEAT, HEAT, HEAT_EDITED, DONE
+    }
+
+    private record Craft(String id, int count, Predicate<ItemStack> matches) { }
 
     private static final BlockPos CHEMICAL = new BlockPos(1151, 80, 0);
     private static final BlockPos HEAT = new BlockPos(1151, 80, 12);
+    private static final BlockPos TABLE = new BlockPos(1151, 80, 5);
+    private static final ResourceLocation HEAT_VARIANT = ResourceLocation.parse("enderio:heat");
     private static final ResourceLocation FILTER = ResourceLocation.parse("enderio:basic_chemical_filter");
     private static final ResourceLocation MENU = ResourceLocation.parse("enderio:chemical_filter");
-    private static final int SAMPLE_COUNT = 4;
+    private static final List<Craft> RECIPES = List.of(
+        new Craft("mek_chemical_filter", 1, ClientMekanismControlsSmoke::isFilter),
+        new Craft("mek_advanced_thermodynamic_conductor", 3, ClientMekanismControlsSmoke::isHeatConduit));
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final String address = System.getProperty("enderio.clientqa.server");
     private final boolean reopen = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase"));
+    private final boolean progression;
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
-    private final ItemStack[] samples = new ItemStack[SAMPLE_COUNT];
+    private final ItemStack[] samples;
     private final long started = System.nanoTime();
     private Stage stage = Stage.TITLE;
     private long titleReady;
     private int arrivalTick = -1;
+    private int recipeIndex;
+    private int placedHeat;
 
-    ClientMekanismControlsSmoke() {
+    ClientMekanismControlsSmoke(boolean progression) {
+        this.progression = progression;
+        samples = new ItemStack[progression ? 1 : 4];
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -82,8 +102,10 @@ final class ClientMekanismControlsSmoke {
                     check("real_survival_multiplayer", !minecraft.player.isCreative() && !minecraft.player.isSpectator()
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     signal("connected");
-                    stage = Stage.OPEN_CHEMICAL;
+                    stage = progression && !reopen ? Stage.TABLE : Stage.OPEN_CHEMICAL;
                 }
+                case TABLE, RECIPE, RESULT, TAKEN -> craft();
+                case PLACE_HEAT, HEAT_PLACED -> placeHeat();
                 case OPEN_CHEMICAL -> open("server-chemical", CHEMICAL, reopen ? Stage.CONFIGURE : Stage.INSTALL);
                 case INSTALL, CONFIGURE, EDIT, CHECK, BACK -> chemical();
                 case OPEN_HEAT -> open("server-heat", HEAT, Stage.HEAT);
@@ -93,6 +115,83 @@ final class ClientMekanismControlsSmoke {
         } catch (Throwable failure) {
             failure.printStackTrace();
             finish(failure);
+        }
+    }
+
+    private void craft() throws IOException {
+        var player = minecraft.player;
+        if (stage == Stage.TABLE) {
+            if (!ready("server-table") || minecraft.screen != null
+                || player.distanceToSqr(1151.5, 80, 7.5) > 0.15) return;
+            player.getInventory().selected = 8;
+            var hit = new BlockHitResult(Vec3.atCenterOf(TABLE).relative(Direction.SOUTH, 0.5), Direction.SOUTH, TABLE, false);
+            check("opens_the_native_crafting_table", minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit).consumesAction());
+            stage = Stage.RECIPE;
+            return;
+        }
+        if (!(minecraft.screen instanceof CraftingScreen screen)) return;
+        var menu = screen.getMenu();
+        var craft = RECIPES.get(recipeIndex);
+        switch (stage) {
+            case RECIPE -> {
+                var key = ResourceLocation.fromNamespaceAndPath("enderio", craft.id());
+                var recipe = minecraft.level.getRecipeManager().byKey(key).orElseThrow();
+                if (!player.getRecipeBook().contains(recipe)) return;
+                check(craft.id() + "_unlocked_from_its_ingredients", true);
+                minecraft.gameMode.handlePlaceRecipe(menu.containerId, recipe, false);
+                stage = Stage.RESULT;
+            }
+            case RESULT -> {
+                var result = menu.getSlot(0).getItem();
+                if (!craft.matches().test(result)) return;
+                check(craft.id() + "_crafts_the_exact_result", result.getCount() == craft.count());
+                capture(craft.id());
+                minecraft.gameMode.handleInventoryMouseClick(menu.containerId, 0, 0, ClickType.QUICK_MOVE, player);
+                stage = Stage.TAKEN;
+            }
+            case TAKEN -> {
+                if (menu.getSlot(0).hasItem() || menu.slots.subList(1, 10).stream().anyMatch(Slot::hasItem)
+                    || count(craft.matches()) != craft.count()) return;
+                check(craft.id() + "_player_receives_the_complete_result", menu.getCarried().isEmpty());
+                if (++recipeIndex == RECIPES.size()) {
+                    player.closeContainer();
+                    signal("crafted");
+                    stage = Stage.PLACE_HEAT;
+                } else {
+                    stage = Stage.RECIPE;
+                }
+            }
+            default -> { }
+        }
+    }
+
+    private void placeHeat() throws IOException {
+        var player = minecraft.player;
+        var target = HEAT.offset(placedHeat, 0, 0);
+        if (stage == Stage.PLACE_HEAT) {
+            if (!ready("server-place-heat") || minecraft.screen != null || player.distanceToSqr(1151.5, 80, 10.5) > 0.15) return;
+            var inventory = player.getInventory();
+            for (int slot = 0; slot < 9; slot++) {
+                if (isHeatConduit(inventory.getItem(slot))) {
+                    inventory.selected = slot;
+                    break;
+                }
+            }
+            check("places_crafted_heat_part_" + placedHeat, isHeatConduit(player.getMainHandItem()));
+            var hit = new BlockHitResult(Vec3.atBottomCenterOf(target), Direction.UP, target.below(), false);
+            check("heat_placement_accepted_" + placedHeat, minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit).consumesAction());
+            stage = Stage.HEAT_PLACED;
+        } else if (minecraft.level.getBlockEntity(target) instanceof ConduitBundleBlockEntity bundle
+                && bundle.getConduits().stream().anyMatch(holder -> holder.is(HEAT_VARIANT))
+                && count(ClientMekanismControlsSmoke::isHeatConduit) == 2 - placedHeat) {
+            check("one_crafted_heat_part_consumed_" + placedHeat, true);
+            if (++placedHeat == 2) {
+                capture("crafted-heat-line");
+                signal("heat-placed");
+                stage = Stage.OPEN_CHEMICAL;
+            } else {
+                stage = Stage.PLACE_HEAT;
+            }
         }
     }
 
@@ -122,8 +221,9 @@ final class ClientMekanismControlsSmoke {
                 if (!(minecraft.screen instanceof ConduitScreen screen) || !at(screen, CHEMICAL, "chemical")) return;
                 var slot = screen.getMenu().getSlot(0);
                 if (stage == Stage.INSTALL) {
-                    var source = playerSlot(screen, 0);
-                    if (!isFilter(source.getItem())) return;
+                    var source = screen.getMenu().slots.stream().filter(candidate -> candidate.container == minecraft.player.getInventory()
+                        && isFilter(candidate.getItem())).findFirst().orElse(null);
+                    if (source == null) return;
                     clickSlot(screen, source);
                     clickSlot(screen, slot);
                     stage = Stage.CONFIGURE;
@@ -141,7 +241,8 @@ final class ClientMekanismControlsSmoke {
                 var button = screen.children().stream().filter(IconButton.class::isInstance).map(IconButton.class::cast)
                     .filter(widget -> widget.getX() == x && widget.getY() == y).findFirst().orElseThrow();
                 if (!button.visible) return;
-                check("filter_is_in_the_native_extract_slot", !playerSlot(screen, 0).hasItem() && screen.getMenu().getCarried().isEmpty());
+                check("filter_is_in_the_native_extract_slot", count(ClientMekanismControlsSmoke::isFilter) == 0
+                    && screen.getMenu().getCarried().isEmpty());
                 click(screen, x + 2, y + 2);
                 stage = reopen ? Stage.CHECK : Stage.EDIT;
             }
@@ -149,11 +250,11 @@ final class ClientMekanismControlsSmoke {
                 if (!(minecraft.screen instanceof AbstractContainerScreen<?> screen)
                     || !MENU.equals(BuiltInRegistries.MENU.getKey(screen.getMenu().getType()))) return;
                 if (stage == Stage.EDIT) {
-                    for (int i = 0; i < SAMPLE_COUNT; i++) {
-                        if (!playerSlot(screen, i + 1).hasItem()) return;
+                    for (int i = 0; i < samples.length; i++) {
+                        if (!playerSlot(screen, sampleIndex(i)).hasItem()) return;
                     }
-                    for (int i = 0; i < SAMPLE_COUNT; i++) {
-                        var source = playerSlot(screen, i + 1);
+                    for (int i = 0; i < samples.length; i++) {
+                        var source = playerSlot(screen, sampleIndex(i));
                         samples[i] = source.getItem().copy();
                         clickSlot(screen, source);
                         clickSlot(screen, screen.getMenu().getSlot(i));
@@ -165,15 +266,15 @@ final class ClientMekanismControlsSmoke {
                     stage = Stage.CHECK;
                     return;
                 }
-                for (int i = 0; i < SAMPLE_COUNT; i++) {
-                    var sample = playerSlot(screen, i + 1).getItem();
+                for (int i = 0; i < samples.length; i++) {
+                    var sample = playerSlot(screen, sampleIndex(i)).getItem();
                     if (!(screen.getMenu().getSlot(i) instanceof FilterSlot<?> slot) || slot.isEmpty()
                         || !slot.getResourceFrom(sample).map(slot.getResource()::equals).orElse(false)) return;
                     check("chemical_sample_" + i + "_survives_ghost_copy", sample.getCount() == 1 && (reopen || ItemStack.matches(samples[i], sample)));
                 }
                 if (!Boolean.TRUE.equals(screen.getMenu().getClass().getMethod("isInverted").invoke(screen.getMenu()))) return;
-                check("four_distinct_ghost_slots_and_deny_mode_sync", screen.getMenu().getCarried().isEmpty()
-                    && ((FilterSlot<?>) screen.getMenu().getSlot(SAMPLE_COUNT)).isEmpty());
+                check("ghost_slots_and_deny_mode_sync", screen.getMenu().getCarried().isEmpty()
+                    && ((FilterSlot<?>) screen.getMenu().getSlot(samples.length)).isEmpty());
                 capture(reopen ? "chemical-reopened" : "chemical-deny-list");
                 click(screen, screen.getGuiLeft() + 5, screen.getGuiTop() + 5);
                 stage = Stage.BACK;
@@ -208,6 +309,18 @@ final class ClientMekanismControlsSmoke {
 
     private static boolean isFilter(ItemStack stack) {
         return FILTER.equals(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+    }
+
+    private static boolean isHeatConduit(ItemStack stack) {
+        return stack.is(EIOItems.CONDUIT.get()) && HEAT_VARIANT.equals(EnderIODataComponents.CONDUIT.getId(stack));
+    }
+
+    private int count(Predicate<ItemStack> matches) {
+        return minecraft.player.getInventory().items.stream().filter(matches).mapToInt(ItemStack::getCount).sum();
+    }
+
+    private int sampleIndex(int sample) {
+        return progression ? 7 : sample + 1;
     }
 
     private Slot playerSlot(AbstractContainerScreen<?> screen, int index) {

@@ -162,7 +162,8 @@ public final class ClientSmoke {
             case "storage-terminals" -> new ClientStorageTerminalSmoke();
             case "ae2-facade" -> new ClientAE2FacadeSmoke();
             case "me-colors" -> new ClientMEColorsSmoke();
-            case "mekanism-controls" -> new ClientMekanismControlsSmoke();
+            case "mekanism-controls" -> new ClientMekanismControlsSmoke(false);
+            case "mekanism-crafting" -> new ClientMekanismControlsSmoke(true);
             case "legacy-soulbound" -> new ClientSoulboundSmoke();
             case "enchanter-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.ENCHANTER);
             case "enchanter-reload" -> new ClientEnchanterReloadSmoke();
