@@ -11,6 +11,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -34,10 +35,10 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 final class ClientIntegratedGliderSmoke {
-    private enum Stage { TITLE, LOAD, FIXTURE, EQUIP, FLIGHT, ARMOR, LANDED, SAVE, REOPEN, DONE }
+    private enum Stage { TITLE, LOAD, FIXTURE, EQUIP, FLIGHT, RIDE, DISMOUNT, ARMOR, LANDED, SAVE, REOPEN, DONE }
 
     private enum Flight {
-        FRESH("fresh"), ARMOR_SWAP("armor-swap"), REOPENED("reopened");
+        FRESH("fresh"), BOAT("boat"), ARMOR_SWAP("armor-swap"), REOPENED("reopened");
 
         private final String id;
 
@@ -47,7 +48,9 @@ final class ClientIntegratedGliderSmoke {
     }
 
     private record Pilot(UUID uuid, Vec3 position, float health, boolean grounded, boolean gliding,
-                         ItemStack chest, ItemStack held) { }
+                         int vehicleId, ItemStack chest, ItemStack held) { }
+
+    private static final double BOAT_Y = 90;
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final String worldName = System.getProperty("enderio.clientqa.worldName");
@@ -55,10 +58,14 @@ final class ClientIntegratedGliderSmoke {
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final Map<String, Object> landings = new LinkedHashMap<>();
+    private final Map<String, Object> ride = new LinkedHashMap<>();
     private Stage stage = Stage.TITLE;
     private Flight flight = Flight.FRESH;
     private CompletableFuture<?> fixture;
     private CompletableFuture<Pilot> observation;
+    private CompletableFuture<Integer> boatId;
+    private int mountedAt = -1;
+    private int dismountedAt = -1;
     private long titleReady;
     private boolean airborne;
     private boolean serverGliding;
@@ -95,6 +102,8 @@ final class ClientIntegratedGliderSmoke {
                     if (tagged(minecraft.player.getItemBySlot(EquipmentSlot.CHEST), EIOItems.GLIDER.get())) launch(Flight.FRESH);
                 }
                 case FLIGHT -> observeFlight();
+                case RIDE -> observeRide();
+                case DISMOUNT -> observeDismount();
                 case ARMOR -> observeArmorSwap();
                 case LANDED -> verifyLanding();
                 case SAVE -> saveAndReopen();
@@ -150,6 +159,15 @@ final class ClientIntegratedGliderSmoke {
         observation = null;
         startingHealth = minecraft.player.getHealth();
         var server = minecraft.getSingleplayerServer();
+        if (next == Flight.BOAT) {
+            boatId = server.submit(() -> {
+                // Keep a vanilla boat at reachable height long enough to use it in midair.
+                var boat = new Boat(server.overworld(), 2.25, BOAT_Y, 5.75);
+                boat.setNoGravity(true);
+                if (!server.overworld().addFreshEntity(boat)) throw new AssertionError("Boat fixture did not spawn");
+                return boat.getId();
+            });
+        }
         server.execute(() -> server.getPlayerList().getPlayers().get(0).connection.teleport(0.5, 97, 4.5, 0, 22));
         minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         minecraft.options.hideGui = true;
@@ -163,6 +181,13 @@ final class ClientIntegratedGliderSmoke {
         if (PlayerMovementHandler.isGliding(player) && !serverGliding) {
             var state = pollPilot();
             if (state != null && state.gliding && tagged(state.chest, EIOItems.GLIDER.get())) {
+                if (flight == Flight.BOAT) {
+                    if (boardBoat()) {
+                        serverGliding = true;
+                        stage = Stage.RIDE;
+                    }
+                    return;
+                }
                 serverGliding = true;
                 capture(flight.id + "-flight");
                 if (flight == Flight.ARMOR_SWAP) {
@@ -179,6 +204,60 @@ final class ClientIntegratedGliderSmoke {
             observation = null;
             stage = Stage.LANDED;
         }
+    }
+
+    private boolean boardBoat() throws IOException {
+        if (!boatId.isDone() || !(minecraft.level.getEntity(boatId.join()) instanceof Boat boat)) return false;
+        var player = minecraft.player;
+        if (player.distanceToSqr(boat) > 9) return false;
+        capture("boat-flight");
+        check("native_survival_interaction_boards_the_boat_mid_glide",
+            minecraft.gameMode.interact(player, boat, InteractionHand.MAIN_HAND).consumesAction());
+        return true;
+    }
+
+    private void observeRide() throws IOException {
+        var player = minecraft.player;
+        if (!(player.getVehicle() instanceof Boat boat) || boat.getId() != boatId.join()) return;
+        check("client_stops_gliding_while_airborne_in_the_boat", !PlayerMovementHandler.isGliding(player)
+            && !player.onGround() && !player.isInWater() && !player.isShiftKeyDown()
+            && tagged(player.getItemBySlot(EquipmentSlot.CHEST), EIOItems.GLIDER.get()));
+        if (mountedAt < 0) mountedAt = player.tickCount;
+        if (player.tickCount - mountedAt < 20) return;
+        var state = pollPilot();
+        if (state == null) return;
+        check("server_keeps_the_original_glider_stowed_while_riding", state.vehicleId == boat.getId() && !state.gliding
+            && !state.grounded && state.health == startingHealth && tagged(state.chest, EIOItems.GLIDER.get()));
+        ride.put("mountedTicks", player.tickCount - mountedAt);
+        capture("boat-mounted");
+        minecraft.options.keyShift.setDown(true);
+        stage = Stage.DISMOUNT;
+    }
+
+    private void observeDismount() throws IOException {
+        var player = minecraft.player;
+        if (player.isPassenger()) return;
+        if (dismountedAt < 0) {
+            minecraft.options.keyShift.setDown(false);
+            // Walk clear if vanilla places the player on top of the boat when dismounting.
+            minecraft.options.keyUp.setDown(true);
+            check("native_dismount_leaves_the_glider_stowed_at_first", !PlayerMovementHandler.isGliding(player)
+                && player.getY() > BOAT_Y - 1 && tagged(player.getItemBySlot(EquipmentSlot.CHEST), EIOItems.GLIDER.get()));
+            dismountedAt = player.tickCount;
+            ride.put("dismountY", player.getY());
+        }
+        if (player.getY() < BOAT_Y - 0.25) minecraft.options.keyUp.setDown(false);
+        if (player.onGround() && player.getY() < BOAT_Y - 1) throw new AssertionError("Landed before re-deploying after dismount");
+        if (!PlayerMovementHandler.isGliding(player)) return;
+        var state = pollPilot();
+        if (state == null || !state.gliding) return;
+        check("client_and_server_redeploy_the_same_glider_after_dismount", state.vehicleId == -1
+            && !state.grounded && !player.onGround() && state.health == startingHealth
+            && player.tickCount - dismountedAt >= 10 && tagged(state.chest, EIOItems.GLIDER.get()));
+        ride.put("redeployTicks", player.tickCount - dismountedAt);
+        ride.put("redeployY", state.position.y);
+        capture("boat-redeployed");
+        stage = Stage.FLIGHT;
     }
 
     private void observeArmorSwap() throws IOException {
@@ -204,8 +283,15 @@ final class ClientIntegratedGliderSmoke {
                 && state.position.z > 14 && tagged(state.chest, EIOItems.GLIDER.get()));
         }
         landings.put(flight.id, Map.of("z", state.position.z, "health", state.health));
-        if (flight == Flight.FRESH) launch(Flight.ARMOR_SWAP);
-        else if (flight == Flight.ARMOR_SWAP) {
+        if (flight == Flight.FRESH) launch(Flight.BOAT);
+        else if (flight == Flight.BOAT) {
+            var server = minecraft.getSingleplayerServer();
+            int id = boatId.join();
+            server.execute(() -> {
+                if (server.overworld().getEntity(id) instanceof Boat boat) boat.discard();
+            });
+            launch(Flight.ARMOR_SWAP);
+        } else if (flight == Flight.ARMOR_SWAP) {
             useChestItem(1, "native_use_re_equips_the_original_glider");
             stage = Stage.SAVE;
         } else {
@@ -244,7 +330,8 @@ final class ClientIntegratedGliderSmoke {
             observation = server.submit(() -> {
                 var player = server.getPlayerList().getPlayers().get(0);
                 return new Pilot(player.getUUID(), player.position(), player.getHealth(), player.onGround(),
-                    PlayerMovementHandler.isGliding(player), player.getItemBySlot(EquipmentSlot.CHEST).copy(), player.getMainHandItem().copy());
+                    PlayerMovementHandler.isGliding(player), player.isPassenger() ? player.getVehicle().getId() : -1,
+                    player.getItemBySlot(EquipmentSlot.CHEST).copy(), player.getMainHandItem().copy());
             });
             return null;
         }
@@ -278,11 +365,14 @@ final class ClientIntegratedGliderSmoke {
     private void finish(Throwable failure) {
         stage = Stage.DONE;
         minecraft.options.hideGui = false;
+        minecraft.options.keyShift.setDown(false);
+        minecraft.options.keyUp.setDown(false);
         var result = new LinkedHashMap<String, Object>();
         result.put("passed", failure == null);
         result.put("checks", checks);
         result.put("captures", captures);
         result.put("landings", landings);
+        result.put("ride", ride);
         if (failure != null) result.put("error", failure.toString());
         ClientSmoke.complete("client_integrated_glider", result);
     }
