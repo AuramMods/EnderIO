@@ -124,6 +124,7 @@ public final class ClientSmoke {
             case "vat-controls" -> new ClientVatControlsSmoke(false);
             case "vat-backpressure" -> new ClientVatControlsSmoke(true);
             case "redstone-filters" -> new ClientRedstoneFiltersSmoke();
+            case "redstone-progression" -> new ClientRedstoneProgressionSmoke();
             case "conduit-filters" -> new ClientConduitFiltersSmoke();
             case "transfer-filter-menus" -> new ClientTransferFilterMenusSmoke();
             case "stock-filter-menus" -> new ClientStockFilterMenusSmoke();
