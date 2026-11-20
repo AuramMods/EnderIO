@@ -32,11 +32,14 @@ public final class AttractorObserver {
                 mob -> mob.isAlive() && mob.getTags().contains("port_attractor_probe"))) {
             var target = mob.getTarget();
             boolean controlled = target instanceof FakePlayer player && player.getGameProfile().getName().startsWith("enderio:attractor:");
+            var path = mob.getNavigation().getPath();
+            var destination = path == null || path.isDone() ? null : path.getTarget();
             System.out.println("PORT_ATTRACTOR " + JSON.toJson(Map.of(
                 "type", BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString(),
                 "uuid", mob.getStringUUID(), "tick", level.getGameTime(), "entityTick", mob.tickCount, "position", coordinates(mob.position()),
                 "motion", coordinates(mob.getDeltaMovement()), "decoy", controlled,
-                "bossMode", MachinesConfig.COMMON.ATTRACTOR_PULL_BOSSES.get())));
+                "bossMode", MachinesConfig.COMMON.ATTRACTOR_PULL_BOSSES.get(),
+                "navigationTarget", destination == null ? List.of() : List.of(destination.getX(), destination.getY(), destination.getZ()))));
         }
     }
 
