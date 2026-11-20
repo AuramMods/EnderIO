@@ -74,6 +74,7 @@ public final class ClientSmoke {
             case "painted-redstone" -> new ClientPaintedRedstoneSmoke();
             case "painted-building" -> new ClientPaintedBuildingSmoke(false);
             case "painted-building-wet" -> new ClientPaintedBuildingSmoke(true);
+            case "painted-fence" -> new ClientPaintedFenceSmoke();
             case "painted-travel" -> new ClientPaintedTravelSmoke();
             case "legacy-painting" -> new ClientLegacyPaintingSmoke();
             case "painted-slabs" -> new ClientPaintedSlabSmoke();
