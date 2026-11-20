@@ -152,19 +152,18 @@ final class ClientModelInventorySmoke {
     }
 
     private void checkConduitArrowDepth() {
+        float layerSpacing = 1 / 256f;
         var variants = List.of(ConduitAdditionalModels.CONDUIT_IO_IN, ConduitAdditionalModels.CONDUIT_IO_OUT,
             ConduitAdditionalModels.CONDUIT_IO_IN_OUT);
         for (Direction side : Direction.Plane.HORIZONTAL) {
             var face = faceDepths(ConduitAdditionalModels.CONDUIT_CONNECTION_BOX, side);
             for (var variant : variants) {
-                var arrows = faceDepths(variant, side);
-                int expected = variant.equals(ConduitAdditionalModels.CONDUIT_IO_IN_OUT) ? 2 : 1;
-                boolean separated = face.size() == 1 && arrows.size() == expected && arrows.stream().allMatch(depth -> {
-                    float gap = depth - face.get(0);
-                    return gap >= 0.001f && gap <= 0.003f;
-                });
-                if (separated && expected == 2) {
-                    separated = Math.abs(arrows.get(0) - arrows.get(1)) >= 0.001f;
+                var arrows = faceDepths(variant, side).stream().sorted().toList();
+                int layers = variant.equals(ConduitAdditionalModels.CONDUIT_IO_IN_OUT) ? 2 : 1;
+                boolean separated = face.size() == 1 && arrows.size() == layers;
+                for (int layer = 0; separated && layer < layers; layer++) {
+                    float expectedDepth = face.get(0) + (layer + 1) * layerSpacing;
+                    separated = Math.abs(arrows.get(layer) - expectedDepth) < 0.00001f;
                 }
                 checks.merge("depth_" + variant.getPath() + "_" + side.getName(), separated, (before, after) -> before && after);
             }
