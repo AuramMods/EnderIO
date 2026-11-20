@@ -5,6 +5,7 @@ import argparse
 from io import BytesIO
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -145,6 +146,45 @@ def check_smelting_inheritance(packaged, recipes, runtime):
     return check
 
 
+def registered_paths(source, register):
+    return set(re.findall(rf'\b{register}\s*\.\s*(?:register|builder)\(\s*"([a-z0-9_]+)"', source))
+
+
+def check_shared_registries(commit, runtime):
+    def baseline_source(path):
+        return subprocess.check_output(["git", "show", f"{commit}:{path}"], cwd=ROOT, text=True)
+
+    source = "enderio/src/main/java/com/enderio/enderio"
+    block_entities = baseline_source(f"{source}/init/EIOBlockEntities.java")
+    entity_ids = registered_paths(block_entities, "BLOCK_ENTITY_TYPES")
+    for folder, enum in (("capacitor_bank", "CapacitorTier"), ("solar_panel", "SolarPanelTier")):
+        suffix = re.search(rf'for \({enum} tier : {enum}\.values\(\)\).*?'
+                           r'\.builder\(tier\.name\(\)\.toLowerCase\(Locale\.ROOT\) \+ "([a-z_]+)"',
+                           block_entities, flags=re.DOTALL).group(1)
+        tiers = baseline_source(f"{source}/content/machines/{folder}/{enum}.java")
+        entity_ids.update(f"{tier.lower()}{suffix}" for tier in re.findall(r'^\s*([A-Z]+)\(MachinesConfig\.', tiers, re.MULTILINE))
+
+    menu_ids = registered_paths(baseline_source(f"{source}/init/EIOMenus.java"), "MENUS")
+    if "mekanism" in runtime["mods"]:
+        menu_ids.update(registered_paths(baseline_source("enderio-modded-conduits/src/main/java/com/enderio/"
+                                   "modded_conduits/common/modules/mekanism/MekanismModule.java"), "MENUS"))
+
+    checks = {}
+    for name, registry, baseline, forge_entries in (
+            ("blockEntityTypes", "block_entity_type", entity_ids, {"light_node", "powered_light", "primitive_alloy_smelter"}),
+            ("menus", "menu", menu_ids, {"primitive_alloy_smelter"}),
+            ("soundEvents", "sound_event", registered_paths(baseline_source(f"{source}/init/EIOSounds.java"), "SOUNDS"), set()),
+            ("particleTypes", "particle_type", registered_paths(baseline_source(f"{source}/init/EIOParticles.java"), "PARTICLE_TYPES"),
+             {"experience_effect", "machine_dust"})):
+        expected = {f"enderio:{path}" for path in baseline | forge_entries}
+        check = compare(expected, runtime["registries"][f"minecraft:{registry}"])
+        check["baselineExpected"] = len(baseline)
+        check["forgeEntries"] = sorted(f"enderio:{path}" for path in forge_entries)
+        check["unexpectedlyActive"] = check["extra"]
+        checks[name] = check
+    return checks
+
+
 def reconcile(jar, runtime, experiments):
     baseline = json.loads(BASELINE.read_text())
     resources, item_models = baseline_resources(baseline["baseline_commit"])
@@ -187,6 +227,7 @@ def reconcile(jar, runtime, experiments):
                                            "neoforge:conditions"),
         "baselineTags": check_tags(inventory, runtime),
         "baselineExperimentFlags": flags,
+        **check_shared_registries(baseline["baseline_commit"], runtime),
     }
 
 

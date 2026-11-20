@@ -107,8 +107,21 @@ def exercise_ladders(args, server, results, report):
                                     f"if score #end_y port_steel matches {end - 375}..{end + 375}", results)
             server.command(f"tp {PLAYER} 4203.5 92 13.5 180 4")
             (output / "server-ready-verify").touch()
-            if client.wait(timeout=30) != 0:
+            wait_signal(client, output, "ladder-verified")
+            server.command("fill 4218 85 10 4230 97 11 minecraft:smooth_quartz")
+            server.command("fill 4219 86 11 4229 96 11 enderio:reinforced_obsidian_block")
+            server.command("fill 4218 89 12 4230 89 15 minecraft:smooth_quartz")
+            server.assert_state("obsidian_fixture_has_a_single_exposed_side",
+                                "if block 4224 91 11 enderio:reinforced_obsidian_block "
+                                "if block 4224 91 10 minecraft:smooth_quartz if block 4224 91 12 minecraft:air", results)
+            server.command(f"tp {PLAYER} 4224.5 90 15.5 180 -5")
+            (output / "server-ready-obsidian").touch()
+            if client.wait(timeout=40) != 0:
                 raise AssertionError(f"Steel construction client failed, see {output}")
+            summary = json.loads((output / "summary.json").read_text())
+            jar = summary["client"]["captures"]["obsidian-particles-enabled"]["loadedMods"]["enderio"]["file"]
+            if digest(Path(jar)) != report["jarSha256"]:
+                raise AssertionError("Steel construction client and server loaded different Ender IO jars")
         finally:
             stop_client(client)
             summary = output / "summary.json"

@@ -1,22 +1,33 @@
 package com.enderio.port.clientqa;
 
+import com.enderio.enderio.config.base.BaseConfig;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import com.enderio.enderio.init.EIOBlocks;
+import com.enderio.enderio.init.EIOSounds;
 import com.google.gson.Gson;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.ParticleStatus;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
+import net.minecraft.client.particle.DustParticle;
+import net.minecraft.client.particle.Particle;
+import net.minecraft.client.particle.ParticleEngine;
+import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,9 +35,11 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 final class ClientSteelConstructionSmoke {
-    private enum Stage { TITLE, JOIN, POSITION, MEASURE, VERIFY, DONE }
+    private enum Stage { TITLE, JOIN, POSITION, MEASURE, VERIFY, PARTICLES, DONE }
+    private enum AmbientPhase { ENABLED, DISABLED, RESTORED }
     private record Trial(String name, double x, int y, boolean climb, boolean crouch, boolean steel) {
         Block ladder() {
             return steel ? EIOBlocks.DARK_STEEL_LADDER.get() : Blocks.LADDER;
@@ -40,12 +53,15 @@ final class ClientSteelConstructionSmoke {
         new Trial("steel-descent", 4205.5, 96, false, false, true),
         new Trial("steel-crouch", 4205.5, 91, false, true, true));
     private static final int TRIAL_TICKS = 12;
+    private static final BlockPos OBSIDIAN = new BlockPos(4224, 91, 11);
+    private static final AABB OBSIDIAN_DUST_AREA = new AABB(4218.8, 85.8, 10.8, 4230.2, 97.2, 12.3);
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final long started = System.nanoTime();
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Double> travel = new LinkedHashMap<>();
+    private final Map<String, Integer> ambientPeaks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private Stage stage = Stage.TITLE;
     private long titleReady;
@@ -53,6 +69,9 @@ final class ClientSteelConstructionSmoke {
     private double startY;
     private int firstTick;
     private int firstViewTick = -1;
+    private AmbientPhase ambientPhase;
+    private int ambientStart;
+    private int ambientPeak;
 
     ClientSteelConstructionSmoke() {
         MinecraftForge.EVENT_BUS.addListener(this::render);
@@ -131,13 +150,87 @@ final class ClientSteelConstructionSmoke {
                     if (!ladderTip || alloyTip) {
                         throw new AssertionError("Climbing tooltip targets ladder=" + ladderTip + ", solid block=" + alloyTip);
                     }
-                    finish(null);
+                    verifySounds();
+                    signal("ladder-verified", Map.of());
+                    stage = Stage.PARTICLES;
                 }
+                case PARTICLES -> observeObsidian();
                 default -> { }
             }
         } catch (Throwable failure) {
             failure.printStackTrace();
             finish(failure);
+        }
+    }
+
+    private void observeObsidian() throws IOException {
+        var player = minecraft.player;
+        var particlesSetting = BaseConfig.CLIENT.MACHINE_PARTICLES;
+        if (ambientPhase == null) {
+            if (!ready("obsidian") || player.distanceToSqr(4224.5, 90, 15.5) > 0.1
+                || !minecraft.level.getBlockState(OBSIDIAN).is(EIOBlocks.REINFORCED_OBSIDIAN.get())
+                || !minecraft.level.getBlockState(OBSIDIAN.north()).is(Blocks.SMOOTH_QUARTZ)) return;
+            check("default_machine_particles_enabled", particlesSetting.get());
+            minecraft.options.particles().set(ParticleStatus.ALL);
+            ambientPhase = AmbientPhase.ENABLED;
+            ambientStart = player.tickCount;
+        }
+
+        int elapsed = player.tickCount - ambientStart;
+        if (ambientPhase == AmbientPhase.DISABLED && elapsed < 50) return;
+        var dust = obsidianDust();
+        ambientPeak = Math.max(ambientPeak, dust.size());
+        check("dust_only_emits_from_the_exposed_face", dust.stream().allMatch(particle -> particle.getBoundingBox().getCenter().z > 11.8));
+        if (ambientPhase == AmbientPhase.DISABLED) {
+            check("disabled_machine_particles_keep_the_wall_clear", dust.isEmpty());
+            if (elapsed < 100) return;
+            captureAmbient("obsidian-particles-disabled");
+            ambientPeaks.put("disabled", ambientPeak);
+            particlesSetting.set(true);
+            ambientPhase = AmbientPhase.RESTORED;
+        } else {
+            boolean nearView = dust.stream().map(particle -> particle.getBoundingBox().getCenter())
+                .anyMatch(center -> center.x > 4221.5 && center.x < 4227.5 && center.y > 88.5 && center.y < 94.5);
+            if (elapsed > 150) throw new AssertionError("No live Reinforced Obsidian dust in " + ambientPhase);
+            if (elapsed < 50 || !nearView) return;
+            if (ambientPhase == AmbientPhase.RESTORED) {
+                check("reenabling_particles_restores_dust", true);
+                captureAmbient("obsidian-particles-restored");
+                ambientPeaks.put("restored", ambientPeak);
+                finish(null);
+                return;
+            }
+            check("reinforced_obsidian_smolders_in_the_stock_client", true);
+            captureAmbient("obsidian-particles-enabled");
+            ambientPeaks.put("enabled", ambientPeak);
+            particlesSetting.set(false);
+            ambientPhase = AmbientPhase.DISABLED;
+        }
+        ambientPeak = 0;
+        ambientStart = player.tickCount;
+    }
+
+    private List<DustParticle> obsidianDust() {
+        Map<ParticleRenderType, Queue<Particle>> particles = ObfuscationReflectionHelper.getPrivateValue(
+            ParticleEngine.class, minecraft.particleEngine, "f_107289_");
+        return particles.values().stream().flatMap(Queue::stream).filter(DustParticle.class::isInstance)
+            .map(DustParticle.class::cast).filter(particle -> OBSIDIAN_DUST_AREA.contains(particle.getBoundingBox().getCenter())).toList();
+    }
+
+    private void captureAmbient(String name) throws IOException {
+        var frame = ClientSmoke.capture(name + ".png");
+        captures.put(name, frame);
+        check(name + "_silent_hidden_capture", Boolean.TRUE.equals(frame.get("passed")));
+    }
+
+    private void verifySounds() {
+        var soundManager = minecraft.getSoundManager();
+        var resources = minecraft.getResourceManager();
+        var random = RandomSource.create(0);
+        for (var entry : List.of(EIOSounds.STIRLING, EIOSounds.SLICER, EIOSounds.SAG_MILL, EIOSounds.SOUL_BINDER, EIOSounds.VAT)) {
+            var definition = soundManager.getSoundEvent(entry.get().getLocation());
+            check("native_audio_asset_" + entry.getId().getPath(), definition != null
+                && resources.getResource(definition.getSound(random).getPath()).isPresent());
         }
     }
 
@@ -191,9 +284,11 @@ final class ClientSteelConstructionSmoke {
         stage = Stage.DONE;
         minecraft.options.keyUp.setDown(false);
         minecraft.options.keyShift.setDown(false);
+        if (ambientPhase == AmbientPhase.DISABLED) BaseConfig.CLIENT.MACHINE_PARTICLES.set(true);
         var result = new LinkedHashMap<String, Object>();
         result.put("checks", checks);
         result.put("travel", travel);
+        result.put("ambientDustPeaks", ambientPeaks);
         result.put("captures", captures);
         result.put("passed", failure == null);
         if (failure != null) result.put("error", failure.toString());
