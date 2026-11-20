@@ -1,0 +1,6 @@
+{
+  "name": "Conduits and Filters",
+  "description": "Route items, fluids, power and redstone through the same space. Configure each connection to send resources where they belong.",
+  "icon": "enderio:conduit_probe",
+  "sortnum": 2
+}

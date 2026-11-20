@@ -1,0 +1,25 @@
+{
+  "name": "Wrench and Probe",
+  "icon": "enderio:yeta_wrench",
+  "category": "enderio:conduits",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:yeta_wrench",
+      "text": "Use the Yeta Wrench on a machine face to cycle that face’s IO mode."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:conduit_probe"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Hold the Conduit Probe in your main hand. Sneak and scroll until its tooltip says Copy/Paste. Sneak-use a configured conduit endpoint to copy, then use a matching endpoint to paste the settings."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Copy uses the conduit types present on the source face. Put the same tiers at the destination before pasting. Install filter items separately. Hold a spare conduit in your offhand to hide facades while using the probe."
+    }
+  ]
+}

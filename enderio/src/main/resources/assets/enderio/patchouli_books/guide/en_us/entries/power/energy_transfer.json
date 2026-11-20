@@ -30,6 +30,10 @@
       "type": "patchouli:spotlight",
       "item": "enderio:creative_power",
       "text": "Creative Power supplies FE in a creative test setup. For survival, use a $(l:enderio:power/stirling)Stirling Generator$(/l) or $(l:enderio:power/photovoltaics)photovoltaic modules$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Combine the power line with separate item, fluid or signal networks. See $(l:enderio:conduits/bundles)Conduit Bundles$(/l) to set up each endpoint on the combined line."
     }
   ]
 }

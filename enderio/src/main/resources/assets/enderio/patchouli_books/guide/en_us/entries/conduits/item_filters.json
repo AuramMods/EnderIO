@@ -1,0 +1,38 @@
+{
+  "name": "Item Filters",
+  "icon": "enderio:basic_item_filter",
+  "category": "enderio:conduits",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:basic_item_filter",
+      "text": "Use the filter in your hand to open its editor. Add a sample, then select Allow List or Deny List."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:advanced_item_filter",
+      "title": "Advanced Filter",
+      "text": "Advanced filters can match stored NBT, such as a name or other item data."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:big_item_filter",
+      "recipe2": "enderio:big_advanced_item_filter",
+      "title": "Large Filters"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "An Extract filter applies before items leave the source. An Insert filter applies before they enter a destination. Click the configure button below an installed filter to edit it."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:limited_item_filter",
+      "title": "Limited Item Filter"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Set the sample count to the stock level you want. On Insert, a count of 16 stops filling once the attached inventory holds 16 matching items. On Extract, it leaves 16 behind. Only sampled items pass this filter."
+    }
+  ]
+}

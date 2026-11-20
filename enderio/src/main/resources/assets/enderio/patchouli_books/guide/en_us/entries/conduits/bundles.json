@@ -1,0 +1,28 @@
+{
+  "name": "Conduit Bundles",
+  "icon": "enderio:conduit_probe",
+  "category": "enderio:conduits",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Place a line of conduits against the inventories, tanks or machines it should serve. Right-click a conduit block with a different conduit to add it to the same bundle. Each type still forms its own network."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Right-click an endpoint with an empty hand to open its settings. Use the conduit tabs to select the resource, then check the face you clicked. Configure a source and destination for each resource."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Upgrade a placed segment by using its higher tier on the bundle. The original conduit returns to your inventory and the connection settings stay in place. Stock tiers can mix. If your pack disables mixing, finish the entire route at one tier."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "To split a route, break the segment you want to disconnect. Aim at the individual strand when removing one type from an exposed bundle. Keep a separate path for every resource that must still reach its destination."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Start with $(l:enderio:conduits/items)Item Conduits$(/l) or $(l:enderio:conduits/fluids)Fluid Conduits$(/l). For a generator-to-machine run, see $(l:enderio:power/energy_transfer)Moving Energy$(/l). Hide the finished line with $(l:enderio:conduits/facades)facades$(/l)."
+    }
+  ]
+}

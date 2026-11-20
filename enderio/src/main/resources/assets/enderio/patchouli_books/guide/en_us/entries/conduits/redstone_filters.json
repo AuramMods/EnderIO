@@ -1,0 +1,49 @@
+{
+  "name": "Redstone Filters",
+  "icon": "enderio:redstone_filter_base",
+  "category": "enderio:conduits",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:redstone_filter_base"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:redstone_not_filter",
+      "title": "NOT Filter",
+      "text": "Put a NOT filter on an output to invert its signal. Turn the input lever on and the output lamp should go off."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:redstone_sensor_filter",
+      "title": "Sensor Filter",
+      "text": "A Sensor Filter on an input reads a block’s comparator output, such as chest fullness."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:redstone_and_filter",
+      "recipe2": "enderio:redstone_or_filter",
+      "title": "Logic Gates"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Open a two-channel gate and select its input colors. AND requires both signals. OR needs either. XOR needs exactly one. NAND, NOR and XNOR invert those results. Send the result to the controlled block with an Output connection."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:redstone_toggle_filter",
+      "recipe2": "enderio:redstone_timer_filter",
+      "title": "Toggle and Timer"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:redstone_counting_filter",
+      "title": "Counting Filter"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A Toggle Filter changes state on each pulse. Use the Timer’s editor to set its timing and the Counting Filter’s editor to choose how many events it waits for. Test with a lever and lamp before attaching the machine."
+    }
+  ]
+}

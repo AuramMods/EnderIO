@@ -1,0 +1,29 @@
+{
+  "name": "Redstone Conduits",
+  "icon": "minecraft:lever",
+  "category": "enderio:conduits",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:redstone_conduit",
+      "text": "Run a redstone conduit from a lever to a lamp."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "At the lever, enable Input and choose Red. At the lamp, enable Output on Red. Flip the lever and check the lamp. Turn on Strong Signal at an output that needs to drive a neighboring solid block."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A redstone and item conduit can share a bundle. Bring the lever in on Red, then select Active With Signal and Red under the Item Conduit’s extraction settings. The lever can now start and stop the item line."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Active without Signal runs when that signal is absent. Always Active ignores the redstone channel, and Never Active pauses extraction. Colored item or fluid routing channels are set separately from the signal color."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use $(l:enderio:conduits/redstone_filters)Redstone Filters$(/l) for logic, container sensors, pulses and timed output."
+    }
+  ]
+}

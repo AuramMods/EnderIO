@@ -1,0 +1,24 @@
+{
+  "name": "Channels and Priority",
+  "icon": "minecraft:hopper",
+  "category": "enderio:conduits",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "An extraction channel connects to Insert endpoints set to the same color. For two routes in one bundle, assign Green to one pair and Blue to the other. The colors are settings, so choose them in the menu."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "With Round Robin off, set the main destination to a higher priority and an overflow barrel lower. When the main destination cannot accept the item, a matching lower-priority destination can take it."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Enable Round Robin on the source when you want to rotate deliveries among eligible destinations. Leave Self Feed off for a normal line. Turn it on when an item should be able to leave and return through the same endpoint."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Try an Allow List filter for iron at the main barrel, and leave the overflow barrel unfiltered. Iron takes the first route while other items use the overflow. See $(l:enderio:conduits/item_filters)Item Filters$(/l) to set the sample."
+    }
+  ]
+}

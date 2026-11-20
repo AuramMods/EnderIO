@@ -1,0 +1,40 @@
+{
+  "name": "Fluid Conduits",
+  "icon": "minecraft:water_bucket",
+  "category": "enderio:conduits",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:fluid_conduit",
+      "text": "Connect a filled tank to an empty tank. Use a fluid-compatible face on each tank."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Enable Extract at the source and Insert at the destination on the same channel. For this test select Always Active at the source. If the receiving tank holds another fluid or is full, clear it or use a new tank."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:pressurized_fluid_conduit",
+      "title": "Energetic Conduit"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:ender_fluid",
+      "title": "Vibrant Conduit"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Basic, Energetic and Vibrant lines move up to 200, 1,000 and 8,000 mB/t at stock settings. Transfers occur in batches. The slower segment limits a mixed route. Raise an Insert priority to prefer that tank over other destinations on the same channel."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:basic_fluid_filter",
+      "text": "Open the filter and sample a fluid with a filled container. Choose Allow List or Deny List and install it at the endpoint."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "For two liquids in the same conduit run, use separate channels and an appropriate filter at each destination. Check the tanks and filters before switching an existing line to a different fluid."
+    }
+  ]
+}

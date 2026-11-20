@@ -1,0 +1,37 @@
+{
+  "name": "Item Conduits",
+  "icon": "minecraft:chest",
+  "category": "enderio:conduits",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:item_conduit",
+      "text": "Build a route from a chest to a barrel. Use the connection menu at each end."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "At the chest, enable Extract and choose Green. Set extraction to Always Active for this test. At the barrel, enable Insert on Green and turn Extract off. Put a few items in the chest to watch them arrive."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:energetic_item_conduit",
+      "title": "Energetic Conduit"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:vibrant_item_conduit",
+      "title": "Vibrant Conduit"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Stock Basic moves up to 32 items per 20 ticks, Energetic up to 64 per 20 and Vibrant up to 64 per 10. A mixed route can be limited by a slower segment. The conduit tooltip reports its configured rate."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:extraction_speed_upgrade_4",
+      "title": "Legacy Speed Upgrades",
+      "text": "Older worlds can retain Legacy Extraction Speed Upgrades. They fit the dedicated extraction slot and set that endpoint’s rate. New worlds can craft a higher conduit tier."
+    }
+  ]
+}

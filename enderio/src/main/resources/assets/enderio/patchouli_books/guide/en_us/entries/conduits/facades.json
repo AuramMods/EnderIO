@@ -1,0 +1,36 @@
+{
+  "name": "Conduit Facades",
+  "icon": "enderio:conduit_facade",
+  "category": "enderio:conduits",
+  "sortnum": 8,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:conduit_facade",
+      "text": "Make a facade to conceal a conduit bundle."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:hardened_conduit_facade",
+      "title": "Hardened Facade"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:transparent_conduit_facade_from_conduit_facade",
+      "title": "Transparent Facade"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:transparent_hardened_conduit_facade_from_hardened_conduit_facade",
+      "title": "Hardened Clear Facade"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use a facade and a block sample in the Painting Machine to make the facade match that block. For example, paint one with stone to hide a line in a stone wall. Use the transparent facade for transparent paint, such as glass."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use the facade on an existing bundle. Hold a Yeta Wrench to hide the cover and open the underlying connection. To recover the facade, switch away from your tool, then break the visible cover."
+    }
+  ]
+}
