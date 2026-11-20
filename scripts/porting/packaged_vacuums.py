@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check Vacuum Chest and XP Vacuum conservation and migration on headless Forge."""
+"""Check vacuum conservation, chunk eviction and migration on headless Forge."""
 
 import argparse
 import json
@@ -14,16 +14,22 @@ from packaged_spawners import WORLD, prepare_profile, run_stage
 
 CHEST = "2740 80 8"
 XP = "2750 80 8"
+BLOCKED_TANK = "2751 80 8"
 XP_EXPORT = "2759 80 8"
 TANK = "2760 80 8"
 BARREL = "2740 80 7"
 ARCHIVE = "2743 80 13"
+CHUNKS = "2736 0 2767 15"
+ENTITY_AREA = "x=2737,y=79,z=4,dx=26,dy=5,dz=10"
 SWITCHES = ("2740 80 9", "2750 80 9", "2759 80 9")
 CHEST_ID = "enderio:vacuum_chest"
 XP_ID = "enderio:xp_vacuum"
 JUICE = "enderio:fluid_xp_juice_still"
 OLD_JUICE = "enderio:xp_juice"
 CAPACITY = 2147483647
+TANK_CAPACITY = 16000
+STARTING_XP_JUICE = CAPACITY - 47
+BLOCKED_WATER = f'Fluids:{{Tanks:[{{Index:0,Contents:{{FluidName:"minecraft:water",Amount:{TANK_CAPACITY}}}}}]}}'
 LIMIT_DATA = ('{"enderio:data":{"enderio:limited_item_filter":{isNbt:1b,items:[{index:0,'
               'value:{id:"minecraft:iron_ingot",Count:4,tag:{PortFixture:135}}}]}}}')
 OLD_FILTER_DATA = '{IsInverted:0b,IsNbt:1b,ItemEntries:[{id:"minecraft:iron_ingot",Count:1b,tag:{PortFixture:135}}]}'
@@ -32,7 +38,7 @@ OLD_FILTER_DATA = '{IsInverted:0b,IsNbt:1b,ItemEntries:[{id:"minecraft:iron_ingo
 def stack(item, count, *, slot=None, tag=None, byte=False):
     fields = [f'id:"{item}"', f"Count:{count}{'b' if byte else ''}"]
     if slot is not None:
-        fields.insert(0, f"Slot:{slot}{'b' if byte and slot == 0 else ''}")
+        fields.insert(0, f"Slot:{slot}{'b' if byte else ''}")
     if tag is not None:
         fields.append(f"tag:{tag}")
     return "{" + ",".join(fields) + "}"
@@ -75,7 +81,7 @@ def item_on_ground(marker, item):
 def base(server, results):
     server.command("gamerule doMobSpawning false")
     server.command("gamerule spawnRadius 0")
-    server.command("forceload add 2736 0 2767 15")
+    server.command(f"forceload add {CHUNKS}")
     server.assert_state("vacuum_fixture_chunks_are_loaded", f"if loaded {CHEST} if loaded {XP} if loaded {XP_EXPORT}", results)
     server.command("fill 2737 79 4 2763 79 14 minecraft:stone")
     server.command(f"setblock {CHEST} {CHEST_ID}")
@@ -106,11 +112,42 @@ def xp_export(server, results, assertion):
                         f"unless entity {entity('experience_orb', 'tag=vacuum_export')}", results, timeout=20)
 
 
+def blocked_barrel():
+    items = ",".join(stack("minecraft:cobblestone", 64, slot=slot, byte=True) for slot in range(27))
+    return f"{{Items:[{items}]}}"
+
+
+def limited_filter():
+    return stack("enderio:limited_item_filter", 1, slot=27, tag=LIMIT_DATA)
+
+
+def active_controls():
+    return (f"if block {SWITCHES[0]} minecraft:redstone_block if block {SWITCHES[1]} minecraft:redstone_block "
+            f"if data block {CHEST} {{{radius(2)},Items:{{Items:[{limited_filter()}]}}}} "
+            f"if data block {XP} {{{radius(1)}}}")
+
+
+def blocked_outputs_and_pending_inputs(server, results, stage):
+    stock_remainder(server, results, f"stock_limit_keeps_exact_tagged_items_{stage}")
+    split_orbs(server, results, f"whole_and_partial_orbs_keep_exact_xp_{stage}")
+    for kind, amount in (("item", 3), ("experience_orb", 2)):
+        server.command(f"execute store result score #{kind} port_vacuum if entity @e[type=minecraft:{kind},{ENTITY_AREA}]")
+        server.assert_state(f"keeps_exact_number_of_{kind}_entities_{stage}",
+                            f"if score #{kind} port_vacuum matches {amount}", results)
+    server.assert_state(f"outputs_stay_blocked_with_both_vacuums_active_{stage}",
+                        f"{active_controls()} if data block {BARREL} {blocked_barrel()} "
+                        f"if data block {BLOCKED_TANK} {{{BLOCKED_WATER}}}", results)
+
+
 def collect(server, results):
     base(server, results)
-    limited = stack("enderio:limited_item_filter", 1, slot=27, tag=LIMIT_DATA)
-    server.command(f"data merge block {CHEST} {{{radius(2)},Items:{{Size:28,Items:[{iron(1, slot=0)},{limited}]}}}}")
-    server.command(f"data merge block {XP} {{{radius(1)},{fluid(CAPACITY - 47, tagged=True)}}}")
+    server.command("scoreboard objectives add port_vacuum dummy")
+    server.command(f"setblock {BARREL} minecraft:barrel")
+    server.command(f"data merge block {BARREL} {blocked_barrel()}")
+    server.command(f"setblock {BLOCKED_TANK} enderio:fluid_tank")
+    server.command(f"data merge block {BLOCKED_TANK} {{{BLOCKED_WATER}}}")
+    server.command(f"data merge block {CHEST} {{{radius(2)},Items:{{Size:28,Items:[{iron(1, slot=0)},{limited_filter()}]}}}}")
+    server.command(f"data merge block {XP} {{{radius(1)},{fluid(STARTING_XP_JUICE, tagged=True)}}}")
     server.command(f"setblock {XP_EXPORT} {XP_ID}")
     server.command(f"data merge block {XP_EXPORT} {{{radius(1)}}}")
     server.command(f"setblock {TANK} enderio:fluid_tank")
@@ -121,26 +158,87 @@ def collect(server, results):
     summon_orb(server, "2759.5 81.1 8.5", "vacuum_export", 7, 3)
     server.assert_state("unpowered_redstone_keeps_the_item_and_orbs_uncollected",
                         f"{stored_iron(CHEST,1)} if entity {item_on_ground('vacuum_stock', iron(10, byte=True))} "
-                        f"if data block {XP} {{{fluid(CAPACITY - 47, tagged=True)}}} "
+                        f"if data block {XP} {{{fluid(STARTING_XP_JUICE, tagged=True)}}} "
                         f"if entity {entity('experience_orb', 'tag=vacuum_merged,nbt={Value:7s,Count:3}')}", results)
     for pos in SWITCHES:
         server.command(f"setblock {pos} minecraft:redstone_block")
-    stock_remainder(server, results, "stock_limit_keeps_the_exact_tagged_remainder_and_rejects_other_entities")
-    split_orbs(server, results, "xp_vacuum_deposits_only_two_points_and_splits_the_partial_orb")
     xp_export(server, results, "sided_tank_receives_all_three_merged_orbs_as_420_mb")
+    blocked_outputs_and_pending_inputs(server, results, "before_eviction")
+
+    server.command(f"forceload remove {CHUNKS}")
+    server.assert_state("both_fixture_chunks_and_pending_entities_are_evicted",
+                        f"unless loaded {CHEST} unless loaded {XP} unless loaded {XP_EXPORT} "
+                        f"unless entity @e[type=minecraft:item,{ENTITY_AREA}] "
+                        f"unless entity @e[type=minecraft:experience_orb,{ENTITY_AREA}]", results, timeout=45)
+    server.command(f"forceload add {CHUNKS}")
+    server.assert_state("both_fixture_chunks_reload",
+                        f"if loaded {CHEST} if loaded {XP} if loaded {XP_EXPORT}", results, timeout=20)
+    blocked_outputs_and_pending_inputs(server, results, "after_chunk_reload")
+    xp_export(server, results, "the_control_tank_keeps_its_exported_xp_through_chunk_reload")
 
 
 def reopen(server, results):
-    stock_remainder(server, results, "stock_and_unaccepted_items_survive_a_dedicated_restart")
-    split_orbs(server, results, "whole_and_partial_orbs_and_tagged_tank_survive_restart")
+    blocked_outputs_and_pending_inputs(server, results, "after_restart")
     xp_export(server, results, "the_sided_tank_persists_all_exported_xp")
-    server.command(f"setblock {BARREL} minecraft:barrel")
-    server.assert_state("sided_output_frees_stock_space_and_all_eleven_items_are_delivered",
+    server.command(f"data remove block {BARREL} Items")
+    server.command(f"data remove block {BLOCKED_TANK} Fluids")
+    resumed_outputs(server, results, "when_outputs_are_freed")
+
+
+def resumed_outputs(server, results, stage):
+    server.assert_state(f"sided_output_delivers_all_eleven_tagged_items_{stage}",
                         f"if data block {BARREL} Items[{iron(11, slot=0, byte=True)}] "
-                        f"unless data block {CHEST} Items.Items[{{Slot:0}}] "
+                        f'unless data block {CHEST} Items.Items[{{id:"minecraft:iron_ingot"}}] '
                         f"unless entity {entity('item', 'tag=vacuum_stock')} "
-                        f"if entity {entity('item', 'tag=vacuum_mismatch')} if entity {entity('item', 'tag=vacuum_outside')} "
-                        f'if data block {CHEST} Items.Items[{{Slot:27,id:"enderio:limited_item_filter"}}]', results, timeout=25)
+                        f"if entity {item_on_ground('vacuum_mismatch', stack('minecraft:iron_ingot', 2, byte=True))} "
+                        f"if entity {item_on_ground('vacuum_outside', iron(3, byte=True))} {active_controls()}",
+                        results, timeout=25)
+    remaining = STARTING_XP_JUICE + 21 * 20 - TANK_CAPACITY
+    server.assert_state(f"both_tanks_account_for_all_twenty_one_converted_points_{stage}",
+                        f"if data block {XP} {{{fluid(remaining, tagged=True)}}} "
+                        f"if data block {BLOCKED_TANK} {{{fluid(TANK_CAPACITY, tagged=True)}}} "
+                        f"unless entity @e[type=minecraft:experience_orb,{ENTITY_AREA}]", results, timeout=25)
+
+
+def exercise_installed_filter(server, results, x, item, *, index, settings, sample, accepted, rejected):
+    chest = f"{x} 80 13"
+    data = f'{{"enderio:data":{{"enderio:item_filter":{{{settings},items:[{{index:{index},value:{sample}}}]}}}}}}'
+    installed = stack(f"enderio:{item}", 1, slot=27, tag=data)
+    server.command(f"setblock {chest} {CHEST_ID}")
+    server.command(f"data merge block {chest} {{{radius(1)},Items:{{Size:28,Items:[{installed}]}}}}")
+    for number, (item_id, count, tag) in enumerate((accepted, *rejected)):
+        summon_item(server, f"{x}.5 81.1 13.5", f"{item}_{number}", stack(item_id, count, tag=tag, byte=True))
+    server.command(f"setblock {x} 80 14 minecraft:redstone_block")
+    item_id, count, tag = accepted
+    stored = stack(item_id, count, tag=tag, slot=0)
+    excludes = " ".join(
+        f"if entity {item_on_ground(f'{item}_{number}', stack(item_id, count, tag=tag, byte=True))}"
+        for number, (item_id, count, tag) in enumerate(rejected, 1)
+    )
+    server.assert_state(f"{item}_collects_only_its_allowed_stack",
+                        f"if data block {chest} {{Items:{{Items:[{installed},{stored}]}}}} "
+                        f"unless data block {chest} Items.Items[{{Slot:1}}] "
+                        f"unless entity {entity('item', f'tag={item}_0')} {excludes}", results, timeout=20)
+
+
+def recovered(server, results):
+    resumed_outputs(server, results, "after_recovery_restart")
+    exercise_installed_filter(server, results, 2740, "big_item_filter",
+                            index=35, settings="isInvert:1b", sample=stack("minecraft:paper", 1),
+                            accepted=("minecraft:gold_ingot", 3, "{Large:1}"),
+                            rejected=(("minecraft:paper", 7, "{Large:2}"),))
+    exercise_installed_filter(server, results, 2748, "advanced_item_filter",
+                            index=17, settings='isNbt:1b,damageMode:"only_damaged"',
+                            sample=stack("minecraft:iron_pickaxe", 1, tag="{Damage:17,Advanced:1}"),
+                            accepted=("minecraft:iron_pickaxe", 1, "{Damage:52,Advanced:1}"),
+                            rejected=(("minecraft:iron_pickaxe", 1, "{Damage:52,Advanced:2}"),
+                                      ("minecraft:iron_pickaxe", 1, "{Advanced:1}")))
+    exercise_installed_filter(server, results, 2759, "big_advanced_item_filter",
+                            index=35, settings='isNbt:1b,damageMode:"up_to_25"',
+                            sample=stack("minecraft:diamond_pickaxe", 1, tag="{Damage:27,LargeAdvanced:1}"),
+                            accepted=("minecraft:diamond_pickaxe", 1, "{Damage:100,LargeAdvanced:1}"),
+                            rejected=(("minecraft:diamond_pickaxe", 1, "{Damage:100,LargeAdvanced:2}"),
+                                      ("minecraft:diamond_pickaxe", 1, "{Damage:500,LargeAdvanced:1}")))
 
 
 def old_settings(size):
@@ -218,6 +316,7 @@ def main():
         if args.legacy_jar is None:
             run_stage(args, port, report, "collect", collect)
             run_stage(args, port, report, "reopened", reopen)
+            run_stage(args, port, report, "recovered", recovered)
         else:
             old = root / "legacy"
             prepare_profile(args, old, args.legacy_jar)
