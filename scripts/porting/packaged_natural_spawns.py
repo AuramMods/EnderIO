@@ -70,7 +70,7 @@ def on_pad(pos):
     return 2097 <= x < 2108 and y == -59 and 3 <= z < 14
 
 
-def observations(server, start):
+def observations(server, start, from_source=in_source, types=(ZOMBIE, SKELETON)):
     with server.condition:
         lines = server.lines[start:]
     attempts, joins, teleports = {}, {}, {}
@@ -78,7 +78,7 @@ def observations(server, start):
         if "PORT_SPAWN " not in line:
             continue
         event = json.loads(line.split("PORT_SPAWN ", 1)[1])
-        if event["event"] == "finalize" and in_source(event["origin"]) and event["type"] in (ZOMBIE, SKELETON):
+        if event["event"] == "finalize" and from_source(event["origin"]) and event["type"] in types:
             attempts[event["uuid"]] = event
         elif event["event"] == "join":
             joins[event["uuid"]] = event

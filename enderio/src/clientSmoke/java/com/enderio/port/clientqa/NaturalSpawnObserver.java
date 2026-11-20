@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
@@ -31,8 +32,7 @@ public final class NaturalSpawnObserver {
     public void finalized(MobSpawnEvent.FinalizeSpawn event) {
         var origin = new Vec3(event.getX(), event.getY(), event.getZ());
         var mob = event.getEntity();
-        if (event.getSpawnType() != MobSpawnType.NATURAL || !isObservedType(mob)
-                || !inFixture(event.getLevel().getLevel(), origin)) return;
+        if (event.getSpawnType() != MobSpawnType.NATURAL || !inFixture(mob, origin)) return;
         awaitingInsertion.add(mob.getUUID());
         log("finalize", mob, origin, mob.position(), event.isSpawnCancelled());
     }
@@ -46,18 +46,19 @@ public final class NaturalSpawnObserver {
 
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public void teleport(EntityTeleportEvent event) {
-        if (event.getEntity() instanceof Mob mob && isObservedType(mob) && inFixture(mob.level(), mob.position())) {
+        if (event.getEntity() instanceof Mob mob && inFixture(mob, mob.position())) {
             log("teleport", mob, mob.position(), new Vec3(event.getTargetX(), event.getTargetY(), event.getTargetZ()), event.isCanceled());
         }
     }
 
-    private static boolean isObservedType(Mob mob) {
-        return mob.getType() == EntityType.ZOMBIE || mob.getType() == EntityType.SKELETON;
-    }
-
-    private static boolean inFixture(Level level, Vec3 pos) {
-        return level.dimension().equals(Level.OVERWORLD) && pos.x >= 2096 && pos.x < 2128
-                && pos.y >= -60 && pos.y < -55 && pos.z >= 0 && pos.z < 16;
+    private static boolean inFixture(Mob mob, Vec3 pos) {
+        if (!mob.level().dimension().equals(Level.OVERWORLD)
+                || pos.y < -60 || pos.y >= -55 || pos.z < 0 || pos.z >= 16) return false;
+        var type = mob.getType();
+        if (type == EntityType.ZOMBIE || type == EntityType.SKELETON) {
+            return pos.x >= 2096 && pos.x < 2128;
+        }
+        return (type == EntityType.TROPICAL_FISH || type == EntityType.AXOLOTL) && pos.x >= 5370 && pos.x < 5388;
     }
 
     private static void log(String observed, Mob mob, Vec3 origin, Vec3 position, boolean canceled) {
@@ -69,7 +70,8 @@ public final class NaturalSpawnObserver {
             "type", BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString(),
             "origin", coordinates(origin), "position", coordinates(position), "canceled", canceled,
             "tick", level.getGameTime(), "blockLight", loaded ? level.getBrightness(LightLayer.BLOCK, feet) : -1,
-            "supported", loaded && level.getBlockState(floor).isFaceSturdy(level, floor, Direction.UP))));
+            "supported", loaded && level.getBlockState(floor).isFaceSturdy(level, floor, Direction.UP),
+            "inWater", loaded && level.getFluidState(feet).is(FluidTags.WATER))));
     }
 
     private static List<Double> coordinates(Vec3 pos) {
