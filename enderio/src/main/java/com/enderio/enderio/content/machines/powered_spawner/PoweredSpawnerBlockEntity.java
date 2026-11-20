@@ -196,13 +196,17 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
         super.serverTick();
 
         if (canAct()) {
+            var previousTask = taskHost.getCurrentTask();
             taskHost.tick();
 
             // Blocked reason is powered by the task when one is running
-            if (taskHost.hasTask()) {
-                if (taskHost.getCurrentTask() instanceof PoweredSpawnerTask poweredSpawnerTask) {
-                    setReason(poweredSpawnerTask.getBlockedReason());
-                }
+            if (taskHost.hasTask() && taskHost.getCurrentTask() instanceof PoweredSpawnerTask poweredSpawnerTask) {
+                setReason(poweredSpawnerTask.getBlockedReason());
+            } else if (previousTask instanceof MobSpawnTask spawnTask && spawnTask.isCompleted()
+                && spawnTask.getBlockedReason() == SpawnerBlockedReason.NONE
+                && (reason == SpawnerBlockedReason.TOO_MANY_SPAWNER || reason == SpawnerBlockedReason.TOO_MANY_MOB
+                    || reason == SpawnerBlockedReason.OTHER_MOD)) {
+                setReason(SpawnerBlockedReason.NONE);
             }
         }
     }

@@ -8,7 +8,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -22,8 +21,6 @@ import java.util.UUID;
 @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.FORGE)
 public class MobSpawnTask extends PoweredSpawnerTask {
 
-    private float efficiency = 1;
-
     public MobSpawnTask(PoweredSpawnerBlockEntity blockEntity) {
         super(PoweredSpawnerMode.SPAWN, blockEntity);
     }
@@ -35,16 +32,12 @@ public class MobSpawnTask extends PoweredSpawnerTask {
 
     @Override
     protected void onTaskCompleted() {
-        if (isAreaClear()) {
+        if (hasRoomForMobs()) {
             trySpawnEntity(blockEntity.getBlockPos(), (ServerLevel) blockEntity.getLevel());
         }
     }
 
-    /**
-     * Check if the area has fewer spawners and mobs than the config.
-     * @return
-     */
-    private boolean isAreaClear() {
+    private boolean hasRoomForMobs() {
         AABB range = new AABB(blockEntity.getBlockPos()).inflate(blockEntity.getRange());
 
         List<? extends Entity> entities = blockEntity.getLevel()
@@ -55,13 +48,6 @@ public class MobSpawnTask extends PoweredSpawnerTask {
             return false;
         }
 
-        long count = BlockPos.betweenClosedStream(range)
-                .filter(pos -> blockEntity.getLevel().getBlockEntity(pos) instanceof PoweredSpawnerBlockEntity)
-                .count();
-        if (count >= MachinesConfig.COMMON.MAX_SPAWNERS.get()) {
-            this.efficiency = MachinesConfig.COMMON.MAX_SPAWNERS.get() / (float) count;
-        }
-
         return true;
     }
 
@@ -70,7 +56,13 @@ public class MobSpawnTask extends PoweredSpawnerTask {
             return;
         }
 
-        if (this.efficiency < level.random.nextFloat()) {
+        AABB range = new AABB(blockEntity.getBlockPos()).inflate(blockEntity.getRange());
+        long count = BlockPos.betweenClosedStream(range)
+                .filter(neighbor -> level.getBlockEntity(neighbor) instanceof PoweredSpawnerBlockEntity)
+                .count();
+        int maximum = MachinesConfig.COMMON.MAX_SPAWNERS.get();
+        float efficiency = count <= maximum ? 1f : maximum / (float) count;
+        if (level.random.nextFloat() >= efficiency) {
             setBlockedReason(PoweredSpawnerBlockEntity.SpawnerBlockedReason.TOO_MANY_SPAWNER);
             return;
         }
