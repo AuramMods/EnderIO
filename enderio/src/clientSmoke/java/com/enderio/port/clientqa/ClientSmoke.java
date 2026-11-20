@@ -207,6 +207,9 @@ public final class ClientSmoke {
             case "solar-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.SOLAR);
             case "capacitor-bank-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.CAPACITOR_BANK);
             case "capacitor-bank" -> new ClientCapacitorBankSmoke();
+            case "bank-textures-core" -> new ClientBankTexturesSmoke(false, false);
+            case "bank-textures-athena" -> new ClientBankTexturesSmoke(true, false);
+            case "bank-textures-embeddium" -> new ClientBankTexturesSmoke(true, true);
             default -> MinecraftForge.EVENT_BUS.addListener(this::render);
         }
         System.out.println("QA_EVT {\"event\":\"client_qa_loaded\",\"status\":\"info\"}");

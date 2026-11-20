@@ -57,7 +57,8 @@ parser.add_argument("--scenario",
                              "antenna-progression", "ender-skull", "legacy-ender-skull",
                              "wireless-charge", "curios", "solar-wired", "photovoltaic-progression", "photovoltaic-upgrades", "solar-carry",
                              "pearl-powder", "creative-tab",
-                             "capacitor-bank", "capacitor-bank-carry"),
+                             "capacitor-bank", "capacitor-bank-carry", "bank-textures-core", "bank-textures-athena",
+                             "bank-textures-embeddium"),
                     default="title")
 parser.add_argument("--tank", choices=("standard", "pressurized"), default="standard")
 parser.add_argument("--server", default="127.0.0.1:25641")
