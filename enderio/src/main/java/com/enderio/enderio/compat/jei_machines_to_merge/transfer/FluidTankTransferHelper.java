@@ -3,10 +3,12 @@ package com.enderio.enderio.compat.jei_machines_to_merge.transfer;
 import com.enderio.enderio.compat.jei_machines_to_merge.category.TankCategory;
 import com.enderio.enderio.content.storage.fluid_tank.FluidTankMenu;
 import com.enderio.enderio.content.storage.fluid_tank.TankRecipe;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import com.enderio.enderio.foundation.network.packets.ServerboundTransferItemsPacket;
 import com.enderio.enderio.init.EIOMenus;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
@@ -16,7 +18,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.crafting.Ingredient;
-import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -49,48 +50,35 @@ public class FluidTankTransferHelper implements IRecipeTransferHandler<FluidTank
     @Override
     public @Nullable IRecipeTransferError transferRecipe(FluidTankMenu container, TankRecipe recipe, IRecipeSlotsView recipeSlots, Player player,
         boolean maxTransfer, boolean doTransfer) {
+        boolean fillsItem = recipe.mode() == TankRecipe.Mode.FILL;
+        int inputIndex = fillsItem ? FluidTankMenu.FILL_INPUT_INDEX : FluidTankMenu.EMPTY_INPUT_INDEX;
+        var target = container.getSlot(inputIndex);
+        var fluid = container.getFluidTank();
+        var ingredient = recipe.input();
+        boolean needsItem = !ingredient.test(target.getItem());
+        boolean hasInventoryItem = player.getInventory().items.stream().anyMatch(ingredient::test);
+        boolean missingItem = needsItem && (target.hasItem() || !hasInventoryItem);
+        boolean missingFluid = fillsItem && (fluid == null || !recipe.fluid().test(fluid.contents()));
 
-        boolean hasFluid = true;
-        if (recipe.mode() == TankRecipe.Mode.FILL) {
-            // Check if the tank contains a fluid that matches the ingredient
-            hasFluid = recipe.fluid().test(container.getFluidTank().contents());
+        if (missingItem || missingFluid) {
+            var inputs = recipeSlots.getSlotViews(RecipeIngredientRole.INPUT);
+            List<IRecipeSlotView> missing = new ArrayList<>(2);
+            if (missingItem) {
+                missing.add(inputs.get(0));
+            }
+            if (missingFluid) {
+                missing.add(inputs.get(1));
+            }
+            return handlerHelper.createUserErrorForMissingSlots(
+                Component.translatable("jei.tooltip.error.recipe.transfer.missing"), missing);
         }
 
-        boolean hasItem = recipe.input().test(container.slots.get(0).getItem());
-        Ingredient item = getIngredientItem(player, recipe.input());
-
-        if (!hasItem || !hasFluid) {
-            Component message = Component.translatable("jei.tooltip.error.recipe.transfer.missing");
-            List<IRecipeSlotView> empty = new ArrayList<>();
-            if (!hasItem && item.isEmpty()) {
-                empty.add(recipeSlots.getSlotViews().get(0));
-            }
-            if (!hasFluid) {
-                empty.add(recipeSlots.getSlotViews().get(2));
-            }
-            if (!empty.isEmpty()) {
-                return handlerHelper.createUserErrorForMissingSlots(message, empty);
-            }
-        }
-
-        if (doTransfer) {
-            List<Ingredient> toSend = NonNullList.withSize(4, Ingredient.EMPTY);
-            if (recipe.mode() == TankRecipe.Mode.EMPTY) {
-                toSend.set(0, item);
-            } else {
-                toSend.set(2, item);
-            }
-            EIONetwork.sendToServer(new ServerboundTransferItemsPacket(container.containerId, toSend, 0,3 + 1, maxTransfer));
+        if (doTransfer && hasInventoryItem && (needsItem || maxTransfer)) {
+            List<Ingredient> toSend = NonNullList.withSize(FluidTankMenu.MACHINE_SLOT_COUNT, Ingredient.EMPTY);
+            toSend.set(inputIndex, ingredient);
+            EIONetwork.sendToServer(new ServerboundTransferItemsPacket(
+                container.containerId, toSend, 0, FluidTankMenu.MACHINE_SLOT_COUNT, maxTransfer));
         }
         return null;
-    }
-
-    private Ingredient getIngredientItem(Player player, Ingredient ingredient) {
-        for (var item : player.getInventory().items) {
-            if (ingredient.test(item)) {
-                return ingredient;
-            }
-        }
-        return Ingredient.EMPTY;
     }
 }

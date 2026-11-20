@@ -101,7 +101,7 @@ public class MachinePayloadHandler {
                 end = WeatherObeliskMenu.LAST_INDEX + 1;
             } else if (menu instanceof FluidTankMenu) {
                 first = 0;
-                end = 4;
+                end = FluidTankMenu.MACHINE_SLOT_COUNT;
             } else {
                 return;
             }

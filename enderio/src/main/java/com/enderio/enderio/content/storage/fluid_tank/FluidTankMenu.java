@@ -10,6 +10,9 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 
 public class FluidTankMenu extends MachineMenu<FluidTankBlockEntity> {
+    public static final int EMPTY_INPUT_INDEX = 0;
+    public static final int FILL_INPUT_INDEX = 2;
+    public static final int MACHINE_SLOT_COUNT = 4;
 
     private final FluidStorageSyncSlot fluidTankSlot;
 
