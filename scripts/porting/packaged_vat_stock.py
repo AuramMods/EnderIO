@@ -116,19 +116,25 @@ def tank(pos, kind, amount):
     return f"if data block {pos} {{{tank_fields(fluid(kind, amount))}}}"
 
 
-def queued(trial):
+def drained_feeders(trial):
+    return (f'{drained(trial.at(dz=-1))} unless data block {hopper(trial, 0)} Items[0] '
+            f'unless data block {hopper(trial, 1)} Items[0]')
+
+
+def queued(trial, *, verify_feeders=True):
     vat = trial.at()
+    feeders = f"{drained_feeders(trial)} " if verify_feeders else ""
     return (f'if data block {vat} {{RedstoneControl:"active_with_signal",IOConfig:{{Modes:{{north:"pull",south:"push"}}}},'
             f'{tank_fields(fluid(trial.source, trial.input_amount + RESERVE))},'
             f'Items:{{Items:[{reagent(trial, 0)},{reagent(trial, 1)}]}}}} '
-            f'{drained(trial.at(dz=-1))} {drained(vat, 1)} {drained(trial.at(dz=1))} '
-            f'unless data block {hopper(trial, 0)} Items[0] unless data block {hopper(trial, 1)} Items[0] '
+            f'{feeders}{drained(vat, 1)} {drained(trial.at(dz=1))} '
             f'unless data block {vat} PendingOutput')
 
 
-def paused(trial, ticks):
+def paused(trial, ticks, *, verify_feeders=True):
     vat = trial.at()
-    return (f'{queued(trial)} if block {vat} enderio:vat[powered=false] if block {trial.at(y=81)} minecraft:air '
+    return (f'{queued(trial, verify_feeders=verify_feeders)} '
+            f'if block {vat} enderio:vat[powered=false] if block {trial.at(y=81)} minecraft:air '
             f'if data block {vat} Task{{RecipeId:"{trial.recipe}",ProgressMade:{ticks},ProgressRequired:{trial.ticks},'
             f'HasDeterminedOutputs:1b,Outputs:[{{Fluid:{fluid(trial.result, trial.output_amount)}}}]}}')
 
@@ -190,25 +196,26 @@ def finish_large_batches(server, results, trials):
             server.command(f"setblock {receiver} enderio:pressurized_fluid_tank[facing=south]")
 
 
-def completed(server, results, trials, stage):
+def completed(server, results, trials, stage, *, verify_feeders=True):
     for trial in trials:
         vat = trial.at()
         outputs = " ".join(tank(pos, trial.result, amount) for pos, amount in receiving_tanks(trial))
+        feeders = f" {drained_feeders(trial)}" if verify_feeders else ""
         server.assert_state(f"{trial.name}_{stage}_exports_the_exact_batch_and_retains_only_the_fluid_reserve",
-                            f"{outputs} {tank(vat, trial.source, RESERVE)} {drained(vat, 1)} {drained(trial.at(dz=-1))} "
+                            f"{outputs} {tank(vat, trial.source, RESERVE)} {drained(vat, 1)} "
                             f"unless data block {vat} Task unless data block {vat} PendingOutput "
-                            f"unless data block {vat} Items.Items[0] unless data block {hopper(trial, 0)} Items[0] "
-                            f"unless data block {hopper(trial, 1)} Items[0]", results, timeout=40)
+                            f"unless data block {vat} Items.Items[0]{feeders}", results, timeout=40)
 
 
-def resume(server, results, trials, report):
+def resume(server, results, trials, report, *, verify_feeders=True):
     load(server, results, trials, "resume")
     for trial in trials:
         progress = report["trials"][trial.name]["pausedTicks"]
-        server.assert_state(f"{trial.name}_restores_its_saved_progress_inputs_and_yield", paused(trial, progress), results)
+        server.assert_state(f"{trial.name}_restores_its_saved_progress_inputs_and_yield",
+                            paused(trial, progress, verify_feeders=verify_feeders), results)
     signal(server, trials, True)
     finish_large_batches(server, results, trials)
-    completed(server, results, trials, "resumed")
+    completed(server, results, trials, "resumed", verify_feeders=verify_feeders)
 
 
 def main():

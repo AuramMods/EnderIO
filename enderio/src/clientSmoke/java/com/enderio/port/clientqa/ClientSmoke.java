@@ -157,6 +157,7 @@ public final class ClientSmoke {
             case "tank-jei" -> new ClientTankJeiSmoke();
             case "vat-jei" -> new ClientVatJeiSmoke();
             case "vat-jei-shared" -> new ClientVatSharedJeiSmoke();
+            case "vat-jei-stock" -> new ClientVatStockJeiSmoke();
             case "filter-recovery" -> new ClientFilterRecoverySmoke();
             case "filter-wrench-editor" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_EDITOR);
             case "filter-wrench-operator" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_OPERATOR);
