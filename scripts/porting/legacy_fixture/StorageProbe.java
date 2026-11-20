@@ -94,6 +94,13 @@ public class StorageProbe {
                             BoolArgumentType.getBool(context, "connected")))))))
             .then(Commands.literal("check_grid")
                 .executes(context -> run(context.getSource(), "Native RS grid connects to its controller", StorageProbe::checkGrid)))
+            .then(Commands.literal("check_rs_route")
+                .executes(context -> run(context.getSource(), "Native RS grid and remote drive share the crafted route", StorageProbe::checkRSRoute)))
+            .then(Commands.literal("seed_rs_disk").then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
+                .executes(context -> run(context.getSource(), "Native RS disk mounted and loaded with tagged items", level -> {
+                    mountRSDisk(level);
+                    writeRS(level, IntegerArgumentType.getInteger(context, "count"));
+                }))))
             .then(Commands.literal("mount_items").executes(context -> run(context.getSource(), "Native item storage mounted", StorageProbe::mount)))
             .then(Commands.literal("write_items").then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
                 .executes(context -> run(context.getSource(), "Native item storage accepted the write",
@@ -235,11 +242,23 @@ public class StorageProbe {
             "The RS grid is not active on the fixture controller's native network");
     }
 
+    private static void checkRSRoute(ServerLevel level) {
+        checkGrid(level);
+        var network = rsNode(level, 1086).getNetwork();
+        require(rsNode(level, 1087).getNetwork() == network && rsNode(level, 1088).getNetwork() == network
+            && rsDrive(level).getNetwork() == network && rsDrive(level).isActive(),
+            "The controller, crafted conduits and remote drive are not on the same active RS network");
+    }
+
     private static void mount(ServerLevel level) {
         for (int z : AE_ROUTES) {
             require(aeDrive(level, z).getInternalInventory().insertItem(0, AEItems.ITEM_CELL_1K.stack(), false).isEmpty(),
                 "AE2 rejected its 1k cell at z=" + z);
         }
+        mountRSDisk(level);
+    }
+
+    private static void mountRSDisk(ServerLevel level) {
         var disk = new ItemStack(RSItems.ITEM_STORAGE_DISKS.get(ItemStorageType.ONE_K).get());
         // Refined Storage creates the disk's persistent ID on its first player inventory tick.
         disk.inventoryTick(level, FakePlayerFactory.getMinecraft(level), 0, false);
@@ -251,6 +270,10 @@ public class StorageProbe {
             require(aeStorage(level, z).insert(AEItemKey.of(sample(z)), count, Actionable.MODULATE, AE_SOURCE) == count,
                 "AE2 storage write failed at z=" + z);
         }
+        writeRS(level, count);
+    }
+
+    private static void writeRS(ServerLevel level, int count) {
         var network = rsNode(level, 1086).getNetwork();
         require(network != null && network.insertItem(sample(13), count, Action.PERFORM).isEmpty(), "RS storage write failed");
     }

@@ -160,7 +160,8 @@ public final class ClientSmoke {
             case "niard" -> new ClientNiardSmoke();
             case "vacuums" -> new ClientVacuumSmoke();
             case "impulse-hopper" -> new ClientImpulseHopperSmoke();
-            case "storage-terminals" -> new ClientStorageTerminalSmoke();
+            case "storage-terminals" -> new ClientStorageTerminalSmoke(false);
+            case "rs-progression" -> new ClientStorageTerminalSmoke(true);
             case "ae2-facade" -> new ClientAE2FacadeSmoke();
             case "me-colors" -> new ClientMEColorsSmoke();
             case "mekanism-controls" -> new ClientMekanismControlsSmoke(false);

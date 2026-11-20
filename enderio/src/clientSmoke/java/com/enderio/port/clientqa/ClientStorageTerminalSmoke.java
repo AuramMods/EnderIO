@@ -5,6 +5,9 @@ import appeng.client.gui.me.common.MEStorageScreen;
 import appeng.client.gui.me.common.RepoSlot;
 import com.refinedmods.refinedstorage.screen.grid.GridScreen;
 import com.refinedmods.refinedstorage.screen.grid.stack.ItemGridStack;
+import com.enderio.enderio.api.EnderIODataComponents;
+import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
+import com.enderio.enderio.init.EIOItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.components.toasts.SystemToast;
@@ -12,6 +15,7 @@ import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.CraftingScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.core.BlockPos;
@@ -21,6 +25,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.BlockHitResult;
@@ -36,7 +41,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class ClientStorageTerminalSmoke {
-    private enum Stage { TITLE, JOIN, OPEN, PLACING_GRID, INITIAL, PICKUP, DEPOSITED, WITHDRAWING, STORING, VERIFIED, DONE }
+    private enum Stage {
+        TITLE, JOIN, TABLE, RECIPE, RESULT, TAKEN, PLACE_CONDUIT, PLACED_CONDUIT,
+        OPEN, PLACING_GRID, INITIAL, PICKUP, DEPOSITED, WITHDRAWING, STORING, VERIFIED, DONE
+    }
 
     private record Route(String name, int marker, int destination) {
         BlockPos pos() { return new BlockPos(1085, 80, marker); }
@@ -46,6 +54,10 @@ final class ClientStorageTerminalSmoke {
 
     private static final Route AE = new Route("ae", 4, 1);
     private static final Route RS = new Route("rs", 13, 2);
+    private static final BlockPos TABLE = new BlockPos(1084, 80, 10);
+    private static final BlockPos RS_HEAD = new BlockPos(1087, 80, 13);
+    private static final ResourceLocation RS_CONDUIT = ResourceLocation.parse("enderio:rs");
+    private static final ResourceLocation RS_RECIPE = ResourceLocation.parse("enderio:rs_conduit");
     private static final ResourceLocation GRID_ITEM = ResourceLocation.fromNamespaceAndPath("refinedstorage", "grid");
     private static final int BEFORE = 37;
     private static final int OFFER = 5;
@@ -55,15 +67,27 @@ final class ClientStorageTerminalSmoke {
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final String address = System.getProperty("enderio.clientqa.server");
     private final boolean reopen = System.getProperty("enderio.clientqa.multiplayerPhase").equals("verify");
+    private final boolean stock;
+    private final int initial;
+    private final int offer;
+    private final int offerSlot;
+    private final int withdrawal;
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
     private long titleAt;
     private int arrivalTick = -1;
+    private int placedConduits;
     private Stage stage = Stage.TITLE;
-    private Route route = AE;
+    private Route route;
 
-    ClientStorageTerminalSmoke() {
+    ClientStorageTerminalSmoke(boolean stock) {
+        this.stock = stock;
+        route = stock ? RS : AE;
+        initial = reopen ? HALF : BEFORE;
+        offer = stock && reopen ? 3 : OFFER;
+        offerSlot = stock ? 5 : 0;
+        withdrawal = (initial + offer) / 2;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -93,8 +117,10 @@ final class ClientStorageTerminalSmoke {
                     check("dedicated_survival_connection", !minecraft.player.isCreative() && !minecraft.player.isSpectator()
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     signal("connected");
-                    stage = Stage.OPEN;
+                    stage = stock && !reopen ? Stage.TABLE : Stage.OPEN;
                 }
+                case TABLE, RECIPE, RESULT, TAKEN -> craftConduits();
+                case PLACE_CONDUIT, PLACED_CONDUIT -> placeConduits();
                 case OPEN -> open();
                 case PLACING_GRID -> {
                     if (minecraft.player.getInventory().getItem(8).isEmpty() && !minecraft.level.getBlockState(RS.pos()).isAir()) {
@@ -112,6 +138,83 @@ final class ClientStorageTerminalSmoke {
             failure.printStackTrace();
             finish(failure);
         }
+    }
+
+    private void craftConduits() throws IOException {
+        var player = minecraft.player;
+        if (stage == Stage.TABLE) {
+            if (!ready("server-table") || minecraft.screen != null || player.distanceToSqr(1084.5, 80, 12.5) > 0.15) return;
+            player.getInventory().selected = 8;
+            var hit = new BlockHitResult(Vec3.atCenterOf(TABLE).relative(Direction.SOUTH, 0.5), Direction.SOUTH, TABLE, false);
+            check("native_crafting_table_opens", minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit).consumesAction());
+            stage = Stage.RECIPE;
+            return;
+        }
+        if (!(minecraft.screen instanceof CraftingScreen screen)) return;
+        var menu = screen.getMenu();
+        switch (stage) {
+            case RECIPE -> {
+                var recipe = minecraft.level.getRecipeManager().byKey(RS_RECIPE).orElseThrow();
+                if (!player.getRecipeBook().contains(recipe)) return;
+                check("stock_recipe_unlocks_from_its_ingredients", true);
+                minecraft.gameMode.handlePlaceRecipe(menu.containerId, recipe, false);
+                stage = Stage.RESULT;
+            }
+            case RESULT -> {
+                var result = menu.getSlot(0).getItem();
+                if (!isRSConduit(result)) return;
+                check("native_craft_yields_three_named_refined_storage_conduits", result.getCount() == 3
+                    && result.getHoverName().getString().equals("Refined Storage Conduit"));
+                capture("rs-conduit-recipe");
+                minecraft.gameMode.handleInventoryMouseClick(menu.containerId, 0, 0, ClickType.QUICK_MOVE, player);
+                stage = Stage.TAKEN;
+            }
+            case TAKEN -> {
+                if (menu.getSlot(0).hasItem() || menu.slots.subList(1, 10).stream().anyMatch(Slot::hasItem) || conduitCount() != 3) return;
+                check("survival_player_receives_all_three_crafted_conduits", menu.getCarried().isEmpty());
+                player.closeContainer();
+                signal("crafted");
+                stage = Stage.PLACE_CONDUIT;
+            }
+            default -> { }
+        }
+    }
+
+    private void placeConduits() throws IOException {
+        var player = minecraft.player;
+        var target = RS_HEAD.east(placedConduits);
+        if (stage == Stage.PLACE_CONDUIT) {
+            if (!ready("server-place-conduits") || minecraft.screen != null || player.distanceToSqr(1087.5, 80, 15.5) > 0.15) return;
+            var inventory = player.getInventory();
+            for (int slot = 0; slot < 9; slot++) {
+                if (isRSConduit(inventory.getItem(slot))) {
+                    inventory.selected = slot;
+                    break;
+                }
+            }
+            check("uses_a_crafted_conduit_" + placedConduits, isRSConduit(player.getMainHandItem()));
+            var hit = new BlockHitResult(Vec3.atBottomCenterOf(target), Direction.UP, target.below(), false);
+            check("native_conduit_placement_" + placedConduits, minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit).consumesAction());
+            stage = Stage.PLACED_CONDUIT;
+        } else if (minecraft.level.getBlockEntity(target) instanceof ConduitBundleBlockEntity bundle
+            && bundle.getConduits().stream().anyMatch(holder -> holder.is(RS_CONDUIT)) && conduitCount() == 2 - placedConduits) {
+            check("places_one_conduit_from_the_crafted_stack_" + placedConduits, true);
+            if (++placedConduits == 2) {
+                capture("rs-crafted-route");
+                signal("conduits-placed");
+                stage = Stage.OPEN;
+            } else {
+                stage = Stage.PLACE_CONDUIT;
+            }
+        }
+    }
+
+    private static boolean isRSConduit(ItemStack stack) {
+        return stack.is(EIOItems.CONDUIT.get()) && RS_CONDUIT.equals(EnderIODataComponents.CONDUIT.getId(stack));
+    }
+
+    private int conduitCount() {
+        return minecraft.player.getInventory().items.stream().filter(ClientStorageTerminalSmoke::isRSConduit).mapToInt(ItemStack::getCount).sum();
     }
 
     private void open() {
@@ -143,27 +246,29 @@ final class ClientStorageTerminalSmoke {
         if (entry == null) return;
         switch (stage) {
             case INITIAL -> {
-                if (entry.quantity != (reopen ? HALF : BEFORE)) return;
+                if (entry.quantity != initial) return;
                 check(route.name + "_screen_syncs_tagged_count", menu.getCarried().isEmpty());
                 capture(route.name + (reopen ? "-reopened" : "-initial"));
                 if (reopen) {
                     check(route.name + "_player_retains_exact_withdrawal", sample(minecraft.player.getInventory().getItem(route.destination), HALF));
-                    advance();
-                } else {
-                    check(route.name + "_five_tagged_ingots_are_in_hotbar", sample(minecraft.player.getInventory().getItem(0), OFFER));
-                    clickHotbar(menu, 0);
-                    stage = Stage.PICKUP;
+                    if (!stock) {
+                        advance();
+                        return;
+                    }
                 }
+                check(route.name + "_exact_tagged_offer_is_in_hotbar", sample(minecraft.player.getInventory().getItem(offerSlot), offer));
+                clickHotbar(menu, offerSlot);
+                stage = Stage.PICKUP;
             }
             case PICKUP -> {
-                if (!sample(menu.getCarried(), OFFER) || !clickEntry(screen, entry, 0)) return;
+                if (!sample(menu.getCarried(), offer) || !clickEntry(screen, entry, 0)) return;
                 stage = Stage.DEPOSITED;
             }
             case DEPOSITED -> {
-                if (entry.quantity != BEFORE + OFFER || !menu.getCarried().isEmpty()) return;
+                if (entry.quantity != initial + offer || !menu.getCarried().isEmpty()) return;
                 if (!ready("server-" + route.name + "-deposited")) {
                     if (!Files.exists(output.resolve("signals/" + route.name + "-deposited.json"))) {
-                        check(route.name + "_native_deposit_updates_open_count", minecraft.player.getInventory().getItem(0).isEmpty());
+                        check(route.name + "_native_deposit_updates_open_count", minecraft.player.getInventory().getItem(offerSlot).isEmpty());
                         capture(route.name + "-deposited");
                         signal(route.name + "-deposited");
                     }
@@ -172,20 +277,25 @@ final class ClientStorageTerminalSmoke {
                 if (clickEntry(screen, entry, 1)) stage = Stage.WITHDRAWING;
             }
             case WITHDRAWING -> {
-                if (entry.quantity != HALF || !sample(menu.getCarried(), HALF)) return;
-                check(route.name + "_right_click_returns_half_with_exact_tag", minecraft.player.getInventory().getItem(route.destination).isEmpty());
+                int destination = withdrawalSlot();
+                if (entry.quantity != withdrawal || !sample(menu.getCarried(), withdrawal)) return;
+                check(route.name + "_right_click_returns_half_with_exact_tag", minecraft.player.getInventory().getItem(destination).isEmpty());
                 capture(route.name + "-withdrawn");
-                clickHotbar(menu, route.destination);
+                clickHotbar(menu, destination);
                 stage = Stage.STORING;
             }
             case STORING -> {
-                if (menu.getCarried().isEmpty() && sample(minecraft.player.getInventory().getItem(route.destination), HALF)) {
-                    check(route.name + "_native_player_slot_keeps_the_withdrawal", entry.quantity == HALF);
+                if (menu.getCarried().isEmpty() && sample(minecraft.player.getInventory().getItem(withdrawalSlot()), withdrawal)) {
+                    check(route.name + "_native_player_slot_keeps_the_withdrawal", entry.quantity == withdrawal);
                     advance();
                 }
             }
             default -> { }
         }
+    }
+
+    private int withdrawalSlot() {
+        return stock && reopen ? 6 : route.destination;
     }
 
     private Entry findEntry(AbstractContainerScreen<?> screen) {
