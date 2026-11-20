@@ -18,7 +18,7 @@
     },
     {
       "type": "patchouli:text",
-      "text": "A Farming Station can also use a bound soul for supported farm actions. Its standard crops and trees can be run with the proper tools, planting inputs and power."
+      "text": "A Farming Station can use a bound soul for supported farm actions. See the $(l:enderio:souls/engine)matching souls$(/l) and use a $(l:enderio:souls/binder)Soul Binder$(/l) to bind one."
     }
   ]
 }

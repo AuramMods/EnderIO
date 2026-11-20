@@ -1,0 +1,30 @@
+{
+  "name": "Soul Binder",
+  "icon": "enderio:soul_binder",
+  "category": "enderio:souls",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:soul_binder"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Install a capacitor and provide FE. Put a filled Soul Vial and the target item in the machine. Supply the required XP Juice from a tank or use the menu’s player XP controls. A finished job returns the empty Soul Vial."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Some binding jobs need more FE than one internal buffer can hold. Keep the line powered while the machine works. Leave space for both the bound item and the empty vial when automating extraction."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "minecraft:infested_cobblestone",
+      "title": "Silverfish Binding",
+      "text": "For one Infested Cobblestone, supply one Cobblestone and a Silverfish Soul Vial. The stock job costs 10,000 FE and has no XP Juice cost."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Read $(l:enderio:souls/crystals)Binding Crystals$(/l) and $(l:enderio:souls/spawners)Powered Spawners$(/l) for recipes with larger power and XP requirements."
+    }
+  ]
+}

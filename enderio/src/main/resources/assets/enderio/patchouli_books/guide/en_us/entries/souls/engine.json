@@ -1,0 +1,28 @@
+{
+  "name": "Soul Engine",
+  "icon": "enderio:soul_engine",
+  "category": "enderio:souls",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:soul_engine"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Bind the Soul Engine item with a supported filled Soul Vial. The stock Soul Binder job costs 188,000 FE and five levels’ worth of XP Juice. Place the bound engine, install a capacitor and pipe in the matching fuel."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A Blaze-bound engine uses lava. Zombie, Zombie Villager and Husk use Nutrient Distillation. A Creeper uses Rocket Fuel and an Enderman uses Dew of the Void. The active binding and fuel appear in the engine menu."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Set an output face to Push or connect an energy conduit. Let the engine’s buffer feed a $(l:enderio:power/banks)Capacitor Bank$(/l). Make the crafted fuels in the $(l:enderio:machines/vat)VAT$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A Farming Station also has a binding recipe. Use its item and a supported soul such as a Bee, Villager or Sniffer. A Phantom can instead bind a photovoltaic module for night generation."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "XP Obelisk",
+  "icon": "enderio:xp_obelisk",
+  "category": "enderio:souls",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:xp_obelisk"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use the menu to deposit or withdraw experience. For a quick test, store one level’s worth and withdraw it again. Use the all-XP buttons to move a full balance before or after a trip."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The XP Obelisk stores experience as XP Juice. A fluid line can bring juice from an $(l:enderio:machines/collection)XP Vacuum$(/l) or feed a $(l:enderio:machines/tanks)Fluid Tank$(/l). Set the fluid faces and give the line room to transfer."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A tank can turn 250 mB of stored XP Juice and a Glass Bottle into a Bottle o’ Enchanting. You can also carry experience in a $(l:enderio:souls/vials)Void Vial$(/l)."
+    }
+  ]
+}

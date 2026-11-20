@@ -32,7 +32,7 @@
     },
     {
       "type": "patchouli:text",
-      "text": "Liquid Sunshine beside a daytime module gives full output, even under a roof. A module bound to a Phantom generates at night instead. Place Liquid Darkness beside that module for full output. Prepare the binding in a Soul Binder."
+      "text": "Liquid Sunshine beside a daytime module gives full output, even under a roof. A Phantom-bound module generates at night. Place Liquid Darkness beside it for full output. Bind the Phantom in a $(l:enderio:souls/binder)Soul Binder$(/l)."
     }
   ]
 }

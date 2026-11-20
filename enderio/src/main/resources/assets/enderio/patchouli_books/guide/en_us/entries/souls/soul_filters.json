@@ -1,0 +1,28 @@
+{
+  "name": "Soul Filters and Tokens",
+  "icon": "enderio:basic_soul_filter",
+  "category": "enderio:souls",
+  "sortnum": 8,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:basic_soul_filter"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use a Soul Filter’s editor with a filled Soul Vial as a sample. Choose the allowed or denied mobs, then install the filter in a compatible obelisk. Use the range view to confirm where the rule applies."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:animal_token",
+      "title": "Animal and Monster",
+      "text": "Bind a creature soul such as a Cow into a Soularium Grinding Ball for an Animal Token. A monster soul with the same ball makes a Monster Token. Both cost 12,800 FE and one level’s worth of XP Juice."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:player_token",
+      "title": "Player Token",
+      "text": "Use a Villager Soul Vial and a Dark Steel Grinding Ball to make a Player Token. The stock cost is 12,800 FE and one level’s worth of XP Juice. Use tokens in the matching fused glass recipes."
+    }
+  ]
+}

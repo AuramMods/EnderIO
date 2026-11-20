@@ -1,0 +1,30 @@
+{
+  "name": "Soul and Void Vials",
+  "icon": "enderio:soul_vial",
+  "category": "enderio:souls",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:soul_vial",
+      "text": "Use an empty Soul Vial on an eligible living mob. Hover the filled vial to see what it holds."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use a filled Soul Vial on a block face with space to release the same mob. A dispenser can capture or release a mob immediately in front of it. Save a filled vial for a $(l:enderio:souls/binder)Soul Binder$(/l) recipe."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Some mobs are restricted. If capture fails, test on a common animal, then consult your pack’s capture rules before bringing a rare mob back to the workshop."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:void_vial",
+      "text": "A Void Vial holds liquid experience and can gather nearby XP orbs while carried."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Transfer XP Juice between a Void Vial and a compatible tank. Hold use on a filled vial to drink its stored XP. An empty vial also supplies the $(l:enderio:machines/enchanter)Enchanter’s$(/l) Mending recipe."
+    }
+  ]
+}

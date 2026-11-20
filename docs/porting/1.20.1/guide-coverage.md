@@ -8,7 +8,7 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 | Power and Storage | Stirling fuel, capacitors, photovoltaics, banks, wired and wireless charging, energy tiers and sided transfer | Six entries authored |
 | Conduits and Filters | Placing and splitting bundles, item and fluid movement, redstone signals, upgrades and filters, facades, wrench and probe, worked networks | Nine entries authored |
 | Workshop Machines | Alloys and powders, mills and grinding balls, Slice’N’Splice, VAT, tanks, painting, Enchanter, Crafter and hoppers, farming and collection, weather and redstone controls | Twelve entries authored |
-| Souls and Obelisks | Vials, Soul Binder, soul components and fuels, Powered Spawner, XP, attraction, aversion, relocation and teleport inhibition | Pending |
+| Souls and Obelisks | Vials, Soul Binder, soul components and fuels, Powered Spawner, XP, attraction, aversion, relocation and teleport inhibition | Nine entries authored |
 | Tools, Travel and Building | Travel blocks and staff, gliders and mobility, magnets, XP equipment and enchantments, utility and mobility items, painted and steel construction, fused glass, hidden redstone | Pending |
 | Integrations and Experiments | AE2, Mekanism, RS, LaserIO, CC:Tweaked, Jade, Curios, FTB Ultimine, JEI, Enderface and Niard settings and dependencies | Pending |
 | Troubleshooting | Energy, blocked outputs, connection sides, channels and redstone, recipe tags and optional dependencies | Pending |
@@ -40,3 +40,9 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 - Documented 12 workshop entries with live machine crafts and worked examples for alloying, milling, slicing, the VAT, tanks, painting, enchanting, crafting and batching. Included the legacy fuel-fired smelter, farming, collection, weather and block sensing.
 - The reobfuscated jar contains four categories, 33 entries, 162 pages, 71 live recipe references and 24 entry links. The guarded Patchouli-only tour passed 526 client checks and four server assertions with 96 captures. It exercised the second menu spread for Workshop Machines. Reviewed both chapter spreads and representative VAT and Slicer layouts. See `build/port-evidence/guide-cycle-004-machines/`.
 - Next verify the soul-binding recipes, Powered Spawner, Soul Engine and obelisk entries.
+
+## Cycle 005
+
+- Added nine entries for soul and XP vials, the Soul Binder and worked binding recipes, crystals, spawners, fuel selection, obelisks, filters and collision tokens.
+- The reobfuscated jar contains five categories, 42 entries, 206 pages, 87 recipe references and 36 entry links. The guarded Forge test with Patchouli alone passed 661 client checks and four dedicated server assertions, with 122 captures and no runtime errors. The assembled spawner recipe and the Silverfish binding page rendered in the native client. See `build/port-evidence/guide-cycle-005-souls/`.
+- Next verify the tool, travel, building and fuel progression entries.

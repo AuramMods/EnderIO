@@ -1,0 +1,35 @@
+{
+  "name": "Binding Crystals",
+  "icon": "enderio:vibrant_crystal",
+  "category": "enderio:souls",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:pulsating_crystal",
+      "recipe2": "enderio:vibrant_crystal"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:ender_crystal",
+      "title": "Ender Crystal",
+      "text": "Bind an Enderman Soul Vial to one Vibrant Crystal for an Ender Crystal. The stock cost is 76,800 FE and 1,440 mB of XP Juice. Use it in the Weather Crystal recipe."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:enticing_crystal",
+      "title": "Enticing Crystal",
+      "text": "Bind a Villager Soul Vial to one Emerald for an Enticing Crystal. The stock cost is 51,200 FE and 800 mB of XP Juice. It supplies the Attractor Obelisk."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:prescient_crystal",
+      "title": "Prescient Crystal",
+      "text": "Bind a Shulker Soul Vial to one Vibrant Crystal for a Prescient Crystal. The stock cost is 100,000 FE and eight levels’ worth of XP Juice. It supplies levitation equipment."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The SAG Mill can grind these and related crystals for recipes that specifically require the powder. Check the use of the finished crystal before milling it."
+    }
+  ]
+}

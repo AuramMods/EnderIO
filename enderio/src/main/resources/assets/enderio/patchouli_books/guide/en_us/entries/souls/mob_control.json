@@ -1,0 +1,32 @@
+{
+  "name": "Mob Control",
+  "icon": "enderio:attractor_obelisk",
+  "category": "enderio:souls",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:attractor_obelisk"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The Attractor draws matching mobs toward it. Put it near a clear path and fit a Soul Filter. Install a capacitor, supply FE and turn on the range display to see its working area."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:aversion_obelisk"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The Aversion Obelisk suppresses matching natural spawns in range while powered. Use it to cut down an unwanted spawn type. Put an appropriate Soul Filter in the slot and check that it is set to the desired list mode."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:relocator_obelisk"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The Relocator moves matching natural spawns to a suitable place near the device. Supply power, a capacitor and a Soul Filter. Leave a valid landing for the mob, including liquid for an aquatic mob where appropriate."
+    }
+  ]
+}

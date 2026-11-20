@@ -1,0 +1,20 @@
+{
+  "name": "Inhibitor Obelisk",
+  "icon": "enderio:inhibitor_obelisk",
+  "category": "enderio:souls",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:inhibitor_obelisk"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Give the Inhibitor a capacitor and a steady FE supply. Use the range display to place its field over the area where you want to suppress teleporting. A tested example is an Ender Pearl thrown from or into the field."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Check the redstone mode before testing. If a nearby Relocator cannot land a mob, check whether its destination overlaps an active Inhibitor field."
+    }
+  ]
+}

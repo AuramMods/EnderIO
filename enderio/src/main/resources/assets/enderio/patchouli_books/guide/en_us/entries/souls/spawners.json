@@ -1,0 +1,41 @@
+{
+  "name": "Powered Spawners",
+  "icon": "enderio:powered_spawner",
+  "category": "enderio:souls",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:broken_spawner",
+      "title": "Broken Spawner",
+      "text": "Mine a vanilla spawner with a suitable pickaxe to obtain a Broken Spawner. Its tooltip identifies the stored mob. Choose the one you want to carry into a Powered Spawner."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:soul_chain",
+      "recipe2": "enderio:ensouled_chassis"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:powered_spawner",
+      "text": "The Broken Spawner passes its mob binding into the crafted machine."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Place the machine by a clear spawning area, install a capacitor and supply FE. Select Spawn in the menu. An eligible cow uses 10,000 FE per stock spawn job. Other mobs can have different costs and placement rules."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Capture mode fills an empty Soul Vial from the machine’s stored mob. Load an empty vial and collect it from the output once the job is paid. Check the bound mob, redstone setting and output space if it waits."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "To change the binding, feed the Powered Spawner item and a filled Soul Vial into the Soul Binder. The stock job costs 288,000 FE and eight levels’ worth of XP Juice. A Broken Spawner can be rebound there too."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:mind_killer",
+      "text": "Place a Mind Killer above a Powered Spawner to disable the AI of its spawned mobs."
+    }
+  ]
+}
