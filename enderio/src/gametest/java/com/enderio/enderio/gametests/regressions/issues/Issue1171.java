@@ -24,6 +24,30 @@ import com.enderio.enderio.gametests.util.FixtureBuilder;
  */
 // Scenario group: regression.issue1171
 public class Issue1171 {
+
+    @GameTest
+    public static void detectorPlacementAndRemovalUpdatePoweredStone(final GameplayTest test) {
+        var detector = new BlockPos(1, 1, 0);
+        var lamp = new BlockPos(3, 1, 0);
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(4, 2, 1)
+            .set(0, 0, 0, Blocks.WHITE_WOOL.defaultBlockState())
+            .set(2, 0, 0, Blocks.STONE.defaultBlockState())
+            .set(3, 0, 0, Blocks.REDSTONE_LAMP.defaultBlockState()));
+
+        test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
+            .thenExecute(() -> {
+                helper.setBlock(detector, EIOBlocks.BLOCK_DETECTOR.get().defaultBlockState()
+                    .setValue(BlockStateProperties.FACING, Direction.WEST));
+                helper.assertTrue(helper.getBlockState(detector).getValue(BlockStateProperties.POWERED),
+                    "Detector should start powered when the target is already present");
+                helper.assertTrue(helper.getBlockState(lamp).getValue(RedstoneLampBlock.LIT),
+                    "Placing the detector should power the lamp through stone");
+                helper.setBlock(detector, Blocks.AIR);
+            })
+            .thenExecuteAfter(4, () -> helper.assertTrue(!helper.getBlockState(lamp).getValue(RedstoneLampBlock.LIT),
+                "Removing the detector should turn off the lamp even while the target remains"))
+            .thenSucceed());
+    }
     
     @GameTest
     // Tests that BlockDetector properly updates neighbors when detected block changes

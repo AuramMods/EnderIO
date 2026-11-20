@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DirectionalBlock;
@@ -14,8 +15,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.jetbrains.annotations.Nullable;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 
 public class BlockDetectorBlock extends DirectionalBlock {
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
@@ -34,8 +33,45 @@ public class BlockDetectorBlock extends DirectionalBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
+        Direction facing = context.getNearestLookingDirection();
         return this.defaultBlockState()
-                .setValue(FACING, context.getNearestLookingDirection().getOpposite().getOpposite());
+                .setValue(FACING, facing)
+                .setValue(POWERED, hasTarget(context.getLevel(), context.getClickedPos(), facing));
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (level.isClientSide || oldState.is(this)) {
+            return;
+        }
+
+        Direction facing = state.getValue(FACING);
+        boolean powered = hasTarget(level, pos, facing);
+        if (powered != state.getValue(POWERED)) {
+            level.setBlock(pos, state.setValue(POWERED, powered), Block.UPDATE_CLIENTS);
+        }
+        if (powered) {
+            updateOutputNeighbors(level, pos, facing);
+        }
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        super.onRemove(state, level, pos, newState, movedByPiston);
+        if (!level.isClientSide && !newState.is(this) && state.getValue(POWERED)) {
+            updateOutputNeighbors(level, pos, state.getValue(FACING));
+        }
+    }
+
+    private void updateOutputNeighbors(Level level, BlockPos pos, Direction facing) {
+        BlockPos output = pos.relative(facing.getOpposite());
+        level.neighborChanged(output, this, pos);
+        level.updateNeighborsAtExceptFromFacing(output, this, facing);
+    }
+
+    private static boolean hasTarget(BlockGetter level, BlockPos pos, Direction facing) {
+        return !level.getBlockState(pos.relative(facing)).isAir();
     }
 
     @Override
@@ -61,16 +97,7 @@ public class BlockDetectorBlock extends DirectionalBlock {
 
     @Override
     public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
-        if (!canConnectRedstone(state, level, pos, direction)) {
-            state.setValue(POWERED, false);
-            return 0;
-        }
-        if (level.getBlockState(pos.relative(state.getValue(FACING))).isAir()) {
-            state.setValue(POWERED, false);
-            return 0;
-        }
-        state.setValue(POWERED, true);
-        return 15;
+        return canConnectRedstone(state, level, pos, direction) && hasTarget(level, pos, direction) ? 15 : 0;
     }
 
     @Override
@@ -95,10 +122,9 @@ public class BlockDetectorBlock extends DirectionalBlock {
             return;
         }
 
-        BlockPos targetPos = pos.relative(state.getValue(FACING));
-        boolean shouldBePowered = !level.getBlockState(targetPos).isAir();
+        boolean shouldBePowered = hasTarget(level, pos, state.getValue(FACING));
         if (state.getValue(POWERED) != shouldBePowered) {
-            level.setBlock(pos, state.cycle(POWERED), Block.UPDATE_CLIENTS);
+            level.setBlock(pos, state.setValue(POWERED, shouldBePowered), Block.UPDATE_CLIENTS);
 
             for (Direction direction : Direction.values()) {
                 level.updateNeighborsAt(pos.relative(direction), this);

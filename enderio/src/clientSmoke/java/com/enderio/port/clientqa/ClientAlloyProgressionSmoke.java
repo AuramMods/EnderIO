@@ -64,12 +64,16 @@ final class ClientAlloyProgressionSmoke {
         }
 
         boolean matchesGrid(List<Slot> grid) {
+            return matchesGrid(grid, 1);
+        }
+
+        boolean matchesGrid(List<Slot> grid, int crafts) {
             if (layout.isEmpty()) {
                 var actual = new LinkedHashMap<Item, Integer>();
                 for (Slot slot : grid) {
                     if (!slot.hasItem()) continue;
                     var stack = slot.getItem();
-                    if (stack.getCount() != 1) return false;
+                    if (stack.getCount() != crafts) return false;
                     actual.merge(stack.getItem(), 1, Integer::sum);
                 }
                 return actual.size() == inputs.size() && inputs.entrySet().stream().allMatch(entry ->
@@ -78,7 +82,7 @@ final class ClientAlloyProgressionSmoke {
             for (int index = 0; index < layout.size(); index++) {
                 String input = layout.get(index);
                 var stack = grid.get(index).getItem();
-                if (input.isEmpty() ? !stack.isEmpty() : !stack.is(item(input)) || stack.getCount() != 1) return false;
+                if (input.isEmpty() ? !stack.isEmpty() : !stack.is(item(input)) || stack.getCount() != crafts) return false;
             }
             return true;
         }
