@@ -3,12 +3,14 @@ package com.enderio.port.clientqa;
 import com.enderio.core.client.gui.widgets.BaseEnumPickerWidget;
 import com.enderio.core.client.gui.widgets.IconButton;
 import com.enderio.core.client.gui.widgets.ToggleIconButton;
+import com.enderio.enderio.api.conduits.connection.config.ConnectionConfig;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.client.content.conduits.gui.ConduitScreen;
 import com.enderio.enderio.client.foundation.widgets.DyeColorPickerWidget;
 import com.enderio.enderio.client.foundation.widgets.RedstoneControlPickerWidget;
 import com.enderio.enderio.content.conduits.bundle.ConduitBundleBlockEntity;
 import com.enderio.enderio.content.conduits.type.fluid.FluidConduitConnectionConfig;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.toasts.SystemToast;
@@ -34,7 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-final class ClientFluidConduitControlsSmoke {
+final class ClientConduitControlsSmoke {
     private enum Stage { TITLE, JOIN, OPEN, EDIT, CAPTURE, FINISH, DONE }
 
     private record Endpoint(BlockPos pos, Direction side, ResourceLocation conduit) {
@@ -45,25 +47,15 @@ final class ClientFluidConduitControlsSmoke {
 
     private record Step(String id, Endpoint endpoint, FluidConduitConnectionConfig before, FluidConduitConnectionConfig after) { }
 
-    private static final Endpoint OUTLET = new Endpoint(3280, Direction.EAST, "pressurized_fluid");
-    private static final Endpoint INLET = new Endpoint(3279, Direction.WEST, "ender_fluid");
     private static final FluidConduitConnectionConfig DEFAULT = FluidConduitConnectionConfig.DEFAULT;
-    private static final FluidConduitConnectionConfig RECEIVER = DEFAULT.withIsInsert(true).withIsExtract(false).withPriority(2);
-    private static final FluidConduitConnectionConfig BLUE_OUTLET = RECEIVER.withInsertChannel(DyeColor.BLUE);
     private static final FluidConduitConnectionConfig RED_GATE = DEFAULT.withExtractChannel(DyeColor.BLUE)
         .withExtractRedstoneControl(RedstoneControl.ACTIVE_WITH_SIGNAL);
     private static final FluidConduitConnectionConfig BLUE_GATE = RED_GATE.withExtractRedstoneChannel(DyeColor.BLUE);
     private static final FluidConduitConnectionConfig INVERTED_GATE = BLUE_GATE.withExtractRedstoneControl(RedstoneControl.ACTIVE_WITHOUT_SIGNAL);
-    private static final List<Step> EDITS = List.of(new Step("outlet-blue", OUTLET, DEFAULT, BLUE_OUTLET),
-        new Step("gate-red", INLET, DEFAULT, RED_GATE), new Step("gate-blue", INLET, RED_GATE, BLUE_GATE),
-        new Step("outlet-green", OUTLET, BLUE_OUTLET, RECEIVER), new Step("outlet-matched", OUTLET, RECEIVER, BLUE_OUTLET),
-        new Step("gate-inverted", INLET, BLUE_GATE, INVERTED_GATE));
-    private static final List<Step> REOPENED = List.of(new Step("saved-inlet", INLET, INVERTED_GATE, INVERTED_GATE),
-        new Step("saved-outlet", OUTLET, BLUE_OUTLET, BLUE_OUTLET));
-
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
-    private final List<Step> steps = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase")) ? REOPENED : EDITS;
+    private final boolean chemical;
+    private final List<Step> steps;
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
@@ -71,7 +63,20 @@ final class ClientFluidConduitControlsSmoke {
     private int index;
     private int captureAt;
 
-    ClientFluidConduitControlsSmoke() {
+    ClientConduitControlsSmoke(boolean chemical) {
+        this.chemical = chemical;
+        String kind = chemical ? "chemical" : "fluid";
+        var outlet = new Endpoint(3280, Direction.EAST, "pressurized_" + kind);
+        var inlet = new Endpoint(3279, Direction.WEST, "ender_" + kind);
+        var receiver = DEFAULT.withIsInsert(true).withIsExtract(false).withPriority(chemical ? 0 : 2);
+        var blueOutlet = receiver.withInsertChannel(DyeColor.BLUE);
+        steps = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase"))
+            ? List.of(new Step("saved-inlet", inlet, INVERTED_GATE, INVERTED_GATE),
+                new Step("saved-outlet", outlet, blueOutlet, blueOutlet))
+            : List.of(new Step("outlet-blue", outlet, DEFAULT, blueOutlet),
+                new Step("gate-red", inlet, DEFAULT, RED_GATE), new Step("gate-blue", inlet, RED_GATE, BLUE_GATE),
+                new Step("outlet-green", outlet, blueOutlet, receiver), new Step("outlet-matched", outlet, receiver, blueOutlet),
+                new Step("gate-inverted", inlet, BLUE_GATE, INVERTED_GATE));
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -79,13 +84,13 @@ final class ClientFluidConduitControlsSmoke {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
             if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > 170_000_000_000L) {
-                throw new AssertionError("Fluid controls stopped at " + stage + " / " + index);
+                throw new AssertionError("Conduit controls stopped at " + stage + " / " + index);
             }
             if (stage == Stage.TITLE) {
                 if (!(minecraft.screen instanceof TitleScreen) || minecraft.getOverlay() != null) return;
                 String address = System.getProperty("enderio.clientqa.server");
                 ConnectScreen.startConnecting(new TitleScreen(), minecraft, ServerAddress.parseString(address),
-                    new ServerData("Fluid conduit controls QA", address, true), false);
+                    new ServerData("Conduit controls QA", address, true), false);
                 stage = Stage.JOIN;
                 return;
             }
@@ -142,7 +147,7 @@ final class ClientFluidConduitControlsSmoke {
             && menu.getSide() == endpoint.side() && menu.getConduit().is(endpoint.conduit()));
         var before = step.before();
         var after = step.after();
-        if (!menu.connectionConfig().equals(before)) return;
+        if (!matches(menu.connectionConfig(), before)) return;
         check(step.id() + "_reads_authoritative_settings_on_open", true);
         if (before.isInsert() != after.isInsert()) click(screen, widget(screen, ToggleIconButton.class, 22, 7));
         if (before.isExtract() != after.isExtract()) click(screen, widget(screen, ToggleIconButton.class, 112, 7));
@@ -161,14 +166,14 @@ final class ClientFluidConduitControlsSmoke {
         for (int value = before.insertPriority(); value < after.insertPriority(); value++) {
             click(screen, widget(screen, IconButton.class, 92, 45));
         }
-        check(step.id() + "_widgets_show_the_requested_configuration", menu.connectionConfig().equals(after));
+        check(step.id() + "_widgets_show_the_requested_configuration", matches(menu.connectionConfig(), after));
         captureAt = minecraft.player.tickCount + 6;
         stage = Stage.CAPTURE;
     }
 
     private void capture(Step step) throws IOException {
         if (!(minecraft.screen instanceof ConduitScreen screen) || minecraft.player.tickCount < captureAt) return;
-        check(step.id() + "_settings_remain_visible", screen.getMenu().connectionConfig().equals(step.after()));
+        check(step.id() + "_settings_remain_visible", matches(screen.getMenu().connectionConfig(), step.after()));
         var redstone = widget(screen, DyeColorPickerWidget.class, 132, 47);
         check(step.id() + "_redstone_picker_visibility_follows_mode", redstone.visible == step.after().extractRedstoneControl().isRedstoneSensitive());
         var frame = ClientSmoke.capture(step.id() + ".png");
@@ -177,6 +182,18 @@ final class ClientFluidConduitControlsSmoke {
         minecraft.player.closeContainer();
         signal(step.id());
         stage = ++index < steps.size() ? Stage.OPEN : Stage.FINISH;
+    }
+
+    private boolean matches(ConnectionConfig actual, FluidConduitConnectionConfig expected) {
+        if (!chemical) return actual.equals(expected);
+
+        // Both codecs use the same names for the shared settings. Only fluid has a priority control.
+        var expectedFields = ConnectionConfig.GENERIC_CODEC.encodeStart(JsonOps.INSTANCE, expected)
+            .getOrThrow(false, message -> { throw new AssertionError(message); }).getAsJsonObject();
+        expectedFields.addProperty("type", "enderio:chemical");
+        expectedFields.remove("insert_priority");
+        return ConnectionConfig.GENERIC_CODEC.encodeStart(JsonOps.INSTANCE, actual)
+            .getOrThrow(false, message -> { throw new AssertionError(message); }).equals(expectedFields);
     }
 
     private static <T extends AbstractWidget> T widget(ConduitScreen screen, Class<T> type, int x, int y) {
@@ -227,6 +244,6 @@ final class ClientFluidConduitControlsSmoke {
         result.put("captures", captures);
         result.put("passed", failure == null);
         if (failure != null) result.put("error", failure.toString());
-        ClientSmoke.complete("client_fluid_conduit_controls", result);
+        ClientSmoke.complete(chemical ? "client_chemical_conduit_controls" : "client_fluid_conduit_controls", result);
     }
 }
