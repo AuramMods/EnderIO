@@ -39,6 +39,7 @@ import java.util.function.Predicate;
 
 final class ClientConduitProgressionSmoke {
     private enum Stage { TITLE, JOIN, TABLE, RECIPE, WRONG_VARIANT, RESULT, TAKEN, SMELTER, SWAP, CAPACITY, UPGRADE, UPGRADED, FINISH, DONE }
+    enum Family { ENERGY, ITEM, FLUID }
 
     private record Craft(String id, String item, int count, String variant, String lowerVariant, String alloy) {
         Craft(String capacitor) { this(capacitor, capacitor, 1, "", "", ""); }
@@ -65,6 +66,12 @@ final class ClientConduitProgressionSmoke {
         new Craft("energetic_item_conduit_upgrade", "enhanced_item", "item", "energetic_alloy_ingot"),
         new Craft("vibrant_item_conduit", "ender_item"),
         new Craft("vibrant_item_conduit_upgrade", "ender_item", "enhanced_item", "vibrant_alloy_ingot"));
+    private static final List<Craft> FLUID_RECIPES = List.of(new Craft("fluid_conduit", "fluid"),
+        new Craft("pressurized_fluid_conduit", "pressurized_fluid"),
+        new Craft("pressurized_fluid_conduit_upgrade", "pressurized_fluid", "fluid", "energetic_alloy_ingot"),
+        new Craft("ender_fluid", "ender_fluid"),
+        new Craft("ender_fluid_conduit_upgrade", "ender_fluid", "pressurized_fluid", "vibrant_alloy_ingot"));
+    private static final List<Integer> FLUID_RATES = List.of(200, 1_000, 8_000);
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
@@ -72,7 +79,7 @@ final class ClientConduitProgressionSmoke {
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
-    private final boolean items;
+    private final Family family;
     private final BlockPos table;
     private final BlockPos left;
     private final BlockPos right;
@@ -88,13 +95,21 @@ final class ClientConduitProgressionSmoke {
     private int beforeUpper;
     private int beforeLower;
 
-    ClientConduitProgressionSmoke(boolean items) {
-        this.items = items;
-        table = items ? new BlockPos(3278, 80, 12) : new BlockPos(3031, 80, 8);
-        left = items ? new BlockPos(3279, 80, 8) : new BlockPos(3039, 80, 9);
+    ClientConduitProgressionSmoke(Family family) {
+        this.family = family;
+        table = family == Family.ENERGY ? new BlockPos(3031, 80, 8) : new BlockPos(3278, 80, 12);
+        left = family == Family.ENERGY ? new BlockPos(3039, 80, 9) : new BlockPos(3279, 80, 8);
         right = left.east();
-        recipes = items ? ITEM_RECIPES : ENERGY_RECIPES;
-        tiers = items ? List.of("item", "enhanced_item", "ender_item") : List.of("energy", "enhanced_energy", "ender_energy");
+        recipes = switch (family) {
+            case ENERGY -> ENERGY_RECIPES;
+            case ITEM -> ITEM_RECIPES;
+            case FLUID -> FLUID_RECIPES;
+        };
+        tiers = switch (family) {
+            case ENERGY -> List.of("energy", "enhanced_energy", "ender_energy");
+            case ITEM -> List.of("item", "enhanced_item", "ender_item");
+            case FLUID -> List.of("fluid", "pressurized_fluid", "ender_fluid");
+        };
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -185,9 +200,10 @@ final class ClientConduitProgressionSmoke {
                 if (result.is(EIOItems.DOUBLE_LAYER_CAPACITOR.get())) {
                     check(name + "_has_the_tier_two_capacitor_default", CapacitorData.ITEM_DATA.get(result).base() == 2);
                 }
-                if (items) {
-                    int rate = 32 << tiers.indexOf(step.variant());
-                    String expected = "Effective Rate: " + rate + " Items/sec";
+                if (family != Family.ENERGY) {
+                    int tier = tiers.indexOf(step.variant());
+                    String expected = family == Family.ITEM ? "Effective Rate: " + (32 << tier) + " Items/sec"
+                        : String.format("Effective Rate: %,d mB/t", FLUID_RATES.get(tier));
                     check(name + "_displays_its_effective_transfer_rate", result.getTooltipLines(player, TooltipFlag.NORMAL)
                         .stream().anyMatch(line -> line.getString().equals(expected)));
                 }
@@ -208,7 +224,7 @@ final class ClientConduitProgressionSmoke {
                 if (recipeIndex == recipes.size()) {
                     player.closeContainer();
                     signal("crafted");
-                    stage = items ? Stage.UPGRADE : Stage.SMELTER;
+                    stage = family == Family.ENERGY ? Stage.SMELTER : Stage.UPGRADE;
                 } else stage = Stage.RECIPE;
             }
             default -> { }
@@ -243,13 +259,13 @@ final class ClientConduitProgressionSmoke {
     }
 
     private void replaceConduit() throws IOException {
-        int tier = upgradeIndex / 2 + (items ? 0 : 1);
+        int tier = upgradeIndex / 2 + (family == Family.ENERGY ? 1 : 0);
         String upper = tiers.get(tier);
         String lower = tier == 0 ? "" : tiers.get(tier - 1);
         BlockPos target = upgradeIndex % 2 == 0 ? left : right;
         if (stage == Stage.UPGRADE) {
             if (!ready("upgrade-" + upgradeIndex) || minecraft.screen != null) return;
-            if (items && (!at(right.getX() + 0.5, right.getZ() + 3.5) || !settled())) return;
+            if (family != Family.ENERGY && (!at(right.getX() + 0.5, right.getZ() + 3.5) || !settled())) return;
             var inventory = minecraft.player.getInventory();
             boolean found = false;
             for (int slot = 0; slot < 9; slot++) {
@@ -278,7 +294,7 @@ final class ClientConduitProgressionSmoke {
                 : "upgrade_" + upgradeIndex + "_consumes_one_upper_and_returns_one_lower", true);
             signal("upgraded-" + upgradeIndex);
             upgradeIndex++;
-            stage = upgradeIndex == (items ? 6 : 4) ? Stage.FINISH : Stage.UPGRADE;
+            stage = upgradeIndex == (family == Family.ENERGY ? 4 : 6) ? Stage.FINISH : Stage.UPGRADE;
         }
     }
 
@@ -361,6 +377,6 @@ final class ClientConduitProgressionSmoke {
         result.put("captures", captures);
         result.put("passed", failure == null);
         if (failure != null) result.put("error", failure.toString());
-        ClientSmoke.complete(items ? "client_item_progression" : "client_energy_progression", result);
+        ClientSmoke.complete("client_" + family.name().toLowerCase(java.util.Locale.ROOT) + "_progression", result);
     }
 }

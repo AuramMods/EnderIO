@@ -31,6 +31,7 @@ public final class ChangingFluidHandler implements IFluidHandler, ICapabilitySer
     }
 
     public void setFluid(FluidStack fluid) { tank.setFluid(fluid.copy()); }
+    void setCapacity(int capacity) { tank.setCapacity(capacity); }
     public int amount() { return tank.getFluidAmount(); }
     @Override public int getTanks() { return 1; }
     @Override public FluidStack getFluidInTank(int index) { return tank.getFluidInTank(index); }

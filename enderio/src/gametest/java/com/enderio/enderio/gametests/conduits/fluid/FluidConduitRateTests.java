@@ -22,7 +22,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -43,6 +46,50 @@ public class FluidConduitRateTests {
     public static void enderConduitTransfersTheAvailableTankContents(GameplayTest test) {
         // The actual native source tank contains 32,000 mB, below this tier's 40,000 mB update budget.
         transfer(test, EIOConduits.VIBRANT_FLUID, 32000);
+    }
+
+    @GameTest
+    public static void enderConduitCapsEachNetworkUpdateAtFortyBuckets(GameplayTest test) {
+        fullRateRoute(test, EIOConduits.VIBRANT_FLUID, 40_000);
+    }
+
+    @GameTest
+    public static void pressurizedSegmentCapsAnEnderRouteAtFiveBuckets(GameplayTest test) {
+        fullRateRoute(test, EIOConduits.ENERGETIC_FLUID, 5_000);
+    }
+
+    private static void fullRateRoute(GameplayTest test, ResourceKey<Conduit<?, ?>> middleTier, int limit) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(5, 1, 1)
+            .set(0, 0, 0, Blocks.BARREL.defaultBlockState()).set(4, 0, 0, Blocks.BARREL.defaultBlockState()));
+        test.onGameTest(ConduitGameTestHelper.class, helper -> {
+            var ender = helper.getConduit(EIOConduits.VIBRANT_FLUID);
+            var middle = helper.getConduit(middleTier);
+            helper.startSequence().thenExecute(() -> {
+                helper.placeConduit(ender, 1, 1, 0);
+                helper.placeConduit(middle, 2, 1, 0);
+                helper.placeConduit(ender, 3, 1, 0);
+                configure(helper, ender, 1, 0, Direction.WEST, true);
+                configure(helper, ender, 3, 0, Direction.EAST, false);
+            }).thenExecuteAfter(3, () -> {
+                var source = (ChangingFluidHandler) helper.getBlockEntity(0, 1, 0, BarrelBlockEntity.class)
+                    .getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.EAST).orElseThrow(IllegalStateException::new);
+                var target = (ChangingFluidHandler) helper.getBlockEntity(4, 1, 0, BarrelBlockEntity.class)
+                    .getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.WEST).orElseThrow(IllegalStateException::new);
+                var water = new FluidStack(Fluids.WATER, 64_000);
+                water.getOrCreateTag().putInt("PortFluidTier", 242);
+                source.setCapacity(64_000);
+                source.setFluid(water);
+                target.setCapacity(64_000);
+                int deposited = 0;
+                for (int update = 0; update < 2; update++) {
+                    tick(helper, ender, 1, 0);
+                    deposited = Math.min(64_000, deposited + limit);
+                    helper.assertValueEqual(target.amount(), deposited, "Destination fluid after scheduled update " + update);
+                    helper.assertValueEqual(source.amount(), 64_000 - deposited, "Source balance after scheduled update " + update);
+                    helper.assertTrue(target.getFluidInTank(0).isFluidEqual(water), "The original fluid and its NBT reach the target");
+                }
+            }).thenSucceed();
+        });
     }
 
     @GameTest
