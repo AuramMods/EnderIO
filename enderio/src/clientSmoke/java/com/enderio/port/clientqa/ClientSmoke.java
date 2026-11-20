@@ -63,6 +63,7 @@ public final class ClientSmoke {
             case "weather-jei" -> new ClientWeatherJeiSmoke();
             case "laserio-guide-craft" -> new ClientLaserGuideSmoke(false);
             case "laserio-guide-reopen" -> new ClientLaserGuideSmoke(true);
+            case "laserio-editor" -> new ClientLaserIOEditorSmoke();
             case "painting-machine" -> new ClientPaintingMachineSmoke();
             case "painted-sand" -> new ClientPaintedSandSmoke();
             case "painted-redstone" -> new ClientPaintedRedstoneSmoke();

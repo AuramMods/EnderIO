@@ -1,15 +1,30 @@
 package com.enderio.modded_conduits;
 
 import appeng.api.networking.IManagedGridNode;
+import com.direwolf20.laserio.common.items.filters.BaseFilter;
+import com.direwolf20.laserio.common.items.filters.FilterBasic;
+import com.direwolf20.laserio.setup.Registration;
 import com.enderio.modded_conduits.common.modules.appeng.ConduitInWorldGridNodeHost;
 import com.enderio.modded_conduits.common.modules.appeng.MEConduit;
 import com.enderio.modded_conduits.common.modules.appeng.MEConduitNodeData;
+import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalHandlerAdapter;
+import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
 import com.enderio.modded_conduits.common.modules.refinedstorage.RSConduitNodeData;
+import mekanism.api.chemical.ChemicalType;
+import mekanism.api.chemical.gas.GasStack;
+import mekanism.api.chemical.infuse.InfusionStack;
+import mekanism.api.chemical.pigment.PigmentStack;
+import mekanism.api.chemical.slurry.SlurryStack;
+import mekanism.common.capabilities.Capabilities;
+import mekanism.common.registries.MekanismBlocks;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -185,6 +200,54 @@ public class IntegrationStateTests {
         assertEquals(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("patchouli", "guide_book"),
             net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(result.getItem()));
         assertEquals("laserio:laseriobook", result.getOrCreateTag().getString("patchouli:book"));
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void laserIoChemicalFilterReadsPersistedNativeTankSamples(GameTestHelper helper) {
+        var filter = new ItemStack(Registration.Filter_Basic.get());
+        var slots = FilterBasic.getInventory(filter);
+        var samples = java.util.List.of(
+            ChemicalResource.fromRegistry(ChemicalType.GAS, ResourceLocation.parse("mekanism:oxygen"), 1450),
+            ChemicalResource.fromRegistry(ChemicalType.INFUSION, ResourceLocation.parse("mekanism:redstone"), 1450),
+            ChemicalResource.fromRegistry(ChemicalType.PIGMENT, ResourceLocation.parse("mekanism:red"), 1450),
+            ChemicalResource.fromRegistry(ChemicalType.SLURRY, ResourceLocation.parse("mekanism:dirty_iron"), 1450));
+        for (int i = 0; i < samples.size(); i++) {
+            var tank = new ItemStack(MekanismBlocks.BASIC_CHEMICAL_TANK.getBlock());
+            var sample = samples.get(i);
+            switch (sample.family()) {
+                case GAS -> tank.getCapability(Capabilities.GAS_HANDLER).orElseThrow(IllegalStateException::new)
+                    .setChemicalInTank(0, (GasStack) sample.nativeCopy());
+                case INFUSION -> tank.getCapability(Capabilities.INFUSION_HANDLER).orElseThrow(IllegalStateException::new)
+                    .setChemicalInTank(0, (InfusionStack) sample.nativeCopy());
+                case PIGMENT -> tank.getCapability(Capabilities.PIGMENT_HANDLER).orElseThrow(IllegalStateException::new)
+                    .setChemicalInTank(0, (PigmentStack) sample.nativeCopy());
+                case SLURRY -> tank.getCapability(Capabilities.SLURRY_HANDLER).orElseThrow(IllegalStateException::new)
+                    .setChemicalInTank(0, (SlurryStack) sample.nativeCopy());
+            }
+            var adapter = ChemicalHandlerAdapter.find(cap -> tank.getCapability(cap).orElse(null));
+            helper.assertTrue(adapter != null && java.util.stream.IntStream.range(0, adapter.getChemicalTanks())
+                .mapToObj(adapter::getChemicalInTank)
+                .anyMatch(held -> ChemicalResource.isSameChemical(held, sample) && held.getAmount() == sample.getAmount()),
+                "Native sample tank should contain " + sample.family());
+            slots.setStackInSlot(i * 2 + 1, tank);
+        }
+        FilterBasic.setInventory(filter, slots);
+        BaseFilter.setAllowList(filter, true);
+        var loaded = ItemStack.of(filter.save(new CompoundTag()));
+        var capability = loaded.getCapability(MekanismModule.Capabilities.CHEMICAL_FILTER).orElseThrow(
+            () -> new net.minecraft.gametest.framework.GameTestAssertException("Basic Filter has no chemical capability"));
+        for (var sample : samples) {
+            var offered = sample.copyWithAmount(4321);
+            var passed = capability.test(null, offered);
+            helper.assertTrue(ChemicalResource.isSameChemical(offered, passed) && passed.getAmount() == 4321,
+                "Persisted " + sample.family() + " sample should allow the full observed batch");
+        }
+        var hydrogen = ChemicalResource.fromRegistry(ChemicalType.GAS, ResourceLocation.parse("mekanism:hydrogen"), 2345);
+        helper.assertTrue(capability.test(null, hydrogen).isEmpty(), "The gas absent from the allowlist should be rejected");
+        BaseFilter.setAllowList(loaded, false);
+        helper.assertTrue(capability.test(null, hydrogen).getAmount() == 2345, "Deny mode should keep the unmatched batch");
+        helper.assertTrue(capability.test(null, samples.get(0)).isEmpty(), "Deny mode should reject the saved oxygen sample");
         helper.succeed();
     }
 

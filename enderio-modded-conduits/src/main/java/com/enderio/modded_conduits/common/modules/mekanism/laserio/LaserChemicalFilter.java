@@ -1,9 +1,7 @@
 package com.enderio.modded_conduits.common.modules.mekanism.laserio;
 
-import com.direwolf20.laserio.common.containers.FilterBasicContainer;
-import com.direwolf20.laserio.common.containers.customhandler.FilterBasicHandler;
 import com.direwolf20.laserio.common.items.filters.BaseFilter;
-import com.enderio.modded_conduits.common.modules.mekanism.MekanismModule;
+import com.direwolf20.laserio.common.items.filters.FilterBasic;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical_filter.ChemicalFilter;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalResource;
 import com.enderio.modded_conduits.common.modules.mekanism.chemical.ChemicalHandlerAdapter;
@@ -27,7 +25,7 @@ public class LaserChemicalFilter implements ChemicalFilter {
         var currentFilter = container.get();
         final boolean isAllowList = BaseFilter.getAllowList(currentFilter);
 
-        FilterBasicHandler filterSlotHandler = new FilterBasicHandler(FilterBasicContainer.SLOTS, currentFilter);
+        var filterSlotHandler = FilterBasic.getInventory(currentFilter);
 
         for (int i = 0; i < filterSlotHandler.getSlots(); ++i) {
             ItemStack itemStack = filterSlotHandler.getStackInSlot(i);
