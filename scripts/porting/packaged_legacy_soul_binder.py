@@ -12,7 +12,7 @@ sys.dont_write_bytecode = True
 from packaged_nutritious_stick import advance
 from packaged_server_smoke import ROOT, digest
 from packaged_soul_binder import VIAL, xp_tank
-from packaged_spawners import WORLD, prepare_profile, run_stage
+from packaged_spawners import OLD_SOUL, WORLD, prepare_profile, run_stage
 
 
 PAID = 6000
@@ -67,6 +67,15 @@ CASES = (
     Binding(5064, "soul_engine", "blaze", "enderio:soul_engine", 188000, 1100),
     Binding(5070, "prescient_crystal", "shulker", "enderio:vibrant_crystal", 100000, 2240,
             binds_soul=False, entity_data="NoAI:1b,Color:4b"),
+    Binding(5082, "animal_token", "cow", "enderio:soularium_grinding_ball", 12800, 140, binds_soul=False),
+    Binding(5088, "monster_token", "zombie", "enderio:soularium_grinding_ball", 12800, 140, binds_soul=False),
+    Binding(5094, "player_token", "villager", "enderio:dark_steel_grinding_ball", 12800, 140, binds_soul=False),
+    Binding(5100, "ender_crystal", "enderman", "enderio:vibrant_crystal", 76800, 1440, binds_soul=False),
+    Binding(5106, "enticing_crystal", "villager", "minecraft:emerald", 51200, 800, binds_soul=False),
+    Binding(5112, "frank_n_zombie", "zombie", "enderio:z_logic_controller", 51200, 800, binds_soul=False),
+    Binding(5118, "sentient_ender", "witch", "enderio:ender_resonator", 51200, 800, binds_soul=False),
+    Binding(5124, "powered_spawner", "sheep", "enderio:powered_spawner", 288000, 2240,
+            entity_data="NoAI:1b,Color:6b"),
 )
 CUSTOM = Binding(5076, "engine", "blaze", "minecraft:blaze_rod", 35600, 800,
                  namespace="port_legacy", output="enderio:soul_engine")
@@ -86,6 +95,11 @@ def binder_tank(amount, old):
         return ('Fluid:{Size:1,Tanks:[{Index:0,Capacity:10000,FluidName:"enderio:xp_juice",'
                 f'Amount:{amount}}}]}}')
     return xp_tank(amount)
+
+
+def unbound_output(pos, item_path, old):
+    soul_path = "BlockEntityTag.EntityStorage" if old else SOUL_PATH
+    return f" unless data block {pos} {item_path}.tag.{soul_path}"
 
 
 def source_job(server, results, case):
@@ -117,6 +131,11 @@ def source_job(server, results, case):
                        '{Delay:32767s,SpawnData:{entity:{id:"minecraft:cow"}}}')
         server.command(f"loot replace block {feed} container.1 mine {source} minecraft:diamond_pickaxe")
         server.command(f"setblock {source} minecraft:air")
+    elif case.recipe == "powered_spawner":
+        source = f"{case.x} 80 10"
+        server.command(f'setblock {source} {case.material}[facing=south]{{{OLD_SOUL}}}')
+        server.command(f"loot replace block {feed} container.1 mine {source} minecraft:diamond_pickaxe")
+        server.command(f"setblock {source} minecraft:air")
     else:
         server.command(f"item replace block {feed} container.1 with {case.material}")
     verify_pending(server, results, case, PAID, "forge6", old=True)
@@ -127,8 +146,8 @@ def verify_pending(server, results, case, paid, phase, *, old=False):
     tag = case.old_soul if old else case.soul
     vial = OLD_FILLED if old else VIAL
     material_tag = ""
-    if case.recipe == "broken_spawner":
-        material_tag = ('BlockEntityTag:{EntityStorage:{Entity:{id:"minecraft:cow"}}}' if old else
+    if case.recipe in ("broken_spawner", "powered_spawner"):
+        material_tag = (f'BlockEntityTag:{{{OLD_SOUL}}}' if old else
                         '"enderio:data":{"enderio:soul":{entity_type:"minecraft:cow"}}')
     material = stack(1, case.material, old=old, tag=material_tag)
     vial_item = stack(0, vial, old=old, tag=tag)
@@ -136,6 +155,8 @@ def verify_pending(server, results, case, paid, phase, *, old=False):
     tank = binder_tank(case.xp + XP_REMAINDER, old)
     product = stack(None, case.product, old=old, tag=tag if case.binds_soul else "")
     returned = stack(None, OLD_EMPTY if old else VIAL, old=old)
+    result_path = f'Task.Outputs[{{Item:{{id:"{case.product}"}}}}].Item'
+    unbound = "" if case.binds_soul else unbound_output(pos, result_path, old)
     server.command(f"data get block {pos}")
     server.assert_state(f"{phase}_{case.recipe}_preserves_paid_fe_xp_and_exact_queued_outputs",
                         f'if data block {pos} {{{energy},{tank},Items:{{Items:[{vial_item},{material}]}},'
@@ -144,7 +165,7 @@ def verify_pending(server, results, case, paid, phase, *, old=False):
                         f'if data block {pos} Task.Outputs[{{Item:{product}}}] '
                         f'if data block {pos} Task.Outputs[{{Item:{returned}}}] '
                         f'unless data block {pos} Task.Outputs[2] '
-                        f'unless data block {pos} Items.Items[{{Slot:2}}] unless data block {pos} Items.Items[{{Slot:3}}]',
+                        f'unless data block {pos} Items.Items[{{Slot:2}}] unless data block {pos} Items.Items[{{Slot:3}}]{unbound}',
                         results, timeout=85 if phase == "one_fe_short" else 15)
 
 
@@ -153,6 +174,7 @@ def verify_finished(server, results, case, phase):
     collector = f"{case.x} 79 8"
     product = stack(None, case.product, vanilla=True, tag=case.soul if case.binds_soul else "")
     returned = stack(None, VIAL, vanilla=True)
+    unbound = "" if case.binds_soul else unbound_output(collector, f'Items[{{id:"{case.product}"}}]', False)
     server.assert_state(f"{phase}_{case.recipe}_exports_exact_product_and_one_empty_vial",
                         f'if data block {pos} {{EnergyStored:0,{xp_tank(XP_REMAINDER)}}} '
                         f'unless data block {pos} Task unless data block {pos} Items.Items[{{Slot:0}}] '
@@ -160,15 +182,18 @@ def verify_finished(server, results, case, phase):
                         f'unless data block {pos} Items.Items[{{Slot:3}}] '
                         f'if data block {collector} Items[{product}] if data block {collector} Items[{returned}] '
                         f'unless data block {collector} Items[2] '
-                        f'unless data block {collector} Items[{{id:"{VIAL}"}}].tag.{SOUL_PATH}',
+                        f'unless data block {collector} Items[{{id:"{VIAL}"}}].tag.{SOUL_PATH}{unbound}',
                         results, timeout=15)
 
 
 def legacy(server, results, cases):
     server.command("gamerule doMobSpawning false")
-    server.command("forceload add 5056 0 5087 15")
-    server.assert_state("original_forge_chunks_are_loaded", "if loaded 5058 80 8 if loaded 5076 80 8", results)
-    server.command("fill 5056 79 4 5087 79 13 minecraft:stone_bricks")
+    server.command("gamerule doDaylightCycle false")
+    server.command("time set midnight")
+    server.command("forceload add 5056 0 5135 15")
+    server.assert_state("original_forge_chunks_are_loaded",
+                        " ".join(f"if loaded {case.binder}" for case in cases), results)
+    server.command("fill 5056 79 4 5135 79 13 minecraft:stone_bricks")
     for case in cases:
         source_job(server, results, case)
 
@@ -233,6 +258,8 @@ def main():
     for path in ("java", "forge-server", "legacy-jar", "jar"):
         parser.add_argument(f"--{path}", type=Path, required=True)
     parser.add_argument("--stock-only", action="store_true", help="Exercise the unmodified stock recipe set")
+    parser.add_argument("--early-6-2", action="store_true",
+                        help="Use the 6.2.0-beta catalog, before Powered Spawner rebinding was added")
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a directory name")
@@ -242,8 +269,9 @@ def main():
     source, port = directory / "legacy", directory / "port"
     prepare_profile(args, source, args.legacy_jar)
     prepare_profile(args, port, args.jar)
-    cases = CASES if args.stock_only else (*CASES, CUSTOM)
+    cases = tuple(case for case in CASES if not (args.early_6_2 and case.recipe == "powered_spawner"))
     if not args.stock_only:
+        cases += (CUSTOM,)
         write_original_datapack(source)
     report = {"passed": False, "legacySha256": digest(args.legacy_jar), "jarSha256": digest(args.jar),
               "assertions": [], "servers": []}

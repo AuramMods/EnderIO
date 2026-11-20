@@ -37,6 +37,6 @@ The 6.2.18-beta fixtures on Minecraft 1.20.1 Forge cover placed and carried mach
 
 For a SAG Mill with an active custom Forge 6.2 grinding ball, include the original datapack that defines its recipe. The port uses the saved ID and wear to capture the original modifiers on load. If the definition is absent, loading the mill after returning the datapack recovers the retained record. Modern item data maps take priority for balls inserted into the mill after the upgrade. [Custom grinding ball migration](cycle-259.md)
 
-Keep the original enabled datapack when upgrading a world with an in-progress custom Soul Binder recipe. The port reads the Forge 6.2 `exp` and `souldata` fields and resolves the saved job by its original recipe ID. [Soul Binder migration](cycle-260.md)
+Keep the original enabled datapack when upgrading a world with an in-progress custom Soul Binder recipe. The port reads the Forge 6.2 `exp` and `souldata` fields and resolves the saved job by its original recipe ID. Copy-based tests cover every stock Soul Binder recipe shipped in 6.2.0-beta and 6.2.18-beta, including paid Powered Spawner rebinding in the later release. [Custom recipe migration](cycle-260.md), [Stock recipe migration](cycle-273.md)
 
 The [feature evidence matrix](features.md) identifies the state exercised by each fixture. The [completion audit](completion-audit.md) tracks the remaining verification work and the tested candidate artifacts.
