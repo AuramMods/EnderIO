@@ -86,6 +86,7 @@ public final class ClientSmoke {
             case "enchanter" -> new ClientEnchanterSmoke(false);
             case "enchanter-catalog" -> new ClientEnchanterCatalogSmoke();
             case "electromagnet" -> new ClientElectromagnetSmoke();
+            case "electromagnet-progression" -> new ClientElectromagnetProgressionSmoke();
             case "legacy-enchanter" -> new ClientEnchanterSmoke(true);
             case "legacy-auto-smelt" -> new ClientAutoSmeltSmoke();
             case "legacy-combat" -> new ClientLegacyCombatSmoke();
