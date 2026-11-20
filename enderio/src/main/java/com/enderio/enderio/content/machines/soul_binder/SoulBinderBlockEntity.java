@@ -251,6 +251,27 @@ public class SoulBinderBlockEntity extends PoweredMachineBlockEntity implements 
     protected PoweredCraftingMachineTask<SoulBindingRecipe, SoulBindingRecipe.Input> createTask(Level level,
             SoulBindingRecipe.Input container, @Nullable SoulBindingRecipe recipe) {
         return new PoweredCraftingMachineTask<>(level, getInventory(), getEnergyStorage(), container, OUTPUT, recipe) {
+            private ItemStack plannedVial = ItemStack.EMPTY;
+            private ItemStack plannedMaterial = ItemStack.EMPTY;
+
+            @Override
+            protected SoulBindingRecipe.Input getCurrentRecipeInput() {
+                return createRecipeInput();
+            }
+
+            @Override
+            protected boolean canReuseOutputs(SoulBindingRecipe.Input currentInput) {
+                return ItemStack.matches(plannedVial, currentInput.boundSoulItem())
+                        && ItemStack.matches(plannedMaterial, currentInput.itemToBind());
+            }
+
+            @Override
+            protected SoulBindingRecipe.Input prepareToDetermineOutputs(SoulBindingRecipe recipe, SoulBindingRecipe.Input input) {
+                // Both stacks can affect the bound result. Copy them before the menu or a hopper can replace them.
+                plannedVial = input.boundSoulItem().copy();
+                plannedMaterial = input.itemToBind().copy();
+                return input;
+            }
 
             @Override
             protected void consumeInputs(SoulBindingRecipe recipe) {

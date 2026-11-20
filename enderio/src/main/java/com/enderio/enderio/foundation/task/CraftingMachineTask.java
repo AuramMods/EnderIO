@@ -127,6 +127,14 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
 
     // region Overridable Events
 
+    protected T getCurrentRecipeInput() {
+        return recipeInput;
+    }
+
+    protected boolean canReuseOutputs(T currentInput) {
+        return true;
+    }
+
     /**
      * This is fired right before recipe outputs are determined for the task.
      */
@@ -151,7 +159,8 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
             return;
         }
 
-        if (!recipe.matches(recipeInput, level)) {
+        T currentInput = getCurrentRecipeInput();
+        if (!recipe.matches(currentInput, level)) {
             inventory.updateMachineState(MachineState.EMPTY_INPUT, true);
             isComplete = true;
             return;
@@ -159,9 +168,9 @@ public abstract class CraftingMachineTask<R extends MachineRecipe<T>, T extends 
         inventory.updateMachineState(MachineState.EMPTY_INPUT, false);
 
         // Get the outputs list.
-        if (!hasDeterminedOutputs) {
+        if (!hasDeterminedOutputs || !canReuseOutputs(currentInput)) {
             hasDeterminedOutputs = true;
-            T processedRecipeInput = prepareToDetermineOutputs(recipe, recipeInput);
+            T processedRecipeInput = prepareToDetermineOutputs(recipe, currentInput);
             outputs = recipe.craft(processedRecipeInput, level.registryAccess());
 
             // TODO: Compact any items that are the same into singular stacks?
