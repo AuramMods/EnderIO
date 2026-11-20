@@ -2,18 +2,14 @@
 """Test native aquatic spawning and Relocator destinations in packaged Forge."""
 
 import argparse
-from collections import Counter
 import json
 from math import floor
 from pathlib import Path
 import shutil
-import subprocess
 import sys
-import time
 
 sys.dont_write_bytecode = True
-from client.run_multiplayer import stop_client, wait_signal
-from packaged_natural_spawns import PLAYER, observations, set_mode
+from packaged_natural_spawns import PLAYER, sample_natural_spawns, set_mode, spawn_client_session
 from packaged_server_smoke import ROOT, digest
 from packaged_spawners import prepare_profile, run_stage
 
@@ -84,38 +80,8 @@ def clear_mobs(server):
 
 
 def phase(server, results, name, fish_outcome):
-    clear_mobs(server)
-    start = len(server.lines)
-    expected = {FISH: fish_outcome, AXOLOTL: "original"}
-    deadline = time.monotonic() + 30
-    clear_after = time.monotonic() + 5
-    server.command("gamerule doMobSpawning true")
-    try:
-        while True:
-            samples = observations(server, start, in_source, tuple(expected))
-            counts = Counter((entry["finalize"]["type"], outcome(entry)) for entry in samples if entry["join"] is not None)
-            wrong = any(expected[kind] != result for kind, result in counts)
-            if wrong or all(counts[entry] >= 3 for entry in expected.items()) or time.monotonic() >= deadline:
-                break
-            if server.process.poll() is not None:
-                raise RuntimeError(f"Forge quit during {name}. See {server.log_path}")
-            if time.monotonic() >= clear_after:
-                clear_mobs(server)
-                clear_after = time.monotonic() + 5
-            with server.condition:
-                server.condition.wait(timeout=0.15)
-    finally:
-        server.command("gamerule doMobSpawning false")
-
-    samples = observations(server, start, in_source, tuple(expected))
-    counts = Counter((entry["finalize"]["type"], outcome(entry)) for entry in samples)
-    passed = (all(counts[entry] >= 3 for entry in expected.items())
-              and all(expected[kind] == result for kind, result in counts))
-    results.append({"assertion": name, "passed": passed, "samples": samples,
-                    "counts": [{"type": kind, "outcome": result, "count": count}
-                               for (kind, result), count in sorted(counts.items())]})
-    if not passed:
-        raise AssertionError(f"{name}: observed {dict(counts)}. See {server.log_path}")
+    samples = sample_natural_spawns(server, results, name, {FISH: fish_outcome, AXOLOTL: "original"},
+                                   in_source, outcome, clear_mobs)
     sample = next(entry for entry in reversed(samples) if entry["finalize"]["type"] == FISH)
     pos = " ".join(str(floor(value)) for value in sample["join"]["position"])
     server.assert_state(f"{name}_confirms_native_fish_and_water",
@@ -140,27 +106,11 @@ def exercise(server, results, reopened):
 
 
 def client_session(args, server, report, reopened):
-    stage = "reopened" if reopened else "exercise"
-    evidence = ROOT / "build/port-evidence" / f"{args.name}-{stage}-client"
-    summary = evidence / "summary.json"
-    command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
-               "--launch", str(args.launch.resolve()), "--scenario", "natural-spawns",
-               "--server", f"127.0.0.1:{args.port}", "--output", str(evidence), "--timeout", "220"]
-    with (server.directory / f"aquatic-client-{stage}.log").open("w") as log:
-        client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-        try:
-            wait_signal(client, evidence, "connected")
-            server.command(f"tp {PLAYER} {STATION} -90 0")
-            exercise(server, report["assertions"], reopened)
-            (evidence / "server-verified").touch()
-            if client.wait(timeout=25) != 0:
-                raise AssertionError(f"Aquatic fixture client failed. See {evidence}")
-            frame = json.loads(summary.read_text())["client"]["frame"]
-            if digest(Path(frame["loadedMods"]["enderio"]["file"])) != report["jarSha256"]:
-                raise AssertionError("The client and server loaded different Ender IO jars")
-        finally:
-            stop_client(client)
-            report["clients"][stage] = json.loads(summary.read_text()) if summary.exists() else None
+    def connected():
+        server.command(f"tp {PLAYER} {STATION} -90 0")
+        exercise(server, report["assertions"], reopened)
+
+    spawn_client_session(args, server, report, "reopened" if reopened else "exercise", connected)
 
 
 def main():

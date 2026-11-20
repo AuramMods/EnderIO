@@ -8,6 +8,7 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import static java.util.Map.entry;
 
 /** Observes native spawn finalization and insertion without modifying either event. */
 public final class NaturalSpawnObserver {
@@ -52,6 +55,7 @@ public final class NaturalSpawnObserver {
     }
 
     private static boolean inFixture(Mob mob, Vec3 pos) {
+        if (inStriderFixture(mob, pos)) return true;
         if (!mob.level().dimension().equals(Level.OVERWORLD)
                 || pos.y < -60 || pos.y >= -55 || pos.z < 0 || pos.z >= 16) return false;
         var type = mob.getType();
@@ -61,17 +65,26 @@ public final class NaturalSpawnObserver {
         return (type == EntityType.TROPICAL_FISH || type == EntityType.AXOLOTL) && pos.x >= 5370 && pos.x < 5388;
     }
 
+    static boolean inStriderFixture(Mob mob, Vec3 pos) {
+        return mob.getType() == EntityType.STRIDER && mob.level().dimension().equals(Level.NETHER)
+            && pos.x >= 5428 && pos.x < 5452 && pos.y >= 1 && pos.y < 5 && pos.z >= 0 && pos.z < 32;
+    }
+
     private static void log(String observed, Mob mob, Vec3 origin, Vec3 position, boolean canceled) {
         var level = mob.level();
         var feet = BlockPos.containing(position);
         var floor = feet.below();
         boolean loaded = level.hasChunkAt(feet);
-        System.out.println("PORT_SPAWN " + JSON.toJson(Map.of("event", observed, "uuid", mob.getStringUUID(),
-            "type", BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString(),
-            "origin", coordinates(origin), "position", coordinates(position), "canceled", canceled,
-            "tick", level.getGameTime(), "blockLight", loaded ? level.getBrightness(LightLayer.BLOCK, feet) : -1,
-            "supported", loaded && level.getBlockState(floor).isFaceSturdy(level, floor, Direction.UP),
-            "inWater", loaded && level.getFluidState(feet).is(FluidTags.WATER))));
+        System.out.println("PORT_SPAWN " + JSON.toJson(Map.ofEntries(
+            entry("event", observed), entry("uuid", mob.getStringUUID()),
+            entry("type", BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString()),
+            entry("origin", coordinates(origin)), entry("position", coordinates(position)), entry("canceled", canceled),
+            entry("tick", level.getGameTime()), entry("blockLight", loaded ? level.getBrightness(LightLayer.BLOCK, feet) : -1),
+            entry("supported", loaded && level.getBlockState(floor).isFaceSturdy(level, floor, Direction.UP)),
+            entry("inWater", loaded && level.getFluidState(feet).is(FluidTags.WATER)),
+            entry("inLava", loaded && level.getFluidState(feet).is(FluidTags.LAVA)),
+            entry("dimension", level.dimension().location().toString()),
+            entry("placement", SpawnPlacements.getPlacementType(mob.getType()).name()))));
     }
 
     private static List<Double> coordinates(Vec3 pos) {

@@ -87,6 +87,63 @@ def observations(server, start, from_source=in_source, types=(ZOMBIE, SKELETON))
     return [{"finalize": attempt, "join": joins.get(uid), "teleport": teleports.get(uid)} for uid, attempt in attempts.items()]
 
 
+def sample_natural_spawns(server, results, name, expected, source, outcome, clear_mobs, timeout=30):
+    clear_mobs(server)
+    start = len(server.lines)
+    deadline = time.monotonic() + timeout
+    clear_after = time.monotonic() + 5
+    server.command("gamerule doMobSpawning true")
+    try:
+        while True:
+            samples = observations(server, start, source, tuple(expected))
+            counts = Counter((entry["finalize"]["type"], outcome(entry)) for entry in samples if entry["join"] is not None)
+            wrong = any(expected[kind] != result for kind, result in counts)
+            if wrong or all(counts[entry] >= 3 for entry in expected.items()) or time.monotonic() >= deadline:
+                break
+            if server.process.poll() is not None:
+                raise RuntimeError(f"Forge quit during {name}. See {server.log_path}")
+            if time.monotonic() >= clear_after:
+                clear_mobs(server)
+                clear_after = time.monotonic() + 5
+            with server.condition:
+                server.condition.wait(timeout=0.15)
+    finally:
+        server.command("gamerule doMobSpawning false")
+
+    samples = observations(server, start, source, tuple(expected))
+    counts = Counter((entry["finalize"]["type"], outcome(entry)) for entry in samples)
+    passed = (all(counts[entry] >= 3 for entry in expected.items())
+              and all(expected[kind] == result for kind, result in counts))
+    results.append({"assertion": name, "passed": passed, "samples": samples,
+                    "counts": [{"type": kind, "outcome": result, "count": count}
+                               for (kind, result), count in sorted(counts.items())]})
+    if not passed:
+        raise AssertionError(f"{name}: observed {dict(counts)}. See {server.log_path}")
+    return samples
+
+
+def spawn_client_session(args, server, report, stage, exercise):
+    evidence = ROOT / "build/port-evidence" / f"{args.name}-{stage}-client"
+    summary = evidence / "summary.json"
+    command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
+               "--launch", str(args.launch.resolve()), "--scenario", "natural-spawns",
+               "--server", f"127.0.0.1:{args.port}", "--output", str(evidence), "--timeout", "220"]
+    with (server.directory / f"spawn-client-{stage}.log").open("w") as log:
+        client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        try:
+            wait_signal(client, evidence, "connected")
+            exercise()
+            (evidence / "server-verified").touch()
+            if client.wait(timeout=25) != 0:
+                raise AssertionError(f"Natural spawn client failed. See {evidence}")
+            frame = json.loads(summary.read_text())["client"]["frame"]
+            if digest(Path(frame["loadedMods"]["enderio"]["file"])) != report["jarSha256"]:
+                raise AssertionError("The client and server loaded different Ender IO jars")
+        finally:
+            stop_client(client)
+            report["clients"][stage] = json.loads(summary.read_text()) if summary.exists() else None
+
+
 def outcome(observed):
     attempt, join, teleport = (observed[name] for name in ("finalize", "join", "teleport"))
     if attempt["tick"] != join["tick"] or attempt["position"] != join["position"]:
