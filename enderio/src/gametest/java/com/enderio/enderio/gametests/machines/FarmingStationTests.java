@@ -21,12 +21,13 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmBlock;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import java.util.List;
 import java.util.Map;
 
 public class FarmingStationTests {
+    private static final BlockPos WHEAT_PLOT = new BlockPos(2, 3, 1);
+
     @GameTest
     public static void blockedHarvestLeavesTheSeedAndOutputSlotsUntouched(GameplayTest test) {
         test.registerGameTestTemplate(() -> fixture(1, 1));
@@ -104,18 +105,16 @@ public class FarmingStationTests {
     @GameTest(timeoutTicks = 400)
     public static void poweredStationRetriesMatureWheatThenReplants(GameplayTest test) {
         var mature = ((CropBlock) Blocks.WHEAT).getStateForAge(7);
-        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(3, 2, 1)
-            .set(0, 1, 0, EIOBlocks.FARMING_STATION.get().defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, true))
-            .set(2, 1, 0, Blocks.GLOWSTONE.defaultBlockState()));
+        test.registerGameTestTemplate(FarmingStationTests::wheatFixture);
         test.onGameTest(EnderGameTestHelper.class, helper -> {
-            var machine = helper.getBlockEntity(0, 2, 0, FarmingStationBlockEntity.class);
-            var crop = new BlockPos(1, 2, 0);
+            var machine = helper.getBlockEntity(1, 3, 1, FarmingStationBlockEntity.class);
+            var crop = WHEAT_PLOT;
             helper.setBlock(crop.below(), Blocks.FARMLAND.defaultBlockState().setValue(FarmBlock.MOISTURE, 7));
             helper.setBlock(crop, mature);
             var seedSlot = machine.getSeedForPos(helper.absolutePos(crop.below()));
             var output = FarmingStationBlockEntity.OUTPUT.get(0);
             machine.setActionRange(new ActionRange(1, false));
-            helper.insertIntoContainer(0, 2, 0, EIOItems.BASIC_CAPACITOR.get(), 1);
+            helper.insertIntoContainer(1, 3, 1, EIOItems.BASIC_CAPACITOR.get(), 1);
             machine.getEnergyStorage().setEnergyStored(32000);
             seedSlot.setStackInSlot(machine, new ItemStack(Items.WHEAT_SEEDS, 8));
             fillOutputs(machine);
@@ -220,12 +219,10 @@ public class FarmingStationTests {
     @GameTest(timeoutTicks = 400)
     public static void stationCannotHarvestUntilACapacitorIsInstalled(GameplayTest test) {
         var mature = ((CropBlock) Blocks.WHEAT).getStateForAge(7);
-        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(3, 2, 1)
-            .set(0, 1, 0, EIOBlocks.FARMING_STATION.get().defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, true))
-            .set(2, 1, 0, Blocks.GLOWSTONE.defaultBlockState()));
+        test.registerGameTestTemplate(FarmingStationTests::wheatFixture);
         test.onGameTest(EnderGameTestHelper.class, helper -> {
-            var station = helper.getBlockEntity(0, 2, 0, FarmingStationBlockEntity.class);
-            var crop = new BlockPos(1, 2, 0);
+            var station = helper.getBlockEntity(1, 3, 1, FarmingStationBlockEntity.class);
+            var crop = WHEAT_PLOT;
             helper.setBlock(crop.below(), Blocks.FARMLAND.defaultBlockState().setValue(FarmBlock.MOISTURE, 7));
             helper.setBlock(crop, mature);
             station.setActionRange(new ActionRange(1, false));
@@ -234,13 +231,29 @@ public class FarmingStationTests {
                 .thenExecuteAfter(100, () -> {
                     helper.assertValueEqual(helper.getBlockState(crop), mature, "missing capacitor keeps the crop planted");
                     helper.assertTrue(output.getItemStack(station).isEmpty(), "the station cannot produce a free harvest");
-                    helper.insertIntoContainer(0, 2, 0, EIOItems.BASIC_CAPACITOR.get(), 1);
+                    helper.insertIntoContainer(1, 3, 1, EIOItems.BASIC_CAPACITOR.get(), 1);
                     station.getEnergyStorage().setEnergyStored(32000);
                 })
                 .thenWaitUntil(() -> helper.assertTrue(ItemStack.matches(output.getItemStack(station), new ItemStack(Items.WHEAT)),
                     "the very same plot can be harvested with a charged capacitor"))
                 .thenSucceed();
         });
+    }
+
+    private static FixtureBuilder wheatFixture() {
+        var stone = Blocks.STONE.defaultBlockState();
+        // Water is level with the farmland and contained under the light beside the crop.
+        return FixtureBuilder.withSize(5, 4, 3)
+            .set(1, 2, 1, EIOBlocks.FARMING_STATION.get().defaultBlockState())
+            .set(3, 2, 1, Blocks.GLOWSTONE.defaultBlockState())
+            .set(3, 1, 1, Blocks.WATER.defaultBlockState())
+            .set(3, 0, 1, stone)
+            .set(3, 1, 0, stone)
+            .set(3, 1, 2, stone)
+            .set(4, 1, 1, stone)
+            .set(2, 2, 0, Blocks.GLASS.defaultBlockState())
+            .set(2, 2, 2, Blocks.GLASS.defaultBlockState())
+            .set(2, 3, 1, Blocks.GLASS.defaultBlockState());
     }
 
     @GameTest(timeoutTicks = 450)

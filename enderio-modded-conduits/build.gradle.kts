@@ -111,7 +111,7 @@ dependencies {
 legacyForge {
     enable {
         forgeVersion = "1.20.1-${libs.versions.forge.get()}"
-        isDisableRecompilation = System.getenv("CI") == "true"
+        isDisableRecompilation = false
     }
 
     addModdingDependenciesTo(sourceSets.getByName("datagen"))
