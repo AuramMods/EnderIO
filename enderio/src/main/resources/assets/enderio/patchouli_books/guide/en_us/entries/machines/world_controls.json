@@ -1,0 +1,32 @@
+{
+  "name": "Weather and Sensors",
+  "icon": "enderio:weather_obelisk",
+  "category": "enderio:machines",
+  "sortnum": 11,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:weather_crystal"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:weather_obelisk"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Place the Weather Obelisk under open sky. Supply a Firework Rocket and 1,000 mB of the matching fluid. Use Cloud Seed for rain, Concentrated Cloud Seed for thunder, or Liquid Sunshine to clear the sky."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "If the obelisk waits, clear the blocks above it, check its redstone setting and verify both the rocket and fluid amount. Make the fluids in the $(l:enderio:machines/vat)VAT$(/l)."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:block_detector"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Aim the Block Detector’s sensor at the space to watch and connect a lamp or redstone circuit to the opposite side. A block in the watched space turns the signal on. Remove the block to test that it turns off."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Farming Station",
+  "icon": "enderio:farming_station",
+  "category": "enderio:machines",
+  "sortnum": 10,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:farming_station"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Install a capacitor and feed FE. Supply the task’s tools in the axe, hoe or shears slots and put seeds or saplings into the planting inventory. Use the range display and keep output storage clear."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Start with watered farmland, a hoe and Wheat Seeds. Once the crop grows, collect the harvest from the output and let the station replant. Use an axe and suitable clearance for a sapling farm."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A Farming Station can also use a bound soul for supported farm actions. Its standard crops and trees can be run with the proper tools, planting inputs and power."
+    }
+  ]
+}

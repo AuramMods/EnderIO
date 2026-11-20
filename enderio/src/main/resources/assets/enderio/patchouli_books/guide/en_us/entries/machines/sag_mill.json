@@ -1,0 +1,42 @@
+{
+  "name": "SAG Mill",
+  "icon": "enderio:sag_mill",
+  "category": "enderio:machines",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:sag_mill",
+      "text": "Install a capacitor and supply power. Put one processable block or item in the input."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:powdered_coal",
+      "title": "Milling Coal",
+      "text": "One Coal or Charcoal gives one Powdered Coal and a 10% chance of one extra for 2,400 FE. If a mod supplies sulfur dust, the stock recipe can also roll sulfur at 10%."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:silicon",
+      "title": "Silicon from Clay",
+      "text": "One Clay block yields two Clay Balls, with chances for an extra Clay Ball (10%) and two Silicon (80%). The base cost is 2,400 FE. Stock sand and redstone ore recipes can also produce Silicon."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "At the stock cost of 2,400 FE, one Iron Ore gives one Raw Iron, with a 33% chance of an extra Raw Iron and a 15% chance of Cobblestone. Ore and raw metal recipes can have different results."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:conductive_alloy_grinding_ball",
+      "title": "Conductive Grinding Ball"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Place a Grinding Ball or supported Flint in the ball slot to modify milling. Hover the ball to read its output, bonus and FE modifiers. It wears as recipes run. The worked recipes here use their unmodified costs and chances."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use separate extraction filters or leave a large barrel for the extra products. Even a low-chance bonus can fill its output slot and stop the next operation."
+    }
+  ]
+}

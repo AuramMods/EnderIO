@@ -1,0 +1,26 @@
+{
+  "name": "Enchanter",
+  "icon": "enderio:enchanter",
+  "category": "enderio:machines",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:enchanter"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Open the Enchanter and insert a Book and Quill, the catalyst for the enchantment, and Lapis Lazuli. More catalyst can produce a higher level where available. The result preview shows the enchantment and XP level cost."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:void_vial",
+      "title": "Mending Catalyst",
+      "text": "For Mending, use one empty Void Vial, one Book and Quill and 15 Lapis Lazuli at stock settings. Supply the preview’s XP level cost to take the book. Apply it with an anvil."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use JEI if installed to look up Enchanter catalysts and levels. The Enchanter consumes materials and player XP as you take the book, so compare prices in the menu first."
+    }
+  ]
+}

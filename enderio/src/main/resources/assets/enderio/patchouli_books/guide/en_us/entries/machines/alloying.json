@@ -1,0 +1,52 @@
+{
+  "name": "Alloy Smelting",
+  "icon": "enderio:alloy_smelter",
+  "category": "enderio:machines",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:alloy_smelter"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Install a capacitor and supply FE. The Smelting Mode control lets you select alloy recipes, furnace recipes, or both. Use the alloy mode for a dedicated alloy line and keep the output clear."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:energetic_alloy_ingot",
+      "title": "Energetic Alloy",
+      "text": "In the Alloy Smelter, combine one Conductive Alloy Ingot, one Gold Ingot and one Redstone Dust for two Energetic Alloy Ingots. The stock recipe costs 4,800 FE."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:vibrant_alloy_ingot",
+      "title": "Vibrant Alloy",
+      "text": "Combine one Energetic Alloy Ingot, one Ender Pearl and one Glowstone Dust for two Vibrant Alloy Ingots. The stock recipe costs 5,600 FE."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:pulsating_alloy_ingot",
+      "title": "Pulsating and Redstone",
+      "text": "One Iron Ingot and one Ender Pearl make two Pulsating Alloy Ingots for 4,800 FE. One Copper Ingot and one Redstone Dust make one Redstone Alloy Ingot for 3,200 FE."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:dark_steel_ingot",
+      "title": "Dark Steel",
+      "text": "One Iron Ingot, one Powdered Coal and one Obsidian make two Dark Steel Ingots for 3,200 FE. Run coal through a $(l:enderio:machines/sag_mill)SAG Mill$(/l) for the powder."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:end_steel_ingot",
+      "title": "End Steel and Soularium",
+      "text": "One End Stone, one Dark Steel Ingot and one Obsidian give two End Steel Ingots for 6,400 FE. For Soularium, one Gold Ingot plus one Soul Sand or Soul Soil gives one ingot for 5,600 FE."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:primitive_alloy_smelter",
+      "title": "Primitive Smelter",
+      "text": "In a world that already has a Primitive Alloy Smelter, supply furnace fuel. For one Conductive Alloy Ingot, use one Copper Ingot and one Silicon in this machine’s legacy recipe."
+    }
+  ]
+}

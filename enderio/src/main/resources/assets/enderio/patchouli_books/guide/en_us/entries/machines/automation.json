@@ -1,0 +1,24 @@
+{
+  "name": "Automating Machines",
+  "icon": "minecraft:hopper",
+  "category": "enderio:machines",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Install a capacitor in powered machines that have a capacitor slot. Connect FE and check the energy bar and redstone setting. Set an input face to Pull and an output face to Push when using the machine to move items."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "For a simple automated line, put a vanilla hopper over a Pull face and a barrel beside a Push face. Feed ingredients through the hopper and collect the result from the barrel. Use a separate face or path for power."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "If the machine keeps its result in the output slot, check the barrel’s space and the output face. A full or incompatible output can pause a paid job. Clear the obstruction to let it finish."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use $(l:enderio:conduits/item_filters)filters$(/l) when multiple products use one line. A machine’s item and fluid slots can take different inputs, so test an initial batch by hand before enabling a large feed."
+    }
+  ]
+}

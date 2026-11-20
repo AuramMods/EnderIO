@@ -1,0 +1,21 @@
+{
+  "name": "Painting Machine",
+  "icon": "enderio:painting_machine",
+  "category": "enderio:machines",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:painting_machine",
+      "text": "Power the machine and install a capacitor."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Place a valid template in the input slot and the block whose appearance you want in the paint slot. Use one vanilla Crafting Table and a Diamond Block to make one diamond-painted crafting table. A stock batch costs 2,400 FE."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The result keeps the template’s function. Paint fences, stairs, slabs, or other supported templates to match the room. For hidden routing, paint a $(l:enderio:conduits/facades)conduit facade$(/l). Separate the paint sample and input when feeding the slots."
+    }
+  ]
+}

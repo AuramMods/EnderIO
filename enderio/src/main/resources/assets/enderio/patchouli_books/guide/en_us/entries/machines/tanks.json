@@ -1,0 +1,36 @@
+{
+  "name": "Fluid Tanks",
+  "icon": "enderio:fluid_tank",
+  "category": "enderio:machines",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:fluid_tank",
+      "title": "Standard Tank"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:pressurized_fluid_tank",
+      "title": "Pressurized Tank"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The Standard Tank holds 16,000 mB and the Pressurized Tank holds 32,000 mB. A bucket is 1,000 mB. Open the menu to transfer with fluid containers and set individual faces for a pipe or machine."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Fill an Item",
+      "text": "For a tank filling recipe, put one Glass Bottle in a tank holding at least 250 mB of XP Juice. Take one Bottle o’ Enchanting from the output. A Stick and 1,000 mB of Nutrient Distillation make one Nutritious Stick."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Empty an Item",
+      "text": "For an emptying recipe, insert a Wet Sponge with room for 1,000 mB of water. The tank takes the water and returns a dry Sponge. Clear the result slot before processing another."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Chain a tank after the $(l:enderio:machines/vat)VAT$(/l) to buffer its liquid. Once the connection is in place, make a small batch and check that the tank accepts exactly that liquid."
+    }
+  ]
+}

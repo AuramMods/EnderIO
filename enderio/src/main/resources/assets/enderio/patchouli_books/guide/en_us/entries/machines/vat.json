@@ -1,0 +1,36 @@
+{
+  "name": "The VAT",
+  "icon": "enderio:vat",
+  "category": "enderio:machines",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:vat",
+      "text": "The VAT uses liquid and two solid reagents. It can ferment without an FE supply."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Put the base liquid in the input tank. Load the two reagent slots and check the batch result and quantity in the menu. The reagent choice changes yield. Leave space in the output tank and set its outlet to push into a compatible tank."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Liquid Sunshine",
+      "text": "For Liquid Sunshine, put 1,000 mB of water in the input tank and add one Glowstone Dust and one Torchflower. With stock reagent values this yields 300 mB in 200 ticks."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Liquid Darkness",
+      "text": "For Liquid Darkness, combine 500 mB of Liquid Sunshine, one Amethyst Shard and one Powdered Obsidian. At stock values this yields 1,000 mB in 600 ticks."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cloud Seed",
+      "text": "For Cloud Seed, use 1,000 mB of water, one Prismarine Shard and one Snowball. This makes 110 mB in 400 ticks by default. A block of Blue Ice in the cold reagent slot can yield much larger batches."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Feed liquid from a second tank or a $(l:enderio:conduits/fluids)fluid line$(/l). Use item filters to separate the solid reagents from the liquid path. Check redstone control and output space if a batch is waiting."
+    }
+  ]
+}

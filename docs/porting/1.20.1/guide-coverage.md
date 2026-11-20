@@ -7,7 +7,7 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 | Getting Started | Guide craft, fire and grains, starter parts, powered machines, conductive alloy and binders, first energy line | Six entries authored |
 | Power and Storage | Stirling fuel, capacitors, photovoltaics, banks, wired and wireless charging, energy tiers and sided transfer | Six entries authored |
 | Conduits and Filters | Placing and splitting bundles, item and fluid movement, redstone signals, upgrades and filters, facades, wrench and probe, worked networks | Nine entries authored |
-| Machines and Processing | Alloys and powders, mills and grinding balls, Slice’N’Splice, VAT, tanks and reservoirs, painting, Enchanter, Crafter, sorting and hoppers, farming and collection, weather and redstone controls | Pending |
+| Workshop Machines | Alloys and powders, mills and grinding balls, Slice’N’Splice, VAT, tanks, painting, Enchanter, Crafter and hoppers, farming and collection, weather and redstone controls | Twelve entries authored |
 | Souls and Obelisks | Vials, Soul Binder, soul components and fuels, Powered Spawner, XP, attraction, aversion, relocation and teleport inhibition | Pending |
 | Tools, Travel and Building | Travel blocks and staff, gliders and mobility, magnets, XP equipment and enchantments, utility and mobility items, painted and steel construction, fused glass, hidden redstone | Pending |
 | Integrations and Experiments | AE2, Mekanism, RS, LaserIO, CC:Tweaked, Jade, Curios, FTB Ultimine, JEI, Enderface and Niard settings and dependencies | Pending |
@@ -34,3 +34,9 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 - The reobfuscated jar contains three categories, 21 entries, 98 pages, 53 recipe references and 17 entry links. The packaged book runner with Patchouli alone passed 342 client checks and four dedicated server assertions, with 60 captures, exact matching artifacts, and a successful reload. Reviewed the chapter menu and representative filter layouts. The window observer recorded 2,957 samples and zero activation, foreground or onscreen observations. See `build/port-evidence/guide-cycle-003-conduits/`.
 - A real first login with Auram’s updated script saved a 40-book starter tome with its other entries and no Ender IO guide. The fixture’s client exited after login because its selected Terramity install lacked Caelus. Forge saved the inventory and stopped cleanly. See `build/port-runtime/guide-cycle-002-auram-login/first-login-inventory.json`. The independent Patchouli and JEI guide profiles completed successfully.
 - Next document alloying, grinding, slicing, fluid processing and the other workshop machines.
+
+## Cycle 004
+
+- Documented 12 workshop entries with live machine crafts and worked examples for alloying, milling, slicing, the VAT, tanks, painting, enchanting, crafting and batching. Included the legacy fuel-fired smelter, farming, collection, weather and block sensing.
+- The reobfuscated jar contains four categories, 33 entries, 162 pages, 71 live recipe references and 24 entry links. The guarded Patchouli-only tour passed 526 client checks and four server assertions with 96 captures. It exercised the second menu spread for Workshop Machines. Reviewed both chapter spreads and representative VAT and Slicer layouts. See `build/port-evidence/guide-cycle-004-machines/`.
+- Next verify the soul-binding recipes, Powered Spawner, Soul Engine and obelisk entries.

@@ -1,0 +1,6 @@
+{
+  "name": "Workshop Machines",
+  "description": "Turn basic materials into parts, run automated recipes, handle liquids and build a workshop that keeps running.",
+  "icon": "enderio:sag_mill",
+  "sortnum": 3
+}

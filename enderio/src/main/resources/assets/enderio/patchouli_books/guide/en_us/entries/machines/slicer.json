@@ -1,0 +1,33 @@
+{
+  "name": "Slice’N’Splice",
+  "icon": "enderio:slice_and_splice",
+  "category": "enderio:machines",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:slice_and_splice",
+      "text": "Add a capacitor, FE, an axe and shears. The tools wear as the machine finishes jobs."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:z_logic_controller",
+      "title": "Z-Logic Controller",
+      "text": "For one Z-Logic Controller, fill the top row with Soularium, a Zombie Head and Soularium. Fill the bottom row with Silicon, Redstone Dust and Silicon. This is a 20,000 FE job."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:ender_resonator",
+      "title": "Ender Resonator",
+      "text": "For one Ender Resonator, use Soularium, Enderman Head and Soularium on top. Put Silicon, Vibrant Alloy and Silicon below. It costs 20,000 FE and unlocks a wireless antenna."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The other stock parts are the Zombie Electrode, Skeletal Contractor and Guardian Diode. Match the six slots to the recipe pattern. Check the tool slots when the progress stops."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Feed a known recipe into a Pull face with a hopper and take the finished part from an output face. Use a $(l:enderio:machines/sag_mill)SAG Mill$(/l) upstream for Silicon."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Crafter and Batching",
+  "icon": "enderio:crafter",
+  "category": "enderio:machines",
+  "sortnum": 8,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:crafter"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Power the Crafter and install a capacitor. Set a crafting recipe in its ghost grid, then feed matching ingredients into the real slots. For four Sticks, set two planks vertically in the grid and supply the planks. Pull the finished sticks from the output."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:impulse_hopper"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use an Impulse Hopper to send measured batches. Install a capacitor and supply FE. Set each template lane to an item and quantity, then feed those items. All configured lanes move together only when there is a full batch and space for every output."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Try one lane for four Iron Ingots and another for one Redstone Dust. Below either threshold the machine waits. At stock settings this five-item batch costs 50 FE and releases the exact amounts together."
+    }
+  ]
+}

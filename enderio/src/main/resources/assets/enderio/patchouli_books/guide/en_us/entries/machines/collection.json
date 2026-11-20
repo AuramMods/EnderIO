@@ -1,0 +1,34 @@
+{
+  "name": "Vacuums and Drain",
+  "icon": "enderio:vacuum_chest",
+  "category": "enderio:machines",
+  "sortnum": 9,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:vacuum_chest"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:xp_vacuum"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A Vacuum Chest collects dropped items in range. Add an item filter to select the drops you want and send them to storage through an output face. An XP Vacuum gathers experience orbs and stores XP Juice for a tank or XP Obelisk."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:drain"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Install a capacitor and supply FE to the Drain. Adjust its search radius and use the range view to confirm the liquid source is inside. The Drain collects source fluid into its buffer. Configure a fluid outlet to a tank with room."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:industrial_insulation",
+      "title": "Industrial Insulation",
+      "text": "For one Industrial Insulation, alloy one Powdered Lapis, one Wool and one Iron Dust. It costs 3,200 FE. Place the block to clear nearby connected fluid when you need dry space."
+    }
+  ]
+}
