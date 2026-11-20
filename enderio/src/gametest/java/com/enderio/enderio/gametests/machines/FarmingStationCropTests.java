@@ -19,6 +19,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FarmBlock;
@@ -27,13 +28,14 @@ import net.minecraft.world.level.block.PitcherCropBlock;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.AABB;
 
+import java.util.function.Consumer;
+
 public class FarmingStationCropTests {
     private static final BlockPos PLOT = new BlockPos(1, 2, 1);
 
     @GameTest
     public static void pitcherPodGrowsBothHalvesAndWaitsForOutputSpace(GameplayTest test) {
-        test.registerGameTestTemplate(FarmingStationCropTests::fixture);
-        test.onGameTest(EnderGameTestHelper.class, helper -> {
+        onLitCropPlot(test, helper -> {
             var station = helper.getBlockEntity(0, 2, 1, FarmingStationBlockEntity.class);
             var soil = helper.absolutePos(PLOT.below());
             helper.setBlock(PLOT.below(), Blocks.FARMLAND.defaultBlockState().setValue(FarmBlock.MOISTURE, 7));
@@ -66,7 +68,6 @@ public class FarmingStationCropTests {
             helper.assertBlockPresent(Blocks.AIR, PLOT);
             helper.assertBlockPresent(Blocks.AIR, PLOT.above());
             helper.assertValueEqual(seeds.getItemStack(station).getCount(), 1, "the reserve stays intact");
-            helper.startSequence().thenSucceed();
         });
     }
 
@@ -115,8 +116,7 @@ public class FarmingStationCropTests {
 
     @GameTest
     public static void hoeTillsDirtBeforePlantingAndUsesItsLastDurability(GameplayTest test) {
-        test.registerGameTestTemplate(FarmingStationCropTests::fixture);
-        test.onGameTest(EnderGameTestHelper.class, helper -> {
+        onLitCropPlot(test, helper -> {
             var station = helper.getBlockEntity(0, 2, 1, FarmingStationBlockEntity.class);
             var soil = helper.absolutePos(PLOT.below());
             helper.setBlock(PLOT.below(), Blocks.DIRT);
@@ -136,14 +136,12 @@ public class FarmingStationCropTests {
             helper.assertValueEqual(PlantCropFarmTask.INSTANCE.process(soil, station), FarmInteraction.FINISHED, "the tilled plot is ready for a seed");
             helper.assertBlockPresent(Blocks.WHEAT, PLOT);
             helper.assertValueEqual(seeds.getItemStack(station).getCount(), 1, "planting leaves one seed reserved");
-            helper.startSequence().thenSucceed();
         });
     }
 
     @GameTest
     public static void torchflowerGrowsAndWaitsForRoomBeforeHarvest(GameplayTest test) {
-        test.registerGameTestTemplate(FarmingStationCropTests::fixture);
-        test.onGameTest(EnderGameTestHelper.class, helper -> {
+        onLitCropPlot(test, helper -> {
             var station = helper.getBlockEntity(0, 2, 1, FarmingStationBlockEntity.class);
             var soil = helper.absolutePos(PLOT.below());
             helper.setBlock(PLOT.below(), Blocks.FARMLAND);
@@ -164,7 +162,6 @@ public class FarmingStationCropTests {
             helper.assertValueEqual(HarvestFlower.INSTANCE.process(soil, station), FarmInteraction.FINISHED, "the flower can now be collected");
             helper.assertTrue(ItemStack.matches(output.getItemStack(station), new ItemStack(Items.TORCHFLOWER)), "one flower reaches the output");
             helper.assertValueEqual(seeds.getItemStack(station).getCount(), 1, "the reserve stays intact");
-            helper.startSequence().thenSucceed();
         });
     }
 
@@ -227,6 +224,16 @@ public class FarmingStationCropTests {
             }
             helper.startSequence().thenSucceed();
         });
+    }
+
+    private static void onLitCropPlot(GameplayTest test, Consumer<EnderGameTestHelper> scenario) {
+        test.registerGameTestTemplate(FarmingStationCropTests::fixture);
+        test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
+            .thenWaitUntil(() -> helper.assertTrue(
+                helper.getLevel().getBrightness(LightLayer.BLOCK, helper.absolutePos(PLOT)) >= 8,
+                "the fixture's glowstone has lit the crop plot"))
+            .thenExecute(() -> scenario.accept(helper))
+            .thenSucceed());
     }
 
     private static FixtureBuilder fixture() {

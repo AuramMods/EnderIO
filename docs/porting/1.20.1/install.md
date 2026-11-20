@@ -1,8 +1,10 @@
 # Ender IO for Minecraft Forge 1.20.1
 
-The port targets Minecraft 1.20.1, Forge 47.4.28 and Java 17. The tested Java distribution is Temurin 17.0.18. The core profile uses one Ender IO runtime jar. Its nested archives include EnderCore, Modded Conduits and GraphLib3 3.0.5. [Packaging evidence](cycle-272.md)
+The port targets Minecraft 1.20.1, Forge 47.4.28 and Java 17. The tested Java distribution is Temurin 17.0.18. The core profile uses one Ender IO runtime jar. Its nested archives include EnderCore, Modded Conduits and GraphLib3 3.0.5. [Packaging evidence](cycle-279.md)
 
 ## Install the runtime jar
+
+The verified runtime is `enderio-8.2.14.278-dev+8c0fe1b6d4.jar` from `8c0fe1b6d43b23db28f8029c84b3caf1e770fcf2`. The distribution record has the archive locations and SHA-256 checksums. [Verified distribution](cycle-279.md#distribution-archives)
 
 1. Create a Minecraft 1.20.1 instance with Forge 47.4.28 and configure its launcher to use Java 17. For a dedicated server, use the pinned Forge installer, then use its generated startup script.
 2. Put the main reobfuscated `enderio-<version>.jar` in the instance's `mods` directory. If upgrading an Ender IO installation, move the previous Ender IO jar to the backup first. The API, sources, standalone submodule and QA archives serve the build and tests.
@@ -22,7 +24,7 @@ Run from the port checkout with Java 17 active. The wrapper pins Gradle 9.8.2 an
 ./gradlew :enderio:reobfJar
 ```
 
-The runtime archive is in `enderio/build/libs`. To run the unit and native GameTest profiles without assembling every artifact, use `./gradlew check --continue`. The module `build/test-results` directories contain XML reports. Main gameplay coverage has a separate discovery list and an execution check. [Packaging comparison](cycle-272.md), [Main gameplay test suite](../../../enderio/src/gametest/README.md), [Registry test suite](../../../enderio/src/registryTest/README.md)
+The runtime archive is in `enderio/build/libs`. To run the unit and native GameTest profiles without assembling every artifact, use `./gradlew check --continue`. The module `build/test-results` directories contain XML reports. Main gameplay coverage has a separate discovery list and an execution check. [Packaging comparison](cycle-279.md), [Main gameplay test suite](../../../enderio/src/gametest/README.md), [Registry test suite](../../../enderio/src/registryTest/README.md)
 
 Use the [packaged server harness](packaged-server.md) for a clean dedicated Forge instance and the [guarded client harness](client-harness.md) for the matching client and TCP scenarios. The macOS guard verifies focus and window state independently of the game and keeps the isolated client's volumes and narrator off. The harness documentation gives the commands and evidence locations.
 
@@ -39,4 +41,4 @@ For a SAG Mill with an active custom Forge 6.2 grinding ball, include the origin
 
 Keep the original enabled datapack when upgrading a world with an in-progress custom Soul Binder recipe. The port reads the Forge 6.2 `exp` and `souldata` fields and resolves the saved job by its original recipe ID. Copy-based tests cover every stock Soul Binder recipe shipped in 6.2.0-beta and 6.2.18-beta, including paid Powered Spawner rebinding in the later release. [Custom recipe migration](cycle-260.md), [Stock recipe migration](cycle-273.md)
 
-The [feature evidence matrix](features.md) identifies the state exercised by each fixture. The [completion audit](completion-audit.md) tracks the remaining verification work and the tested candidate artifacts.
+The feature matrix identifies the state exercised by each fixture. The completion audit records the tested distribution and the target-platform adaptations. [Feature matrix](features.md), [Completion audit](completion-audit.md)

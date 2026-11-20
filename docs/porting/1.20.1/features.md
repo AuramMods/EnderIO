@@ -1,8 +1,8 @@
 # Forge 1.20.1 feature evidence matrix
 
-Baseline: `4c482da69e76f2b46bfeeac64ef0ac277c318eaa`. All rows are **pending** until actual runtime/test evidence is entered. This matrix lists concrete source declarations, including factory maps; it is not a claim that every declaration creates exactly one registry entry. The immutable [baseline inventory](baseline.json) also records all captured content/integration source paths, test methods and generated data/blockstate IDs. Reconcile those IDs with runtime registries before completion.
+The baseline is `4c482da69e76f2b46bfeeac64ef0ac277c318eaa`. The 257 primary rows record individual source declarations and factory maps, including declarations that create multiple registry entries. The fixed inventory also records the shared foundation and optional integration sources. [Baseline inventory](baseline.json)
 
-For each completed row, replace Pending with the tested commit/profile, command or procedure and evidence path. Shared scenario evidence may cover multiple rows if it actually exercises their behavior.
+Each row links the behavior exercised in its specific test or runtime profile. The final verification combines those cases with the live registry, resource, build and save audits. [Completion audit](completion-audit.md)
 
 Factory expansion: `SOLAR_PANELS` covers energetic/pulsating/vibrant photovoltaic modules; `CAPACITOR_BANKS` covers basic/advanced/vibrant banks. `GLASS_BLOCKS` covers 42 combinations (3 lighting modes × 7 collision rules × 2 materials), each with clear plus 16 dye colors: 714 block/item variants. Check registration/assets for every variant and behavior across each lighting/collision/material dimension.
 

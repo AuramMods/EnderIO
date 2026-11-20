@@ -18,6 +18,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
@@ -36,23 +37,14 @@ public class FireCraftingTests {
 
     private static final BlockPos FIRE_POS = new BlockPos(0, 2, 0);
     private static final BlockPos BASE_POS = new BlockPos(0, 1, 0);
+    private static final BlockPos VANILLA_FIRE_POS = new BlockPos(1, 2, 1);
 
     // Test-only infiniburn tags keep these recipe bases lit until the explicit
     // extinguish step. Vanilla random burnout can otherwise precede FIRE_MIN_AGE.
     @GameTest(timeoutTicks = 300)
     // Tests that fire on a valid base block produces item drops.
     public static void testFireBlockCraftingDrops(final GameplayTest test) {
-        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 2, 1)
-                .set(0, 0, 0, Blocks.GRANITE.defaultBlockState()));
-
-        test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
-                .thenExecute(() -> helper.setBlock(FIRE_POS, Blocks.FIRE.defaultBlockState()))
-                .thenExecuteAfter(BaseConfig.COMMON.INFINITY.FIRE_MIN_AGE.get() + 1, () -> helper.setBlock(FIRE_POS, Blocks.AIR.defaultBlockState()))
-                .thenExecute(() -> {
-                    helper.assertItemEntityPresent(EIOItems.GRAINS_OF_INFINITY.get(), FIRE_POS, 2.0);
-                    helper.assertBlockPresent(Blocks.GRANITE, BASE_POS);
-                })
-                .thenSucceed());
+        checkMatureVanillaFireDrops(test, Blocks.GRANITE, Blocks.GRANITE);
     }
 
     @GameTest(timeoutTicks = 300)
@@ -181,17 +173,37 @@ public class FireCraftingTests {
     @GameTest(timeoutTicks = 300)
     // Tests that fire on a valid base block produces item drops and changes the block below.
     public static void testFireBlockCraftingDropsAndBlockChange(final GameplayTest test) {
-        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 2, 1)
-                .set(0, 0, 0, Blocks.COBBLESTONE.defaultBlockState()));
+        checkMatureVanillaFireDrops(test, Blocks.COBBLESTONE, Blocks.STONE);
+    }
+
+    private static void checkMatureVanillaFireDrops(GameplayTest test, Block base, Block result) {
+        test.registerGameTestTemplate(() -> {
+            var fixture = FixtureBuilder.withSize(3, 3, 3);
+            var stone = Blocks.STONE.defaultBlockState();
+            for (int x = 0; x < 3; x++) {
+                for (int z = 0; z < 3; z++) {
+                    fixture.set(x, 0, z, stone);
+                    fixture.set(x, 2, z, stone);
+                }
+            }
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                fixture.set(1 + side.getStepX(), 1, 1 + side.getStepZ(), stone);
+            }
+            return fixture.set(1, 0, 1, base.defaultBlockState());
+        });
 
         test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
-                .thenExecute(() -> helper.setBlock(FIRE_POS, Blocks.FIRE.defaultBlockState()))
-                .thenExecuteAfter(BaseConfig.COMMON.INFINITY.FIRE_MIN_AGE.get() + 1, () -> helper.setBlock(FIRE_POS, Blocks.AIR.defaultBlockState()))
-                .thenExecute(() -> {
-                    helper.assertItemEntityPresent(EIOItems.GRAINS_OF_INFINITY.get(), FIRE_POS, 2.0);
-                    helper.assertBlockPresent(Blocks.STONE, BASE_POS);
-                })
-                .thenSucceed());
+            .thenExecute(() -> helper.setBlock(VANILLA_FIRE_POS, Blocks.FIRE))
+            .thenExecuteAfter(BaseConfig.COMMON.INFINITY.FIRE_MIN_AGE.get() + 1, () -> {
+                helper.assertBlockPresent(Blocks.FIRE, VANILLA_FIRE_POS);
+                helper.assertBlockPresent(base, VANILLA_FIRE_POS.below());
+                helper.setBlock(VANILLA_FIRE_POS, Blocks.AIR);
+            })
+            .thenExecute(() -> {
+                helper.assertItemEntityPresent(EIOItems.GRAINS_OF_INFINITY.get(), VANILLA_FIRE_POS, 0.5);
+                helper.assertBlockPresent(result, VANILLA_FIRE_POS.below());
+            })
+            .thenSucceed());
     }
 
     @GameTest
