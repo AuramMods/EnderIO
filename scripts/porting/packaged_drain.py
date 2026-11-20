@@ -25,8 +25,8 @@ OLD_CAPACITOR = '{Slot:0,id:"enderio:basic_capacitor",Count:1b}'
 ITEM_DATA = 'tag."enderio:data"'
 
 
-def tank_contents(amount, *, legacy=False):
-    stack = f'FluidName:"minecraft:lava",Amount:{amount}'
+def tank_contents(amount, *, legacy=False, fluid="minecraft:lava"):
+    stack = f'FluidName:"{fluid}",Amount:{amount}'
     if legacy:
         return f'Fluid:{{Tanks:[{{Index:0,{stack}}}]}}'
     return f'Fluids:{{Tanks:[{{Index:0,Contents:{{{stack}}}}}]}}'
