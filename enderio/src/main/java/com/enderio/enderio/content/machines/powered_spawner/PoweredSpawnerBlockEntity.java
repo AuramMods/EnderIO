@@ -320,6 +320,7 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
     public void bindSoul(Soul newSoul) {
         this.boundSoul = newSoul;
         taskHost.newTaskAvailable();
+        setChanged();
     }
 
     // TODO: I want a better way to handle this, but unsure what that could be.

@@ -81,6 +81,7 @@ public final class ClientSmoke {
             case "facade-dimensions" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.FORGE, true, true);
             case "facade-dimensions-embeddium" -> new ClientFacadeSmoke(ClientFacadeSmoke.Renderer.EMBEDDIUM, true, true);
             case "jade" -> new ClientJadeSmoke(true, true);
+            case "jade-souls" -> new ClientJadeSoulsSmoke();
             case "jade-client-only" -> new ClientJadeSmoke(true, false);
             case "jade-absent" -> new ClientJadeSmoke(false, false);
             case "ultimine" -> new ClientUltimineSmoke(true);

@@ -62,6 +62,10 @@ final class ClientJadeSmoke {
         observedOverlay = overlay;
     }
 
+    static Overlay overlayAt(BlockPos position) {
+        return position.equals(observedPosition) ? observedOverlay : null;
+    }
+
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
