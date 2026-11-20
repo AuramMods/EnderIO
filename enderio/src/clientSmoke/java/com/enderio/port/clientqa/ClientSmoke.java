@@ -83,6 +83,7 @@ public final class ClientSmoke {
             case "inventory-sorter" -> new ClientInventorySorterSmoke(true);
             case "inventory-sorter-absent" -> new ClientInventorySorterSmoke(false);
             case "enchanter" -> new ClientEnchanterSmoke(false);
+            case "enchanter-catalog" -> new ClientEnchanterCatalogSmoke();
             case "legacy-enchanter" -> new ClientEnchanterSmoke(true);
             case "legacy-auto-smelt" -> new ClientAutoSmeltSmoke();
             case "legacy-combat" -> new ClientLegacyCombatSmoke();
