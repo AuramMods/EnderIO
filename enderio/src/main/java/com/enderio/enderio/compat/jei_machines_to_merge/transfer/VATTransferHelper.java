@@ -3,10 +3,12 @@ package com.enderio.enderio.compat.jei_machines_to_merge.transfer;
 import com.enderio.enderio.compat.jei_machines_to_merge.category.VATCategory;
 import com.enderio.enderio.content.machines.vat.FermentingRecipe;
 import com.enderio.enderio.content.machines.vat.VatMenu;
+import com.enderio.enderio.foundation.network.EIONetwork;
 import com.enderio.enderio.foundation.network.packets.ServerboundTransferItemsPacket;
 import com.enderio.enderio.init.EIOMenus;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
@@ -16,8 +18,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.fluids.FluidStack;
-import com.enderio.enderio.foundation.network.EIONetwork;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -50,42 +50,57 @@ public class VATTransferHelper implements IRecipeTransferHandler<VatMenu, Fermen
     @Override
     public @Nullable IRecipeTransferError transferRecipe(VatMenu container, FermentingRecipe recipe, IRecipeSlotsView recipeSlots, Player player,
         boolean maxTransfer, boolean doTransfer) {
+        var tank = container.getInputTank();
+        boolean missingFluid = tank == null || !recipe.input().test(tank.contents());
+        var first = Ingredient.of(recipe.firstReagent());
+        var second = Ingredient.of(recipe.secondReagent());
+        var left = container.getSlot(VatMenu.INPUTS_INDEX).getItem();
+        var right = container.getSlot(VatMenu.INPUTS_INDEX + 1).getItem();
+        boolean reversed = !(fits(left, first) && fits(right, second)) && fits(left, second) && fits(right, first);
+        var firstInput = new Reagent(first, reversed ? right : left, player.getInventory().items.stream().anyMatch(first::test));
+        var secondInput = new Reagent(second, reversed ? left : right, player.getInventory().items.stream().anyMatch(second::test));
+        boolean missingFirst = firstInput.isMissing();
+        boolean missingSecond = secondInput.isMissing();
 
-        boolean hasFluid = recipe.input().ingredient().test(new FluidStack(container.getInputTank().contents().getFluid(), container.getInputTank().contents().getAmount()));
-        boolean hasLeft = container.slots.get(VatMenu.INPUTS_INDEX).getItem().is(recipe.firstReagent());
-        boolean hasRight = container.slots.get(VatMenu.INPUTS_INDEX + 1).getItem().is(recipe.secondReagent());
-        Ingredient left = getIngredientItem(player, Ingredient.of(recipe.firstReagent()));
-        Ingredient right = getIngredientItem(player, Ingredient.of(recipe.secondReagent()));
-
-        if (!hasLeft || !hasRight || !hasFluid) {
-            Component message = Component.translatable("jei.tooltip.error.recipe.transfer.missing");
-            List<IRecipeSlotView> empty = new ArrayList<>();
-            if (!hasLeft && left.isEmpty()) {
-                empty.add(recipeSlots.getSlotViews().get(VatMenu.INPUTS_INDEX));
+        if (missingFirst || missingSecond || missingFluid) {
+            var inputs = recipeSlots.getSlotViews(RecipeIngredientRole.INPUT);
+            List<IRecipeSlotView> missing = new ArrayList<>(3);
+            if (missingFirst) {
+                missing.add(inputs.get(0));
             }
-            if (!hasRight && right.isEmpty()) {
-                empty.add(recipeSlots.getSlotViews().get(VatMenu.INPUTS_INDEX + 1));
+            if (missingSecond) {
+                missing.add(inputs.get(1));
             }
-            if (!hasFluid) {
-                empty.add(recipeSlots.getSlotViews().get(VatMenu.INPUTS_INDEX + 2));
+            if (missingFluid) {
+                missing.add(inputs.get(2));
             }
-            if (!empty.isEmpty()) {
-                return handlerHelper.createUserErrorForMissingSlots(message, empty);
-            }
+            return handlerHelper.createUserErrorForMissingSlots(
+                Component.translatable("jei.tooltip.error.recipe.transfer.missing"), missing);
         }
 
         if (doTransfer) {
-            EIONetwork.sendToServer(new ServerboundTransferItemsPacket(container.containerId, List.of(left, right), VatMenu.INPUTS_INDEX,VatMenu.LAST_INDEX + 1, maxTransfer));
+            var firstTransfer = firstInput.toTransfer(maxTransfer);
+            var secondTransfer = secondInput.toTransfer(maxTransfer);
+            if (!firstTransfer.isEmpty() || !secondTransfer.isEmpty()) {
+                var inputs = reversed ? List.of(secondTransfer, firstTransfer) : List.of(firstTransfer, secondTransfer);
+                EIONetwork.sendToServer(new ServerboundTransferItemsPacket(
+                    container.containerId, inputs, VatMenu.INPUTS_INDEX, VatMenu.LAST_INDEX + 1, maxTransfer));
+            }
         }
         return null;
     }
 
-    private Ingredient getIngredientItem(Player player, Ingredient ingredient) {
-        for (var item : player.getInventory().items) {
-            if (ingredient.test(item)) {
-                return ingredient;
-            }
+    private static boolean fits(ItemStack current, Ingredient ingredient) {
+        return current.isEmpty() || ingredient.test(current);
+    }
+
+    private record Reagent(Ingredient ingredient, ItemStack current, boolean available) {
+        boolean isMissing() {
+            return current.isEmpty() ? !available : !ingredient.test(current);
         }
-        return Ingredient.of(ItemStack.EMPTY);
+
+        Ingredient toTransfer(boolean maximum) {
+            return available && (current.isEmpty() || maximum) ? ingredient : Ingredient.EMPTY;
+        }
     }
 }

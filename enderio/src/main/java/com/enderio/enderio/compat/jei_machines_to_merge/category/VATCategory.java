@@ -8,7 +8,9 @@ import com.enderio.enderio.compat.jei_machines_to_merge.util.MachineRecipeCatego
 import com.enderio.enderio.content.machines.vat.FermentingRecipe;
 import com.enderio.enderio.content.machines.vat.VatBlockEntity;
 import com.enderio.enderio.foundation.datamap.VatReagent;
+import com.enderio.enderio.foundation.util.SizedFluidIngredientHelper;
 import com.enderio.enderio.init.EIOBlocks;
+import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
@@ -24,6 +26,8 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
 public class VATCategory extends MachineRecipeCategory<FermentingRecipe> {
@@ -71,14 +75,16 @@ public class VATCategory extends MachineRecipeCategory<FermentingRecipe> {
                 .addTooltipCallback((recipeSlotView, tooltip) -> tooltip.add(Component.literal("x"
                         + getModifier(recipeSlotView.getDisplayedItemStack().get(), recipe.secondReagent()))));
 
-        for (var fluid : recipe.input().getFluids()) {
-            builder.addSlot(RecipeIngredientRole.INPUT, 2, 2)
-                    .addFluidStack(fluid.getFluid(), recipe.input().amount())
-                    .setFluidRenderer(VatBlockEntity.TANK_CAPACITY, false, 15, 47);
-        }
+        var fluidChoices = SizedFluidIngredientHelper.getFluidStacksInPreferredOrder(recipe.input()).stream()
+                .filter(stack -> !(stack.getFluid() instanceof FlowingFluid flowing) || stack.getFluid() == flowing.getSource()
+                        || !recipe.input().test(new FluidStack(flowing.getSource(), stack.getAmount())))
+                .toList();
+        builder.addSlot(RecipeIngredientRole.INPUT, 2, 2)
+                .addIngredients(ForgeTypes.FLUID_STACK, fluidChoices)
+                .setFluidRenderer(VatBlockEntity.TANK_CAPACITY, false, 15, 47);
 
         builder.addSlot(RecipeIngredientRole.OUTPUT, 104, 2)
-                .addFluidStack(recipe.output().getFluid(), (long) (recipe.output().getAmount()))
+                .addIngredient(ForgeTypes.FLUID_STACK, recipe.output().copy())
                 .setFluidRenderer(VatBlockEntity.TANK_CAPACITY, false, 15, 47);
     }
 
