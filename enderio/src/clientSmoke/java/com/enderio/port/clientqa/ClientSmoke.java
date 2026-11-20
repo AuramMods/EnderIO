@@ -105,6 +105,8 @@ public final class ClientSmoke {
             case "inventory-sorter-absent" -> new ClientInventorySorterSmoke(false);
             case "enchanter" -> new ClientEnchanterSmoke(false);
             case "enchanter-catalog" -> new ClientEnchanterCatalogSmoke();
+            case "enchanter-presentation-core" -> new ClientEnchanterPresentationSmoke(false);
+            case "enchanter-presentation-embeddium" -> new ClientEnchanterPresentationSmoke(true);
             case "electromagnet" -> new ClientElectromagnetSmoke();
             case "electromagnet-progression" -> new ClientElectromagnetProgressionSmoke();
             case "legacy-enchanter" -> new ClientEnchanterSmoke(true);
