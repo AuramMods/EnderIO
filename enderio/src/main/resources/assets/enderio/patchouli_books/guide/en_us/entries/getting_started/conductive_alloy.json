@@ -1,5 +1,5 @@
 {
-  "name": "Conductive Alloy and Binder",
+  "name": "Alloy and Binder",
   "icon": "enderio:conductive_alloy_ingot",
   "category": "enderio:getting_started",
   "sortnum": 4,
@@ -12,7 +12,13 @@
     {
       "type": "patchouli:crafting",
       "recipe": "enderio:conduit_binder_composite",
-      "text": "Smelt the composite in a furnace or blast furnace. Each composite makes two Conduit Binders. Save six binders and three Conductive Alloy Ingots for $(l:enderio:getting_started/first_energy_line)Energy Conduits$(/l)."
+      "title": "Binder Composite",
+      "text": "Smelt the composite in a furnace or blast furnace."
+    },
+    {
+      "type": "patchouli:smelting",
+      "recipe": "enderio:conduit_binder_from_smelting",
+      "text": "Save six binders and three Conductive Alloy Ingots for $(l:enderio:getting_started/first_energy_line)Energy Conduits$(/l)."
     }
   ]
 }

@@ -1,0 +1,6 @@
+{
+  "name": "Power and Storage",
+  "description": "Generate Forge Energy, buffer it between machines, and charge tools.",
+  "icon": "enderio:basic_capacitor_bank",
+  "sortnum": 1
+}

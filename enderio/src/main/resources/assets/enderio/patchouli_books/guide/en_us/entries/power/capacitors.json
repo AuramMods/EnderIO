@@ -1,0 +1,28 @@
+{
+  "name": "Machine Capacitors",
+  "icon": "enderio:double_layer_capacitor",
+  "category": "enderio:power",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:basic_capacitor",
+      "text": "Put a Basic Capacitor into the upgrade slot of a machine that requires one."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:double_layer_capacitor",
+      "recipe2": "enderio:octadic_capacitor"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Double-Layer and Octadic Capacitors raise the capacitor level to 2 and 3. Machines use that level differently. An upgrade can change processing speed, power cost, fuel efficiency or buffer size. Compare the displayed stats after installing it."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:loot_capacitor",
+      "title": "Loot Capacitors",
+      "text": "Loot Capacitors have individual modifiers. Read the tooltip and try the capacitor in the intended machine to see which values it changes."
+    }
+  ]
+}

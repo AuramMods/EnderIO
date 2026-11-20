@@ -1,0 +1,20 @@
+{
+  "name": "Stirling Generator",
+  "icon": "enderio:stirling_generator",
+  "category": "enderio:power",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:stirling_generator"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Install a capacitor and supply a solid furnace fuel such as coal or charcoal. The generator ignites fresh fuel when its buffer has room and the redstone setting allows it. Fuel that leaves a container, such as a lava bucket, stays out of the fuel slot."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Point a Push face toward a machine that accepts FE, or connect an Energy Conduit. A burning fuel item keeps ticking down if the buffer fills or a redstone signal prevents new fuel from starting. Add a $(l:enderio:power/banks)Capacitor Bank$(/l) to store more of a burn between jobs."
+    }
+  ]
+}

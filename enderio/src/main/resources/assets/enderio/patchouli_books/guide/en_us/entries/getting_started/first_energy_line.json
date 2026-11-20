@@ -15,7 +15,7 @@
     },
     {
       "type": "patchouli:text",
-      "text": "Testing a new line between machines that already touch? Set the direct faces to Disabled so power has to travel through the conduit. If the bar stays empty, check the fuel, both capacitors, the machine faces, and whether the endpoints connect."
+      "text": "Testing the line between machines that already touch? Disable the touching faces to send power through the conduit. See $(l:enderio:power/energy_transfer)Moving Energy$(/l) for more on face settings and conduit tiers."
     }
   ]
 }

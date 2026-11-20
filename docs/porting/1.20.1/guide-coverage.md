@@ -5,7 +5,7 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 | Chapter | Coverage to verify | Status |
 | --- | --- | --- |
 | Getting Started | Guide craft, fire and grains, starter parts, powered machines, conductive alloy and binders, first energy line | Six entries authored |
-| Power and Storage | Stirling fuel, capacitors, photovoltaics, banks, wired and wireless charging, energy tiers and sided transfer | Pending |
+| Power and Storage | Stirling fuel, capacitors, photovoltaics, banks, wired and wireless charging, energy tiers and sided transfer | Six entries authored |
 | Conduits and Filters | Placing and splitting bundles, item and fluid movement, redstone signals, upgrades and filters, facades, wrench and probe, worked networks | Pending |
 | Machines and Processing | Alloys and powders, mills and grinding balls, Slice’N’Splice, VAT, tanks and reservoirs, painting, Enchanter, Crafter, sorting and hoppers, farming and collection, weather and redstone controls | Pending |
 | Souls and Obelisks | Vials, Soul Binder, soul components and fuels, Powered Spawner, XP, attraction, aversion, relocation and teleport inhibition | Pending |
@@ -19,3 +19,11 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 - Java 17 data generation and Forge 47.4.10 assembly passed. The reobfuscated jar contains one category, six entries, 14 pages, eight recipe references and five entry links. The book resources matched the source JSON, both title keys resolved in the packaged English file, and all linked entries and recipes were present.
 - The candidate booted and stopped cleanly in disposable Forge 47.4.10 dedicated servers with and without Patchouli 1.20.1-84.1-forge. The build, packaged resource assertions and startup report are in `build/port-evidence/guide-cycle-001/`.
 - Next verify the actual survival craft, tooltip and starter pages in the guarded client, then document power and storage. The visual review, resource reload, JEI profile and Auram deployment are pending.
+
+## Cycle 002
+
+- Added Power and Storage with six entries, including a worked bank buffer, photovoltaic plates, antenna range and the difference between accessible bank faces and faces that push power. Added a recipe-backed furnace page for the starter binder. The shipped book has 12 entries, 46 pages, 26 live recipe references and ten entry links.
+- Added `scripts/porting/packaged_enderio_guide.py` to craft the guide in a real survival inventory and visit each entry through Patchouli’s UI. It checks the translated tooltip and landing text, active recipe cards, page layout, an inline link, and reopening after resource reload. Both dedicated peers use the same artifacts.
+- The Patchouli-only run passed 147 client checks and four server assertions. Image review found several long recipe headings, which now use shorter titles. The subsequent Patchouli and JEI 15.20.0.129 run passed 177 client checks and four server assertions, with 31 captures and no runtime errors. Both runs recorded zero activation, foreground or onscreen samples and verified muted sound, narrator off and no cursor capture. See `build/port-evidence/guide-cycle-002-power-final/` and `build/port-evidence/guide-cycle-002-power-jei/`.
+- A fresh survival player received no Ender IO guide in the stock profile. Auram separately stops including the guide in its first-login tome while retaining it in the crafted tome. The CraftTweaker 14.0.59 run verified both tome variants and checked that the starter still contains its Botania entry. See Auram commit `73779d1` and `build/port-runtime/guide-cycle-002-auram-tome-retry/logs/crafttweaker.log`.
+- Next exercise the conduit chapter, then add machine processing.

@@ -1,0 +1,35 @@
+{
+  "name": "Capacitor Banks",
+  "icon": "enderio:basic_capacitor_bank",
+  "category": "enderio:power",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:basic_capacitor_bank",
+      "text": "Place a bank between a generator and a machine to buffer energy."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:advanced_capacitor_bank",
+      "title": "Advanced Bank"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:vibrant_capacitor_bank_upgrade",
+      "title": "Vibrant Bank"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The default capacities per block are 500,000 FE for Basic, 2,000,000 FE for Advanced and 4,000,000 FE for Vibrant. Touch banks face to face to combine their capacity, including banks of different tiers. Open the controller to read the stored and transferred FE."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "For a simple buffer, put a generator on one side and a machine on the other. Set the generator to Push and the receiving face of the bank to Pull. Set the bank’s machine-facing side to Push. Use a side or bottom face for active bank output."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A blank bank face can receive and supply energy through a connected block. Set that face to Push or Push / Pull to have the bank actively send power. Use Disabled to disconnect a face."
+    }
+  ]
+}

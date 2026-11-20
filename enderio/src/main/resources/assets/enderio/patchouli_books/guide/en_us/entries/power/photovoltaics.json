@@ -1,0 +1,38 @@
+{
+  "name": "Photovoltaic Modules",
+  "icon": "enderio:energetic_photovoltaic_module",
+  "category": "enderio:power",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:energetic_photovoltaic_module",
+      "title": "Energetic Module",
+      "text": "Start an outdoor array with an Energetic Photovoltaic Module."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:photovoltaic_composite",
+      "title": "Panel Composite",
+      "text": "Smelt two composites together for one Photovoltaic Plate. Each batch uses 5,600 FE in the Alloy Smelter."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:pulsating_photovoltaic_module",
+      "title": "Pulsating Module"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:vibrant_photovoltaic_module",
+      "title": "Vibrant Module"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "With clear sky at midday, Energetic, Pulsating and Vibrant modules peak at 4, 16 and 64 FE/t by default. Adjacent modules on the same level share a buffer. Take FE from the side or below and store the daytime surplus in a $(l:enderio:power/banks)bank$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Liquid Sunshine beside a daytime module gives full output, even under a roof. A module bound to a Phantom generates at night instead. Place Liquid Darkness beside that module for full output. Prepare the binding in a Soul Binder."
+    }
+  ]
+}

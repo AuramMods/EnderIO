@@ -68,8 +68,9 @@ public final class ClientSmoke {
             case "fluid-buckets-collect" -> new ClientFluidBucketsSmoke(true);
             case "machine-resets" -> new ClientMachineResetSmoke();
             case "weather-jei" -> new ClientWeatherJeiSmoke();
-            case "laserio-guide-craft" -> new ClientLaserGuideSmoke(false);
-            case "laserio-guide-reopen" -> new ClientLaserGuideSmoke(true);
+            case "laserio-guide-craft" -> new ClientPatchouliGuideSmoke(ClientPatchouliGuideSmoke.Guide.LASERIO, false);
+            case "laserio-guide-reopen" -> new ClientPatchouliGuideSmoke(ClientPatchouliGuideSmoke.Guide.LASERIO, true);
+            case "enderio-guide" -> new ClientPatchouliGuideSmoke(ClientPatchouliGuideSmoke.Guide.ENDER_IO, false);
             case "laserio-editor" -> new ClientLaserIOEditorSmoke();
             case "painting-machine" -> new ClientPaintingMachineSmoke();
             case "painted-sand" -> new ClientPaintedSandSmoke();

@@ -1,0 +1,35 @@
+{
+  "name": "Moving Energy",
+  "icon": "minecraft:redstone",
+  "category": "enderio:power",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Open IO Configuration on each machine. Use Push on the face of a producer and Pull on the face of a consumer. Push / Pull permits both directions where supported. Disabled disconnects the face. Check both ends of the path."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:enhanced_energy_conduit",
+      "title": "Energetic Conduit"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:ender_energy_conduit",
+      "title": "Vibrant Conduit"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The stock transfer limits are 8,000 FE/t for Energy, 48,000 for Energetic and 192,000 for Vibrant Energy Conduits. Mixed tiers connect by default, with the slowest segment limiting the path. Upgrade a placed segment by using the higher tier on it."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "If the machine’s bar stays empty, check that its capacitor is installed and that the source has stored FE. In the conduit endpoint menu, enable extraction at the source and insertion at the machine. Check the extraction redstone mode if transfer still waits."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:creative_power",
+      "text": "Creative Power supplies FE in a creative test setup. For survival, use a $(l:enderio:power/stirling)Stirling Generator$(/l) or $(l:enderio:power/photovoltaics)photovoltaic modules$(/l)."
+    }
+  ]
+}

@@ -12,7 +12,7 @@
     {
       "type": "patchouli:crafting",
       "recipe": "enderio:basic_capacitor",
-      "text": "Make four Iron Gears, two Void Chassis, and two Basic Capacitors for your $(l:enderio:getting_started/first_machines)first machines$(/l). Keep the capacitors for the machines’ upgrade slots."
+      "text": "Make four Infinity Bimetal Gears, two Void Chassis, and two Basic Capacitors for your $(l:enderio:getting_started/first_machines)first machines$(/l). Keep the capacitors for the machines’ upgrade slots."
     }
   ]
 }

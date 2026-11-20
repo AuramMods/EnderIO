@@ -1,0 +1,35 @@
+{
+  "name": "Charging Tools",
+  "icon": "enderio:wired_charger",
+  "category": "enderio:power",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:wired_charger",
+      "recipe2": "enderio:wireless_charger"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Install a capacitor in the charger and supply FE. Insert a chargeable item into the Wired Charger. The item moves into the output slot when full. Clear the output before inserting another tool."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The Wireless Charger tops up chargeable items in nearby players’ inventories. With Curios installed it can charge equipped curios too. Give it steady power for upkeep and use the range display to see where your tools will charge."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:wireless_charger_antenna",
+      "title": "Pulsating Antenna"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:wireless_charger_antenna_advanced",
+      "title": "Vibrant Antenna"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Place one antenna directly above the Wireless Charger. With default values, the Pulsating antenna adds 16 blocks and the Vibrant antenna adds 32 to the base range of 16. Change the active range in the charger’s menu."
+    }
+  ]
+}
