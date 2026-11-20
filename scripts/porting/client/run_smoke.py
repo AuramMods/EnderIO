@@ -48,7 +48,7 @@ parser.add_argument("--scenario",
                              "glass-progression", "alloy-progression", "crystal-progression", "advanced-components",
                              "antenna-progression", "ender-skull", "legacy-ender-skull",
                              "wireless-charge", "curios", "solar-wired", "photovoltaic-progression", "photovoltaic-upgrades", "solar-carry",
-                             "pearl-powder",
+                             "pearl-powder", "creative-tab",
                              "capacitor-bank", "capacitor-bank-carry"),
                     default="title")
 parser.add_argument("--tank", choices=("standard", "pressurized"), default="standard")

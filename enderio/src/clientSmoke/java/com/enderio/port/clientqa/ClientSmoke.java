@@ -156,6 +156,7 @@ public final class ClientSmoke {
             case "photovoltaic-progression" -> new ClientPhotovoltaicProgressionSmoke();
             case "photovoltaic-upgrades" -> new ClientPhotovoltaicUpgradesSmoke();
             case "pearl-powder" -> new ClientPearlPowderSmoke();
+            case "creative-tab" -> new ClientCreativeTabSmoke();
             case "solar-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.SOLAR);
             case "capacitor-bank-carry" -> new ClientBlockCarrySmoke(ClientBlockCarrySmoke.Scenario.CAPACITOR_BANK);
             case "capacitor-bank" -> new ClientCapacitorBankSmoke();
