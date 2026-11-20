@@ -30,6 +30,7 @@ public final class ClientSmoke {
         switch (System.getProperty("enderio.clientqa.scenario", "title")) {
             case "model-inventory" -> new ClientModelInventorySmoke();
             case "xp-tools" -> new ClientXpToolsSmoke();
+            case "gameplay-particles" -> new ClientGameplayParticlesSmoke();
             case "xp-tool-crafting" -> new ClientXpCraftingSmoke(false);
             case "special-enderios" -> new ClientXpCraftingSmoke(true);
             case "singleplayer" -> new ClientWorldSmoke();
