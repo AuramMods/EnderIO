@@ -1,0 +1,20 @@
+{
+  "name": "Experience Tools",
+  "icon": "enderio:experience_rod",
+  "category": "enderio:tools",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:experience_rod"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use the Experience Rod on an XP tank to withdraw experience. Sneak-use it to deposit yours. Select the quantity in its mode controls and try a small transfer first. Check the tank’s space when depositing."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The $(l:enderio:souls/vials)Void Vial$(/l) stores experience in your inventory. For a larger workshop setup, move liquid XP between the $(l:enderio:souls/xp)XP Obelisk$(/l), an XP Vacuum and a Fluid Tank."
+    }
+  ]
+}

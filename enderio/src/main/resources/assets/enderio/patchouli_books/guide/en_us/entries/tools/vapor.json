@@ -1,0 +1,27 @@
+{
+  "name": "Vapor of Levity",
+  "icon": "enderio:prescient_powder",
+  "category": "enderio:tools",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Nutrient Distillation",
+      "text": "Make Nutrient Distillation in the VAT with 1,000 mB of water, one piece of Beef and a crop such as Wheat. With the stock base reagents a batch makes 250 mB. Save 4,000 mB for the next step."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Dew of the Void",
+      "text": "Use the SAG Mill to make Grains of Piezallity from a Pulsating Crystal and Grains of the End from an Ender Crystal. Ferment one of each with 4,000 mB of Nutrient Distillation for 1,000 mB of Dew of the Void in 400 ticks."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Vapor of Levity",
+      "text": "Grind a Prescient Crystal for Grains of Prescience. Then ferment one of those grains and one Grain of Piezallity with 1,000 mB of Dew of the Void. The stock recipe makes 1,000 mB of Vapor of Levity in 400 ticks."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Each crystal mill job costs 2,400 FE and yields one powder. Pipe the finished Vapor to a tank or use the tool on a compatible fluid store. See $(l:enderio:machines/vat)The VAT$(/l) for fluid routing."
+    }
+  ]
+}

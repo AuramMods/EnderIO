@@ -1,0 +1,26 @@
+{
+  "name": "Workshop Extras",
+  "icon": "enderio:enderios",
+  "category": "enderio:tools",
+  "sortnum": 8,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:enderios"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Mill one Ender Pearl for nine Powdered Ender Pearl at 2,400 FE. Use the powder in the Enderios craft. It leaves an empty bucket, and eating the meal returns the bowl."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:nutritious_stick",
+      "title": "Nutritious Stick",
+      "text": "The Nutritious Stick is made by filling a regular Stick with 1,000 mB of Nutrient Distillation in a Fluid Tank. See $(l:enderio:machines/tanks)Fluid Tanks$(/l) for setup."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Save Grains of Infinity for machine components. Bedrock fires can also yield a Suspicious Seed. See $(l:enderio:getting_started/grains_of_infinity)Grains of Infinity$(/l) for the harvest method."
+    }
+  ]
+}

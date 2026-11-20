@@ -1,0 +1,39 @@
+{
+  "name": "Fused and Clear Glass",
+  "icon": "enderio:fused_quartz",
+  "category": "enderio:tools",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:fused_quartz",
+      "title": "Base Glass",
+      "text": "Alloy four Nether Quartz for one Fused Quartz at 6,400 FE. An ordinary colorless Glass block alloys into one Clear Glass for 3,200 FE."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:fused_quartz_e",
+      "title": "Enlightened Glass",
+      "text": "Add four Glowstone Dust and one Fused Quartz in the Alloy Smelter to make Enlightened Fused Quartz for 3,200 FE. It emits light. Clear Glass has its own matching recipe."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:fused_quartz_d",
+      "title": "Dark Glass",
+      "text": "Add four Amethyst Shards to one Fused Quartz for Dark Fused Quartz at 3,200 FE. The dark variant blocks light. Clear Glass can also be made dark."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:collision_token_fused_quartz_p",
+      "title": "Player-Solid Quartz"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use $(l:enderio:souls/soul_filters)Soul Tokens$(/l) to choose which entities collide with a glass block. Read the tooltip for the chosen rule. The recipe shown makes glass that is solid only to players. Inversion recipes switch a rule to its opposite."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use dye recipes to match the glass to your build. Lighting, color and collision are separate properties. Try a sample in the intended enclosure before replacing every block."
+    }
+  ]
+}

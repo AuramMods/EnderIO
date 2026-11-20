@@ -1,0 +1,30 @@
+{
+  "name": "Glider and Levity",
+  "icon": "enderio:glider",
+  "category": "enderio:tools",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:glider_wing",
+      "recipe2": "enderio:glider"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Equip the Glider in the chest slot and step off a short ledge into open space. It opens as you fall. Steer with your view and keep a clear landing. Crouch to interrupt gliding. Try steering at low height before crossing a wide gap."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:infinity_rod",
+      "recipe2": "enderio:staff_of_levity"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Charge the Staff of Levity and fill it from a tank that holds Vapor of Levity. Use the staff to toggle lift and use it again to stop. It consumes both FE and Vapor while it lifts you. Keep enough of both for the return trip."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "To make Vapor of Levity, start with $(l:enderio:tools/vapor)the VAT fuel chain$(/l). The staff recipe needs the $(l:enderio:souls/crystals)Prescient Crystal$(/l) from a Shulker, so make an extra crystal for grinding."
+    }
+  ]
+}

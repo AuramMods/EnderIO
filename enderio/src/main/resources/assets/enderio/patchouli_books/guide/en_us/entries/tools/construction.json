@@ -1,0 +1,44 @@
+{
+  "name": "Steel and Painted Builds",
+  "icon": "enderio:dark_steel_ladder",
+  "category": "enderio:tools",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:dark_steel_ladder",
+      "recipe2": "enderio:dark_steel_bars"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:dark_steel_door",
+      "recipe2": "enderio:dark_steel_trapdoor"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use a Dark Steel Ladder for faster climbing. Crouch to hold your position. The steel door and trapdoor follow redstone. Dark Steel Bars and End Steel Bars connect as barriers."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:end_steel_bars"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:reinforced_obsidian_block",
+      "title": "Reinforced Obsidian"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use Reinforced Obsidian for blast-resistant construction. Match painted walls, stairs, fences and other functional shapes to the room with the $(l:enderio:machines/painting)Painting Machine$(/l). Route a concealed line behind $(l:enderio:conduits/facades)facades$(/l)."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:silent_light_weighted_pressure_plate",
+      "title": "Silent Plates"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A Silent Pressure Plate gives its corresponding redstone output without the click. Paint a Redstone Block or Lever to hide it in a matching build. The painted block still provides power and the painted lever still toggles."
+    }
+  ]
+}

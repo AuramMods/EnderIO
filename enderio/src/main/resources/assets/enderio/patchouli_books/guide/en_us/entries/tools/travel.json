@@ -1,0 +1,29 @@
+{
+  "name": "Travel Anchors and Staff",
+  "icon": "enderio:travel_anchor",
+  "category": "enderio:tools",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:travel_anchor"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Place and name two Travel Anchors in the same dimension. With both hands empty, stand on one and use it while aiming at the other marker. For an elevator, align the anchors vertically. Jump to go up and crouch to go down."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:staff_of_travelling",
+      "title": "Travel Staff"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Charge the staff with a $(l:enderio:power/chargers)charger$(/l). Aim at a visible target marker and use the staff, or hold the Travel Staff key to see targets and release on the destination. Check Controls for your binding. Sneak-use the staff to blink a short distance."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Keep the destination clear and within range. Separate dimensions have separate anchor lists. Use the $(l:enderio:machines/painting)Painting Machine$(/l) with an anchor and a block sample to disguise the anchor while retaining its travel function."
+    }
+  ]
+}

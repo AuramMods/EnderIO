@@ -9,7 +9,7 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 | Conduits and Filters | Placing and splitting bundles, item and fluid movement, redstone signals, upgrades and filters, facades, wrench and probe, worked networks | Nine entries authored |
 | Workshop Machines | Alloys and powders, mills and grinding balls, Slice’N’Splice, VAT, tanks, painting, Enchanter, Crafter and hoppers, farming and collection, weather and redstone controls | Twelve entries authored |
 | Souls and Obelisks | Vials, Soul Binder, soul components and fuels, Powered Spawner, XP, attraction, aversion, relocation and teleport inhibition | Nine entries authored |
-| Tools, Travel and Building | Travel blocks and staff, gliders and mobility, magnets, XP equipment and enchantments, utility and mobility items, painted and steel construction, fused glass, hidden redstone | Pending |
+| Tools and Building | Travel blocks and staff, gliders and mobility, magnets, XP equipment and enchantments, field tools, painted and steel construction, fused glass, hidden redstone | Nine entries authored |
 | Integrations and Experiments | AE2, Mekanism, RS, LaserIO, CC:Tweaked, Jade, Curios, FTB Ultimine, JEI, Enderface and Niard settings and dependencies | Pending |
 | Troubleshooting | Energy, blocked outputs, connection sides, channels and redstone, recipe tags and optional dependencies | Pending |
 
@@ -46,3 +46,9 @@ The English Patchouli book is `enderio:guide` on Minecraft 1.20.1. Use the [feat
 - Added nine entries for soul and XP vials, the Soul Binder and worked binding recipes, crystals, spawners, fuel selection, obelisks, filters and collision tokens.
 - The reobfuscated jar contains five categories, 42 entries, 206 pages, 87 recipe references and 36 entry links. The guarded Forge test with Patchouli alone passed 661 client checks and four dedicated server assertions, with 122 captures and no runtime errors. The assembled spawner recipe and the Silverfish binding page rendered in the native client. See `build/port-evidence/guide-cycle-005-souls/`.
 - Next verify the tool, travel, building and fuel progression entries.
+
+## Cycle 006
+
+- Added nine entries for travel, flight, a worked three-stage Vapor of Levity chain, XP tools, magnets and utility items, steel and enchantments, fused glass, painted construction and workshop food.
+- The candidate has six categories, 51 entries, 250 pages, 107 recipe references and 49 entry links. The guarded Patchouli-only tour passed 805 client checks and four server assertions, with 149 captures and successful clicks across three different entry links. Reviewed the travel and building chapter list and representative glass and levitation pages. See `build/port-evidence/guide-cycle-006-tools/`.
+- Next verify the optional integrations and troubleshooting chapters with their dependencies absent and complete the release checks.

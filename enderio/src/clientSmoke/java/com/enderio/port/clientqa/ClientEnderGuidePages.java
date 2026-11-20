@@ -27,20 +27,22 @@ import static com.enderio.port.clientqa.ClientPatchouliGuideSmoke.screenIs;
 /** Tours the book through the same buttons and text links available to a player. */
 final class ClientEnderGuidePages {
     private static final String RESOURCES = "patchouli_books/guide/en_us/";
-    private static final ResourceLocation FIRST_LINK_FROM = id("enderio:getting_started/guidebook");
-    private static final ResourceLocation FIRST_LINK_TO = id("enderio:getting_started/grains_of_infinity");
+    private static final Map<LinkSource, ResourceLocation> LINKS = Map.of(
+        new LinkSource(id("enderio:getting_started/guidebook"), 0), id("enderio:getting_started/grains_of_infinity"),
+        new LinkSource(id("enderio:getting_started/first_energy_line"), 1), id("enderio:power/energy_transfer"),
+        new LinkSource(id("enderio:power/energy_transfer"), 3), id("enderio:conduits/bundles"));
 
     private final ClientPatchouliGuideSmoke smoke;
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Set<ResourceLocation> seenCategories = new HashSet<>();
     private final Set<ResourceLocation> seenEntries = new HashSet<>();
+    private final Set<LinkSource> visitedLinks = new HashSet<>();
     private final Set<String> frames = new HashSet<>();
     private Map<?, ?> categories;
     private Map<?, ?> entries;
     private CompletableFuture<Void> reload;
     private boolean reopened;
-    private boolean followLink;
-    private boolean followedLink;
+    private LinkSource activeLink;
 
     ClientEnderGuidePages(ClientPatchouliGuideSmoke smoke) {
         this.smoke = smoke;
@@ -87,7 +89,7 @@ final class ClientEnderGuidePages {
         if (pageForward(screen)) return;
         smoke.check("every_category_and_entry_was_opened_through_its_button",
             seenCategories.equals(categories.keySet()) && seenEntries.equals(entries.keySet()));
-        smoke.check("inline_link_opened_the_expected_entry", followedLink);
+        smoke.check("inline_links_opened_the_expected_entries", visitedLinks.equals(LINKS.keySet()));
         minecraft.setScreen(null);
         reload = minecraft.reloadResourcePacks();
     }
@@ -105,11 +107,12 @@ final class ClientEnderGuidePages {
     private void entry(Screen screen) throws Exception {
         var entry = screen.getClass().getMethod("getEntry").invoke(screen);
         var entryId = identifier(entry);
-        if (followLink) {
-            smoke.check("clicked_inline_link_arrived_at_grains_of_infinity", entryId.equals(FIRST_LINK_TO));
-            capture("linked-entry");
-            followLink = false;
-            followedLink = true;
+        if (activeLink != null) {
+            String linked = "linked-" + entryId.getPath().replace('/', '-');
+            smoke.check(linked + "_arrived_at_the_expected_entry", entryId.equals(LINKS.get(activeLink)));
+            capture(linked);
+            visitedLinks.add(activeLink);
+            activeLink = null;
             back(screen);
             return;
         }
@@ -123,9 +126,10 @@ final class ClientEnderGuidePages {
         var text = verifyPage(frame + "-left", left);
         if (right != null) verifyPage(frame + "-right", right);
         capture(frame);
-        if (!followedLink && entryId.equals(FIRST_LINK_FROM)) {
-            clickFirstLink(screen, left, text);
-            followLink = true;
+        var link = new LinkSource(entryId, spread);
+        if (LINKS.containsKey(link) && !visitedLinks.contains(link)) {
+            clickLink(frame, screen, left, text);
+            activeLink = link;
         } else if (!pageForward(screen)) {
             seenEntries.add(entryId);
             back(screen);
@@ -180,7 +184,7 @@ final class ClientEnderGuidePages {
         return (List<?>) field(BOOK_GUI + "BookTextRenderer", "words").get(renderer);
     }
 
-    private void clickFirstLink(Screen screen, Object page, Object renderer) throws Exception {
+    private void clickLink(String name, Screen screen, Object page, Object renderer) throws Exception {
         Class<?> bookGui = Class.forName(BOOK_GUI + "GuiBook");
         int left = bookGui.getField("bookLeft").getInt(screen) + page.getClass().getField("left").getInt(page);
         int top = bookGui.getField("bookTop").getInt(screen) + page.getClass().getField("top").getInt(page);
@@ -189,10 +193,10 @@ final class ClientEnderGuidePages {
             if (field(type.getName(), "onClick").get(word) == null) continue;
             double x = left + type.getField("x").getInt(word) + 1;
             double y = top + type.getField("y").getInt(word) + 1;
-            smoke.check("first_workshop_link_accepts_a_native_click", clickBook(screen, x, y));
+            smoke.check(name + "_inline_link_accepts_a_native_click", clickBook(screen, x, y));
             return;
         }
-        throw new AssertionError("The guide craft page has no link");
+        throw new AssertionError("No link found on " + name);
     }
 
     private static boolean openUnvisited(Screen screen, String kind, String accessor, Set<ResourceLocation> visited) throws Exception {
@@ -251,4 +255,6 @@ final class ClientEnderGuidePages {
         field.setAccessible(true);
         return field;
     }
+
+    private record LinkSource(ResourceLocation entry, int spread) {}
 }

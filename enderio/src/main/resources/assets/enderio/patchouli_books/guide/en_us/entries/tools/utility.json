@@ -1,0 +1,30 @@
+{
+  "name": "Field Tools",
+  "icon": "enderio:electromagnet",
+  "category": "enderio:tools",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:electromagnet",
+      "text": "Charge the Electromagnet and carry it in your hotbar. Toggle it with the Ender IO magnet key in Controls."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The active magnet collects nearby dropped items and spends energy while operating. It skips items excluded by your pack’s magnet rules. If you have Curios, you can equip it in a compatible charm slot."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:coordinate_selector"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Carry paper, aim at the block you want to record and use the Coordinate Selector. Choose the printout’s details in its menu. The resulting Location Printout records the destination so you can refer to it later."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:cold_fire_igniter",
+      "text": "Fill this tool with Vapor of Levity. Use it on a clear, suitable block face to light Cold Fire. Each successful ignition costs 10 mB at stock settings."
+    }
+  ]
+}

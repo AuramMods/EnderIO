@@ -1,0 +1,24 @@
+{
+  "name": "Steel and Enchantments",
+  "icon": "enderio:dark_steel_sword",
+  "category": "enderio:tools",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:dark_steel_sword"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Use the Dark Steel Sword to collect mob heads. Eligible examples include Zombies and Endermen. Their heads are inputs for the $(l:enderio:machines/slicer)Slice’N’Splice$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Ender IO enchantments include Auto Smelt for smelting applicable mining drops and XP Boost for eligible experience gains. Soulbound keeps an enchanted item through death under normal rules. Shimmer adds glint."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Withering can apply Wither on a supported hit. Repellent can reposition eligible attackers. Look up your pack’s sources for enchanted books and apply them to eligible equipment through an anvil."
+    }
+  ]
+}
