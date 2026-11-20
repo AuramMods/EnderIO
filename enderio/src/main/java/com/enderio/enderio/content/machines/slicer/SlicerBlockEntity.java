@@ -195,6 +195,11 @@ public class SlicerBlockEntity extends PoweredMachineBlockEntity {
         return new PoweredCraftingMachineTask<>(level, getInventory(), getEnergyStorage(), recipeInput, OUTPUT,
                 recipe) {
             @Override
+            protected SlicingRecipe.Input getCurrentRecipeInput() {
+                return createRecipeInput();
+            }
+
+            @Override
             protected void consumeInputs(SlicingRecipe recipe) {
                 // Deduct ingredients
                 MachineInventory inv = getInventory();

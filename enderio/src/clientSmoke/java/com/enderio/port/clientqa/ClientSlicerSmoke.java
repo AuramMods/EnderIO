@@ -30,11 +30,16 @@ import java.util.List;
 import java.util.Map;
 
 final class ClientSlicerSmoke {
-    private enum Stage { TITLE, JOIN, OPEN, SAVED, REMOVED, CHARGED, RETURNED, FINISHED, DONE }
+    private enum Stage {
+        TITLE, JOIN, OPEN, SAVED, REMOVED, CHARGED, RETURNED, FINISHED,
+        BLOCKED, HEAD_TAKEN, OUTPUT_CLEARED, UNBLOCKED, HEAD_RETURNED, RECOVERED, DONE
+    }
 
     private static final BlockPos SLICER = new BlockPos(3163, 80, 8);
     private static final int AXE = 1;
     private static final int SHEARS = 2;
+    private static final int HEAD = SlicerMenu.INPUTS_INDEX + 1;
+    private static final int OUTPUT = SlicerMenu.LAST_INDEX;
     private static final float PAID = 3600f / 20000;
 
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -42,19 +47,25 @@ final class ClientSlicerSmoke {
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
+    private final boolean fullOutput;
+    private final BlockPos slicer;
+    private final long timeout;
     private final long started = System.nanoTime();
     private Stage stage = Stage.TITLE;
     private long titleAt;
     private int useAt = -1;
 
-    ClientSlicerSmoke() {
+    ClientSlicerSmoke(boolean fullOutput) {
+        this.fullOutput = fullOutput;
+        this.slicer = fullOutput ? new BlockPos(4954, 80, 8) : SLICER;
+        this.timeout = fullOutput ? 240_000_000_000L : 140_000_000_000L;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
-            if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > 140_000_000_000L) {
+            if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > timeout) {
                 throw new AssertionError("Slice'N'Splice stopped during " + stage);
             }
             if (stage == Stage.TITLE) {
@@ -78,12 +89,13 @@ final class ClientSlicerSmoke {
                 return;
             }
             if (stage == Stage.OPEN) {
-                if (!ready("slicer") || minecraft.screen != null || player.distanceToSqr(3163.5, 80, 11.5) > 0.15) return;
+                if (!ready("slicer") || minecraft.screen != null
+                    || player.distanceToSqr(Vec3.atBottomCenterOf(slicer.south(3))) > 0.15) return;
                 if (useAt < 0) useAt = player.tickCount + 8;
                 if (player.tickCount < useAt) return;
-                var hit = new BlockHitResult(Vec3.atCenterOf(SLICER).relative(Direction.SOUTH, 0.5), Direction.SOUTH, SLICER, false);
+                var hit = new BlockHitResult(Vec3.atCenterOf(slicer).relative(Direction.SOUTH, 0.5), Direction.SOUTH, slicer, false);
                 check("native_slicer_interaction", minecraft.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit).consumesAction());
-                stage = Stage.SAVED;
+                stage = fullOutput ? Stage.BLOCKED : Stage.SAVED;
                 return;
             }
             if (minecraft.screen instanceof SlicerScreen screen) inspect(screen.getMenu());
@@ -136,6 +148,61 @@ final class ClientSlicerSmoke {
                 player.closeContainer();
                 finish(null);
             }
+            case BLOCKED -> {
+                if (menu.getCraftingProgress() != 1 || menu.getEnergyStorage() == null
+                    || !controller(menu.getSlot(OUTPUT).getItem(), 64) || !taggedHead(menu.getSlot(HEAD).getItem())) return;
+                check("restored_full_output_has_one_paid_job_and_unworn_tools",
+                    ingredientsMatch(menu) && unworn(menu) && menu.getEnergyStorage().getEnergyStored() == 0
+                        && player.getInventory().getItem(0).isEmpty());
+                capture("blocked");
+                minecraft.gameMode.handleInventoryMouseClick(menu.containerId, HEAD, 0, ClickType.SWAP, player);
+                stage = Stage.HEAD_TAKEN;
+            }
+            case HEAD_TAKEN -> {
+                if (menu.getSlot(HEAD).hasItem() || !taggedHead(player.getInventory().getItem(0))) return;
+                if (!ready("clear")) {
+                    signalOnce("head-taken");
+                    return;
+                }
+                check("head_swap_keeps_the_original_full_output_and_tools",
+                    controller(menu.getSlot(OUTPUT).getItem(), 64) && unworn(menu));
+                minecraft.gameMode.handleInventoryMouseClick(menu.containerId, OUTPUT, 0, ClickType.QUICK_MOVE, player);
+                stage = Stage.OUTPUT_CLEARED;
+            }
+            case OUTPUT_CLEARED -> {
+                if (player.getInventory().items.stream().noneMatch(stack -> controller(stack, 64))) return;
+                signal("output-cleared");
+                stage = Stage.UNBLOCKED;
+            }
+            case UNBLOCKED -> {
+                if (!ready("unblocked")) return;
+                capture("without-head");
+                check("free_output_cannot_deliver_with_the_head_missing",
+                    !menu.getSlot(OUTPUT).hasItem() && !menu.getSlot(HEAD).hasItem()
+                        && unworn(menu) && menu.getCraftingProgress() == 0 && menu.getEnergyStorage().getEnergyStored() == 0);
+                minecraft.gameMode.handleInventoryMouseClick(menu.containerId, HEAD, 0, ClickType.SWAP, player);
+                stage = Stage.HEAD_RETURNED;
+            }
+            case HEAD_RETURNED -> {
+                if (!taggedHead(menu.getSlot(HEAD).getItem()) || !player.getInventory().getItem(0).isEmpty()) return;
+                check("returning_the_head_restores_all_inputs_without_delivering_for_free",
+                    ingredientsMatch(menu) && !menu.getSlot(OUTPUT).hasItem() && unworn(menu)
+                        && menu.getEnergyStorage().getEnergyStored() == 0);
+                signal("head-returned");
+                stage = Stage.RECOVERED;
+            }
+            case RECOVERED -> {
+                if (!ready("finished") || !controller(menu.getSlot(OUTPUT).getItem(), 1)
+                    || !matches(menu.getSlot(AXE).getItem(), Items.IRON_AXE, 8)
+                    || !matches(menu.getSlot(SHEARS).getItem(), Items.SHEARS, 12)) return;
+                check("valid_recovery_crafts_one_item_and_spends_one_use_per_tool",
+                    menu.getEnergyStorage().getEnergyStored() == 0 && menu.getCraftingProgress() == 0
+                        && menu.slots.subList(SlicerMenu.INPUTS_INDEX, OUTPUT).stream().noneMatch(slot -> slot.hasItem())
+                        && player.getInventory().items.stream().anyMatch(stack -> controller(stack, 64)));
+                capture("recovered");
+                player.closeContainer();
+                finish(null);
+            }
             default -> { }
         }
     }
@@ -151,6 +218,20 @@ final class ClientSlicerSmoke {
     private static boolean matches(ItemStack stack, Item item, int damage) {
         return stack.is(item) && stack.getCount() == 1 && stack.hasTag() && stack.getTag().getInt("PortSlicer") == 159
             && stack.getDamageValue() == damage;
+    }
+
+    private static boolean unworn(SlicerMenu menu) {
+        return matches(menu.getSlot(AXE).getItem(), Items.IRON_AXE, 7)
+            && matches(menu.getSlot(SHEARS).getItem(), Items.SHEARS, 11);
+    }
+
+    private static boolean taggedHead(ItemStack stack) {
+        return stack.is(Items.ZOMBIE_HEAD) && stack.getCount() == 1
+            && stack.hasTag() && stack.getTag().getInt("PortSlicerIngredient") == 231;
+    }
+
+    private static boolean controller(ItemStack stack, int count) {
+        return stack.is(EIOItems.Z_LOGIC_CONTROLLER.get()) && stack.getCount() == count;
     }
 
     private static boolean ingredientsMatch(SlicerMenu menu) {
@@ -174,6 +255,10 @@ final class ClientSlicerSmoke {
         var tmp = dir.resolve(name + ".tmp");
         Files.writeString(tmp, "{}");
         Files.move(tmp, dir.resolve(name + ".json"));
+    }
+
+    private void signalOnce(String name) throws IOException {
+        if (!Files.exists(output.resolve("signals").resolve(name + ".json"))) signal(name);
     }
 
     private void capture(String name) throws IOException {
