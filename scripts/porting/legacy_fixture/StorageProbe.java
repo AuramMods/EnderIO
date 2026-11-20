@@ -4,6 +4,7 @@ import appeng.api.config.Actionable;
 import appeng.api.ids.AEItemIds;
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.GridHelper;
+import appeng.api.networking.pathing.ControllerState;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.parts.IPartItem;
 import appeng.api.parts.PartHelper;
@@ -35,6 +36,8 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
@@ -52,6 +55,7 @@ public class StorageProbe {
     private static final int[] COLORED_ROUTES = {4, 8};
     private static final BlockPos TERMINAL = new BlockPos(1085, 80, 4);
     private static final BlockPos GRID = new BlockPos(1085, 80, 13);
+    private static final BlockPos CHANNEL_HEAD = new BlockPos(3279, 80, 8);
     private static final IActionSource AE_SOURCE = IActionSource.empty();
     private static final UUID RS_LEFT_OWNER = UUID.fromString("3e96b660-0e27-4020-a770-00d68996d801");
     private static final UUID RS_RIGHT_OWNER = UUID.fromString("3e96b660-0e27-4020-a770-00d68996d802");
@@ -68,6 +72,14 @@ public class StorageProbe {
                 .executes(context -> run(context.getSource(), "Native AE2 terminal placed", StorageProbe::placeTerminal)))
             .then(Commands.literal("give_facade")
                 .executes(context -> run(context.getSource(), "Native AE2 diamond facade created", StorageProbe::giveFacade)))
+            .then(Commands.literal("check_channels").then(Commands.argument("headDense", BoolArgumentType.bool())
+                .then(Commands.argument("tailDense", BoolArgumentType.bool())
+                    .then(Commands.argument("drives", IntegerArgumentType.integer(1, 33))
+                        .executes(context -> run(context.getSource(), "Native AE2 channel counts verified",
+                            level -> checkChannels(level, BoolArgumentType.getBool(context, "headDense"),
+                                BoolArgumentType.getBool(context, "tailDense"), IntegerArgumentType.getInteger(context, "drives"))))))))
+            .then(Commands.literal("release_channel")
+                .executes(context -> run(context.getSource(), "Removed one powered AE2 drive", StorageProbe::removeActiveDrive)))
             .then(Commands.literal("place_colored_me").then(Commands.argument("route", IntegerArgumentType.integer(4, 8))
                 .then(Commands.argument("head", BoolArgumentType.bool()).then(Commands.argument("red", BoolArgumentType.bool())
                     .executes(context -> run(context.getSource(), "Native colored ME conduit placed",
@@ -97,6 +109,45 @@ public class StorageProbe {
             .then(Commands.literal("take_items").then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
                 .executes(context -> run(context.getSource(), "Native item storage delivered the requested items",
                     level -> take(level, IntegerArgumentType.getInteger(context, "count")))))));
+    }
+
+    private static void checkChannels(ServerLevel level, boolean headDense, boolean tailDense, int expectedDrives) {
+        var controller = GridHelper.getExposedNode(level, CHANNEL_HEAD.west(), Direction.EAST);
+        var head = GridHelper.getExposedNode(level, CHANNEL_HEAD, Direction.EAST);
+        var tail = GridHelper.getExposedNode(level, CHANNEL_HEAD.east(), Direction.EAST);
+        require(controller != null && head != null && tail != null, "Missing controller or conduit grid node");
+        var grid = controller.getGrid();
+        require(head.getGrid() == grid && tail.getGrid() == grid, "The crafted trunk is disconnected from the controller");
+        require(grid.getPathingService().getControllerState() == ControllerState.CONTROLLER_ONLINE
+            && !grid.getPathingService().isNetworkBooting() && grid.getEnergyService().isNetworkPowered(), "The controller is still booting");
+        int headCapacity = headDense ? 32 : 8;
+        int tailCapacity = tailDense ? 32 : 8;
+        int expectedActive = Math.min(expectedDrives, Math.min(headCapacity, tailCapacity));
+        require(head.getMaxChannels() == headCapacity && tail.getMaxChannels() == tailCapacity,
+            "Unexpected trunk capacity " + head.getMaxChannels() + "/" + tail.getMaxChannels());
+        require(head.getUsedChannels() == expectedActive && tail.getUsedChannels() == expectedActive,
+            "Unexpected trunk usage " + head.getUsedChannels() + "/" + tail.getUsedChannels());
+        int drives = 0;
+        int active = 0;
+        for (var drive : grid.getMachineNodes(DriveBlockEntity.class)) {
+            drives++;
+            if (drive.isActive()) active++;
+        }
+        require(drives == expectedDrives && active == expectedActive, "Grid sees " + drives + " drives with " + active + " active");
+    }
+
+    private static void removeActiveDrive(ServerLevel level) {
+        checkChannels(level, true, true, 33);
+        var controller = GridHelper.getExposedNode(level, CHANNEL_HEAD.west(), Direction.EAST);
+        for (var drive : controller.getGrid().getMachines(DriveBlockEntity.class)) {
+            var node = drive.getMainNode().getNode();
+            if (node != null && node.isActive()) {
+                require(level.setBlockAndUpdate(((BlockEntity) drive).getBlockPos(), Blocks.AIR.defaultBlockState()),
+                    "Could not remove the active drive");
+                return;
+            }
+        }
+        throw new IllegalStateException("Missing an active drive on the crafted trunk");
     }
 
     private static void giveFacade(ServerLevel level) {

@@ -39,7 +39,7 @@ import java.util.function.Predicate;
 
 final class ClientConduitProgressionSmoke {
     private enum Stage { TITLE, JOIN, TABLE, RECIPE, WRONG_VARIANT, RESULT, TAKEN, SMELTER, SWAP, CAPACITY, UPGRADE, UPGRADED, FINISH, DONE }
-    enum Family { ENERGY, ITEM, FLUID, CHEMICAL }
+    enum Family { ENERGY, ITEM, FLUID, CHEMICAL, AE2 }
 
     private record Craft(String id, String item, int count, String variant, String lowerVariant, String alloy) {
         Craft(String capacitor) { this(capacitor, capacitor, 1, "", "", ""); }
@@ -81,6 +81,8 @@ final class ClientConduitProgressionSmoke {
         new Craft("mek_elite_pressurized_tube", "ender_chemical", 3),
         new Craft("mek_advanced_pressurized_tube_upgrade", "ender_chemical", "pressurized_chemical", "mekanism:alloy_reinforced"));
     private static final List<Integer> CHEMICAL_RATES = List.of(750, 2_000, 64_000);
+    private static final List<Craft> AE2_RECIPES = List.of(new Craft("ae_glass_cable", "me", 3),
+        new Craft("ae_covered_cable", "me", 3), new Craft("ae_covered_dense_cable", "dense_me", 3));
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
@@ -114,12 +116,14 @@ final class ClientConduitProgressionSmoke {
             case ITEM -> ITEM_RECIPES;
             case FLUID -> FLUID_RECIPES;
             case CHEMICAL -> CHEMICAL_RECIPES;
+            case AE2 -> AE2_RECIPES;
         };
         tiers = switch (family) {
             case ENERGY -> List.of("energy", "enhanced_energy", "ender_energy");
             case ITEM -> List.of("item", "enhanced_item", "ender_item");
             case FLUID -> List.of("fluid", "pressurized_fluid", "ender_fluid");
             case CHEMICAL -> List.of("chemical", "pressurized_chemical", "ender_chemical");
+            case AE2 -> List.of("me", "dense_me");
         };
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
@@ -217,7 +221,11 @@ final class ClientConduitProgressionSmoke {
                 if (result.is(EIOItems.DOUBLE_LAYER_CAPACITOR.get())) {
                     check(name + "_has_the_tier_two_capacitor_default", CapacitorData.ITEM_DATA.get(result).base() == 2);
                 }
-                if (family != Family.ENERGY) {
+                if (family == Family.AE2) {
+                    String label = step.variant().equals("dense_me") ? "Dense ME Conduit" : "ME Conduit";
+                    check(name + "_uses_its_localized_tier_name", result.getHoverName().getString().equals(label));
+                    capture(step.id());
+                } else if (family != Family.ENERGY) {
                     int tier = tiers.indexOf(step.variant());
                     var rates = family == Family.CHEMICAL ? CHEMICAL_RATES : FLUID_RATES;
                     String expected = family == Family.ITEM ? "Effective Rate: " + (32 << tier) + " Items/sec"
@@ -312,7 +320,8 @@ final class ClientConduitProgressionSmoke {
                 : "upgrade_" + upgradeIndex + "_consumes_one_upper_and_returns_one_lower", true);
             signal("upgraded-" + upgradeIndex);
             upgradeIndex++;
-            stage = upgradeIndex == (family == Family.ENERGY ? 4 : 6) ? Stage.FINISH : Stage.UPGRADE;
+            int placeableTiers = tiers.size() - (family == Family.ENERGY ? 1 : 0);
+            stage = upgradeIndex == 2 * placeableTiers ? Stage.FINISH : Stage.UPGRADE;
         }
     }
 
