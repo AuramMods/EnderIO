@@ -4,13 +4,15 @@ The port targets Minecraft 1.20.1, Forge 47.4.10 and Java 17. The tested Java di
 
 ## Install the runtime jar
 
-The Auram runtime is `enderio-8.2.16-beta.jar`. It targets Auram’s Forge 47.4.10 and JEI 15.20.0.129 versions. [Auram compatibility checks](cycle-280.md)
+The Auram runtime is `enderio-8.2.17-beta.jar`. It targets Auram’s Forge 47.4.10 and JEI 15.20.0.129 versions. [Auram compatibility checks](cycle-280.md)
 
 1. Create a Minecraft 1.20.1 instance with Forge 47.4.10 and configure its launcher to use Java 17. For a dedicated server, use the pinned Forge installer, then use its generated startup script.
 2. Put the main reobfuscated `enderio-<version>.jar` in the instance's `mods` directory. If upgrading an Ender IO installation, move the previous Ender IO jar to the backup first. The API, sources, standalone submodule and QA archives serve the build and tests.
 3. On a dedicated server, use matching Ender IO bytes on the server and client. Install compatible optional mods on the sides they require. Start a disposable world and confirm that Ender IO content loads before upgrading any world you use.
 
 The [dependency table](dependencies.md) lists exact versions and artifact coordinates. Install AE2 15.4.12 with GuideME 20.1.15 on both sides to use ME Conduits. Install Mekanism 10.4.16.80 or Refined Storage 1.12.4 for their respective conduits. Use Patchouli 1.20.1-84.1-forge alongside LaserIO 1.6.8 for LaserIO 101. For the tested shader profile, use Embeddium 0.3.31+mc1.20.1 and Oculus 1.20.1-1.8.0 on the client. Athena 3.1.2 and the built-in Athena resource pack enable the tested connected textures.
+
+Install Patchouli 1.20.1-84.1-forge and craft a book with redstone to obtain the Ender IO Guide. Existing copies still open the same book. [Guide coverage and verification](guide-coverage.md)
 
 Enderface and Niard are experimental. Select their respective built-in packs when creating the world. The dedicated fixtures enable them through `initial-enabled-packs` with `mod/enderio:data/enderio/datapacks/enderface` or `mod/enderio:data/enderio/datapacks/niard`. The Farming Station is available in a default world. [Experiment selection and defaults](cycle-097.md), [Enderface](cycle-098.md), [Farming Station](cycle-212.md)
 
