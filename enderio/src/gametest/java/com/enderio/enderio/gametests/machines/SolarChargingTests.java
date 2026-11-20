@@ -12,6 +12,7 @@ import com.enderio.enderio.foundation.souldata.SolarSoul;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
 import com.enderio.enderio.gametests.util.GameplayTest;
+import com.enderio.enderio.init.EIOBlockEntities;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIOFluids;
 import com.enderio.enderio.init.EIOItems;
@@ -132,6 +133,46 @@ public class SolarChargingTests {
                 } finally {
                     SolarSoul.SOLAR.map = originalData;
                     level.setDayTime(originalTime);
+                }
+            })
+            .thenSucceed());
+    }
+
+    @GameTest
+    public static void solarChunkUpdateCarriesTheBindingButKeepsEnergyOnDisk(GameplayTest test) {
+        var tiers = SolarPanelTier.values();
+        test.registerGameTestTemplate(() -> {
+            var fixture = FixtureBuilder.withSize(2 * tiers.length - 1, 1, 1);
+            for (var tier : tiers) {
+                fixture.set(tier.ordinal() * 2, 0, 0, EIOBlocks.SOLAR_PANELS.get(tier).get().defaultBlockState());
+            }
+            return fixture;
+        });
+        test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence()
+            .thenExecute(() -> {
+                var phantom = Soul.of(EntityType.PHANTOM);
+                for (var tier : tiers) {
+                    var source = helper.getBlockEntity(tier.ordinal() * 2, 1, 0, SolarPanelBlockEntity.class);
+                    source.bindSoul(phantom);
+                    setEnergy(source, 137);
+
+                    var copy = EIOBlockEntities.SOLAR_PANELS.get(tier).get()
+                        .create(source.getBlockPos(), source.getBlockState());
+                    copy.setLevel(helper.getLevel());
+                    var update = source.getUpdateTag();
+                    copy.handleUpdateTag(update);
+                    helper.assertTrue(Soul.isSameEntity(copy.getBoundSoul(), phantom),
+                        tier + " chunk update restores the Phantom binding");
+                    helper.assertTrue(!update.contains(MachineNBTKeys.ENERGY_STORED), tier + " chunk update omits stored FE");
+
+                    copy.load(source.saveWithoutMetadata());
+                    helper.assertTrue(Soul.isSameEntity(copy.getBoundSoul(), phantom), tier + " disk load restores the binding");
+                    helper.assertValueEqual(copy.saveWithoutMetadata().getInt(MachineNBTKeys.ENERGY_STORED), 137,
+                        tier + " disk load preserves exact FE");
+
+                    source.bindSoul(Soul.EMPTY);
+                    copy.handleUpdateTag(source.getUpdateTag());
+                    helper.assertTrue(!copy.hasSoul(), tier + " unbound update clears the previous soul");
                 }
             })
             .thenSucceed());

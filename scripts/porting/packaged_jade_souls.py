@@ -14,7 +14,7 @@ from client.run_multiplayer import stop_client, wait_signal
 from packaged_server_smoke import FORGE, ROOT, digest
 from packaged_solar_charging import check
 from packaged_soul_binder import item, xp_tank
-from packaged_spawners import PLAYER, prepare_profile, run_stage
+from packaged_spawners import PLAYER, WORLD, prepare_profile, run_stage
 
 
 @dataclass(frozen=True)
@@ -82,11 +82,12 @@ def prepare(server, results):
 
 
 class Session:
-    def __init__(self, server, results, output, client):
+    def __init__(self, server, results, output, client, jade):
         self.server = server
         self.results = results
         self.output = output
         self.client = client
+        self.jade = jade
         self.index = 0
         self.target = None
 
@@ -130,9 +131,10 @@ def native_binding(session):
     session.server.command(f"gamemode survival {PLAYER}")
     for machine in PANELS:
         session.inspect(machine.name + "-placed", machine, machine.soul, "PLACE")
-    vibrant = PANELS[-1]
-    session.inspect("provider-disabled", vibrant, vibrant.soul, "CONFIGURE", enabled=False)
-    session.inspect("provider-restored", vibrant, vibrant.soul, "CONFIGURE")
+    if session.jade:
+        vibrant = PANELS[-1]
+        session.inspect("provider-disabled", vibrant, vibrant.soul, "CONFIGURE", enabled=False)
+        session.inspect("provider-restored", vibrant, vibrant.soul, "CONFIGURE")
     session.inspect(UNBOUND_PANEL.name, UNBOUND_PANEL, "")
 
 
@@ -143,14 +145,16 @@ def inspect_saved(session):
 
 def exercise_client(args, server, results, report, stage, scenario):
     output = ROOT / "build/port-evidence" / f"{args.name}-{stage}-client"
+    jade = "jade" in report["jars"]
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"), "--launch", str(args.launch.resolve()),
-               "--scenario", "jade-souls", "--output", str(output), "--server", f"127.0.0.1:{args.port}", "--timeout", "225"]
+               "--scenario", "jade-souls" if jade else "native-machine-souls",
+               "--output", str(output), "--server", f"127.0.0.1:{args.port}", "--timeout", "225"]
     summary = output / "summary.json"
     with (server.directory / f"jade-souls-client-{stage}.log").open("w") as log:
         client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         try:
             wait_signal(client, output, "connected")
-            scenario(Session(server, results, output, client))
+            scenario(Session(server, results, output, client, jade))
             (output / "server-finish").touch()
             if client.wait(timeout=30) != 0:
                 raise AssertionError(f"Jade soul client failed; see {output}")
@@ -167,16 +171,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True)
     parser.add_argument("--port", required=True, type=int)
-    for option in ("java", "forge-server", "jar", "jade", "launch"):
+    for option in ("java", "forge-server", "jar", "launch"):
         parser.add_argument(f"--{option}", required=True, type=Path)
+    parser.add_argument("--jade", type=Path, help="Install Jade and check its overlay alongside native client state.")
+    parser.add_argument("--saved-world", type=Path, help="Copy an existing disposable test world and exercise its saved machines.")
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a directory name")
     directory = ROOT / "build/port-runtime" / args.name
     prepare_profile(args, directory, args.jar)
-    shutil.copyfile(args.jade, directory / "mods/jade.jar")
-    report = {"passed": False, "forge": FORGE, "assertions": [], "servers": [], "clients": {},
-              "jars": {name: digest(directory / "mods" / f"{name}.jar") for name in ("enderio", "jade")}}
+    jars = {"enderio": digest(directory / "mods/enderio.jar")}
+    if args.jade:
+        shutil.copyfile(args.jade, directory / "mods/jade.jar")
+        jars["jade"] = digest(directory / "mods/jade.jar")
+    if args.saved_world:
+        shutil.copytree(args.saved_world, directory / WORLD, ignore=shutil.ignore_patterns("session.lock"))
+    report = {"passed": False, "forge": FORGE, "assertions": [], "servers": [], "clients": {}, "jars": jars}
 
     def fresh(server, results):
         prepare(server, results)
@@ -186,7 +196,8 @@ def main():
         exercise_client(args, server, results, report, "reopened", inspect_saved)
 
     try:
-        run_stage(args, directory, report, "fresh", fresh)
+        if not args.saved_world:
+            run_stage(args, directory, report, "fresh", fresh)
         run_stage(args, directory, report, "reopened", reopened)
         report["passed"] = True
     finally:

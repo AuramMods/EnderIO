@@ -11,6 +11,7 @@ import com.enderio.enderio.init.EIODataComponents;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
@@ -326,7 +327,7 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
 
     @Override
     public void load(CompoundTag tag) {
-        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
+        var lookupProvider = level == null ? RegistryAccess.EMPTY : level.registryAccess();
         boundSoul = Soul.parseOptional(lookupProvider, tag.getCompound(MachineNBTKeys.ENTITY_STORAGE));
 
         // Old serialization format
@@ -344,13 +345,17 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
 
     @Override
     public void saveAdditional(CompoundTag tag) {
-        var lookupProvider = level == null ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
-        tag.put(MachineNBTKeys.ENTITY_STORAGE, boundSoul.saveOptional(lookupProvider));
-
         // TODO: 26.1 - serialize the node instead?
         tag.putInt(MachineNBTKeys.ENERGY_STORED, node.getEnergyStored());
 
         super.saveAdditional(tag);
+    }
+
+    @Override
+    protected void saveAdditionalSynced(CompoundTag tag) {
+        super.saveAdditionalSynced(tag);
+        var lookupProvider = level == null ? RegistryAccess.EMPTY : level.registryAccess();
+        tag.put(MachineNBTKeys.ENTITY_STORAGE, boundSoul.saveOptional(lookupProvider));
     }
 
     @Override

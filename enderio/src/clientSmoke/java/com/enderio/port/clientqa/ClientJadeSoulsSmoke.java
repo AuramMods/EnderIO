@@ -2,6 +2,7 @@ package com.enderio.port.clientqa;
 
 import com.enderio.enderio.api.soul.binding.SoulBindable;
 import com.enderio.enderio.compat.jade.EIOJadePlugin;
+import com.enderio.enderio.content.machines.solar_panel.SolarPanelBlockEntity;
 import com.enderio.enderio.init.EIOItems;
 import com.google.gson.Gson;
 import net.minecraft.client.Minecraft;
@@ -20,6 +21,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.fml.ModList;
 import snownee.jade.impl.config.PluginConfig;
 
 import java.nio.file.Files;
@@ -41,6 +43,7 @@ final class ClientJadeSoulsSmoke {
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
+    private final boolean jade;
     private long firstTitleFrame;
     private boolean connecting;
     private boolean joined;
@@ -50,7 +53,8 @@ final class ClientJadeSoulsSmoke {
     private int actedAt = -1;
     private Step step;
 
-    ClientJadeSoulsSmoke() {
+    ClientJadeSoulsSmoke(boolean jade) {
+        this.jade = jade;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -71,6 +75,7 @@ final class ClientJadeSoulsSmoke {
             if (!joined) {
                 if (minecraft.getToasts().getToast(SystemToast.class, SystemToast.SystemToastIds.UNSECURE_SERVER_WARNING) != null) return;
                 check("joins_the_real_dedicated_server", !minecraft.getConnection().getConnection().isMemoryConnection());
+                check("optional_jade_installation_matches_the_profile", jade == ModList.get().isLoaded("jade"));
                 signal("connected");
                 joined = true;
                 return;
@@ -86,7 +91,7 @@ final class ClientJadeSoulsSmoke {
                 stepStarted = System.nanoTime();
             }
             if (System.nanoTime() - stepStarted > 17_000_000_000L) {
-                throw new AssertionError("Jade overlay did not settle for " + step + ", current hit " + minecraft.hitResult
+                throw new AssertionError("Soul observation did not settle for " + step + ", current hit " + minecraft.hitResult
                     + ", observed overlay " + ClientJadeSmoke.overlayAt(step.pos()));
             }
             if (actedAt < 0 && !act()) return;
@@ -148,28 +153,42 @@ final class ClientJadeSoulsSmoke {
     }
 
     private void inspect() throws Exception {
-        var view = ClientJadeSmoke.overlayAt(step.pos());
-        boolean showsSoul = step.enabled() && !step.soul().isEmpty();
-        if (view == null || !view.block().equals(step.block()) || view.soulLine() != showsSoul) return;
-        if (step.enabled() && !view.soul().equals(step.soul())) return;
+        var block = minecraft.level.getBlockState(step.pos()).getBlock();
+        if (!BuiltInRegistries.BLOCK.getKey(block).toString().equals(step.block())) return;
         var entity = minecraft.level.getBlockEntity(step.pos());
-        if (entity == null || !view.serverType().equals(BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(entity.getType()).toString())) return;
-        var title = minecraft.level.getBlockState(step.pos()).getBlock().getName().getString();
-        check(step.name() + "_jade_renders_the_actual_machine", view.connected() && view.blockEntity() && view.text().contains(title));
-        if (showsSoul) {
-            var type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(step.soul()));
-            check(step.name() + "_exact_soul_name", view.text().contains("Bound Soul: " + type.getDescription().getString()));
-        } else {
-            check(step.name() + "_the_soul_line_is_absent", !view.text().contains("Bound Soul:"));
+        if (!(entity instanceof SoulBindable bindable)) return;
+        ClientJadeSmoke.Overlay view = null;
+        if (jade) {
+            view = ClientJadeSmoke.overlayAt(step.pos());
+            boolean showsSoul = step.enabled() && !step.soul().isEmpty();
+            var typeId = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(entity.getType()).toString();
+            if (view == null || !view.block().equals(step.block()) || view.soulLine() != showsSoul
+                || !view.serverType().equals(typeId) || step.enabled() && !view.soul().equals(step.soul())) return;
+            check(step.name() + "_jade_renders_the_actual_machine",
+                view.connected() && view.blockEntity() && view.text().contains(block.getName().getString()));
+            if (showsSoul) {
+                var type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(step.soul()));
+                check(step.name() + "_exact_soul_name", view.text().contains("Bound Soul: " + type.getDescription().getString()));
+            } else {
+                check(step.name() + "_the_soul_line_is_absent", !view.text().contains("Bound Soul:"));
+            }
         }
+
         var frame = ClientSmoke.capture(step.name() + ".png");
-        frame.put("jadeOverlay", view);
-        if (entity instanceof SoulBindable bindable) {
-            var localSoul = bindable.getBoundSoul();
-            frame.put("clientSoul", localSoul.hasEntity() ? localSoul.entityTypeId().toString() : "");
+        if (view != null) frame.put("jadeOverlay", view);
+        var soul = bindable.getBoundSoul();
+        String localSoul = soul.hasEntity() ? soul.entityTypeId().toString() : "";
+        frame.put("clientSoul", localSoul);
+        if (entity instanceof SolarPanelBlockEntity panel) {
+            frame.put("localGenerationRate", panel.getGenerationRate());
         }
         captures.put(step.name(), frame);
         check(step.name() + "_capture_is_silent_and_hidden", Boolean.TRUE.equals(frame.get("passed")));
+        check(step.name() + "_native_client_has_the_expected_binding", localSoul.equals(step.soul()));
+        if (entity instanceof SolarPanelBlockEntity panel) {
+            int expectedRate = step.soul().isEmpty() ? 0 : panel.tier().getProductionRate();
+            check(step.name() + "_native_nighttime_generation_rate", panel.getGenerationRate() == expectedRate);
+        }
         signal(step.name());
         index++;
         actedAt = -1;
@@ -194,6 +213,6 @@ final class ClientJadeSoulsSmoke {
         result.put("checks", checks);
         result.put("captures", captures);
         if (failure != null) result.put("error", failure.toString());
-        ClientSmoke.complete("client_jade_souls", result);
+        ClientSmoke.complete(jade ? "client_jade_souls" : "client_native_machine_souls", result);
     }
 }
