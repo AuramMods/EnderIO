@@ -1,6 +1,7 @@
 package com.enderio.port.clientqa;
 
 import com.enderio.enderio.api.soul.Soul;
+import com.enderio.enderio.client.content.conduits.model.ConduitAdditionalModels;
 import com.enderio.enderio.content.conduits.probe.ConduitProbeItem;
 import com.enderio.enderio.content.conduits.type.energy.EnergyConduitConnectionConfig;
 import com.enderio.enderio.content.machines.solar_panel.SolarPanelTier;
@@ -14,6 +15,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -22,6 +24,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraftforge.client.model.IQuadTransformer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fluids.FluidStack;
@@ -82,6 +85,7 @@ final class ClientModelInventorySmoke {
     }
 
     private Map<String, Object> audit() {
+        checkConduitArrowDepth();
         var manager = minecraft.getModelManager();
         var missing = manager.getMissingModel();
         var missingSprite = missing.getParticleIcon().contents().name();
@@ -145,6 +149,34 @@ final class ClientModelInventorySmoke {
         return Map.of("blocks", blocks, "invisibleStates", invisibleStates, "missingBlocks", missingBlocks,
             "missingBlockParticles", blockParticles, "items", items, "missingItems", missingItems,
             "missingItemParticles", itemParticles, "variants", variants, "tooltips", tooltips, "language", language);
+    }
+
+    private void checkConduitArrowDepth() {
+        var variants = List.of(ConduitAdditionalModels.CONDUIT_IO_IN, ConduitAdditionalModels.CONDUIT_IO_OUT,
+            ConduitAdditionalModels.CONDUIT_IO_IN_OUT);
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            var face = faceDepths(ConduitAdditionalModels.CONDUIT_CONNECTION_BOX, side);
+            for (var variant : variants) {
+                var arrows = faceDepths(variant, side);
+                int expected = variant.equals(ConduitAdditionalModels.CONDUIT_IO_IN_OUT) ? 2 : 1;
+                boolean separated = face.size() == 1 && arrows.size() == expected && arrows.stream().allMatch(depth -> {
+                    float gap = depth - face.get(0);
+                    return gap >= 0.001f && gap <= 0.003f;
+                });
+                if (separated && expected == 2) {
+                    separated = Math.abs(arrows.get(0) - arrows.get(1)) >= 0.001f;
+                }
+                checks.merge("depth_" + variant.getPath() + "_" + side.getName(), separated, (before, after) -> before && after);
+            }
+        }
+    }
+
+    private static List<Float> faceDepths(ResourceLocation model, Direction side) {
+        int axis = side.getAxis() == Direction.Axis.X ? 0 : 2;
+        return ConduitAdditionalModels.modelOf(model).getQuads(null, null, RandomSource.create(42)).stream()
+            .filter(quad -> quad.getDirection() == side)
+            .map(quad -> Float.intBitsToFloat(quad.getVertices()[IQuadTransformer.POSITION + axis]) * side.getAxisDirection().getStep())
+            .toList();
     }
 
     private void checkTooltip(Map<String, List<String>> tooltips, String sample, String... lines) {
