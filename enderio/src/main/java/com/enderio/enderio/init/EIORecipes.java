@@ -9,6 +9,7 @@ import com.enderio.enderio.content.machines.alloy.AlloySmeltingRecipe;
 import com.enderio.enderio.content.machines.alloy.PrimitiveAlloySmeltingRecipe;
 import com.enderio.enderio.content.machines.obelisks.weather.WeatherChangeRecipe;
 import com.enderio.enderio.content.machines.painting.PaintingRecipe;
+import com.enderio.enderio.content.machines.sag_mill.Forge6GrindingBallRecipe;
 import com.enderio.enderio.content.machines.sag_mill.SagMillingRecipe;
 import com.enderio.enderio.content.machines.slicer.SlicingRecipe;
 import com.enderio.enderio.content.machines.soul_binder.SoulBindingRecipe;
@@ -47,6 +48,8 @@ public class EIORecipes {
             "primitive_alloy_smelting", PrimitiveAlloySmeltingRecipe.Serializer::new);
     public static final RecipeTypeSerializerPair<SagMillingRecipe, SagMillingRecipe.Serializer> SAG_MILLING = register(
             "sag_milling", SagMillingRecipe.Serializer::new);
+    public static final RecipeTypeSerializerPair<Forge6GrindingBallRecipe, Forge6GrindingBallRecipe.Serializer> FORGE6_GRINDING_BALL = register(
+            "grinding_ball", Forge6GrindingBallRecipe.Serializer::new);
     public static final RecipeTypeSerializerPair<SlicingRecipe, SlicingRecipe.Serializer> SLICING = register("slicing",
             SlicingRecipe.Serializer::new);
     public static final RecipeTypeSerializerPair<SoulBindingRecipe, SoulBindingRecipe.Serializer> SOUL_BINDING = register(

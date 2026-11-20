@@ -141,7 +141,8 @@ public final class ClientSmoke {
             case "sag-progression" -> new ClientSagProgressionSmoke(false);
             case "sag-backpressure" -> new ClientSagProgressionSmoke(true);
             case "stock-grinding-balls" -> new ClientGrindingBallSmoke();
-            case "legacy-sag" -> new ClientLegacySagSmoke();
+            case "legacy-sag" -> new ClientLegacySagSmoke(false);
+            case "legacy-custom-sag" -> new ClientLegacySagSmoke(true);
             case "sag-jei" -> new ClientSagJeiSmoke();
             case "sag-unified" -> new ClientUnifiedSagSmoke();
             case "slicer" -> new ClientSlicerSmoke(false);

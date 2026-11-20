@@ -35,4 +35,6 @@ The sampled upgrade source is Ender IO 6.2.18-beta on Minecraft 1.20.1 Forge. Th
 3. Open the copy and review the first-load logs. Verify representative inventories, running machines, conduit routes and stored resources in the world. Shut it down cleanly and reopen the copy to confirm they persist. Some recorded Forge 6.2 fixtures report first-load legacy ID remapping while valid content is recovered. Compare concerning IDs and saved behavior against the relevant fixture.
 4. To revert, use the original backup with its original Forge instance and jar set.
 
+For a SAG Mill with an active custom Forge 6.2 grinding ball, include the original datapack that defines its recipe. The port uses the saved ID and wear to capture the original modifiers on load. If the definition is absent, loading the mill after returning the datapack recovers the retained record. Modern item data maps take priority for balls inserted into the mill after the upgrade. [Custom grinding ball migration](cycle-259.md)
+
 The [feature evidence matrix](features.md) identifies the state exercised by each fixture. The [completion audit](completion-audit.md) tracks the remaining verification work and the tested candidate artifacts.

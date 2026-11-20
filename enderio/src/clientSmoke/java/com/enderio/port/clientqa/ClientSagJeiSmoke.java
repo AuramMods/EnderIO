@@ -232,9 +232,14 @@ final class ClientSagJeiSmoke {
     }
 
     private String readEnergy(IRecipeLayoutDrawable<SagMillingRecipe> layout, String key) {
+        String value = renderedEnergy(minecraft, layout);
+        energy.put(key, value);
+        return value;
+    }
+
+    static String renderedEnergy(Minecraft minecraft, IRecipeLayoutDrawable<SagMillingRecipe> layout) {
         var text = new EnergyText(minecraft);
         layout.getRecipeCategory().draw(layout.getRecipe(), layout.getRecipeSlotsView(), text, 84, 48);
-        energy.put(key, text.value);
         return text.value;
     }
 

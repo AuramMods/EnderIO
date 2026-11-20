@@ -7,8 +7,10 @@ import com.enderio.enderio.api.capacitor.CapacitorData;
 import com.enderio.enderio.api.capacitor.CapacitorModifier;
 import com.enderio.enderio.api.components.GrindingBallData;
 import com.enderio.enderio.content.capacitors.CapacitorLang;
+import com.enderio.enderio.content.machines.sag_mill.Forge6GrindingBallRecipe;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import com.enderio.enderio.init.EIODataComponents;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
@@ -75,7 +77,7 @@ public class TooltipHandler {
     }
 
     private static void addGrindingBallTooltips(ItemStack itemStack, List<Component> components, boolean showAdvanced) {
-        GrindingBallData data = com.enderio.core.common.datamap.ClientDataMaps.get(GrindingBallData.DATA_MAP_TYPE, itemStack.getItem());
+        GrindingBallData data = Forge6GrindingBallRecipe.forItem(Minecraft.getInstance().level, itemStack.getItem());
         if (data != null) {
             components.add(TooltipUtil.styledWithArgs(EIOCommonLang.GRINDINGBALL_MAIN_OUTPUT, (int) (data.outputMultiplier() * 100)));
             components.add(TooltipUtil.styledWithArgs(EIOCommonLang.GRINDINGBALL_BONUS_OUTPUT, (int) (data.bonusMultiplier() * 100)));

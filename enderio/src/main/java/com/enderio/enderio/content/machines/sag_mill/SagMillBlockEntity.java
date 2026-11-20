@@ -1,6 +1,7 @@
 package com.enderio.enderio.content.machines.sag_mill;
 
 import com.enderio.core.annotations.UseOnly;
+import com.enderio.core.common.recipes.RecipeLookup;
 import com.enderio.enderio.api.capacitor.CapacitorModifier;
 import com.enderio.enderio.api.capacitor.QuadraticScalable;
 import com.enderio.enderio.api.components.GrindingBallData;
@@ -58,7 +59,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     private GrindingBallData grindingBallData = GrindingBallData.IDENTITY;
     private int grindingBallDamage;
     @Nullable
-    private String unresolvedForge6BallId;
+    private String forge6BallId;
 
     private final CraftingMachineTaskHost<SagMillingRecipe, SagMillingRecipe.Input> craftingTaskHost;
 
@@ -77,7 +78,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     public void setGrindingBallData(GrindingBallData data) {
         grindingBallDamage = 0;
         grindingBallData = data;
-        unresolvedForge6BallId = null;
+        forge6BallId = null;
     }
 
     public float getGrindingBallDamage() {
@@ -134,6 +135,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     @Override
     public void onLoad() {
         super.onLoad();
+        resolveForge6GrindingBall();
         craftingTaskHost.onLevelReady();
     }
 
@@ -144,7 +146,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
                 .slotAccess(INPUT)
                 .outputSlot(4)
                 .slotAccess(OUTPUT)
-                .inputSlot((slot, stack) -> GrindingBallData.DATA_MAP_TYPE.get(level, stack.getItem()) != null)
+                .inputSlot((slot, stack) -> Forge6GrindingBallRecipe.forItem(level, stack.getItem()) != null)
                 .slotAccess(GRINDING_BALL)
                 .capacitor()
                 .build();
@@ -195,12 +197,9 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
                 if (recipe.bonusType().useGrindingBall() && grindingBallData.isIdentity()) {
                     ItemStack ball = GRINDING_BALL.getItemStack(inv);
                     if (!ball.isEmpty()) {
-                        GrindingBallData data = GrindingBallData.DATA_MAP_TYPE.get(level, ball.getItem());
-                        if (data == null) {
-                            data = GrindingBallData.IDENTITY;
-                        }
-                        setGrindingBallData(data);
-                        if (!data.isIdentity()) {
+                        GrindingBallData data = Forge6GrindingBallRecipe.forItem(level, ball.getItem());
+                        if (data != null && !data.isIdentity()) {
+                            setGrindingBallData(data);
                             ball.shrink(1);
                         }
                     }
@@ -243,9 +242,11 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
 
         if (!grindingBallData.isIdentity()) {
             tag.put(KEY_GRINDING_BALL, grindingBallData.save(lookupProvider));
-            tag.putInt(KEY_GRINDING_BALL_DAMAGE, grindingBallDamage);
-        } else if (unresolvedForge6BallId != null) {
-            tag.putString(KEY_FORGE6_GRINDING_BALL, unresolvedForge6BallId);
+        }
+        if (forge6BallId != null) {
+            tag.putString(KEY_FORGE6_GRINDING_BALL, forge6BallId);
+        }
+        if (!grindingBallData.isIdentity() || forge6BallId != null) {
             tag.putInt(KEY_GRINDING_BALL_DAMAGE, grindingBallDamage);
         }
     }
@@ -257,20 +258,39 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
         int wear = tag.getInt(KEY_GRINDING_BALL_DAMAGE);
         if (tag.contains(KEY_GRINDING_BALL, Tag.TAG_COMPOUND)) {
             restoreGrindingBall(GrindingBallData.parseOptional(lookupProvider, tag.getCompound(KEY_GRINDING_BALL)), wear);
-        } else if (tag.contains(KEY_FORGE6_GRINDING_BALL, Tag.TAG_STRING)) {
-            String legacyId = tag.getString(KEY_FORGE6_GRINDING_BALL);
-            var historical = Forge6GrindingBallData.get(legacyId);
-            if (historical != null) {
-                restoreGrindingBall(historical, wear);
-            } else {
-                setGrindingBallData(GrindingBallData.IDENTITY);
-                unresolvedForge6BallId = legacyId;
-                grindingBallDamage = wear;
+            if (!grindingBallData.isIdentity() && tag.contains(KEY_FORGE6_GRINDING_BALL, Tag.TAG_STRING)) {
+                forge6BallId = tag.getString(KEY_FORGE6_GRINDING_BALL);
             }
+        } else if (tag.contains(KEY_FORGE6_GRINDING_BALL, Tag.TAG_STRING)) {
+            setGrindingBallData(GrindingBallData.IDENTITY);
+            forge6BallId = tag.getString(KEY_FORGE6_GRINDING_BALL);
+            grindingBallDamage = wear;
+            resolveForge6GrindingBall();
         } else {
             setGrindingBallData(GrindingBallData.IDENTITY);
         }
         craftingTaskHost.load(lookupProvider, tag);
+    }
+
+    private void resolveForge6GrindingBall() {
+        if (level == null || level.isClientSide() || forge6BallId == null || !grindingBallData.isIdentity()) {
+            return;
+        }
+
+        String id = forge6BallId;
+        var recipe = RecipeLookup.find(level.getRecipeManager(), EIORecipes.FORGE6_GRINDING_BALL.type().get(), id).orElse(null);
+        if (recipe != null) {
+            restoreGrindingBall(recipe.modifiers(), grindingBallDamage);
+            forge6BallId = id;
+            setChanged();
+            return;
+        }
+
+        var stock = Forge6GrindingBallData.get(id);
+        if (stock != null) {
+            restoreGrindingBall(stock, grindingBallDamage);
+            setChanged();
+        }
     }
 
     private void restoreGrindingBall(GrindingBallData data, int wear) {
@@ -284,7 +304,9 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
 
         var carriedBall = EIODataComponents.SAG_MILL_GRINDING_BALL.get(components);
         if (carriedBall != null) {
+            String id = forge6BallId;
             restoreGrindingBall(carriedBall, EIODataComponents.SAG_MILL_GRINDING_BALL_DAMAGE.getOrDefault(components, 0));
+            forge6BallId = id;
         }
 
         // Native placement loads BlockEntityTag first. Rebind the saved recipe input once its
@@ -312,7 +334,7 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
     public void removeItemDataFromTag(CompoundTag tag) {
         super.removeItemDataFromTag(tag);
         tag.remove(KEY_GRINDING_BALL);
-        if (unresolvedForge6BallId == null) {
+        if (forge6BallId == null) {
             tag.remove(KEY_GRINDING_BALL_DAMAGE);
         }
     }

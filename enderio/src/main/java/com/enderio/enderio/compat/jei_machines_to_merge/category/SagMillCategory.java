@@ -7,6 +7,7 @@ import com.enderio.enderio.compat.jei.JEILang;
 import com.enderio.enderio.compat.jei.JEIUtils;
 import com.enderio.enderio.compat.jei_machines_to_merge.util.MachineRecipeCategory;
 import com.enderio.enderio.content.machines.MachinesLang;
+import com.enderio.enderio.content.machines.sag_mill.Forge6GrindingBallRecipe;
 import com.enderio.enderio.content.machines.sag_mill.SagMillingRecipe;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import com.enderio.enderio.init.EIOBlocks;
@@ -31,7 +32,7 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static mezz.jei.api.recipe.RecipeIngredientRole.*;
 
@@ -77,13 +78,13 @@ public class SagMillCategory extends MachineRecipeCategory<SagMillingRecipe> {
 
         IRecipeSlotBuilder gridingBallSlot = builder.addSlot(CATALYST, 74, 12).addItemStack(new ItemStack(Items.AIR));
         if (recipe.bonusType().useGrindingBall()) {
-            List<ItemStack> grindingBalls = com.enderio.core.common.datamap.ClientDataMaps.values(GrindingBallData.DATA_MAP_TYPE)
+            var current = com.enderio.core.common.datamap.ClientDataMaps.values(GrindingBallData.DATA_MAP_TYPE)
                 .keySet()
                 .stream()
                 .map(BuiltInRegistries.ITEM::get)
-                .filter(Objects::nonNull)
-                .map(ItemStack::new)
-                .collect(Collectors.toList());
+                .filter(Objects::nonNull);
+            List<ItemStack> grindingBalls = Stream.concat(current, Forge6GrindingBallRecipe.items(Minecraft.getInstance().level))
+                .distinct().map(ItemStack::new).toList();
 
             gridingBallSlot.addItemStacks(grindingBalls);
         }
@@ -154,7 +155,7 @@ public class SagMillCategory extends MachineRecipeCategory<SagMillingRecipe> {
         GrindingBallData data = recipeSlotsView.getSlotViews()
                 .get(1)
                 .getDisplayedItemStack()
-                .map(i -> com.enderio.core.common.datamap.ClientDataMaps.get(GrindingBallData.DATA_MAP_TYPE, i.getItem()))
+                .map(i -> Forge6GrindingBallRecipe.forItem(Minecraft.getInstance().level, i.getItem()))
                 .orElse(GrindingBallData.IDENTITY);
 
         if (data == null) {
