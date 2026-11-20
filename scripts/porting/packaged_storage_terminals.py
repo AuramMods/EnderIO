@@ -119,9 +119,13 @@ def exercise(args, server, results, report, phase):
     elif args.stock:
         check_rs_path(server, results, "cold_start_recovers_the_route_before_player_login")
         check_route(server, results, "cold_start_recovers_the_physical_disk_balance", 13, 21)
+    if args.ae_guide:
+        assert_probe(server, f"native_storage_routes_and_owners_before_guide_{phase}", "port_storage_native",
+                     "Native AE2 and RS storage routes and owners verified", results)
     output = ROOT / "build/port-evidence" / f"{args.name}-{phase}"
+    scenario = "rs-progression" if args.stock else "ae-terminal-guide" if args.ae_guide else "storage-terminals"
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"),
-               "--launch", str(args.launch.resolve()), "--scenario", "rs-progression" if args.stock else "storage-terminals", "--output", str(output),
+               "--launch", str(args.launch.resolve()), "--scenario", scenario, "--output", str(output),
                "--server", f"127.0.0.1:{args.port}", "--multiplayer-phase", phase, "--timeout", "175"]
     with (server.directory / f"storage-client-{phase}.log").open("w") as log:
         client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
@@ -132,7 +136,7 @@ def exercise(args, server, results, report, phase):
             if args.stock:
                 play_stock(server, results, client, output, reopen)
             else:
-                for name, marker, destination in ROUTES:
+                for name, marker, destination in (ROUTES[:1] if args.ae_guide else ROUTES):
                     check_route(server, results, f"{name}_{phase}_remote_storage_before_open", marker, 21 if reopen else 37)
                     if not reopen:
                         server.command(f"item replace entity {PLAYER} hotbar.0 with minecraft:iron_ingot{{PortRoute:{marker}}} 5")
@@ -190,9 +194,12 @@ def main():
     fixture = parser.add_mutually_exclusive_group(required=True)
     fixture.add_argument("--world", type=Path)
     fixture.add_argument("--stock", action="store_true", help="Craft and place two Refined Storage conduits in a fresh world")
+    parser.add_argument("--ae-guide", action="store_true", help="Open, scroll and close the native AE2 terminal guide on the copied ME route")
     parser.add_argument("--probe", required=True, type=Path)
     parser.add_argument("--mod", action="append", required=True, type=Path)
     args = parser.parse_args()
+    if args.ae_guide and not args.world:
+        parser.error("--ae-guide requires a converted --world containing the powered ME route")
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be one directory name")
     directory = ROOT / "build/port-runtime" / args.name

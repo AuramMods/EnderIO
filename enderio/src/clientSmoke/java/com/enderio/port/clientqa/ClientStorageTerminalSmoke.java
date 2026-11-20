@@ -3,6 +3,7 @@ package com.enderio.port.clientqa;
 import appeng.api.stacks.AEItemKey;
 import appeng.client.gui.me.common.MEStorageScreen;
 import appeng.client.gui.me.common.RepoSlot;
+import appeng.client.gui.widgets.OpenGuideButton;
 import com.refinedmods.refinedstorage.screen.grid.GridScreen;
 import com.refinedmods.refinedstorage.screen.grid.stack.ItemGridStack;
 import com.enderio.enderio.api.EnderIODataComponents;
@@ -13,6 +14,7 @@ import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CraftingScreen;
@@ -33,6 +35,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import org.lwjgl.glfw.GLFW;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -43,7 +46,7 @@ import java.util.Map;
 final class ClientStorageTerminalSmoke {
     private enum Stage {
         TITLE, JOIN, TABLE, RECIPE, RESULT, TAKEN, PLACE_CONDUIT, PLACED_CONDUIT,
-        OPEN, PLACING_GRID, INITIAL, PICKUP, DEPOSITED, WITHDRAWING, STORING, VERIFIED, DONE
+        OPEN, PLACING_GRID, INITIAL, GUIDE_PAGE, GUIDE_SCROLLED, PICKUP, DEPOSITED, WITHDRAWING, STORING, VERIFIED, DONE
     }
 
     private record Route(String name, int marker, int destination) {
@@ -59,6 +62,7 @@ final class ClientStorageTerminalSmoke {
     private static final ResourceLocation RS_CONDUIT = ResourceLocation.parse("enderio:rs");
     private static final ResourceLocation RS_RECIPE = ResourceLocation.parse("enderio:rs_conduit");
     private static final ResourceLocation GRID_ITEM = ResourceLocation.fromNamespaceAndPath("refinedstorage", "grid");
+    private static final ResourceLocation TERMINAL_GUIDE = ResourceLocation.parse("ae2:items-blocks-machines/terminals.md");
     private static final int BEFORE = 37;
     private static final int OFFER = 5;
     private static final int HALF = (BEFORE + OFFER) / 2;
@@ -68,21 +72,27 @@ final class ClientStorageTerminalSmoke {
     private final String address = System.getProperty("enderio.clientqa.server");
     private final boolean reopen = System.getProperty("enderio.clientqa.multiplayerPhase").equals("verify");
     private final boolean stock;
+    private final boolean guide;
     private final int initial;
     private final int offer;
     private final int offerSlot;
     private final int withdrawal;
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
+    private final Map<String, Object> guideObservation = new LinkedHashMap<>();
     private final long started = System.nanoTime();
     private long titleAt;
     private int arrivalTick = -1;
     private int placedConduits;
+    private int guideTick = -1;
+    private int originalScroll;
+    private AbstractContainerScreen<?> terminalBeforeGuide;
     private Stage stage = Stage.TITLE;
     private Route route;
 
-    ClientStorageTerminalSmoke(boolean stock) {
+    ClientStorageTerminalSmoke(boolean stock, boolean guide) {
         this.stock = stock;
+        this.guide = guide;
         route = stock ? RS : AE;
         initial = reopen ? HALF : BEFORE;
         offer = stock && reopen ? 3 : OFFER;
@@ -95,7 +105,7 @@ final class ClientStorageTerminalSmoke {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
             if (minecraft.screen instanceof DisconnectedScreen screen) {
-                throw new AssertionError("Disconnected during " + route.name + " " + stage + " with " + screen.getTitle().getString());
+                throw new AssertionError("Disconnected during " + route.name + " " + stage + " with " + screen.getNarrationMessage().getString());
             }
             if (System.nanoTime() - started > 150_000_000_000L) {
                 throw new AssertionError("Timed out during " + route.name + " " + stage);
@@ -129,6 +139,7 @@ final class ClientStorageTerminalSmoke {
                     }
                 }
                 case INITIAL, PICKUP, DEPOSITED, WITHDRAWING, STORING -> useTerminal();
+                case GUIDE_PAGE, GUIDE_SCROLLED -> verifyGuide();
                 case VERIFIED -> {
                     if (ready("server-verified")) finish(null);
                 }
@@ -247,6 +258,11 @@ final class ClientStorageTerminalSmoke {
         switch (stage) {
             case INITIAL -> {
                 if (entry.quantity != initial) return;
+                if (guide && terminalBeforeGuide == null) {
+                    openGuide(screen);
+                    return;
+                }
+                if (guide) check("guide_returns_to_the_same_terminal_and_balance", screen == terminalBeforeGuide);
                 check(route.name + "_screen_syncs_tagged_count", menu.getCarried().isEmpty());
                 capture(route.name + (reopen ? "-reopened" : "-initial"));
                 if (reopen) {
@@ -292,6 +308,57 @@ final class ClientStorageTerminalSmoke {
             }
             default -> { }
         }
+    }
+
+    private void openGuide(AbstractContainerScreen<?> terminal) {
+        var button = terminal.children().stream().filter(OpenGuideButton.class::isInstance).map(OpenGuideButton.class::cast)
+            .filter(candidate -> candidate.visible && candidate.active).findFirst().orElse(null);
+        if (button == null) return;
+        terminalBeforeGuide = terminal;
+        check("native_terminal_help_button_opens", terminal.mouseClicked(button.getX() + button.getWidth() / 2.0,
+            button.getY() + button.getHeight() / 2.0, 0));
+        stage = Stage.GUIDE_PAGE;
+    }
+
+    private void verifyGuide() throws ReflectiveOperationException, IOException {
+        var screen = minecraft.screen;
+        if (screen == null || !screen.getClass().getName().equals("guideme.internal.screen.GuideScreen")) return;
+        int tick = minecraft.player.tickCount;
+        if (guideTick < 0) guideTick = tick;
+        if (tick - guideTick < 3) return;
+        var type = screen.getClass();
+        var page = type.getMethod("getCurrentPageId").invoke(screen);
+        check("guideme_opens_ae2s_original_terminals_page", TERMINAL_GUIDE.equals(page));
+        if (stage == Stage.GUIDE_PAGE) {
+            // Keep the optional GuideME implementation off the core QA classpath.
+            var collection = type.getMethod("getGuide").invoke(screen);
+            var pages = Class.forName("guideme.PageCollection", false, type.getClassLoader());
+            check("terminals_page_comes_from_the_registered_ae2_guide", Boolean.TRUE.equals(
+                pages.getMethod("pageExists", ResourceLocation.class).invoke(collection, TERMINAL_GUIDE)));
+            var bounds = type.getMethod("getDocumentViewport").invoke(screen);
+            int height = (Integer) bounds.getClass().getMethod("height").invoke(bounds);
+            check("guideme_lays_out_the_document_viewport", height > 0);
+            guideObservation.put("page", page.toString());
+            guideObservation.put("viewportHeight", height);
+            check("guideme_retains_the_open_terminal_as_its_parent", type.getMethod("getReturnToOnClose").invoke(screen) == terminalBeforeGuide);
+            originalScroll = documentYAtOrigin(screen);
+            capture("ae-terminal-guide");
+            check("native_guide_scroll_is_consumed", screen.mouseScrolled(screen.width * 0.72, screen.height * 0.65, -4));
+            guideTick = tick;
+            stage = Stage.GUIDE_SCROLLED;
+        } else {
+            int scroll = documentYAtOrigin(screen) - originalScroll;
+            check("native_guide_scroll_moves_the_document", scroll > 0);
+            guideObservation.put("documentScrollDelta", scroll);
+            capture("ae-terminal-guide-scrolled");
+            check("escape_closes_the_native_guide", screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0));
+            stage = Stage.INITIAL;
+        }
+    }
+
+    private static int documentYAtOrigin(Screen screen) throws ReflectiveOperationException {
+        var point = screen.getClass().getMethod("getDocumentPointUnclamped", double.class, double.class).invoke(screen, 0.0, 0.0);
+        return (Integer) point.getClass().getMethod("y").invoke(point);
     }
 
     private int withdrawalSlot() {
@@ -354,7 +421,7 @@ final class ClientStorageTerminalSmoke {
     private void advance() throws IOException {
         minecraft.player.closeContainer();
         signal(route.name + "-done");
-        if (route == AE) {
+        if (route == AE && !guide) {
             route = RS;
             arrivalTick = -1;
             stage = Stage.OPEN;
@@ -391,6 +458,7 @@ final class ClientStorageTerminalSmoke {
         var result = new LinkedHashMap<String, Object>();
         result.put("checks", checks);
         result.put("captures", captures);
+        if (guide) result.put("guideObservation", guideObservation);
         result.put("passed", failure == null);
         if (failure != null) result.put("error", failure.toString());
         ClientSmoke.complete("client_storage_terminals", result);
