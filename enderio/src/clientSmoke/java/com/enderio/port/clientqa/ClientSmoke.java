@@ -38,7 +38,8 @@ public final class ClientSmoke {
             case "carried-tanks" -> new ClientCarriedTankSmoke();
             case "extraction-upgrades" -> new ClientExtractionUpgradeSmoke();
             case "legacy-lights" -> new ClientLegacyLightSmoke();
-            case "primitive-smelter" -> new ClientPrimitiveSmelterSmoke();
+            case "primitive-smelter" -> new ClientPrimitiveSmelterSmoke(false);
+            case "industrial-insulation" -> new ClientPrimitiveSmelterSmoke(true);
             case "stirling" -> new ClientStirlingSmoke();
             case "soul-binder" -> new ClientSoulBinderSmoke();
             case "soul-binder-backpressure" -> new ClientSoulBinderBackpressureSmoke();

@@ -106,6 +106,29 @@ public class AlloySmelterTests {
         });
     }
 
+    @GameTest
+    public static void industrialInsulationUsesStockTagsAndEnergy(GameplayTest test) {
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(1, 1, 1)
+            .set(0, 0, 0, EIOBlocks.ALLOY_SMELTER.get().defaultBlockState()));
+
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var ingredients = List.of(EIOItems.POWDERED_IRON.get(), Items.ORANGE_WOOL, EIOItems.POWDERED_LAPIS_LAZULI.get());
+            helper.startSequence()
+                .thenExecute(() -> {
+                    helper.getBlockEntity(0, 1, 0, AlloySmelterBlockEntity.class).setMode(AlloySmelterMode.ALLOYS);
+                    helper.insertIntoContainer(0, 1, 0, EIOItems.OCTADIC_CAPACITOR.get(), 1);
+                    helper.provideEnergyExact(0, 1, 0, 6_500);
+                    for (var ingredient : ingredients) helper.insertIntoContainer(0, 1, 0, ingredient, 1);
+                })
+                .thenWaitUntil(() -> helper.assertContainerHasExactly(0, 1, 0, EIOBlocks.INDUSTRIAL_INSULATION.get().asItem(), 1))
+                .thenExecute(() -> {
+                    for (var ingredient : ingredients) helper.assertContainerHasExactly(0, 1, 0, ingredient, 0);
+                    helper.assertEnergyStored(0, 1, 0, 3_300);
+                })
+                .thenSucceed();
+        });
+    }
+
     @GameTest(timeoutTicks = 120)
     public static void smelterModeSelectsTheMatchingQuartzBlockRecipe(GameplayTest test) {
         test.registerGameTestTemplate(() -> FixtureBuilder.withSize(3, 1, 1)
