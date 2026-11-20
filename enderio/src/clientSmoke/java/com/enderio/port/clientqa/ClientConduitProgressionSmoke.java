@@ -39,12 +39,14 @@ import java.util.function.Predicate;
 
 final class ClientConduitProgressionSmoke {
     private enum Stage { TITLE, JOIN, TABLE, RECIPE, WRONG_VARIANT, RESULT, TAKEN, SMELTER, SWAP, CAPACITY, UPGRADE, UPGRADED, FINISH, DONE }
-    enum Family { ENERGY, ITEM, FLUID }
+    enum Family { ENERGY, ITEM, FLUID, CHEMICAL }
 
     private record Craft(String id, String item, int count, String variant, String lowerVariant, String alloy) {
         Craft(String capacitor) { this(capacitor, capacitor, 1, "", "", ""); }
 
         Craft(String recipe, String variant) { this(recipe, "conduit", 8, variant, "", ""); }
+
+        Craft(String recipe, String variant, int count) { this(recipe, "conduit", count, variant, "", ""); }
 
         Craft(String recipe, String variant, String lowerVariant, String alloy) {
             this(recipe, "conduit", 8, variant, lowerVariant, alloy);
@@ -72,6 +74,13 @@ final class ClientConduitProgressionSmoke {
         new Craft("ender_fluid", "ender_fluid"),
         new Craft("ender_fluid_conduit_upgrade", "ender_fluid", "pressurized_fluid", "vibrant_alloy_ingot"));
     private static final List<Integer> FLUID_RATES = List.of(200, 1_000, 8_000);
+    private static final Craft BASIC_CHEMICAL = new Craft("mek_basic_pressurized_tube", "chemical", 3);
+    private static final List<Craft> CHEMICAL_RECIPES = List.of(BASIC_CHEMICAL, BASIC_CHEMICAL, BASIC_CHEMICAL, BASIC_CHEMICAL,
+        new Craft("mek_advanced_pressurized_tube", "pressurized_chemical", 3),
+        new Craft("mek_basic_pressurized_tube_upgrade", "pressurized_chemical", "chemical", "mekanism:alloy_infused"),
+        new Craft("mek_elite_pressurized_tube", "ender_chemical", 3),
+        new Craft("mek_advanced_pressurized_tube_upgrade", "ender_chemical", "pressurized_chemical", "mekanism:alloy_reinforced"));
+    private static final List<Integer> CHEMICAL_RATES = List.of(750, 2_000, 64_000);
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
@@ -104,11 +113,13 @@ final class ClientConduitProgressionSmoke {
             case ENERGY -> ENERGY_RECIPES;
             case ITEM -> ITEM_RECIPES;
             case FLUID -> FLUID_RECIPES;
+            case CHEMICAL -> CHEMICAL_RECIPES;
         };
         tiers = switch (family) {
             case ENERGY -> List.of("energy", "enhanced_energy", "ender_energy");
             case ITEM -> List.of("item", "enhanced_item", "ender_item");
             case FLUID -> List.of("fluid", "pressurized_fluid", "ender_fluid");
+            case CHEMICAL -> List.of("chemical", "pressurized_chemical", "ender_chemical");
         };
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
@@ -167,6 +178,7 @@ final class ClientConduitProgressionSmoke {
         if (!(minecraft.screen instanceof CraftingScreen screen)) return;
         var menu = screen.getMenu();
         String name = step.id() + "_" + recipeIndex;
+        int variantSlot = family == Family.CHEMICAL ? 9 : 5;
         switch (stage) {
             case RECIPE -> {
                 beforeCraft = count(step::matches);
@@ -176,20 +188,25 @@ final class ClientConduitProgressionSmoke {
                     minecraft.gameMode.handlePlaceRecipe(menu.containerId, recipe, false);
                     stage = Stage.RESULT;
                 } else {
-                    distribute(menu, stack -> stack.is(item("conduit_binder")), 1, 2, 3, 7, 8, 9);
-                    distribute(menu, stack -> stack.is(item(step.alloy())), 4, 6);
-                    distribute(menu, stack -> conduit(stack, step.variant()), 5);
+                    if (family == Family.CHEMICAL) {
+                        distribute(menu, stack -> conduit(stack, step.lowerVariant()), 1, 2, 3, 4, 6, 7, 8);
+                        distribute(menu, stack -> stack.is(item(step.alloy())), 5);
+                    } else {
+                        distribute(menu, stack -> stack.is(item("conduit_binder")), 1, 2, 3, 7, 8, 9);
+                        distribute(menu, stack -> stack.is(item(step.alloy())), 4, 6);
+                    }
+                    distribute(menu, stack -> conduit(stack, step.variant()), variantSlot);
                     stage = Stage.WRONG_VARIANT;
                 }
                 requestedAt = player.tickCount;
             }
             case WRONG_VARIANT -> {
-                if (player.tickCount - requestedAt < 8 || !conduit(menu.getSlot(5).getItem(), step.variant())) return;
+                if (player.tickCount - requestedAt < 8 || !conduit(menu.getSlot(variantSlot).getItem(), step.variant())) return;
                 check(name + "_rejects_the_wrong_tagged_variant", !menu.getSlot(0).hasItem());
                 var wrongSource = playerSlot(menu, stack -> conduit(stack, step.variant()));
-                click(menu, 5, 0);
+                click(menu, variantSlot, 0);
                 click(menu, wrongSource.index, 0);
-                distribute(menu, stack -> conduit(stack, step.lowerVariant()), 5);
+                distribute(menu, stack -> conduit(stack, step.lowerVariant()), variantSlot);
                 requestedAt = player.tickCount;
                 stage = Stage.RESULT;
             }
@@ -202,13 +219,14 @@ final class ClientConduitProgressionSmoke {
                 }
                 if (family != Family.ENERGY) {
                     int tier = tiers.indexOf(step.variant());
+                    var rates = family == Family.CHEMICAL ? CHEMICAL_RATES : FLUID_RATES;
                     String expected = family == Family.ITEM ? "Effective Rate: " + (32 << tier) + " Items/sec"
-                        : String.format("Effective Rate: %,d mB/t", FLUID_RATES.get(tier));
+                        : String.format("Effective Rate: %,d mB/t", rates.get(tier));
                     check(name + "_displays_its_effective_transfer_rate", result.getTooltipLines(player, TooltipFlag.NORMAL)
                         .stream().anyMatch(line -> line.getString().equals(expected)));
                 }
                 if (!step.lowerVariant().isEmpty()) {
-                    if (!conduit(menu.getSlot(5).getItem(), step.lowerVariant())) return;
+                    if (!conduit(menu.getSlot(variantSlot).getItem(), step.lowerVariant())) return;
                     capture(step.id());
                 }
                 minecraft.gameMode.handleInventoryMouseClick(menu.containerId, 0, 0, ClickType.QUICK_MOVE, player);
@@ -340,7 +358,7 @@ final class ClientConduitProgressionSmoke {
     }
 
     private static Item item(String path) {
-        return BuiltInRegistries.ITEM.get(id(path));
+        return BuiltInRegistries.ITEM.get(path.contains(":") ? ResourceLocation.parse(path) : id(path));
     }
 
     private static ResourceLocation id(String path) {
