@@ -1,6 +1,6 @@
 # Ender IO for Minecraft Forge 1.20.1
 
-The port targets Minecraft 1.20.1, Forge 47.4.28 and Java 17. The tested Java distribution is Temurin 17.0.18. The core profile uses one Ender IO runtime jar. Its nested archives include EnderCore, Modded Conduits and GraphLib3 3.0.5. [Packaging evidence](cycle-251.md)
+The port targets Minecraft 1.20.1, Forge 47.4.28 and Java 17. The tested Java distribution is Temurin 17.0.18. The core profile uses one Ender IO runtime jar. Its nested archives include EnderCore, Modded Conduits and GraphLib3 3.0.5. [Packaging evidence](cycle-272.md)
 
 ## Install the runtime jar
 
@@ -22,7 +22,7 @@ Run from the port checkout with Java 17 active. The wrapper pins Gradle 9.8.2 an
 ./gradlew :enderio:reobfJar
 ```
 
-The runtime archive is in `enderio/build/libs`. To run the unit and native GameTest profiles without assembling every artifact, use `./gradlew check --continue`. The module `build/test-results` directories contain XML reports. Main gameplay coverage has a separate discovery list and an execution check. [Packaging comparison](cycle-251.md), [Main gameplay test suite](../../../enderio/src/gametest/README.md), [Registry test suite](../../../enderio/src/registryTest/README.md)
+The runtime archive is in `enderio/build/libs`. To run the unit and native GameTest profiles without assembling every artifact, use `./gradlew check --continue`. The module `build/test-results` directories contain XML reports. Main gameplay coverage has a separate discovery list and an execution check. [Packaging comparison](cycle-272.md), [Main gameplay test suite](../../../enderio/src/gametest/README.md), [Registry test suite](../../../enderio/src/registryTest/README.md)
 
 Use the [packaged server harness](packaged-server.md) for a clean dedicated Forge instance and the [guarded client harness](client-harness.md) for the matching client and TCP scenarios. The macOS guard verifies focus and window state independently of the game and keeps the isolated client's volumes and narrator off. The harness documentation gives the commands and evidence locations.
 
