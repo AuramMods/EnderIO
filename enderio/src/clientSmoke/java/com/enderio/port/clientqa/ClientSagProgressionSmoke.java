@@ -34,13 +34,20 @@ import java.util.Map;
 
 final class ClientSagProgressionSmoke {
     private enum Stage { TITLE, JOIN, STOCK, STOCK_PAUSED, STOCK_RESUMED, AUTHORED, AUTHORED_PAUSED, BALL_EXPIRED,
-        TABLE, RECIPE, PREVIEW, CRAFTED, FINISH, DONE }
+        TABLE, RECIPE, PREVIEW, CRAFTED, FINISH, SWAP_OPEN, SWAP_PAID, SWAP_INPUT, SWAP_OUTPUT, SWAP_SETTLED, DONE }
+
+    private record SwapTrial(String name, BlockPos mill, Item replacement, int hotbar) { }
 
     private static final BlockPos STOCK = new BlockPos(3063, 80, 8);
     private static final BlockPos AUTHORED = new BlockPos(3071, 80, 8);
     private static final BlockPos TABLE = new BlockPos(3067, 80, 8);
     private static final GrindingBallData FLINT = new GrindingBallData(1.2f, 1.25f, 0.85f, 24000);
     private static final GrindingBallData FEATHER = new GrindingBallData(2, 10, 0.5f, 2200);
+    private static final GrindingBallData REDSTONE_ALLOY = new GrindingBallData(1, 1, 0.35f, 30000);
+    private static final int PAID_COAL_COST = 840;
+    private static final int FIRST_OUTPUT = SagMillMenu.INPUTS_INDEX + SagMillMenu.INPUT_COUNT;
+    private static final SwapTrial STONE_SWAP = new SwapTrial("stone", new BlockPos(4980, 80, 8), Items.STONE, 0);
+    private static final SwapTrial CHARCOAL_SWAP = new SwapTrial("charcoal", new BlockPos(4988, 80, 8), Items.CHARCOAL, 1);
     private static final ResourceLocation CAPACITOR_RECIPE = ResourceLocation.parse("enderio:double_layer_capacitor");
 
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -48,14 +55,17 @@ final class ClientSagProgressionSmoke {
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
+    private final boolean backpressure;
     private final long started = System.nanoTime();
     private Stage stage = Stage.TITLE;
+    private SwapTrial trial = STONE_SWAP;
     private long titleAt;
     private int useAt = -1;
     private int requestTick;
     private int initialPowder;
 
-    ClientSagProgressionSmoke() {
+    ClientSagProgressionSmoke(boolean backpressure) {
+        this.backpressure = backpressure;
         MinecraftForge.EVENT_BUS.addListener(this::render);
     }
 
@@ -83,7 +93,7 @@ final class ClientSagProgressionSmoke {
                     check("dedicated_survival_tcp", !player.isCreative() && !player.isSpectator()
                         && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
                     signal("connected");
-                    stage = Stage.STOCK;
+                    stage = backpressure ? Stage.SWAP_OPEN : Stage.STOCK;
                 }
                 case STOCK -> {
                     if (open("stock", STOCK)) stage = Stage.STOCK_PAUSED;
@@ -103,12 +113,81 @@ final class ClientSagProgressionSmoke {
                 case FINISH -> {
                     if (ready("complete")) finish(null);
                 }
+                case SWAP_OPEN -> {
+                    if (open(trial.name + "-open", trial.mill)) stage = Stage.SWAP_PAID;
+                }
+                case SWAP_PAID, SWAP_INPUT, SWAP_OUTPUT, SWAP_SETTLED -> checkSwap();
                 default -> { }
             }
         } catch (Throwable failure) {
             failure.printStackTrace();
             finish(failure);
         }
+    }
+
+    private void checkSwap() throws IOException {
+        if (!(minecraft.screen instanceof SagMillScreen screen)) return;
+        var menu = screen.getMenu();
+        var player = minecraft.player;
+        var input = menu.getSlot(SagMillMenu.INPUTS_INDEX).getItem();
+        var first = menu.getSlot(FIRST_OUTPUT).getItem();
+        String name = trial.name;
+        switch (stage) {
+            case SWAP_PAID -> {
+                if (!matches(menu, REDSTONE_ALLOY, PAID_COAL_COST, PAID_COAL_COST, PAID_COAL_COST)
+                    || !tagged(input, Items.COAL, 1, "PortSagInput") || !tagged(first, Items.IRON_INGOT, 64, "PortSagStock")) return;
+                check(name + "_reloads_the_full_paid_job_and_spare_ball", hasSpareBall(menu));
+                capture(name + "-paid");
+                minecraft.gameMode.handleInventoryMouseClick(menu.containerId, SagMillMenu.INPUTS_INDEX, trial.hotbar, ClickType.SWAP, player);
+                stage = Stage.SWAP_INPUT;
+            }
+            case SWAP_INPUT -> {
+                if (!tagged(input, trial.replacement, 1, "PortSagReplacement")
+                    || !tagged(player.getInventory().getItem(trial.hotbar), Items.COAL, 1, "PortSagInput")) return;
+                if (!ready(name + "-clear")) {
+                    if (!Files.exists(output.resolve("signals/" + name + "-swapped.json"))) signal(name + "-swapped");
+                    return;
+                }
+                check(name + "_swap_keeps_all_original_output_and_no_extra_wear", tagged(first, Items.IRON_INGOT, 64, "PortSagStock")
+                    && close(menu.getGrindingBallDamage(), 1 - PAID_COAL_COST / (float) REDSTONE_ALLOY.durability()) && hasSpareBall(menu));
+                minecraft.gameMode.handleInventoryMouseClick(menu.containerId, FIRST_OUTPUT, 0, ClickType.QUICK_MOVE, player);
+                stage = Stage.SWAP_OUTPUT;
+            }
+            case SWAP_OUTPUT -> {
+                int stockTaken = player.getInventory().items.stream()
+                    .filter(stack -> tagged(stack, Items.IRON_INGOT, 64, "PortSagStock")).mapToInt(ItemStack::getCount).sum();
+                if (stockTaken != (trial == STONE_SWAP ? 64 : 128)) return;
+                signal(name + "-cleared");
+                stage = Stage.SWAP_SETTLED;
+            }
+            case SWAP_SETTLED -> {
+                if (!ready(name + "-settled")) return;
+                int expected = Integer.parseInt(Files.readString(output.resolve(name + "-powder")));
+                boolean balanced = expected == 0 ? first.isEmpty() && tagged(input, Items.STONE, 1, "PortSagReplacement")
+                    : first.is(EIOItems.POWDERED_COAL.get()) && first.getCount() == expected && input.isEmpty();
+                checks.put(name + "_shows_expected_input_output_and_unchanged_wear",
+                    balanced && matches(menu, REDSTONE_ALLOY, 0, 1, PAID_COAL_COST) && hasSpareBall(menu));
+                capture(name + "-settled");
+                player.closeContainer();
+                signal(name + "-done");
+                if (trial == CHARCOAL_SWAP) {
+                    finish(null);
+                } else {
+                    trial = CHARCOAL_SWAP;
+                    stage = Stage.SWAP_OPEN;
+                }
+            }
+            default -> { }
+        }
+    }
+
+    private static boolean tagged(ItemStack stack, Item item, int count, String key) {
+        return stack.is(item) && stack.getCount() == count && stack.hasTag() && stack.getTag().getInt(key) == 233;
+    }
+
+    private static boolean hasSpareBall(SagMillMenu menu) {
+        var spare = menu.getSlot(SagMillMenu.LAST_INDEX).getItem();
+        return spare.is(EIOItems.REDSTONE_ALLOY_BALL.get()) && spare.getCount() == 1;
     }
 
     private void checkMill() throws IOException {
@@ -232,7 +311,7 @@ final class ClientSagProgressionSmoke {
         var result = new LinkedHashMap<String, Object>();
         result.put("checks", checks);
         result.put("captures", captures);
-        result.put("passed", failure == null);
+        result.put("passed", failure == null && checks.values().stream().allMatch(Boolean.TRUE::equals));
         if (failure != null) result.put("error", failure.toString());
         ClientSmoke.complete("client_sag_progression", result);
     }

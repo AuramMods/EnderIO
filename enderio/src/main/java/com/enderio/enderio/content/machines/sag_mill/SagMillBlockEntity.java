@@ -182,6 +182,11 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
             SagMillingRecipe.Input container, @Nullable SagMillingRecipe recipe) {
         return new PoweredCraftingMachineTask<>(level, getInventory(), getEnergyStorage(), container, OUTPUT, recipe) {
             @Override
+            protected SagMillingRecipe.Input getCurrentRecipeInput() {
+                return new SagMillingRecipe.Input(INPUT.getItemStack(getInventory()), container.grindingBallData());
+            }
+
+            @Override
             protected void consumeInputs(SagMillingRecipe recipe) {
                 MachineInventory inv = getInventory();
                 INPUT.getItemStack(inv).shrink(1);

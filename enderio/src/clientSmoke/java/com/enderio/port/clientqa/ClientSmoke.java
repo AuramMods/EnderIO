@@ -125,7 +125,8 @@ public final class ClientSmoke {
             case "starter-progression" -> new ClientStarterProgressionSmoke();
             case "energy-progression" -> new ClientConduitProgressionSmoke(false);
             case "item-progression" -> new ClientConduitProgressionSmoke(true);
-            case "sag-progression" -> new ClientSagProgressionSmoke();
+            case "sag-progression" -> new ClientSagProgressionSmoke(false);
+            case "sag-backpressure" -> new ClientSagProgressionSmoke(true);
             case "stock-grinding-balls" -> new ClientGrindingBallSmoke();
             case "legacy-sag" -> new ClientLegacySagSmoke();
             case "sag-jei" -> new ClientSagJeiSmoke();
