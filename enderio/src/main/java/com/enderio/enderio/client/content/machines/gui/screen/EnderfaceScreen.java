@@ -26,6 +26,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -66,8 +67,6 @@ public class EnderfaceScreen extends Screen {
 
     private float pitch = -45;
     private float yaw = 45;
-
-    private boolean chunkLoaded;
 
     private int gw;
     private int gh;
@@ -120,8 +119,6 @@ public class EnderfaceScreen extends Screen {
         }
 
         origin.set(enderfacePos.getX() + 0.5, enderfacePos.getY() + 0.5, enderfacePos.getZ() + 0.5);
-
-        chunkLoaded = world.isLoaded(enderfacePos);
     }
 
     @Override
@@ -252,8 +249,24 @@ public class EnderfaceScreen extends Screen {
         return blockTransform;
     }
 
-    public void setWorldNeedsRebuild() {
-        this.worldNeedsRebuild = true;
+    public void invalidateBlock(ClientLevel level, BlockPos pos) {
+        // Geometry at the edge can depend on a block just outside the preview.
+        int radius = range + 1;
+        if (level == world && Math.abs(pos.getX() - enderfacePos.getX()) <= radius
+                && Math.abs(pos.getY() - enderfacePos.getY()) <= radius
+                && Math.abs(pos.getZ() - enderfacePos.getZ()) <= radius) {
+            worldNeedsRebuild = true;
+        }
+    }
+
+    public void invalidateChunk(ClientLevel level, ChunkPos chunk) {
+        int radius = range + 1;
+        if (level == world && chunk.getMinBlockX() <= enderfacePos.getX() + radius
+                && chunk.getMaxBlockX() >= enderfacePos.getX() - radius
+                && chunk.getMinBlockZ() <= enderfacePos.getZ() + radius
+                && chunk.getMaxBlockZ() >= enderfacePos.getZ() - radius) {
+            worldNeedsRebuild = true;
+        }
     }
 
     private void renderWorld(GuiGraphics graphics, float partialTick) {
@@ -465,7 +478,7 @@ public class EnderfaceScreen extends Screen {
 
         if (!animateInX && !animateInY) {
 
-            if (chunkLoaded) {
+            if (world.hasChunkAt(enderfacePos)) {
                 updateCamera(par1, par2);
                 renderWorld(graphics, partialTick);
             } else {
@@ -477,19 +490,24 @@ public class EnderfaceScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == InputConstants.MOUSE_BUTTON_RIGHT && selectedPos != null) {
-            if (DEBUG_SELECTION_POSITION) {
-                System.out.println(selectedPos);
-                System.out.println(selectedSide);
-                System.out.println(selectedLocation);
-                System.out.println(world.getBlockState(selectedPos));
-            }
-            // Open menu here
-            EIONetwork.sendToServer(new ServerboundEnderfaceInteractPacket(
-                    new BlockHitResult(selectedLocation, selectedSide, selectedPos, false)));
-            return true;
+        if (button != InputConstants.MOUSE_BUTTON_RIGHT || animateInX || animateInY || !world.hasChunkAt(enderfacePos)) {
+            return super.mouseClicked(mouseX, mouseY, button);
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+
+        updateCamera(Mth.floor(mouseX), Mth.floor(mouseY));
+        if (selectedPos == null) {
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
+
+        if (DEBUG_SELECTION_POSITION) {
+            System.out.println(selectedPos);
+            System.out.println(selectedSide);
+            System.out.println(selectedLocation);
+            System.out.println(world.getBlockState(selectedPos));
+        }
+        EIONetwork.sendToServer(new ServerboundEnderfaceInteractPacket(
+                new BlockHitResult(selectedLocation, selectedSide, selectedPos, false)));
+        return true;
     }
 
     private float portalFade = 1;

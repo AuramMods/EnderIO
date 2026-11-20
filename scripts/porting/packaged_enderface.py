@@ -10,6 +10,7 @@ import sys
 
 sys.dont_write_bytecode = True
 from client.run_multiplayer import stop_client, wait_signal
+from packaged_legacy_transfer_filters import wait_ticks
 from packaged_server_smoke import FORGE, ROOT, digest
 from packaged_spawners import prepare_profile, run_stage
 
@@ -18,6 +19,7 @@ PLAYER = "EnderIOQA"
 PACK = "mod/enderio:data/enderio/datapacks/enderface"
 FACE = "3040 81 8"
 CHEST = "3042 81 3"
+OCCLUDER = "3042 81 2"
 TANK = "3038 81 13"
 WATER = '{Fluids:{Tanks:[{Index:0,Contents:{FluidName:"minecraft:water",Amount:1750}}]}}'
 COPPER = '{id:"minecraft:copper_ingot",Count:7b}'
@@ -61,7 +63,7 @@ def client_scenario(args, server, results, report, phase):
     output = ROOT / "build/port-evidence" / f"{args.name}-{phase}-client"
     command = [sys.executable, str(ROOT / "scripts/porting/client/run_smoke.py"), "--launch", str(args.launch.resolve()),
                "--scenario", "enderface", "--multiplayer-phase", phase, "--output", str(output),
-               "--server", f"127.0.0.1:{args.port}", "--timeout", "150"]
+               "--server", f"127.0.0.1:{args.port}", "--timeout", "240"]
     summary_path = output / "summary.json"
     with (server.directory / f"enderface-{phase}-client.log").open("w") as log:
         client = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
@@ -73,10 +75,19 @@ def client_scenario(args, server, results, report, phase):
             server.command(f"tp {PLAYER} 3040.5 80 24.5 180 0.5")
             (output / "server-ready").touch()
             if phase == "exercise":
+                wait_signal(client, output, "preview-ready")
+                server.command(f"setblock {OCCLUDER} minecraft:emerald_block")
+                wait_signal(client, output, "occluder-clicked")
+                wait_ticks(server, 8)
+                server.assert_state("preview_occluder_keeps_the_remote_chest_intact",
+                                    f"if block {OCCLUDER} minecraft:emerald_block if data block {CHEST} Items[{COPPER}] "
+                                    f"{staff_charge(8000)}", results)
+                server.command(f"setblock {OCCLUDER} minecraft:air")
                 wait_signal(client, output, "chest-transferred")
                 server.assert_state("remote_shift_click_moves_all_seven_items_once",
                                     f"unless data block {CHEST} Items[0] if data entity {PLAYER} Inventory[{COPPER}] "
                                     f"{staff_charge(8000)}", results)
+                (output / "server-checked-chest").touch()
                 wait_signal(client, output, "tank-opened")
                 server.assert_state("remote_tank_has_exact_fluid_and_staff_cost",
                                     f"if data block {TANK} {WATER} {staff_charge(7000)}", results)

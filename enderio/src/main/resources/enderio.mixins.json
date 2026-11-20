@@ -19,7 +19,8 @@
         "BlockRenderDispatcherMixin",
         "ChunkCompileTaskAccessor",
         "ChunkRebuildTaskMixin",
-        "MouseHandlerMixin"
+        "MouseHandlerMixin",
+        "ClientLevelMixin"
     ],
     "minVersion": "0.8",
     "refmap": "enderio.refmap.json",

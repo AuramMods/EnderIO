@@ -104,7 +104,12 @@ shader_drew_frame = ((args.scenario == "stained-facades-oculus-shader" and check
                      or (args.scenario in {"facade-shader-passes", "facade-shader-toggle"}
                          and checks.get("active_shader_final_pass_visible"))
                      or (args.scenario == "sag-unified" and checks.get("authored_shader_draws_the_integrated_world")))
-if checks.get("expected_oculus_installation") and (shaders_disabled or shader_drew_frame):
+enderface_with_oculus = False
+if args.scenario == "enderface":
+    preview_mods = result.get("captures", {}).get("preview-1", {}).get("loadedMods", {})
+    enderface_with_oculus = ({"oculus", "embeddium"} <= preview_mods.keys()
+                            and " [Oculus/]: Shaders are disabled\n" in log)
+if (checks.get("expected_oculus_installation") and (shaders_disabled or shader_drew_frame)) or enderface_with_oculus:
     # Embeddium emits this support-policy diagnostic when Oculus patches its renderer.
     notice = ("/ERROR] [Embeddium-MixinTaintDetector/]: Mod mixin into Embeddium internals detected. "
               "This instance is now tainted. The Embeddium team does not provide any guarantee of support "
