@@ -7,6 +7,7 @@ import com.enderio.api.misc.RedstoneControl;
 import com.enderio.conduits.common.conduit.block.ConduitBlockEntity;
 import com.enderio.conduits.common.conduit.connection.DynamicConnectionState;
 import com.enderio.conduits.common.conduit.connection.StaticConnectionStates;
+import com.enderio.conduits.common.conduit.type.item.ItemConduitData.ItemSidedData;
 import com.enderio.conduits.common.init.EIOConduitTypes;
 import com.enderio.conduits.common.redstone.DoubleRedstoneChannel;
 import com.enderio.conduits.common.redstone.RedstoneCountFilter;
@@ -190,14 +191,30 @@ public class Fixture {
         sourceData.isRoundRobin = true;
         sourceData.isSelfFeed = true;
         sourceData.rotatingIndex = 1;
-        sourceData.setPriority(42);
-        destination.getBundle().getNodeFor(type).getConduitData().compute(Direction.EAST).setPriority(71);
+        setPriorities(sourceData, destination.getBundle().getNodeFor(type).getConduitData().compute(Direction.EAST));
         source.getBundle().setConnectionState(Direction.NORTH, type, StaticConnectionStates.DISABLED);
         for (var side : Direction.values()) {
             destination.getBundle().setFacade(Blocks.POLISHED_ANDESITE.defaultBlockState(), side);
         }
         source.setChanged();
         destination.setChanged();
+    }
+
+    private static void setPriorities(ItemSidedData source, ItemSidedData destination) {
+        try {
+            try {
+                var setter = ItemSidedData.class.getMethod("setPriority", int.class);
+                setter.invoke(source, 42);
+                setter.invoke(destination, 71);
+            } catch (NoSuchMethodException ignored) {
+                // 6.2.0 exposes the same saved priority as a public field.
+                var field = ItemSidedData.class.getField("priority");
+                field.setInt(source, 42);
+                field.setInt(destination, 71);
+            }
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("Could not configure the historical priorities", error);
+        }
     }
 
     private static ConduitBlockEntity place(ServerLevel level, int x) {
@@ -350,7 +367,7 @@ public class Fixture {
         var destination = place(level, new BlockPos(4528, 79, z), "redstone_conduit");
         var type = EIOConduitTypes.REDSTONE.get();
         if (level.getBlockState(source.getBlockPos().west()).is(Blocks.CHEST)) {
-            source.tryConnectTo(Direction.WEST, type, false, false, true);
+            connectRedstoneComparator(source, type);
         }
         source.handleConnectionStateUpdate(Direction.WEST, type,
             new DynamicConnectionState(false, ColorControl.WHITE, enabled, color,
@@ -361,6 +378,16 @@ public class Fixture {
         source.setChanged();
         destination.setChanged();
         return source;
+    }
+
+    private static void connectRedstoneComparator(ConduitBlockEntity source, ConduitType<?> type) {
+        try {
+            var method = ConduitBlockEntity.class.getMethod("tryConnectTo", Direction.class, ConduitType.class,
+                boolean.class, boolean.class, boolean.class);
+            method.invoke(source, Direction.WEST, type, false, false, true);
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("This fixture needs the historical force-connect conduit API", error);
+        }
     }
 
     private static ItemStack taggedFilter(String item, String marker) {

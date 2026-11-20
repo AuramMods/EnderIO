@@ -28,7 +28,7 @@ Use the [packaged server harness](packaged-server.md) for a clean dedicated Forg
 
 ## Upgrade a saved world
 
-The sampled upgrade source is Ender IO 6.2.18-beta on Minecraft 1.20.1 Forge. The recorded fixtures cover placed and carried machines, conduit bundles and filters, powered addon networks, and several historical items and enchantments. Other 6.x releases require their own copy-based verification. Keep Minecraft 1.21.1 worlds on their existing Minecraft version. [Historical fixture coverage](features.md#historical-62-save-compatibility), [Representative Forge 6.2 conversion commands](cycle-047.md)
+The 6.2.18-beta fixtures on Minecraft 1.20.1 Forge cover placed and carried machines, conduit bundles and filters, powered addon networks, and several historical items and enchantments. Copy-based tests of 6.2.0-beta also verify mixed conduit bundles, item and fluid filters, tagged tanks, renamed blocks, Alloy Smelter settings and a running Stirling Generator. Verify other 6.x releases on their own copies. Keep Minecraft 1.21.1 worlds on their existing Minecraft version. [Historical fixture coverage](features.md#historical-62-save-compatibility), [Early Forge 6.2 conversion commands](cycle-268.md)
 
 1. Stop the game or server. Back up the entire world directory and the associated instance configuration and mods. Work on a separate copy. Keep the original copy available with its original jar set for rollback.
 2. Keep the world on Minecraft 1.20.1. Install the candidate Ender IO jar and the matching optional mods referenced by the save before its first load. Include the world's `serverconfig`, enabled datapacks and dimension data when copying it.

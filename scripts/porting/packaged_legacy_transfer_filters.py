@@ -115,22 +115,26 @@ def route_items(server, results, stage, legacy):
                         f'unless data block {destination} Items[{{id:"minecraft:iron_pickaxe",tag:{{Damage:27,Sample:42}}}}]', results)
 
 
-def route_fluids(server, results, stage, legacy):
+def route_fluids(server, results, stage, legacy, *, partial_tagged_water=False):
     water = "minecraft:water"
     for z in (8, 11):
         empty_destination(server, z, legacy)
     if legacy:
-        # Forge 6 drains using a tagless FluidStack before invoking a filter.
         fill(server, 8, True, water, 625, 43)
         fill(server, 11, True, "minecraft:lava", 575, None)
         wait_ticks(server, 96)
-        server.assert_state("original_ticker_leaves_tagged_water_in_its_source",
-                            f"{tank(4638, 8, True, water, 625, 43)} {tank(4641, 8, True)}", results)
+        if partial_tagged_water:
+            server.assert_state("early_ticker_saves_a_partial_tagged_water_transfer",
+                                f"{tank(4638, 8, True, water, 575, 43)} {tank(4641, 8, True, water, 50, 43)}", results)
+        else:
+            # 6.2.18 drains using a tagless FluidStack before invoking a filter.
+            server.assert_state("original_ticker_leaves_tagged_water_in_its_source",
+                                f"{tank(4638, 8, True, water, 625, 43)} {tank(4641, 8, True)}", results)
         server.assert_state("original_inverted_filter_rejects_untagged_lava",
                             f'{tank(4638, 11, True, "minecraft:lava", 575)} {tank(4641, 11, True)}', results)
-        fill(server, 8, True, water, 625, None)
-        fill(server, 11, True, water, 575, None)
-        for z, amount in ((8, 625), (11, 575)):
+        untagged_routes = ((11, 575),) if partial_tagged_water else ((8, 625), (11, 575))
+        for z, amount in untagged_routes:
+            fill(server, z, True, water, amount, None)
             server.assert_state(f"original_filter_transfers_allowed_untagged_water_in_lane_{z}",
                                 f"{tank(4641, z, True, water, amount)} {tank(4638, z, True)}", results)
         return
@@ -206,7 +210,7 @@ def snapshot(server, results, stage, legacy):
             server.assert_state(f"{location}_{marker}_keeps_sparse_samples_and_flags_{stage}", " ".join(conditions), results)
 
 
-def legacy_world(server, results):
+def legacy_world(server, results, *, partial_tagged_water):
     load(server, results, "legacy")
     server.command("gamerule doMobSpawning false")
     server.command("fill 4637 79 1 4642 79 15 minecraft:stone")
@@ -220,12 +224,15 @@ def legacy_world(server, results):
         raise AssertionError(output)
     snapshot(server, results, "legacy", True)
     route_items(server, results, "legacy", True)
-    route_fluids(server, results, "legacy", True)
+    route_fluids(server, results, "legacy", True, partial_tagged_water=partial_tagged_water)
 
 
-def converted_world(server, results):
+def converted_world(server, results, *, partial_tagged_water):
     load(server, results, "converted")
     snapshot(server, results, "converted", False)
+    if partial_tagged_water:
+        server.assert_state("converted_route_finishes_the_saved_partial_tagged_water_transfer",
+                            f'{tank(4638, 8, False)} {tank(4641, 8, False, "minecraft:water", 625, 43)}', results)
     route_items(server, results, "converted", False)
     route_fluids(server, results, "converted", False)
     server.command(f"forceload remove {CHUNKS}")
@@ -249,6 +256,8 @@ def main():
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--forge-server", type=Path, required=True)
     parser.add_argument("--legacy-jar", type=Path, required=True)
+    parser.add_argument("--legacy-partial-tagged-water", action="store_true",
+                        help="Preserve the partial tagged-water transfer produced by the 6.2.0-beta ticker")
     parser.add_argument("--fixture", type=Path, required=True)
     parser.add_argument("--jar", type=Path, required=True)
     args = parser.parse_args()
@@ -262,10 +271,12 @@ def main():
     try:
         prepare_profile(args, legacy, args.legacy_jar)
         shutil.copyfile(args.fixture, legacy / "mods/fixture.jar")
-        run_stage(args, legacy, report, "legacy", legacy_world)
+        run_stage(args, legacy, report, "legacy", lambda server, results:
+                  legacy_world(server, results, partial_tagged_water=args.legacy_partial_tagged_water))
         prepare_profile(args, port, args.jar)
         shutil.copytree(legacy / WORLD, port / WORLD)
-        run_stage(args, port, report, "converted", converted_world)
+        run_stage(args, port, report, "converted", lambda server, results:
+                  converted_world(server, results, partial_tagged_water=args.legacy_partial_tagged_water))
         run_stage(args, port, report, "reopened", reopened_world)
         if any(stage["registryErrors"] for stage in report["servers"]):
             raise RuntimeError("Unexpected Forge registry errors")

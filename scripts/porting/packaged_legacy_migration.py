@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy and migrate an actual Ender IO 6.2.18-beta Forge 1.20.1 fixture."""
+"""Copy and migrate an actual Ender IO 6.2 Forge 1.20.1 fixture."""
 
 import argparse
 import json
@@ -161,6 +161,9 @@ def exercise_conduits(server, stage, results):
         output = server.command("port_legacy_fixture")
         if "Legacy conduit fixture created" not in output:
             raise AssertionError(output)
+        server.assert_state("legacy_conduits_save_both_configured_priorities",
+                            f"if data block {source} ConduitExtraData[1].WEST{{Priority:42}} "
+                            f"if data block {destination} ConduitExtraData[1].EAST{{Priority:71}}", results)
 
     for x in (1018, 1023, 1024):
         server.command(f"data get block {x} 80 8")
