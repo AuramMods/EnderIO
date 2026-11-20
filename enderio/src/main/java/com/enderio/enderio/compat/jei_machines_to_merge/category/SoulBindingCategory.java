@@ -7,7 +7,6 @@ import com.enderio.enderio.client.content.machines.gui.screen.SoulBinderScreen;
 import com.enderio.enderio.compat.jei.JEILang;
 import com.enderio.enderio.compat.jei.JEIUtils;
 import com.enderio.enderio.compat.jei_machines_to_merge.util.MachineRecipeCategory;
-import com.enderio.enderio.compat.jei_machines_to_merge.util.RecipeUtil;
 import com.enderio.enderio.content.machines.soul_binder.SoulBindingRecipe;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
@@ -84,9 +83,18 @@ public class SoulBindingCategory extends MachineRecipeCategory<SoulBindingRecipe
 
         builder.addSlot(INPUT, 3, 4).addItemStacks(vials);
 
-        builder.addSlot(INPUT, 24, 4).addIngredients(recipe.getInput());
+        var material = recipe.copyInputComponents() ? focuses.getItemStackFocuses(INPUT)
+                .map(focus -> focus.getTypedValue().getIngredient())
+                .filter(recipe.getInput()::test)
+                .findFirst().orElse(ItemStack.EMPTY) : ItemStack.EMPTY;
+        var materialSlot = builder.addSlot(INPUT, 24, 4);
+        if (material.isEmpty()) {
+            materialSlot.addIngredients(recipe.getInput());
+        } else {
+            materialSlot.addItemStack(material.copyWithCount(1));
+        }
 
-        var resultStack = RecipeUtil.getResultStacks(recipe).get(0).getItem();
+        var resultStack = recipe.createOutput(material);
         var results = new ArrayList<ItemStack>();
 
         // If the output can take an entity type, then we add it

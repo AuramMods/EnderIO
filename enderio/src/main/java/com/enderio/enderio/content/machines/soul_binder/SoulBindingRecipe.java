@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.soul_binder;
 
+import com.enderio.core.common.capability.ItemCapabilityRegistry;
 import com.enderio.core.common.recipes.OutputStack;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.network.MassiveStreamCodec;
@@ -54,16 +55,7 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
     @Override
     public List<OutputStack> craft(Input input, RegistryAccess registryAccess) {
         ItemStack vial = input.getItem(0);
-
-        List<OutputStack> results = getResultStacks(registryAccess);
-        ItemStack result = results.get(0).getItem();
-
-        if (copyInputComponents) {
-            if (input.itemToBind.hasTag()) {
-                result.getOrCreateTag().merge(input.itemToBind.getTag().copy());
-                com.enderio.core.common.capability.ItemCapabilityRegistry.refresh(result);
-            }
-        }
+        ItemStack result = createOutput(input.itemToBind());
 
         var vialSoulBindable = vial.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
         var resultSoulBinding = result.getCapability(EnderIOCapabilities.SOUL_BINDABLE_ITEM).orElse(null);
@@ -72,7 +64,16 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
             resultSoulBinding.bindSoul(vialSoulBindable.getBoundSoul());
         }
 
-        return results;
+        return List.of(OutputStack.of(result), OutputStack.of(EIOItems.SOUL_VIAL.get().getDefaultInstance()));
+    }
+
+    public ItemStack createOutput(ItemStack material) {
+        var result = output.copy();
+        if (copyInputComponents && material.hasTag()) {
+            result.getOrCreateTag().merge(material.getTag().copy());
+            ItemCapabilityRegistry.refresh(result);
+        }
+        return result;
     }
 
     @Override

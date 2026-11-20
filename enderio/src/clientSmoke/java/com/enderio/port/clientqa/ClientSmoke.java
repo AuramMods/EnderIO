@@ -49,6 +49,7 @@ public final class ClientSmoke {
             case "soul-engine-fuels" -> new ClientSoulEngineFuelsSmoke();
             case "powered-spawner" -> new ClientPoweredSpawnerSmoke();
             case "spawner-crafting" -> new ClientSpawnerCraftingSmoke();
+            case "spawner-rebinding" -> new ClientSpawnerRebindingSmoke();
             case "mind-killer" -> new ClientMindKillerSmoke();
             case "spawner-rules" -> new ClientSpawnerRulesSmoke();
             case "obelisks" -> new ClientObeliskSmoke();
