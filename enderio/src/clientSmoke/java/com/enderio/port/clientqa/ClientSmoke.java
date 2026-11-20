@@ -41,7 +41,8 @@ public final class ClientSmoke {
             case "primitive-smelter" -> new ClientPrimitiveSmelterSmoke();
             case "stirling" -> new ClientStirlingSmoke();
             case "soul-binder" -> new ClientSoulBinderSmoke();
-            case "soul-binder-jei" -> new ClientSoulBinderJeiSmoke();
+            case "soul-binder-jei" -> new ClientSoulBinderJeiSmoke(false);
+            case "soul-binder-jei-rules" -> new ClientSoulBinderJeiSmoke(true);
             case "soul-components" -> new ClientSoulComponentSmoke();
             case "soul-vials" -> new ClientSoulVialSmoke();
             case "soul-engine" -> new ClientSoulEngineSmoke();
