@@ -87,6 +87,8 @@ public final class ClientSmoke {
             case "jade-absent" -> new ClientJadeSmoke(false, false);
             case "ultimine" -> new ClientUltimineSmoke(true);
             case "ultimine-absent" -> new ClientUltimineSmoke(false);
+            case "ultimine-shapes" -> new ClientUltimineSmoke(true, true);
+            case "ultimine-shapes-absent" -> new ClientUltimineSmoke(false, true);
             case "enderface" -> new ClientEnderfaceSmoke();
             case "crafter" -> new ClientCrafterSmoke(false);
             case "crafter-jei" -> new ClientCrafterSmoke(true);
