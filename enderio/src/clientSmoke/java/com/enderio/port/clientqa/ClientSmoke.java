@@ -129,6 +129,7 @@ public final class ClientSmoke {
             case "slicer" -> new ClientSlicerSmoke();
             case "legacy-slicer" -> new ClientLegacySlicerSmoke();
             case "slicer-jei" -> new ClientSlicerJeiSmoke();
+            case "alloy-jei" -> new ClientAlloyJeiSmoke();
             case "filter-recovery" -> new ClientFilterRecoverySmoke();
             case "filter-wrench-editor" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_EDITOR);
             case "filter-wrench-operator" -> new ClientFilterRecoverySmoke(ClientFilterRecoverySmoke.Mode.WRENCH_OPERATOR);
