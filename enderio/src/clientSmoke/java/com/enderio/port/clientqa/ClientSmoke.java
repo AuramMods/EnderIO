@@ -109,6 +109,7 @@ public final class ClientSmoke {
             case "legacy-combat" -> new ClientLegacyCombatSmoke();
             case "legacy-experience" -> new ClientLegacyExperienceSmoke();
             case "hang-glider" -> new ClientHangGliderSmoke(false);
+            case "hang-glider-single-player" -> new ClientIntegratedGliderSmoke();
             case "hang-glider-maneuvers" -> new ClientHangGliderSmoke(true);
             case "hang-glider-observer" -> new ClientRemoteHangGliderSmoke();
             case "coordinate-printout" -> new ClientCoordinatePrintoutSmoke(false);
