@@ -3,8 +3,9 @@ package com.enderio.enderio.compat.jei_machines_to_merge.transfer;
 import com.enderio.enderio.compat.jei_machines_to_merge.category.VATCategory;
 import com.enderio.enderio.content.machines.vat.FermentingRecipe;
 import com.enderio.enderio.content.machines.vat.VatMenu;
+import com.enderio.enderio.content.machines.vat.VatRecipeTransfer;
 import com.enderio.enderio.foundation.network.EIONetwork;
-import com.enderio.enderio.foundation.network.packets.ServerboundTransferItemsPacket;
+import com.enderio.enderio.foundation.network.packets.ServerboundVatRecipeTransferPacket;
 import com.enderio.enderio.init.EIOMenus;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
@@ -16,8 +17,6 @@ import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -52,23 +51,15 @@ public class VATTransferHelper implements IRecipeTransferHandler<VatMenu, Fermen
         boolean maxTransfer, boolean doTransfer) {
         var tank = container.getInputTank();
         boolean missingFluid = tank == null || !recipe.input().test(tank.contents());
-        var first = Ingredient.of(recipe.firstReagent());
-        var second = Ingredient.of(recipe.secondReagent());
-        var left = container.getSlot(VatMenu.INPUTS_INDEX).getItem();
-        var right = container.getSlot(VatMenu.INPUTS_INDEX + 1).getItem();
-        boolean reversed = !(fits(left, first) && fits(right, second)) && fits(left, second) && fits(right, first);
-        var firstInput = new Reagent(first, reversed ? right : left, player.getInventory().items.stream().anyMatch(first::test));
-        var secondInput = new Reagent(second, reversed ? left : right, player.getInventory().items.stream().anyMatch(second::test));
-        boolean missingFirst = firstInput.isMissing();
-        boolean missingSecond = secondInput.isMissing();
+        var missingReagents = VatRecipeTransfer.missingReagents(container, player, recipe);
 
-        if (missingFirst || missingSecond || missingFluid) {
+        if (missingReagents.first() || missingReagents.second() || missingFluid) {
             var inputs = recipeSlots.getSlotViews(RecipeIngredientRole.INPUT);
             List<IRecipeSlotView> missing = new ArrayList<>(3);
-            if (missingFirst) {
+            if (missingReagents.first()) {
                 missing.add(inputs.get(0));
             }
-            if (missingSecond) {
+            if (missingReagents.second()) {
                 missing.add(inputs.get(1));
             }
             if (missingFluid) {
@@ -79,28 +70,8 @@ public class VATTransferHelper implements IRecipeTransferHandler<VatMenu, Fermen
         }
 
         if (doTransfer) {
-            var firstTransfer = firstInput.toTransfer(maxTransfer);
-            var secondTransfer = secondInput.toTransfer(maxTransfer);
-            if (!firstTransfer.isEmpty() || !secondTransfer.isEmpty()) {
-                var inputs = reversed ? List.of(secondTransfer, firstTransfer) : List.of(firstTransfer, secondTransfer);
-                EIONetwork.sendToServer(new ServerboundTransferItemsPacket(
-                    container.containerId, inputs, VatMenu.INPUTS_INDEX, VatMenu.LAST_INDEX + 1, maxTransfer));
-            }
+            EIONetwork.sendToServer(new ServerboundVatRecipeTransferPacket(container.containerId, recipe.getId(), maxTransfer));
         }
         return null;
-    }
-
-    private static boolean fits(ItemStack current, Ingredient ingredient) {
-        return current.isEmpty() || ingredient.test(current);
-    }
-
-    private record Reagent(Ingredient ingredient, ItemStack current, boolean available) {
-        boolean isMissing() {
-            return current.isEmpty() ? !available : !ingredient.test(current);
-        }
-
-        Ingredient toTransfer(boolean maximum) {
-            return available && (current.isEmpty() || maximum) ? ingredient : Ingredient.EMPTY;
-        }
     }
 }

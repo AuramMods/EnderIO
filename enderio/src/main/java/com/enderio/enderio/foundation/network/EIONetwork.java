@@ -27,6 +27,7 @@ import com.enderio.enderio.foundation.network.packets.ServerboundToggleMagnetPac
 import com.enderio.enderio.foundation.network.packets.ServerboundTransferItemsPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundUpdateCoordinateSelectionNameMenuPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundUpdateCrafterTemplatePacket;
+import com.enderio.enderio.foundation.network.packets.ServerboundVatRecipeTransferPacket;
 import com.enderio.enderio.foundation.network.packets.SetConduitConnectionConfigPacket;
 import com.enderio.enderio.foundation.souldata.EngineSoul;
 import com.enderio.enderio.foundation.souldata.FarmSoul;
@@ -44,7 +45,7 @@ import net.minecraftforge.network.NetworkDirection;
 
 @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.MOD)
 public final class EIONetwork {
-    private static final RegistryNetworkChannel CHANNEL = new RegistryNetworkChannel(EnderIOAPI.rl("main"), "forge-3");
+    private static final RegistryNetworkChannel CHANNEL = new RegistryNetworkChannel(EnderIOAPI.rl("main"), "forge-4");
 
     private EIONetwork() {}
 
@@ -113,6 +114,8 @@ public final class EIONetwork {
             NetworkDirection.PLAY_TO_SERVER, (packet, player) -> MachinePayloadHandler.Server.getInstance().handleEnderfaceInteract(packet, player));
         CHANNEL.register(ServerboundTransferItemsPacket.ID, ServerboundTransferItemsPacket.class, ServerboundTransferItemsPacket.STREAM_CODEC,
             NetworkDirection.PLAY_TO_SERVER, (packet, player) -> MachinePayloadHandler.Server.getInstance().handleTransferItems(packet, player));
+        CHANNEL.register(ServerboundVatRecipeTransferPacket.ID, ServerboundVatRecipeTransferPacket.class, ServerboundVatRecipeTransferPacket.STREAM_CODEC,
+            NetworkDirection.PLAY_TO_SERVER, (packet, player) -> MachinePayloadHandler.Server.getInstance().handleVatRecipeTransfer(packet, player));
     }
 
     public static void sendToServer(Object packet) { CHANNEL.sendToServer(packet); }

@@ -4,7 +4,9 @@ import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.content.enderface.EnderfaceBlockEntity;
 import com.enderio.enderio.content.storage.crafter.CrafterMenu;
 import com.enderio.core.common.menu.MenuRecipeTransfer;
+import com.enderio.enderio.content.machines.vat.FermentingRecipe;
 import com.enderio.enderio.content.machines.vat.VatMenu;
+import com.enderio.enderio.content.machines.vat.VatRecipeTransfer;
 import com.enderio.enderio.content.storage.fluid_tank.FluidTankMenu;
 import com.enderio.enderio.content.machines.obelisks.weather.WeatherObeliskMenu;
 import net.minecraft.world.InteractionHand;
@@ -16,6 +18,7 @@ import com.enderio.enderio.foundation.network.packets.ServerboundCycleIOConfigPa
 import com.enderio.enderio.foundation.network.packets.ServerboundEnderfaceInteractPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundTransferItemsPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundUpdateCrafterTemplatePacket;
+import com.enderio.enderio.foundation.network.packets.ServerboundVatRecipeTransferPacket;
 import com.enderio.enderio.foundation.souldata.EngineSoul;
 import com.enderio.enderio.foundation.souldata.FarmSoul;
 import com.enderio.enderio.foundation.souldata.SolarSoul;
@@ -93,10 +96,7 @@ public class MachinePayloadHandler {
             AbstractContainerMenu menu = player.containerMenu;
             if (menu.containerId != packet.containerId()) return;
             int first, end;
-            if (menu instanceof VatMenu) {
-                first = VatMenu.INPUTS_INDEX;
-                end = VatMenu.LAST_INDEX + 1;
-            } else if (menu instanceof WeatherObeliskMenu) {
+            if (menu instanceof WeatherObeliskMenu) {
                 first = WeatherObeliskMenu.INPUTS_INDEX;
                 end = WeatherObeliskMenu.LAST_INDEX + 1;
             } else if (menu instanceof FluidTankMenu) {
@@ -107,6 +107,15 @@ public class MachinePayloadHandler {
             }
             if (packet.startslot() != first || packet.endslot() != end) return;
             MenuRecipeTransfer.transfer(player, menu, packet.stacks(), first, end, packet.maxTransfer());
+        }
+
+        public void handleVatRecipeTransfer(ServerboundVatRecipeTransferPacket packet, Player player) {
+            if (!(player.containerMenu instanceof VatMenu menu) || menu.containerId != packet.containerId()
+                || player.isSpectator() || !menu.stillValid(player)) return;
+            var registered = player.level().getRecipeManager().byKey(packet.recipeId()).orElse(null);
+            if (registered instanceof FermentingRecipe recipe && recipe.input().test(menu.getBlockEntity().getInputTank().getFluid())) {
+                VatRecipeTransfer.transfer(menu, player, recipe, packet.maximum());
+            }
         }
     }
 }

@@ -184,7 +184,7 @@ final class ClientVatJeiSmoke {
         signal(fixture.name() + "-" + phase);
     }
 
-    private static Set<?> highlightedSlots(IRecipeTransferError error) throws ReflectiveOperationException {
+    static Set<?> highlightedSlots(IRecipeTransferError error) throws ReflectiveOperationException {
         var field = RecipeTransferErrorMissingSlots.class.getDeclaredField("slots");
         field.setAccessible(true);
         return Set.copyOf((Collection<?>) field.get(error));
