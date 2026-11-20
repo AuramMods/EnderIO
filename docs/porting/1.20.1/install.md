@@ -37,4 +37,6 @@ The sampled upgrade source is Ender IO 6.2.18-beta on Minecraft 1.20.1 Forge. Th
 
 For a SAG Mill with an active custom Forge 6.2 grinding ball, include the original datapack that defines its recipe. The port uses the saved ID and wear to capture the original modifiers on load. If the definition is absent, loading the mill after returning the datapack recovers the retained record. Modern item data maps take priority for balls inserted into the mill after the upgrade. [Custom grinding ball migration](cycle-259.md)
 
+Keep the original enabled datapack when upgrading a world with an in-progress custom Soul Binder recipe. The port reads the Forge 6.2 `exp` and `souldata` fields and resolves the saved job by its original recipe ID. [Soul Binder migration](cycle-260.md)
+
 The [feature evidence matrix](features.md) identifies the state exercised by each fixture. The [completion audit](completion-audit.md) tracks the remaining verification work and the tested candidate artifacts.

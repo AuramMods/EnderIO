@@ -15,7 +15,10 @@ import com.enderio.enderio.init.EIOItems;
 import com.enderio.enderio.init.EIORecipes;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.MapLike;
+import com.mojang.serialization.RecordBuilder;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
@@ -33,6 +36,7 @@ import net.minecraftforge.fluids.FluidStack;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, int experience,
         Optional<ResourceLocation> entityType, Optional<MobCategory> mobCategory, Optional<String> soulData,
@@ -157,14 +161,35 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
                 .group(com.enderio.core.common.recipes.RecipeStackCodecs.ITEM.fieldOf("output").forGetter(SoulBindingRecipe::output),
                         com.enderio.core.common.recipes.IngredientCodecs.REQUIRED.fieldOf("input").forGetter(SoulBindingRecipe::input),
                         Codec.INT.fieldOf("energy").forGetter(SoulBindingRecipe::energy),
-                        Codec.INT.fieldOf("experience").forGetter(SoulBindingRecipe::experience),
+                        withLegacyField("experience", Codec.INT.fieldOf("experience"), Codec.INT.fieldOf("exp"))
+                                .forGetter(SoulBindingRecipe::experience),
                         ResourceLocation.CODEC.optionalFieldOf("entity_type").forGetter(SoulBindingRecipe::entityType),
                         MobCategory.CODEC.optionalFieldOf("mob_category").forGetter(SoulBindingRecipe::mobCategory),
-                        Codec.STRING.optionalFieldOf("soul_data").forGetter(SoulBindingRecipe::soulData),
+                        withLegacyField("soul_data", Codec.STRING.optionalFieldOf("soul_data"), Codec.STRING.optionalFieldOf("souldata"))
+                                .forGetter(SoulBindingRecipe::soulData),
                         Codec.BOOL.optionalFieldOf("copyInputComponents", false)
                                 .forGetter(SoulBindingRecipe::copyInputComponents))
                 .apply(instance, SoulBindingRecipe::new))
                 .flatXmap(Serializer::validate, Serializer::validate);
+
+        private static <F> MapCodec<F> withLegacyField(String field, MapCodec<F> current, MapCodec<F> legacy) {
+            return new MapCodec<>() {
+                @Override
+                public <T> DataResult<F> decode(DynamicOps<T> ops, MapLike<T> input) {
+                    return (input.get(field) == null ? legacy : current).decode(ops, input);
+                }
+
+                @Override
+                public <T> RecordBuilder<T> encode(F value, DynamicOps<T> ops, RecordBuilder<T> output) {
+                    return current.encode(value, ops, output);
+                }
+
+                @Override
+                public <T> Stream<T> keys(DynamicOps<T> ops) {
+                    return Stream.concat(current.keys(ops), legacy.keys(ops));
+                }
+            };
+        }
 
         private static DataResult<SoulBindingRecipe> validate(SoulBindingRecipe recipe) {
             int entityType = recipe.entityType().isPresent() ? 1 : 0;
