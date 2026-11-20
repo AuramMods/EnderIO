@@ -43,10 +43,14 @@ public record FermentingRecipe(SizedFluidIngredient input, TagKey<Item> firstRea
 
     @Override
     public List<OutputStack> craft(Input input, RegistryAccess registryAccess) {
+        return List.of(OutputStack.of(EnderFluidUtil.copyWithAmount(output, getOutputAmount(input))));
+    }
+
+    int getOutputAmount(Input input) {
         ItemStack left = input.getItem(0);
         ItemStack right = input.getItem(1);
         double modifier = getSlotModifier(input.level(), left, right, 0) * getSlotModifier(input.level(), left, right, 1);
-        return List.of(OutputStack.of(EnderFluidUtil.copyWithAmount(output, (int) (output.getAmount() * modifier))));
+        return (int) (output.getAmount() * modifier);
     }
 
     @Override

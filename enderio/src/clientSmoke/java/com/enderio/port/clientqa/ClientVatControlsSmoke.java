@@ -19,7 +19,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RenderTooltipEvent;
@@ -37,16 +41,26 @@ import java.util.Map;
 import java.util.Optional;
 
 final class ClientVatControlsSmoke {
-    private enum Stage { TITLE, JOIN, PREVIEW, OPEN_QUEUE, QUEUED, PAUSING, PAUSED, RESUMED, DONE }
+    private enum Stage { TITLE, JOIN, PREVIEW, OPEN_QUEUE, QUEUED, PAUSING, PAUSED, RESUMED,
+        SWAP_OPEN, SWAP_PAID, SWAP_INPUT, SWAP_FINISHED, DONE }
+
+    private record CatalystSwap(String name, BlockPos vat, int slot, Item original, Item replacement, int hotbar,
+                                double multiplier, int expectedPending) { }
 
     private static final BlockPos PREVIEW = new BlockPos(4476, 80, 8);
     private static final BlockPos QUEUE = new BlockPos(4470, 80, 8);
     private static final ResourceLocation TAGGED_RECIPE = ResourceLocation.fromNamespaceAndPath("port_qa", "tagged_batch");
+    private static final ResourceLocation CLOUD_SEED = ResourceLocation.fromNamespaceAndPath("enderio", "fermenting/fluid_cloud_seed_still");
+    private static final CatalystSwap SNOWBALL = new CatalystSwap("snowball", new BlockPos(4996, 80, 8), 1,
+        Items.BLUE_ICE, Items.SNOWBALL, 0, 0.11, 0);
+    private static final CatalystSwap BLUE_ICE = new CatalystSwap("blue-ice", new BlockPos(5004, 80, 8), 0,
+        Items.SNOWBALL, Items.BLUE_ICE, 1, 81, 80891);
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private final Path output = Path.of(System.getProperty("enderio.clientqa.output"));
     private final String address = System.getProperty("enderio.clientqa.server");
     private final boolean baseline = "verify".equals(System.getProperty("enderio.clientqa.multiplayerPhase"));
+    private final boolean backpressure;
     private final long started = System.nanoTime();
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
@@ -57,8 +71,12 @@ final class ClientVatControlsSmoke {
     private boolean tooltipRequested;
     private boolean tooltipRendered;
     private Stage stage = Stage.TITLE;
+    private CatalystSwap swap = SNOWBALL;
+    private int useAt = -1;
+    private int joinRetries;
 
-    ClientVatControlsSmoke() {
+    ClientVatControlsSmoke(boolean backpressure) {
+        this.backpressure = backpressure;
         MinecraftForge.EVENT_BUS.addListener(this::render);
         MinecraftForge.EVENT_BUS.addListener(this::gatherTooltip);
         MinecraftForge.EVENT_BUS.addListener(this::renderWithOutputHover);
@@ -67,7 +85,13 @@ final class ClientVatControlsSmoke {
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
-            if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > 145_000_000_000L) {
+            if (backpressure && stage == Stage.JOIN && minecraft.screen instanceof DisconnectedScreen && joinRetries == 0) {
+                joinRetries++;
+                startConnection();
+                return;
+            }
+            long timeout = backpressure ? 240_000_000_000L : 145_000_000_000L;
+            if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > timeout) {
                 throw new AssertionError("VAT controls client stopped in " + stage);
             }
             if (stage == Stage.TITLE) {
@@ -80,18 +104,85 @@ final class ClientVatControlsSmoke {
                 if (minecraft.getToasts().getToast(SystemToast.class, SystemToast.SystemToastIds.UNSECURE_SERVER_WARNING) != null) return;
                 check("real_dedicated_survival_connection", !player.isCreative() && !player.isSpectator()
                     && minecraft.getSingleplayerServer() == null && !minecraft.getConnection().getConnection().isMemoryConnection());
-                open(PREVIEW);
-                stage = Stage.PREVIEW;
+                if (backpressure) {
+                    signal("connected");
+                    stage = Stage.SWAP_OPEN;
+                } else {
+                    open(PREVIEW);
+                    stage = Stage.PREVIEW;
+                }
+            } else if (stage == Stage.SWAP_OPEN && minecraft.screen == null) {
+                if (!Files.exists(output.resolve("server-" + swap.name + "-open"))
+                    || player.distanceToSqr(Vec3.atBottomCenterOf(swap.vat.south(3))) > 0.15) return;
+                if (useAt < 0) useAt = player.tickCount + 8;
+                if (player.tickCount < useAt) return;
+                useAt = -1;
+                open(swap.vat);
+                stage = Stage.SWAP_PAID;
             } else if (stage == Stage.OPEN_QUEUE && minecraft.screen == null) {
                 open(QUEUE);
                 stage = Stage.QUEUED;
             } else if (minecraft.screen instanceof VatScreen screen) {
-                inspect(screen);
+                if (backpressure) inspectSwap(screen.getMenu());
+                else inspect(screen);
             }
         } catch (Throwable failure) {
             failure.printStackTrace();
             finish(failure);
         }
+    }
+
+    private void inspectSwap(VatMenu menu) throws IOException {
+        var player = minecraft.player;
+        var recipe = menu.getRecipe();
+        var catalyst = menu.getSlot(swap.slot).getItem();
+        var prismarine = menu.getSlot(1 - swap.slot).getItem();
+        var input = menu.getInputTank().contents();
+        var product = menu.getOutputTank().contents();
+        switch (stage) {
+            case SWAP_PAID -> {
+                if (menu.getCraftingProgress() != 1 || product.getAmount() != 8000
+                    || !taggedItem(catalyst, swap.original, "PortVatOriginal")) return;
+                check(swap.name + "_restores_completed_cloud_seed_job_with_unspent_reagents",
+                    recipe != null && CLOUD_SEED.equals(recipe.getId()) && prismarine.is(Items.PRISMARINE_SHARD)
+                        && input.getFluid() == Fluids.WATER && input.getAmount() == 1234
+                        && menu.getPendingOutput().isEmpty());
+                capture(swap.name + "-paid");
+                minecraft.gameMode.handleInventoryMouseClick(menu.containerId, swap.slot, swap.hotbar, ClickType.SWAP, player);
+                stage = Stage.SWAP_INPUT;
+            }
+            case SWAP_INPUT -> {
+                if (!taggedItem(catalyst, swap.replacement, "PortVatReplacement")
+                    || !taggedItem(player.getInventory().getItem(swap.hotbar), swap.original, "PortVatOriginal")) return;
+                check(swap.name + "_preview_uses_the_replacement_in_its_actual_slot", recipe != null
+                    && menu.getCraftingProgress() == 1 && recipe.getSlotModifier(minecraft.level, menu.getSlot(0).getItem(),
+                        menu.getSlot(1).getItem(), swap.slot) == swap.multiplier);
+                capture(swap.name + "-swapped");
+                signal(swap.name + "-swapped");
+                stage = Stage.SWAP_FINISHED;
+            }
+            case SWAP_FINISHED -> {
+                if (!Files.exists(output.resolve("server-" + swap.name + "-finished"))) return;
+                boolean correctPending = swap.expectedPending == 0 ? menu.getPendingOutput().isEmpty() : pending(menu, swap.expectedPending);
+                checks.put(swap.name + "_menu_syncs_the_committed_yield_and_exact_input_balance", correctPending
+                    && catalyst.isEmpty() && prismarine.isEmpty() && input.getAmount() == 234 && input.getFluid() == Fluids.WATER
+                    && menu.getCraftingProgress() == (swap.expectedPending == 0 ? 0 : 1) && recipe == null
+                    && product.getAmount() == 8000 && product.getFluid() == EIOFluids.CLOUD_SEED.source().get());
+                capture(swap.name + "-finished");
+                player.closeContainer();
+                signal(swap.name + "-done");
+                if (swap == BLUE_ICE) finish(null);
+                else {
+                    swap = BLUE_ICE;
+                    stage = Stage.SWAP_OPEN;
+                }
+            }
+            default -> { }
+        }
+    }
+
+    private static boolean taggedItem(ItemStack stack, Item item, String tag) {
+        return stack.is(item) && stack.getCount() == 1 && stack.hasTag() && stack.getTag().getInt(tag) == 234;
     }
 
     private void inspect(VatScreen screen) throws IOException {
@@ -201,6 +292,10 @@ final class ClientVatControlsSmoke {
         if (!(minecraft.screen instanceof TitleScreen) || minecraft.getOverlay() != null) return;
         if (titleReady == 0) titleReady = System.nanoTime();
         if (System.nanoTime() - titleReady < 2_000_000_000L) return;
+        startConnection();
+    }
+
+    private void startConnection() {
         ConnectScreen.startConnecting(new TitleScreen(), minecraft, ServerAddress.parseString(address),
             new ServerData("Ender IO VAT controls", address, true), false);
         stage = Stage.JOIN;
@@ -226,10 +321,11 @@ final class ClientVatControlsSmoke {
     private void finish(Throwable failure) {
         stage = Stage.DONE;
         var result = new LinkedHashMap<String, Object>();
-        result.put("passed", failure == null);
+        result.put("passed", failure == null && checks.values().stream().allMatch(Boolean.TRUE::equals));
         result.put("checks", checks);
         result.put("captures", captures);
         result.put("tooltips", tooltips);
+        if (backpressure) result.put("initialJoinRetries", joinRetries);
         if (failure != null) result.put("error", failure.toString());
         ClientSmoke.complete("client_vat_controls", result);
     }

@@ -116,7 +116,8 @@ public final class ClientSmoke {
             case "levitation-staff" -> new ClientLevitationStaffSmoke();
             case "levitation-progression" -> new ClientLevitationProgressionSmoke();
             case "infinity-rod-progression" -> new ClientInfinityRodProgressionSmoke();
-            case "vat-controls" -> new ClientVatControlsSmoke();
+            case "vat-controls" -> new ClientVatControlsSmoke(false);
+            case "vat-backpressure" -> new ClientVatControlsSmoke(true);
             case "redstone-filters" -> new ClientRedstoneFiltersSmoke();
             case "conduit-filters" -> new ClientConduitFiltersSmoke();
             case "transfer-filter-menus" -> new ClientTransferFilterMenusSmoke();

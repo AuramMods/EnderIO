@@ -225,10 +225,30 @@ public class VatBlockEntity extends MachineBlockEntity implements FluidTankUser,
     protected class VatCraftingMachineTask
             extends CraftingMachineTask<FermentingRecipe, FermentingRecipe.Input> {
 
+        @Nullable
+        private Integer plannedOutputAmount;
+
         public VatCraftingMachineTask(@NotNull Level level, MachineInventory inventory,
                 MachineFluidHandler fluidHandler, FermentingRecipe.Input input,
                 @Nullable FermentingRecipe recipe) {
             super(level, inventory, fluidHandler, input, recipe);
+        }
+
+        @Override
+        protected FermentingRecipe.Input getCurrentRecipeInput() {
+            return createRecipeInput();
+        }
+
+        @Override
+        protected boolean canReuseOutputs(FermentingRecipe.Input currentInput) {
+            var recipe = getRecipe();
+            return plannedOutputAmount != null && recipe != null && plannedOutputAmount == recipe.getOutputAmount(currentInput);
+        }
+
+        @Override
+        protected FermentingRecipe.Input prepareToDetermineOutputs(FermentingRecipe recipe, FermentingRecipe.Input input) {
+            plannedOutputAmount = recipe.getOutputAmount(input);
+            return input;
         }
 
         @Override
