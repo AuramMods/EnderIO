@@ -740,6 +740,8 @@ public class EIOLanguageProvider extends LanguageProvider {
 
     private void addCommonLang() {
         add(EIOCommonLang.CREATIVE_TAB_TITLE, "Ender IO");
+        add("guidebook.enderio.book_title", "Ender IO Guide");
+        add("guidebook.enderio.landing_text", "Start with a fire and a few grains. Build machines, then connect them into a workshop. Open Getting Started for your first powered setup.");
         add(EIOCommonLang.TOOLTIP_ENERGY_EQUIVALENCE, "A unit of energy, equivalent to FE.");
         add(EIOCommonLang.BLOCK_BLAST_RESISTANT, "Blast resistant");
 

@@ -1,0 +1,17 @@
+{
+  "name": "Using This Guide",
+  "icon": "minecraft:book",
+  "category": "enderio:getting_started",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:guide",
+      "text": "Combine a book and redstone to make a copy. Start with $(l:enderio:getting_started/grains_of_infinity)Grains of Infinity$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "This guide uses the stock Ender IO recipes and defaults. Recipe pages show the ingredients loaded in your world. If you have JEI, use its recipe and uses shortcuts on an item to see additional ways to make or use it."
+    }
+  ]
+}

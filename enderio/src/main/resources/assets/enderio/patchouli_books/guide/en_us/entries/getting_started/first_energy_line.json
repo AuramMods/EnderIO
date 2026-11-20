@@ -1,0 +1,21 @@
+{
+  "name": "Your First Energy Line",
+  "icon": "minecraft:redstone",
+  "category": "enderio:getting_started",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:energy_conduit",
+      "text": "This craft makes eight Energy Conduits. Use them to carry power from the generator to a machine farther away."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Take a line of Energy Conduits from a generator face set to Push to a smelter face set to Pull. The conduit endpoints normally choose their energy directions automatically. Feed the generator and check the smelter’s energy bar."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Testing a new line between machines that already touch? Set the direct faces to Disabled so power has to travel through the conduit. If the bar stays empty, check the fuel, both capacitors, the machine faces, and whether the endpoints connect."
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Grains of Infinity",
+  "icon": "enderio:grains_of_infinity",
+  "category": "enderio:getting_started",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:grains_of_infinity",
+      "text": "In the Overworld, light a fire on bedrock or ordinary deepslate. Let it burn for a little over 13 seconds at the default setting. When a mature fire goes out, it can drop Grains of Infinity."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Bedrock has an 80% chance to drop 1–3 grains. Deepslate has a 40% chance to drop one grain and becomes cobblestone on a successful roll. If a flame goes out too early, relight it and try several blocks. Keep the grains for $(l:enderio:getting_started/machine_parts)machine parts$(/l)."
+    }
+  ]
+}

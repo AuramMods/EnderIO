@@ -1,0 +1,18 @@
+{
+  "name": "Conductive Alloy and Binder",
+  "icon": "enderio:conductive_alloy_ingot",
+  "category": "enderio:getting_started",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "enderio:conductive_alloy_ingot",
+      "text": "In the Alloy Smelter, one Iron Ingot and one Copper Ingot make two Conductive Alloy Ingots for 3,200 FE. Run two batches for your first conduit craft."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:conduit_binder_composite",
+      "text": "Smelt the composite in a furnace or blast furnace. Each composite makes two Conduit Binders. Save six binders and three Conductive Alloy Ingots for $(l:enderio:getting_started/first_energy_line)Energy Conduits$(/l)."
+    }
+  ]
+}

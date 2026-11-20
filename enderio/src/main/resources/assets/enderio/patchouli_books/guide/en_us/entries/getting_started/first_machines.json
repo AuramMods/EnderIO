@@ -1,0 +1,21 @@
+{
+  "name": "Your First Powered Setup",
+  "icon": "enderio:stirling_generator",
+  "category": "enderio:getting_started",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "enderio:stirling_generator",
+      "recipe2": "enderio:alloy_smelter"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Place the Stirling Generator beside the Alloy Smelter. Open each machine and install a Basic Capacitor in its capacitor slot. Set the touching generator face to Push and the touching smelter face to Pull using the side settings."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Put coal in the generator and watch the smelter fill with Forge Energy. Select the smelter mode that allows alloying. Use the powered smelter to make $(l:enderio:getting_started/conductive_alloy)Conductive Alloy$(/l)."
+    }
+  ]
+}
