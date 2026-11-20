@@ -16,7 +16,7 @@ import time
 
 
 ROOT = Path(__file__).resolve().parents[2]
-FORGE = "1.20.1-47.4.28"
+FORGE = "1.20.1-47.4.10"
 
 
 class Server:

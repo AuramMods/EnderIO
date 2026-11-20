@@ -196,18 +196,18 @@ final class ClientSlicerJeiSmoke {
         if (!(minecraft.screen instanceof RecipesGui gui)) return;
         var frame = visibleRecipe(gui);
         if (frame == null || !frame.transferButton().isInitialized()) return;
-        var slots = frame.getRecipeLayout().getRecipeSlotsView().getSlotViews(RecipeIngredientRole.INPUT);
+        var slots = frame.recipeLayout().getRecipeSlotsView().getSlotViews(RecipeIngredientRole.INPUT);
         var inputs = custom ? NEW_INPUTS : STOCK_INPUTS;
         check(label() + "_viewer_displays_the_six_expected_inputs", slots.size() == inputs.size()
             && java.util.stream.IntStream.range(0, inputs.size()).allMatch(i -> slots.get(i).getItemStacks()
                 .anyMatch(stack -> itemId(stack).equals(inputs.get(i)))));
-        var results = frame.getRecipeLayout().getRecipeSlotsView().getSlotViews(RecipeIngredientRole.OUTPUT);
+        var results = frame.recipeLayout().getRecipeSlotsView().getSlotViews(RecipeIngredientRole.OUTPUT);
         check(label() + "_viewer_displays_the_expected_result", results.size() == 1 && results.get(0).getDisplayedItemStack()
             .filter(stack -> custom ? stack.is(Items.QUARTZ) && stack.getCount() == 2
                 : itemId(stack).equals("enderio:z_logic_controller") && stack.getCount() == 1).isPresent());
         capture(label() + "-slicer-jei");
-        var rect = frame.getRecipeLayout().getRect();
-        var button = frame.getRecipeLayout().getSideButtonArea(0);
+        var rect = frame.recipeLayout().getRect();
+        var button = frame.recipeLayout().getRecipeTransferButtonArea();
         double x = rect.getX() + button.getX() + button.getWidth() / 2.0;
         double y = rect.getY() + button.getY() + button.getHeight() / 2.0;
         check(label() + "_uses_the_actual_jei_transfer_button",
@@ -219,8 +219,8 @@ final class ClientSlicerJeiSmoke {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
-                    && layout.getRecipeLayout().getRecipe() instanceof SlicingRecipe recipe && recipeId().equals(recipe.getId())) return layout;
+                if (JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
+                    && layout.recipeLayout().getRecipe() instanceof SlicingRecipe recipe && recipeId().equals(recipe.getId())) return layout;
             }
         }
         return null;

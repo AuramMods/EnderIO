@@ -116,7 +116,7 @@ final class ClientSagMetalsJeiSmoke {
                     if (!(minecraft.screen instanceof RecipesGui gui)) return;
                     var layout = ClientSagJeiSmoke.visibleRecipe(gui, mill.recipe());
                     if (layout == null || !layout.transferButton().isInitialized()) return;
-                    var view = layout.getRecipeLayout().getRecipeSlotsView();
+                    var view = layout.recipeLayout().getRecipeSlotsView();
                     var input = view.getSlotViews(RecipeIngredientRole.INPUT).get(0).getDisplayedItemStack().orElseThrow();
                     check(mill.item() + "_focused_card_keeps_its_material_and_exact_server_products",
                         itemId(input).equals(mill.item()) && matchesOutputs(view, fixtures.recipes().get(mill.recipe().toString())));

@@ -1,5 +1,7 @@
 # Target dependency selection
 
+Auram builds use Forge 47.4.10 and JEI 15.20.0.129, with the older Forge and JEI APIs verified in packaged gameplay. The table retains the pinned original port tests. [Auram compatibility checks](cycle-280.md)
+
 Selection began on 2026-11-17. Build dependencies are pinned in `gradle/libs.versions.toml`. The Inventory Sorter test pin is recorded below. Version availability was checked against publisher Maven metadata or the project's Modrinth or CurseForge release record. The runtime column records verified behavior and remaining work.
 
 | Dependency | Target release | Artifact selection | Runtime evidence |

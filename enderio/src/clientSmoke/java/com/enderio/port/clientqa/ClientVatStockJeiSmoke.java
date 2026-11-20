@@ -189,10 +189,10 @@ final class ClientVatStockJeiSmoke {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (!(gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> frame)
-                    || !(frame.getRecipeLayout().getRecipe() instanceof FermentingRecipe recipe)
+                if (!(JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> frame)
+                    || !(frame.recipeLayout().getRecipe() instanceof FermentingRecipe recipe)
                     || !card.recipe().equals(recipe.getId().toString()) || !frame.transferButton().isInitialized()) continue;
-                var view = frame.getRecipeLayout().getRecipeSlotsView();
+                var view = frame.recipeLayout().getRecipeSlotsView();
                 var inputs = view.getSlotViews(RecipeIngredientRole.INPUT);
                 var fluids = inputs.get(2).getIngredients(ForgeTypes.FLUID_STACK).toList();
                 var result = view.getSlotViews(RecipeIngredientRole.OUTPUT).get(0)
@@ -208,9 +208,9 @@ final class ClientVatStockJeiSmoke {
                     itemId(inputs.get(0).getDisplayedItemStack().orElseThrow()).equals(card.reagents().get(card.slotInCard(0)))
                         && itemId(inputs.get(1).getDisplayedItemStack().orElseThrow()).equals(card.reagents().get(card.slotInCard(1)))
                         && labels.values.equals(expectedLabels));
-                var rect = frame.getRecipeLayout().getRect();
+                var rect = frame.recipeLayout().getRect();
                 var tooltip = new JeiTooltip();
-                frame.getRecipeLayout().getRecipeSlotUnderMouse(rect.getX() + 85, rect.getY() + 10).orElseThrow().getTooltip(tooltip);
+                frame.recipeLayout().getRecipeSlotUnderMouse(rect.getX() + 85, rect.getY() + 10).orElseThrow().getTooltip(tooltip);
                 check(card.name() + "_right_reagent_tooltip_agrees_with_the_drawn_multiplier",
                     tooltip.toLegacyToComponents().stream().map(Component::getString).anyMatch(expectedLabels.get(1)::equals));
                 check(card.name() + "_bases_the_expected_yield_on_the_displayed_multipliers",

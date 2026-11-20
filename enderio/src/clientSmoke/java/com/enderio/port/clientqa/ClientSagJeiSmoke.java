@@ -61,6 +61,7 @@ final class ClientSagJeiSmoke {
     private final long started = System.nanoTime();
     private Stage stage = Stage.TITLE;
     private long titleAt;
+    private long reloadAt;
     private int useAt = -1;
 
     ClientSagJeiSmoke() {
@@ -115,7 +116,7 @@ final class ClientSagJeiSmoke {
                     if (!(minecraft.screen instanceof RecipesGui gui)) return;
                     var layout = visibleRecipe(gui, ORE);
                     if (layout == null || !layout.transferButton().isInitialized()) return;
-                    check("real_viewer_displays_stock_flint", layout.getRecipeLayout().getRecipeSlotsView()
+                    check("real_viewer_displays_stock_flint", layout.recipeLayout().getRecipeSlotsView()
                         .getSlotViews(RecipeIngredientRole.CATALYST).get(0).getDisplayedItemStack().orElseThrow().is(Items.FLINT));
                     capture("iron-ore-flint");
                     if (Files.exists(output.resolve("server-client-only"))) {
@@ -153,7 +154,12 @@ final class ClientSagJeiSmoke {
                 }
                 case RELOAD -> {
                     if (runtime == null || ClientDataMaps.get(GrindingBallData.DATA_MAP_TYPE, Items.FEATHER) == null) return;
-                    verifyReload(runtime);
+                    // The data map can arrive before JEI handles the native recipe and tag packets.
+                    if (reloadAt == 0) reloadAt = System.nanoTime();
+                    boolean updatedLookup = matches(runtime, RecipeIngredientRole.CATALYST, Items.FEATHER, ORE)
+                        && !matches(runtime, RecipeIngredientRole.CATALYST, Items.FLINT, ORE);
+                    if (!updatedLookup && System.nanoTime() - reloadAt < 10_000_000_000L) return;
+                    verifyReload(runtime, updatedLookup);
                     showOre(runtime, Items.FEATHER);
                     stage = Stage.RELOADED;
                 }
@@ -161,7 +167,7 @@ final class ClientSagJeiSmoke {
                     if (!(minecraft.screen instanceof RecipesGui gui)) return;
                     var layout = visibleRecipe(gui, ORE);
                     if (layout == null) return;
-                    check("real_viewer_displays_authored_feather", layout.getRecipeLayout().getRecipeSlotsView()
+                    check("real_viewer_displays_authored_feather", layout.recipeLayout().getRecipeSlotsView()
                         .getSlotViews(RecipeIngredientRole.CATALYST).get(0).getDisplayedItemStack().orElseThrow().is(Items.FEATHER));
                     capture("iron-ore-feather");
                     finish(null);
@@ -197,14 +203,13 @@ final class ClientSagJeiSmoke {
             && !matches(runtime, RecipeIngredientRole.CATALYST, Items.FLINT, INGOT));
     }
 
-    private void verifyReload(IJeiRuntime runtime) {
+    private void verifyReload(IJeiRuntime runtime, boolean updatedLookup) {
         var ore = recipe(runtime, ORE);
         var layout = layout(runtime, ore, List.of(focus(runtime, RecipeIngredientRole.CATALYST, Items.FEATHER)));
         verifyBall(layout, Items.FEATHER, "1,200 µI", "Main Output 200%", "Bonus Output 300%", "Power Use 50%");
         check("live_recipe_layout_excludes_removed_flint", layout.getRecipeSlotsView().getSlotViews(RecipeIngredientRole.CATALYST)
             .get(0).getItemStacks().noneMatch(stack -> stack.is(Items.FLINT)));
-        check("live_lookup_indexes_new_ball_and_removes_old_ball", matches(runtime, RecipeIngredientRole.CATALYST, Items.FEATHER, ORE)
-            && !matches(runtime, RecipeIngredientRole.CATALYST, Items.FLINT, ORE));
+        check("live_lookup_indexes_new_ball_and_removes_old_ball", updatedLookup);
     }
 
     private void verifyClientOnlyTransfer(IJeiRuntime runtime) {
@@ -288,16 +293,16 @@ final class ClientSagJeiSmoke {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
-                    && layout.getRecipeLayout().getRecipe() instanceof SagMillingRecipe recipe && id.equals(recipe.getId())) return layout;
+                if (JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
+                    && layout.recipeLayout().getRecipe() instanceof SagMillingRecipe recipe && id.equals(recipe.getId())) return layout;
             }
         }
         return null;
     }
 
     static boolean clickTransfer(RecipesGui gui, RecipeLayoutWithButtons<?> layout) {
-        var rect = layout.getRecipeLayout().getRect();
-        var button = layout.getRecipeLayout().getSideButtonArea(0);
+        var rect = layout.recipeLayout().getRect();
+        var button = layout.recipeLayout().getRecipeTransferButtonArea();
         double x = rect.getX() + button.getX() + button.getWidth() / 2.0;
         double y = rect.getY() + button.getY() + button.getHeight() / 2.0;
         return layout.transferButton().isMouseOver(x, y) && gui.mouseClicked(x, y, 0) && gui.mouseReleased(x, y, 0);

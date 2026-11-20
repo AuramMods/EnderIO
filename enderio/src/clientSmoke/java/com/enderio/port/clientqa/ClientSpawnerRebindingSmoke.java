@@ -185,8 +185,8 @@ final class ClientSpawnerRebindingSmoke {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (!(gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout)
-                    || !(layout.getRecipeLayout().getRecipe() instanceof SoulBindingRecipe recipe) || !RECIPE.equals(recipe.getId())
+                if (!(JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout)
+                    || !(layout.recipeLayout().getRecipe() instanceof SoulBindingRecipe recipe) || !RECIPE.equals(recipe.getId())
                     || !layout.transferButton().isInitialized()) continue;
                 check("unfocused_transfer_finds_configured_cow_and_named_pig", layout.transferButton().getMissingCountHint() == 0);
                 capture("recipe");

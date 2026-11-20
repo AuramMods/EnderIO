@@ -254,10 +254,10 @@ final class ClientSoulBinderJeiSmoke {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (!(gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout)
-                    || !(layout.getRecipeLayout().getRecipe() instanceof SoulBindingRecipe recipe) || !fixture.id().equals(recipe.getId())
+                if (!(JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout)
+                    || !(layout.recipeLayout().getRecipe() instanceof SoulBindingRecipe recipe) || !fixture.id().equals(recipe.getId())
                     || !layout.transferButton().isInitialized()) continue;
-                var view = layout.getRecipeLayout().getRecipeSlotsView();
+                var view = layout.recipeLayout().getRecipeSlotsView();
                 var inputs = view.getSlotViews(RecipeIngredientRole.INPUT);
                 var outputs = view.getSlotViews(RecipeIngredientRole.OUTPUT);
                 check(fixture.name() + "_viewer_uses_the_required_soul_and_shows_a_returned_empty_vial", inputs.size() == 2 && outputs.size() == 2

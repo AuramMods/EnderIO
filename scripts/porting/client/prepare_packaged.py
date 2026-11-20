@@ -13,7 +13,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[3]
 MC = "1.20.1"
-FORGE = "1.20.1-forge-47.4.28"
+FORGE = "1.20.1-forge-47.4.10"
 
 
 def download(url, target, sha1=None):

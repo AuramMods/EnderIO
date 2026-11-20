@@ -176,7 +176,7 @@ final class ClientAlloyJeiSmoke {
         if (!(minecraft.screen instanceof RecipesGui gui)) return;
         var frame = visibleRecipe(gui);
         if (frame == null || !frame.transferButton().isInitialized()) return;
-        var view = frame.getRecipeLayout().getRecipeSlotsView();
+        var view = frame.recipeLayout().getRecipeSlotsView();
         var slots = view.getSlotViews(RecipeIngredientRole.INPUT);
         check(label() + "_has_three_visible_inputs", slots.size() == inputs().size());
         for (int i = 0; i < inputs().size(); i++) {
@@ -187,8 +187,8 @@ final class ClientAlloyJeiSmoke {
             ? result.is(Items.QUARTZ) && result.getCount() == 2 && result.hasTag() && result.getTag().getString("PortAlloyResult").equals("sized")
             : result.is(Items.RED_DYE) && result.getCount() == 12);
         capture(label() + "-alloy-jei");
-        var rect = frame.getRecipeLayout().getRect();
-        var button = frame.getRecipeLayout().getSideButtonArea(0);
+        var rect = frame.recipeLayout().getRect();
+        var button = frame.recipeLayout().getRecipeTransferButtonArea();
         double x = rect.getX() + button.getX() + button.getWidth() / 2.0;
         double y = rect.getY() + button.getY() + button.getHeight() / 2.0;
         check(label() + "_uses_the_actual_jei_transfer_button",
@@ -200,8 +200,8 @@ final class ClientAlloyJeiSmoke {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
-                    && layout.getRecipeLayout().getRecipe() instanceof AlloySmeltingRecipe recipe && recipeId().equals(recipe.getId())) return layout;
+                if (JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
+                    && layout.recipeLayout().getRecipe() instanceof AlloySmeltingRecipe recipe && recipeId().equals(recipe.getId())) return layout;
             }
         }
         return null;

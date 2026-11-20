@@ -273,13 +273,13 @@ final class ClientCrafterSmoke {
             var area = gui.getArea();
             for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
                 for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                    var found = gui.getRecipeLayoutUnderMouse(x, y).orElse(null);
+                    var found = JeiLayoutAccess.underMouse(gui, x, y).orElse(null);
                     if (!(found instanceof RecipeLayoutWithButtons<?> layout)
-                        || !(layout.getRecipeLayout().getRecipe() instanceof CraftingRecipe recipe) || !recipe.getId().equals(id)) continue;
+                        || !(layout.recipeLayout().getRecipe() instanceof CraftingRecipe recipe) || !recipe.getId().equals(id)) continue;
                     var button = layout.transferButton();
                     if (!button.isInitialized()) return false;
-                    var recipeArea = layout.getRecipeLayout().getRect();
-                    var relative = layout.getRecipeLayout().getSideButtonArea(0);
+                    var recipeArea = layout.recipeLayout().getRect();
+                    var relative = layout.recipeLayout().getRecipeTransferButtonArea();
                     double buttonX = recipeArea.getX() + relative.getX() + relative.getWidth() / 2.0;
                     double buttonY = recipeArea.getY() + relative.getY() + relative.getHeight() / 2.0;
                     if (!button.isMouseOver(buttonX, buttonY)) throw new AssertionError("Could not locate the actual JEI transfer button");

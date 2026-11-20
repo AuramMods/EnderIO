@@ -125,7 +125,7 @@ final class ClientUnifiedSagSmoke {
                     if (!(minecraft.screen instanceof RecipesGui gui)) return;
                     var layout = ClientSagJeiSmoke.visibleRecipe(gui, RECIPE);
                     if (layout == null || !layout.transferButton().isInitialized()) return;
-                    var shown = layout.getRecipeLayout().getRecipeSlotsView().getSlotViews(RecipeIngredientRole.OUTPUT)
+                    var shown = layout.recipeLayout().getRecipeSlotsView().getSlotViews(RecipeIngredientRole.OUTPUT)
                         .get(0).getDisplayedItemStack().orElseThrow();
                     var frame = capture("tin-recipe-" + batch);
                     frame.put("displayedTinDust", BuiltInRegistries.ITEM.getKey(shown.getItem()).toString());

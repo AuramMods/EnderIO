@@ -165,13 +165,13 @@ final class ClientVatSharedJeiSmoke {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (!(gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout)
+                if (!(JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout)
                     || !layout.transferButton().isInitialized()) continue;
                 check(fixture.name() + "_enables_transfer_for_sufficient_stock", layout.transferButton().getMissingCountHint() == 0);
                 capture(fixture.name() + "-recipe");
                 // The button dispatches this same JEI operation with maximum=true when Shift is held.
                 boolean sent = fixture.bulk()
-                    ? RecipeTransferUtil.transferRecipe(runtime.getRecipeTransferManager(), menu, layout.getRecipeLayout(), minecraft.player, true)
+                    ? RecipeTransferUtil.transferRecipe(runtime.getRecipeTransferManager(), menu, layout.recipeLayout(), minecraft.player, true)
                     : ClientSagJeiSmoke.clickTransfer(gui, layout);
                 check(fixture.name() + "_dispatches_the_jei_action", sent);
                 if (fixture.bulk()) gui.onClose();

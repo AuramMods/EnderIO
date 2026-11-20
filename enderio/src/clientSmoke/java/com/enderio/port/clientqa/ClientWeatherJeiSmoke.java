@@ -211,15 +211,15 @@ final class ClientWeatherJeiSmoke {
         if (!(minecraft.screen instanceof RecipesGui gui)) return;
         var frame = visibleRecipe(gui, fixture);
         if (frame == null || !frame.transferButton().isInitialized()) return;
-        var slots = frame.getRecipeLayout().getRecipeSlotsView().getSlotViews(RecipeIngredientRole.INPUT);
+        var slots = frame.recipeLayout().getRecipeSlotsView().getSlotViews(RecipeIngredientRole.INPUT);
         check(fixture.name() + "_actual_jei_layout_shows_one_rocket_and_the_exact_fluid", slots.size() == 2
             && slots.get(0).getDisplayedItemStack().filter(s -> s.is(Items.FIREWORK_ROCKET) && s.getCount() == 1).isPresent()
             && slots.get(1).getDisplayedIngredient(ForgeTypes.FLUID_STACK)
                 .filter(f -> f.getAmount() == 1_000 && fixture.fluid().equals(ForgeRegistries.FLUIDS.getKey(f.getFluid()))).isPresent());
         check(fixture.name() + "_jei_transfer_reports_all_inputs_available", frame.transferButton().getMissingCountHint() == 0);
         capture(fixture.name() + "-weather-jei");
-        var rect = frame.getRecipeLayout().getRect();
-        var button = frame.getRecipeLayout().getSideButtonArea(0);
+        var rect = frame.recipeLayout().getRect();
+        var button = frame.recipeLayout().getRecipeTransferButtonArea();
         double x = rect.getX() + button.getX() + button.getWidth() / 2.0;
         double y = rect.getY() + button.getY() + button.getHeight() / 2.0;
         check(fixture.name() + "_uses_the_actual_jei_transfer_button",
@@ -231,8 +231,8 @@ final class ClientWeatherJeiSmoke {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
-                    && layout.getRecipeLayout().getRecipe() instanceof WeatherChangeRecipe recipe
+                if (JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
+                    && layout.recipeLayout().getRecipe() instanceof WeatherChangeRecipe recipe
                     && fixture.recipe().equals(recipe.getId())) return layout;
             }
         }

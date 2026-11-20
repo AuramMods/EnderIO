@@ -196,15 +196,15 @@ final class ClientVatJeiSmoke {
         RecipeLayoutWithButtons<?> frame = null;
         for (int y = area.getY(); y < area.getY() + area.getHeight() && frame == null; y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
-                    && layout.getRecipeLayout().getRecipe() instanceof FermentingRecipe recipe && fixture.id().equals(recipe.getId())) {
+                if (JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
+                    && layout.recipeLayout().getRecipe() instanceof FermentingRecipe recipe && fixture.id().equals(recipe.getId())) {
                     frame = layout;
                     break;
                 }
             }
         }
         if (frame == null || !frame.transferButton().isInitialized()) return;
-        var view = frame.getRecipeLayout().getRecipeSlotsView();
+        var view = frame.recipeLayout().getRecipeSlotsView();
         var inputs = view.getSlotViews(RecipeIngredientRole.INPUT);
         var fluids = inputs.get(2).getIngredients(ForgeTypes.FLUID_STACK).toList();
         check(fixture.name() + "_layout_has_two_reagent_slots_and_one_sized_fluid_slot", inputs.size() == 3
@@ -220,8 +220,8 @@ final class ClientVatJeiSmoke {
                 && java.util.Arrays.equals(result.getTag().getIntArray("Readings"), new int[] {4, 3, 1}))));
         check(fixture.name() + "_jei_recognizes_the_sufficient_supply", frame.transferButton().getMissingCountHint() == 0);
         capture(fixture.name() + "-recipe");
-        var rect = frame.getRecipeLayout().getRect();
-        var button = frame.getRecipeLayout().getSideButtonArea(0);
+        var rect = frame.recipeLayout().getRect();
+        var button = frame.recipeLayout().getRecipeTransferButtonArea();
         double x = rect.getX() + button.getX() + button.getWidth() / 2.0;
         double y = rect.getY() + button.getY() + button.getHeight() / 2.0;
         check(fixture.name() + "_uses_the_actual_jei_transfer_button",

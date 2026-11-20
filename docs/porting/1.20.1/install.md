@@ -1,12 +1,12 @@
 # Ender IO for Minecraft Forge 1.20.1
 
-The port targets Minecraft 1.20.1, Forge 47.4.28 and Java 17. The tested Java distribution is Temurin 17.0.18. The core profile uses one Ender IO runtime jar. Its nested archives include EnderCore, Modded Conduits and GraphLib3 3.0.5. [Packaging evidence](cycle-279.md)
+The port targets Minecraft 1.20.1, Forge 47.4.10 and Java 17. The tested Java distribution is Temurin 17.0.18. The core profile uses one Ender IO runtime jar. Its nested archives include EnderCore, Modded Conduits and GraphLib3 3.0.5. [Auram compatibility checks](cycle-280.md), [Original port packaging evidence](cycle-279.md)
 
 ## Install the runtime jar
 
-The verified runtime is `enderio-8.2.14.278-dev+8c0fe1b6d4.jar` from `8c0fe1b6d43b23db28f8029c84b3caf1e770fcf2`. The distribution record has the archive locations and SHA-256 checksums. [Verified distribution](cycle-279.md#distribution-archives)
+The Auram runtime is `enderio-8.2.16-beta.jar`. It targets Auram’s Forge 47.4.10 and JEI 15.20.0.129 versions. [Auram compatibility checks](cycle-280.md)
 
-1. Create a Minecraft 1.20.1 instance with Forge 47.4.28 and configure its launcher to use Java 17. For a dedicated server, use the pinned Forge installer, then use its generated startup script.
+1. Create a Minecraft 1.20.1 instance with Forge 47.4.10 and configure its launcher to use Java 17. For a dedicated server, use the pinned Forge installer, then use its generated startup script.
 2. Put the main reobfuscated `enderio-<version>.jar` in the instance's `mods` directory. If upgrading an Ender IO installation, move the previous Ender IO jar to the backup first. The API, sources, standalone submodule and QA archives serve the build and tests.
 3. On a dedicated server, use matching Ender IO bytes on the server and client. Install compatible optional mods on the sides they require. Start a disposable world and confirm that Ender IO content loads before upgrading any world you use.
 

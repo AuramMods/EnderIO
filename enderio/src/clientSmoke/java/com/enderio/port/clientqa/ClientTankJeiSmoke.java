@@ -208,7 +208,7 @@ final class ClientTankJeiSmoke {
         if (!(minecraft.screen instanceof RecipesGui gui)) return;
         var frame = visibleRecipe(gui, fixture);
         if (frame == null || !frame.transferButton().isInitialized()) return;
-        var view = frame.getRecipeLayout().getRecipeSlotsView();
+        var view = frame.recipeLayout().getRecipeSlotsView();
         check(fixture.name() + "_displays_the_real_input_and_output_with_the_exact_fluid",
             itemDisplayed(view, RecipeIngredientRole.INPUT, fixture.input())
                 && itemDisplayed(view, RecipeIngredientRole.OUTPUT, fixture.output())
@@ -217,8 +217,8 @@ final class ClientTankJeiSmoke {
                     .anyMatch(fluid -> fluid.getAmount() == fixture.cost() && fixture.fluid().equals(ForgeRegistries.FLUIDS.getKey(fluid.getFluid()))));
         check(fixture.name() + "_has_no_missing_inputs_with_valid_supply", frame.transferButton().getMissingCountHint() == 0);
         capture(fixture.name() + "-recipe");
-        var rect = frame.getRecipeLayout().getRect();
-        var button = frame.getRecipeLayout().getSideButtonArea(0);
+        var rect = frame.recipeLayout().getRect();
+        var button = frame.recipeLayout().getRecipeTransferButtonArea();
         double x = rect.getX() + button.getX() + button.getWidth() / 2.0;
         double y = rect.getY() + button.getY() + button.getHeight() / 2.0;
         check(fixture.name() + "_uses_the_actual_jei_transfer_button",
@@ -241,8 +241,8 @@ final class ClientTankJeiSmoke {
         var area = gui.getArea();
         for (int y = area.getY(); y < area.getY() + area.getHeight(); y += 8) {
             for (int x = area.getX(); x < area.getX() + area.getWidth(); x += 8) {
-                if (gui.getRecipeLayoutUnderMouse(x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
-                    && layout.getRecipeLayout().getRecipe() instanceof TankRecipe recipe && fixture.recipeId().equals(recipe.getId())) return layout;
+                if (JeiLayoutAccess.underMouse(gui, x, y).orElse(null) instanceof RecipeLayoutWithButtons<?> layout
+                    && layout.recipeLayout().getRecipe() instanceof TankRecipe recipe && fixture.recipeId().equals(recipe.getId())) return layout;
             }
         }
         return null;
