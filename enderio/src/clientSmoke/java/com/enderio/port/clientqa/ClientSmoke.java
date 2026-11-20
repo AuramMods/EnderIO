@@ -122,6 +122,7 @@ public final class ClientSmoke {
             case "decorative-redstone" -> new ClientDecorativeRedstoneSmoke();
             case "steel-construction" -> new ClientSteelConstructionSmoke();
             case "drain" -> new ClientDrainSmoke();
+            case "niard" -> new ClientNiardSmoke();
             case "vacuums" -> new ClientVacuumSmoke();
             case "impulse-hopper" -> new ClientImpulseHopperSmoke();
             case "storage-terminals" -> new ClientStorageTerminalSmoke();
