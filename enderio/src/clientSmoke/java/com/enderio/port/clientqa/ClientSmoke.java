@@ -147,6 +147,7 @@ public final class ClientSmoke {
             case "legacy-sag" -> new ClientLegacySagSmoke(false);
             case "legacy-custom-sag" -> new ClientLegacySagSmoke(true);
             case "sag-jei" -> new ClientSagJeiSmoke();
+            case "sag-jei-metals" -> new ClientSagMetalsJeiSmoke();
             case "sag-unified" -> new ClientUnifiedSagSmoke();
             case "slicer" -> new ClientSlicerSmoke(false);
             case "slicer-backpressure" -> new ClientSlicerSmoke(true);

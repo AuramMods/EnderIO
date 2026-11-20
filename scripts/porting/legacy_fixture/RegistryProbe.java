@@ -2,6 +2,7 @@ package porting.registryprobe;
 
 import com.enderio.core.common.datamap.DataMaps;
 import com.enderio.core.common.datamap.RegistryDataMap;
+import com.enderio.enderio.content.machines.sag_mill.SagMillingRecipe;
 import com.enderio.enderio.foundation.souldata.EngineSoul;
 import com.enderio.enderio.foundation.souldata.FarmSoul;
 import com.enderio.enderio.foundation.souldata.SolarSoul;
@@ -22,6 +23,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.ItemStack;
@@ -89,9 +91,22 @@ public class RegistryProbe {
         var server = source.getServer();
         var flags = server.getWorldData().enabledFeatures();
         var recipes = new TreeMap<String, String>();
+        var sagRecipes = new TreeMap<String, Object>();
         server.getRecipeManager().getRecipes().forEach(recipe -> {
             if (recipe.getId().getNamespace().equals("enderio")) {
-                recipes.put(recipe.getId().toString(), ForgeRegistries.RECIPE_SERIALIZERS.getKey(recipe.getSerializer()).toString());
+                String id = recipe.getId().toString();
+                recipes.put(id, ForgeRegistries.RECIPE_SERIALIZERS.getKey(recipe.getSerializer()).toString());
+                if (recipe instanceof SagMillingRecipe sag) {
+                    var inputs = Stream.of(sag.input().getItems()).map(RegistryProbe::itemId).distinct().sorted().toList();
+                    var outputs = sag.outputs().stream().map(output -> {
+                        var stack = output.getItemStack();
+                        return Map.of("item", itemId(stack), "count", stack.getCount(), "chance", output.chance(),
+                            "optional", output.isOptional());
+                    }).toList();
+                    StringRepresentable bonus = sag.bonusType();
+                    sagRecipes.put(id, Map.of("inputs", inputs, "outputs", outputs,
+                        "energy", sag.getBaseEnergyCost(), "bonus", bonus.getSerializedName()));
+                }
             }
         });
 
@@ -114,6 +129,7 @@ public class RegistryProbe {
         snapshot.put("features", FeatureFlags.REGISTRY.toNames(flags).stream().map(ResourceLocation::toString).sorted().toList());
         snapshot.put("packs", server.getPackRepository().getSelectedIds().stream().sorted().toList());
         snapshot.put("recipes", recipes);
+        snapshot.put("sagRecipes", sagRecipes);
         snapshot.put("smeltingRecipes", server.getRecipeManager().getAllRecipesFor(RecipeType.SMELTING).stream()
             .filter(recipe -> !recipe.getResultItem(server.registryAccess()).isEmpty() && recipe.getIngredients().size() == 1
                 && !recipe.getIngredients().get(0).isEmpty())
@@ -145,6 +161,10 @@ public class RegistryProbe {
         }
         source.sendSuccess(() -> Component.literal("Packaged registry snapshot written"), false);
         return 1;
+    }
+
+    private static String itemId(ItemStack stack) {
+        return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
     }
 
     private static void collectForgeRegistry(Map<String, List<String>> registries, ResourceLocation key) {
