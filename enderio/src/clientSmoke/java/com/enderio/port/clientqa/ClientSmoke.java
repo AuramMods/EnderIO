@@ -55,6 +55,7 @@ public final class ClientSmoke {
             case "attractor-progression" -> new ClientAttractorProgressionSmoke();
             case "obelisk-carry" -> new ClientObeliskCarrySmoke();
             case "farming-station" -> new ClientFarmingStationSmoke();
+            case "farming-station-crafting" -> new ClientFarmingStationCraftingSmoke();
             case "painting-machine" -> new ClientPaintingMachineSmoke();
             case "painted-sand" -> new ClientPaintedSandSmoke();
             case "painted-redstone" -> new ClientPaintedRedstoneSmoke();
