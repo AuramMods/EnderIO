@@ -96,7 +96,6 @@ def check_placement(server, results, client):
     server.command(f"item replace entity {name} hotbar.0 with minecraft:air")
     time.sleep(0.2)
     server.command(f"item replace entity {name} hotbar.0 with enderio:alloy_smelter")
-    server.command(f"tp {name} 3848.5 80 8.5 180 38")
     (evidence / "server-try-unlocked-placement").touch()
     wait_signal(process, evidence, "tried-unlocked-placement")
     server.assert_state("feature_stage_grant_places_one_machine_and_records_its_actual_owner",
