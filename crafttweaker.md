@@ -35,12 +35,27 @@ primitive.addRecipe("glowing_alloy", <item:minecraft:glow_ink_sac> * 2, 80, 0.0f
 
 CraftTweaker puts new recipe names in the `crafttweaker` namespace. Scripts run in order on each load. To replace a recipe created earlier in the same script, use its `crafttweaker:` ID.
 
+### Inherited furnace recipes
+
+The powered Alloy Smelter in Furnace or All mode inherits the current `minecraft:smelting` recipes. It generates IDs in the form `enderio:smelting/<source namespace>/<source path>` and uses the smelter's `vanillaItemEnergy` setting, which defaults to 1,500 FE per input. Furnace cooking time stays a furnace setting.
+
+```zenscript
+val furnace = <recipetype:minecraft:smelting>;
+val alloy = <recipetype:enderio:alloy_smelting>;
+furnace.addRecipe("wheat_to_amethyst", <item:minecraft:amethyst_shard>, <item:minecraft:wheat>, 0.25f, 30);
+furnace.addRecipe("fern_to_diamond", <item:minecraft:diamond>, <item:minecraft:fern>, 1.0f, 30);
+alloy.excludeFurnaceRecipe("crafttweaker:fern_to_diamond");
+alloy.removeByName("enderio:smelting/minecraft/gold_ingot_from_smelting_raw_gold");
+```
+
+`excludeFurnaceRecipe(furnaceId)` uses the source furnace ID and skips the generated alloy recipe, while the furnace recipe stays available. `removeByName(id)` can remove an inherited alloy recipe that has already been generated. Ender IO prepares inherited recipes from datapacks before scripts run, then reconciles them with the script-edited furnace list. A datapack recipe or explicit script replacement at the derived ID takes precedence. Removing the script and running `/reload` restores the datapack and stock definitions.
+
 ## Implementation coverage
 
 | Processing path | Current cycle |
 | --- | --- |
 | Powered and primitive alloy smelting | Packaged Forge passed ZenScript lookup, add, replacement, removal, and exact machine input, output, and FE or fuel checks across server restarts. The packaged mod also booted without CraftTweaker. Client recipe-dump and JEI checks are pending. |
-| Inherited furnace recipes | Inventory complete. Live CraftTweaker changes and inheritance order need verification. |
+| Inherited furnace recipes | Packaged Forge verified a scripted furnace addition and replacement, a source removal, two alloy-only exclusions, exact FE, and restoration after live `/reload`. |
 | SAG milling and legacy grinding ball recipes | Inventory complete. Modern modifiers take precedence over the legacy grinding ball recipe. |
 | Slicing, Soul Binder, VAT fermentation, and tank processing | Inventory complete. The VAT uses positioned reagent groups and the tank supports both filling and emptying. |
 | Painting, Enchanter, weather, and fire | Inventory complete. Painting uses the supplied paint block. Enchanter uses the selected enchantment and amount. Weather and fire have world effects. |
