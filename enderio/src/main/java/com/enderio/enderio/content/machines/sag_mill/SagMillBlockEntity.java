@@ -30,6 +30,7 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -196,8 +197,8 @@ public class SagMillBlockEntity extends PoweredMachineBlockEntity {
                 // Claim any available grinding balls.
                 if (recipe.bonusType().useGrindingBall() && grindingBallData.isIdentity()) {
                     ItemStack ball = GRINDING_BALL.getItemStack(inv);
-                    if (!ball.isEmpty()) {
-                        GrindingBallData data = Forge6GrindingBallRecipe.forItem(level, ball.getItem());
+                    if (!ball.isEmpty() && level instanceof ServerLevel serverLevel) {
+                        GrindingBallData data = Forge6GrindingBallRecipe.forActivation(serverLevel, ball.getItem(), getMachineOwner());
                         if (data != null && !data.isIdentity()) {
                             setGrindingBallData(data);
                             ball.shrink(1);

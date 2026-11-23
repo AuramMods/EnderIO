@@ -5,11 +5,13 @@ import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.recipes.CodecRecipeSerializer;
 import com.enderio.enderio.api.components.GrindingBallData;
 import com.enderio.enderio.init.EIORecipes;
+import com.enderio.enderio.integration.gamestages.StageRules;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -23,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 /** The datapack definition referenced by Forge 6 SAG Mill saves. */
@@ -60,9 +64,21 @@ public record Forge6GrindingBallRecipe(@Nullable ResourceLocation id, ResourceLo
         if (current != null || item == Items.AIR) {
             return current;
         }
-        return recipes(level).filter(recipe -> recipe.ballItem() == item)
-            .min(Comparator.comparing(Forge6GrindingBallRecipe::getId))
+        return findLegacy(level, item).map(Forge6GrindingBallRecipe::modifiers).orElse(null);
+    }
+
+    public static @Nullable GrindingBallData forActivation(ServerLevel level, Item item, @Nullable UUID owner) {
+        var current = GrindingBallData.DATA_MAP_TYPE.get(level, item);
+        if (current != null || item == Items.AIR) {
+            return current;
+        }
+        return findLegacy(level, item).filter(recipe -> StageRules.permitsRecipe(level, owner, recipe))
             .map(Forge6GrindingBallRecipe::modifiers).orElse(null);
+    }
+
+    private static Optional<Forge6GrindingBallRecipe> findLegacy(@Nullable Level level, Item item) {
+        return recipes(level).filter(recipe -> recipe.ballItem() == item)
+            .min(Comparator.comparing(Forge6GrindingBallRecipe::getId));
     }
 
     public static Stream<Item> items(@Nullable Level level) {

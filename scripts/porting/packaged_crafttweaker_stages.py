@@ -12,8 +12,10 @@ sys.dont_write_bytecode = True
 from packaged_crafttweaker import FIXTURES, check_script
 from packaged_glass_progression import Smelt, finished_smelter, prepare_smelter, supply
 from packaged_levitation_staff import game_tick
+from packaged_sag_progression import charge, feed, inputs, mill, output, prepare_mill
 from packaged_server_smoke import ROOT, digest
 from packaged_spawners import prepare_profile, run_stage
+from packaged_starter_progression import hopper_item
 
 
 COMPANIONS = (
@@ -27,6 +29,7 @@ COMPANIONS = (
 ALLOY = Smelt(3802, 3, "amethyst_shard", 1, 1500)
 PRIMITIVE = "3806 80 3"
 FIRE_BASE, FIRE = "3810 80 3", "3810 81 3"
+SAG_X = 3814
 ALLOY_INPUTS = '[{Slot:0,id:"minecraft:lapis_lazuli",Count:2},{Slot:1,id:"minecraft:quartz",Count:1}]'
 PRIMITIVE_INPUTS = ('[{Slot:0,id:"minecraft:coal",Count:2},'
                     '{Slot:1,id:"minecraft:bamboo",Count:2},{Slot:2,id:"minecraft:slime_ball",Count:1}]')
@@ -57,6 +60,12 @@ def locked(server, results):
                    f'{{Items:{{Items:{PRIMITIVE_INPUTS}}}}}')
     server.command(f"setblock {FIRE_BASE} minecraft:emerald_block")
     server.command(f"setblock {FIRE} minecraft:fire")
+    prepare_mill(server, SAG_X)
+    server.command(f"item replace block {feed(SAG_X)} container.1 with minecraft:feather")
+    ball = f'if data block {mill(SAG_X)} Items.Items[{{Slot:5,id:"minecraft:feather",Count:1}}]'
+    server.assert_state("hopper_can_load_a_legacy_ball_with_a_stage_requirement", ball, results)
+    inputs(server, SAG_X, "minecraft:stone_button", 1)
+    charge(server, SAG_X, 1337)
     wait_fire_age(server)
     server.assert_state("exact_recipe_stage_holds_unowned_alloy_inputs_and_fe",
                         f'if data block {ALLOY.pos(80)} {{EnergyStored:1637,Items:{{Items:{ALLOY_INPUTS}}}}} '
@@ -65,6 +74,10 @@ def locked(server, results):
                         f'if data block {PRIMITIVE} {{BurnDuration:0,Items:{{Items:{PRIMITIVE_INPUTS}}}}}', results)
     server.assert_state("ungranted_world_stage_prevents_fire_crafting",
                         f"if block {FIRE_BASE} minecraft:emerald_block if block {FIRE} minecraft:fire", results)
+    server.assert_state("legacy_ball_stage_blocks_activation_without_blocking_the_sag_recipe",
+                        f"{ball} if data block {mill(SAG_X)} {{EnergyStored:137}} "
+                        f"unless data block {mill(SAG_X)} GrindingBal "
+                        f"{hopper_item(output(SAG_X), 'minecraft:glow_ink_sac', 1)}", results)
 
 
 def unlocked(server, results):
@@ -73,6 +86,8 @@ def unlocked(server, results):
     # Relight the old untracked fire after granting the world stage.
     server.command(f"setblock {FIRE} minecraft:air")
     server.command(f"setblock {FIRE} minecraft:fire")
+    inputs(server, SAG_X, "minecraft:stone_button", 2)
+    charge(server, SAG_X, 1937)
     server.assert_state("cleared_stage_resumes_existing_alloy_inputs",
                         finished_smelter(ALLOY, namespace="minecraft"), results, timeout=30)
     server.assert_state("cleared_family_stage_runs_primitive_alloy_once",
@@ -81,6 +96,10 @@ def unlocked(server, results):
                         f'unless data block {PRIMITIVE} Task', results, timeout=30)
     server.assert_state("explicit_world_stage_unlocks_actorless_fire_crafting",
                         f"if block {FIRE_BASE} minecraft:diamond_block if block {FIRE} minecraft:air", results, timeout=35)
+    server.assert_state("clearing_the_legacy_ball_stage_restores_the_native_multiplier",
+                        f"if data block {mill(SAG_X)} {{EnergyStored:137,GrindingBallDamage:600}} "
+                        f"unless data block {mill(SAG_X)} Items.Items[{{Slot:5}}] "
+                        f"{hopper_item(output(SAG_X), 'minecraft:glow_ink_sac', 4)}", results)
 
 
 def main():
@@ -102,14 +121,19 @@ def main():
     scripts.mkdir()
     source = (FIXTURES / "stage_processing.zs").read_text()
     script = scripts / "stage_processing.zs"
-    fire = """
+    world_and_ball = """
 import mods.enderio.FireOutput;
+import mods.enderio.SagOutput;
 <recipetype:enderio:fire_crafting>.addRecipe("qa_staged_fire", [<block:minecraft:emerald_block>], [],
     [<resource:minecraft:overworld>], <block:minecraft:diamond_block>,
     FireOutput.item(<item:minecraft:rabbit_hide>, 1, 1, 1.0f));
+<recipetype:enderio:grinding_ball>.addRecipe("qa_staged_ball", <item:minecraft:feather>,
+    2.0f, 1.0f, 0.5f, 5000);
+<recipetype:enderio:sag_milling>.addRecipe("qa_staged_ball_probe", <item:minecraft:stone_button>,
+    1200, "multiply_output", SagOutput.item(<item:minecraft:glow_ink_sac>, 1.0f, false));
 """
-    (scripts / "stage_fire.zs").write_text(fire)
-    script.write_text(source)
+    (scripts / "stage_fire.zs").write_text(world_and_ball)
+    script.write_text(source + '\nEnderIOStages.requireRecipeType(<resource:enderio:grinding_ball>, "parts");\n')
     report = {"passed": False, "assertions": [], "servers": [], "jarSha256": digest(directory / "mods/enderio.jar")}
     try:
         run_stage(args, directory, report, "locked", locked)
