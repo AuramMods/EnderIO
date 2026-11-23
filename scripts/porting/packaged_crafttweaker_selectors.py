@@ -74,6 +74,32 @@ def exercise(server, results, *, changed):
     server.command(f"setblock {base} minecraft:emerald_block")
     server.command(f"setblock {fire} minecraft:fire")
     deadline_tick = game_tick(server) + 270
+
+    sag_x = 3700 + z_offset
+    grinder = f"{sag_x} 80 12"
+    charger, antenna = f"{3702 + z_offset} 80 14", f"{3702 + z_offset} 81 14"
+    # Keep the data map cases separate from the selector machines above.
+    server.command(f'setblock {grinder} enderio:sag_mill[facing=south]'
+                   '{IOConfig:{Modes:{up:"pull",down:"push"}},'
+                   'Items:{Items:[{Slot:6,id:"enderio:basic_capacitor",Count:1}]}}')
+    sag_feed, sag_output = f"{sag_x} 81 12", f"{sag_x} 79 12"
+    server.command(f'setblock {sag_feed} minecraft:hopper[facing=down]'
+                   '{Items:[{Slot:1b,id:"minecraft:feather",Count:1b}]}')
+    server.command(f"setblock {sag_output} minecraft:hopper[facing=down]")
+    server.assert_state("sag_mill_loads_the_scripted_grinding_ball",
+                        f'if data block {grinder} Items.Items[{{Slot:5,id:"minecraft:feather",Count:1}}]', results)
+    server.command(f"item replace block {sag_feed} container.0 with minecraft:stone_button 2")
+    wear, count = (900, 4) if changed else (600, 3)
+    server.command(f"data merge block {grinder} {{EnergyStored:{1200 + wear + 137}}}")
+    server.command(f"setblock {charger} enderio:wireless_charger")
+    server.command(f"setblock {antenna} minecraft:amethyst_block")
+    range_ = 16 if changed else 40
+    server.assert_state("wireless_charger_uses_the_edited_extension",
+                        f"if data block {charger} {{ActionRange:{{range:{range_}}}}}", results, timeout=20)
+    server.assert_state("modern_grinding_ball_takes_priority_until_removed",
+                        f"if data block {grinder} {{EnergyStored:137,GrindingBallDamage:{wear}}} "
+                        f"{hopper_item(sag_output, 'minecraft:glow_ink_sac', count)} "
+                        f"unless data block {grinder} Task", results, timeout=25)
     for x, source, result in rows:
         if result is None:
             item_id = source.partition("{")[0]

@@ -37,6 +37,10 @@ sag.removeByName("crafttweaker:qa_any_vial");
 ProcessingData.setGrindingBall(<item:minecraft:feather>, 2.0f, 1.0f, 0.5f, 5000);
 ProcessingData.setVatYield(<item:minecraft:gold_ingot>, <tag:items:forge:ingots/gold>, 3.0);
 ProcessingData.setRangeExtension(<block:minecraft:amethyst_block>, <tag:blocks:enderio:range_extender>, 24);
+<recipetype:enderio:grinding_ball>.addRecipe("qa_modern_fallback", <item:minecraft:feather>,
+    3.0f, 1.0f, 0.75f, 4000);
+sag.addRecipe("qa_modern_probe", <item:minecraft:stone_button>, 1200, "multiply_output",
+    SagOutput.item(<item:minecraft:glow_ink_sac>, 1.0f, false));
 val grindingBall = ProcessingData.getGrindingBall(<item:minecraft:feather>);
 if grindingBall != null && grindingBall.durability == 5000
         && ProcessingData.getVatYield(<item:minecraft:gold_ingot>, <tag:items:forge:ingots/gold>) == 3.0
