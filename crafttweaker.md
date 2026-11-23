@@ -50,14 +50,44 @@ alloy.removeByName("enderio:smelting/minecraft/gold_ingot_from_smelting_raw_gold
 
 `excludeFurnaceRecipe(furnaceId)` uses the source furnace ID and skips the generated alloy recipe, while the furnace recipe stays available. `removeByName(id)` can remove an inherited alloy recipe that has already been generated. Ender IO prepares inherited recipes from datapacks before scripts run, then reconciles them with the script-edited furnace list. A datapack recipe or explicit script replacement at the derived ID takes precedence. Removing the script and running `/reload` restores the datapack and stock definitions.
 
+## SAG Mill
+
+```zenscript
+import mods.enderio.SagOutput;
+
+val sag = <recipetype:enderio:sag_milling>;
+sag.addRecipe("qa_sag", <item:minecraft:paper>, 800, "none",
+    SagOutput.item(<item:minecraft:amethyst_shard> * 2, 1.0f, false),
+    SagOutput.tag(<tag:items:forge:ingots/copper>, 1, 1.0f, false),
+    SagOutput.item(<item:minecraft:glow_ink_sac>, 0.0001f, true));
+```
+
+- `addRecipe(name, input, energy, bonus, outputs...)` consumes one item matching `input`. Pass the base FE cost and one or more `SagOutput` values.
+- `replaceRecipe(id, input, energy, bonus, outputs...)` takes the same arguments under an existing recipe ID.
+- `bonus` is `none` to skip grinding balls, `chance_only` to apply their chance modifier, or `multiply_output` to apply both yield and chance modifiers. The machine applies its native grinding-ball FE rules.
+- `SagOutput.item(stack, chance, optional)` specifies a stack. `SagOutput.tag(tag, count, chance, optional)` resolves the item using Ender IO's material preference rules. Use a chance from `0.0f` to `1.0f` and supply the native `optional` flag for serialization.
+- `remove(ingredient)` and `getRecipesByOutput(ingredient)` match all possible item outputs with nonzero chances. For tag outputs, they use the tag membership from the current CraftTweaker reload. The machine chooses the actual result using Ender IO's material preference rules.
+
+## Slice'N'Splice
+
+```zenscript
+val slice = <recipetype:enderio:slicing>;
+slice.addRecipe("qa_slice", <item:minecraft:echo_shard> * 2, 600,
+    <item:minecraft:dandelion>, <item:minecraft:air>, <item:minecraft:poppy>,
+    <item:minecraft:air>, <item:minecraft:air>, <item:minecraft:cornflower>);
+```
+
+`addRecipe(name, output, energy, inputs...)` accepts exactly six slots, left to right across the top row, then left to right across the bottom row. Use `<item:minecraft:air>` for a slot that must be empty. Each occupied slot consumes one item. `energy` is in FE. The machine handles axe and shears wear. `replaceRecipe(id, output, energy, inputs...)` keeps the existing ID.
+
 ## Implementation coverage
 
 | Processing path | Current cycle |
 | --- | --- |
 | Powered and primitive alloy smelting | Packaged Forge passed ZenScript lookup, add, replacement, removal, and exact machine input, output, and FE or fuel checks across server restarts. The packaged mod also booted without CraftTweaker. Client recipe-dump and JEI checks are pending. |
 | Inherited furnace recipes | Packaged Forge verified a scripted furnace addition and replacement, a source removal, two alloy-only exclusions, exact FE, and restoration after live `/reload`. |
-| SAG milling and legacy grinding ball recipes | Inventory complete. Modern modifiers take precedence over the legacy grinding ball recipe. |
-| Slicing, Soul Binder, VAT fermentation, and tank processing | Inventory complete. The VAT uses positioned reagent groups and the tank supports both filling and emptying. |
+| SAG milling and slicing | Packaged Forge verified scripted additions, replacements, removal by tagged SAG output, exact FE and item counts, positional slicer inputs, and tool wear. |
+| Legacy grinding ball recipes | Inventory complete. Modern modifiers take precedence over the legacy grinding ball recipe. |
+| Soul Binder, VAT fermentation, and tank processing | Inventory complete. The VAT accepts its two reagent tags in either slot order, and the tank supports both filling and emptying. |
 | Painting, Enchanter, weather, and fire | Inventory complete. Painting uses the supplied paint block. Enchanter uses the selected enchantment and amount. Weather and fire have world effects. |
 | Crafter and shaped entity storage | Both use the vanilla crafting recipe manager. The shaped entity storage serializer adds soul-storage output behavior. |
 | Ingredients | Forge defines `empty_soul_storage`, `filled_soul_storage`, `any_soul_storage`, and `conduit` serializers. Typed script helpers and editable selector groups are pending. |

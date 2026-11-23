@@ -3,7 +3,6 @@ package com.enderio.enderio.integration.crafttweaker;
 import com.blamejared.crafttweaker.api.annotation.ZenRegister;
 import com.blamejared.crafttweaker.api.ingredient.IIngredientWithAmount;
 import com.blamejared.crafttweaker.api.item.IItemStack;
-import com.enderio.core.common.recipes.SizedIngredient;
 import com.enderio.enderio.content.machines.alloy.AlloySmeltingRecipe;
 import net.minecraft.resources.ResourceLocation;
 import org.openzen.zencode.java.ZenCodeType;
@@ -32,11 +31,10 @@ public abstract class AlloyRecipeManager extends ProcessingRecipeManager<AlloySm
         if (inputs.length < 1 || inputs.length > 3) {
             throw new IllegalArgumentException("Alloy smelting needs one to three inputs");
         }
-        if (output.getInternal().isEmpty() || energy <= 0 || !Float.isFinite(experience) || experience < 0) {
-            throw new IllegalArgumentException("Alloy smelting needs an output, positive FE, and nonnegative XP");
+        if (!Float.isFinite(experience) || experience < 0) {
+            throw new IllegalArgumentException("Alloy smelting XP must be finite and nonnegative");
         }
-        var sized = Arrays.stream(inputs).map(value ->
-                new SizedIngredient(value.getIngredient().asVanillaIngredient(), value.getAmount())).toList();
-        return finish(new AlloySmeltingRecipe(sized, output.getInternal().copy(), energy, experience), id);
+        var sized = Arrays.stream(inputs).map(ProcessingRecipeManager::sized).toList();
+        return finish(new AlloySmeltingRecipe(sized, outputStack(output), positive(energy, "Energy"), experience), id);
     }
 }

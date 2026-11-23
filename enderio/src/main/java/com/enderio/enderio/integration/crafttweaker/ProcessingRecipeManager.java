@@ -6,13 +6,16 @@ import com.blamejared.crafttweaker.api.action.recipe.ActionRemoveRecipe;
 import com.blamejared.crafttweaker.api.action.recipe.ActionRemoveRecipeByName;
 import com.blamejared.crafttweaker.api.annotation.ZenRegister;
 import com.blamejared.crafttweaker.api.ingredient.IIngredient;
+import com.blamejared.crafttweaker.api.ingredient.IIngredientWithAmount;
 import com.blamejared.crafttweaker.api.item.IItemStack;
 import com.blamejared.crafttweaker.api.recipe.manager.base.IRecipeManager;
 import com.enderio.core.common.recipes.OutputStack;
+import com.enderio.core.common.recipes.SizedIngredient;
 import com.enderio.enderio.foundation.MachineRecipe;
 import com.google.gson.JsonParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -61,7 +64,7 @@ public abstract class ProcessingRecipeManager<T extends Recipe<?>> implements IR
         add(recipe);
     }
 
-    protected final List<OutputStack> outputs(T recipe) {
+    protected List<OutputStack> outputs(T recipe) {
         return CraftTweakerAPI.getAccessibleElementsProvider().registryAccess(registry -> {
             if (recipe instanceof MachineRecipe<?> machine) {
                 return machine.getResultStacks(registry);
@@ -70,7 +73,26 @@ public abstract class ProcessingRecipeManager<T extends Recipe<?>> implements IR
         });
     }
 
-    private boolean matchesOutput(T recipe, IIngredient output) {
+    protected static ItemStack outputStack(IItemStack output) {
+        var stack = output.getInternal();
+        if (stack.isEmpty()) {
+            throw new IllegalArgumentException("Recipe output must be a nonempty item stack");
+        }
+        return stack.copy();
+    }
+
+    protected static int positive(int value, String parameter) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(parameter + " must be positive");
+        }
+        return value;
+    }
+
+    protected static SizedIngredient sized(IIngredientWithAmount value) {
+        return new SizedIngredient(value.getIngredient().asVanillaIngredient(), value.getAmount());
+    }
+
+    protected boolean matchesOutput(T recipe, IIngredient output) {
         return outputs(recipe).stream().map(OutputStack::getItem)
                 .anyMatch(stack -> !stack.isEmpty() && output.matches(IItemStack.of(stack)));
     }
