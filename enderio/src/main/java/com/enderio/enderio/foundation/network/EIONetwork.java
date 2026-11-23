@@ -11,6 +11,7 @@ import com.enderio.enderio.foundation.network.packets.ClientboundSoulEngineSoulP
 import com.enderio.enderio.foundation.network.packets.ClientboundSyncTravelDataPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundTravelTargetRemovedPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundTravelTargetUpdatedPacket;
+import com.enderio.enderio.foundation.network.packets.ServerboundAlloyRecipeTransferPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundCountFilterPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundCycleIOConfigPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundDoubleChannelPacket;
@@ -45,7 +46,7 @@ import net.minecraftforge.network.NetworkDirection;
 
 @EventBusSubscriber(modid = "enderio", bus = EventBusSubscriber.Bus.MOD)
 public final class EIONetwork {
-    private static final RegistryNetworkChannel CHANNEL = new RegistryNetworkChannel(EnderIOAPI.rl("main"), "forge-4");
+    private static final RegistryNetworkChannel CHANNEL = new RegistryNetworkChannel(EnderIOAPI.rl("main"), "forge-5");
 
     private EIONetwork() {}
 
@@ -116,6 +117,8 @@ public final class EIONetwork {
             NetworkDirection.PLAY_TO_SERVER, (packet, player) -> MachinePayloadHandler.Server.getInstance().handleTransferItems(packet, player));
         CHANNEL.register(ServerboundVatRecipeTransferPacket.ID, ServerboundVatRecipeTransferPacket.class, ServerboundVatRecipeTransferPacket.STREAM_CODEC,
             NetworkDirection.PLAY_TO_SERVER, (packet, player) -> MachinePayloadHandler.Server.getInstance().handleVatRecipeTransfer(packet, player));
+        CHANNEL.register(ServerboundAlloyRecipeTransferPacket.ID, ServerboundAlloyRecipeTransferPacket.class, ServerboundAlloyRecipeTransferPacket.STREAM_CODEC,
+            NetworkDirection.PLAY_TO_SERVER, (packet, player) -> MachinePayloadHandler.Server.getInstance().handleAlloyRecipeTransfer(packet, player));
     }
 
     public static void sendToServer(Object packet) { CHANNEL.sendToServer(packet); }

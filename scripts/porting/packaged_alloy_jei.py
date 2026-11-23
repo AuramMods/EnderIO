@@ -7,9 +7,12 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 
 sys.dont_write_bytecode = True
 from client.run_multiplayer import stop_client, wait_signal
+from packaged_crafttweaker import check_script
+from packaged_crafttweaker_stages import COMPANIONS
 from packaged_glass_progression import Smelt, prepare_smelter
 from packaged_legacy_painting import stack
 from packaged_sag_progression import charge, feed, mill, output, ready_at
@@ -29,14 +32,47 @@ RESULT_TAG = '{PortAlloyResult:"sized"}'
 CAPACITOR = stack(4, 1, "enderio:octadic_capacitor")
 
 
-def write_recipe(path, reloaded=False):
+def recipe_definition(reloaded):
     ingredients = RELOADED if reloaded else ORIGINAL
     result = {"id": RESULT, "count": 2, "tag": {"PortAlloyResult": "sized"}} if reloaded else {
         "id": "minecraft:prismarine_crystals", "count": 1,
     }
-    path.write_text(json.dumps({"type": "enderio:alloy_smelting", "energy": 1800 if reloaded else 2400,
-                                "inputs": [{"item": item, "count": count} for item, count in ingredients],
-                                "experience": 0.0, "output": result}) + "\n")
+    return json.dumps({"type": "enderio:alloy_smelting", "energy": 1800 if reloaded else 2400,
+                       "inputs": [{"item": item, "count": count} for item, count in ingredients],
+                       "experience": 0.0, "output": result})
+
+
+def write_recipe(path, reloaded=False):
+    path.write_text(recipe_definition(reloaded) + "\n")
+
+
+def script_replacement(server):
+    script = server.directory / "scripts/alloy_jei.zs"
+    script.parent.mkdir(exist_ok=True)
+    script.write_text(f'''import mods.enderio.EnderIOStages;
+
+<recipetype:enderio:alloy_smelting>.replaceRecipeJson("{RECIPE_ID}", {json.dumps(recipe_definition(True))});
+EnderIOStages.requireRecipe(<resource:{RECIPE_ID}>, "jei_smelting");
+println("PORT_CT_JEI_REPLACED");
+''')
+    server.command(f"data modify block {mill(X)} owner set from entity {PLAYER} UUID")
+
+
+def check_scripted_transfer(server, results):
+    check_script(server, "PORT_CT_JEI_REPLACED")
+    server.command(f"execute as {PLAYER} run ct recipes manager <recipetype:enderio:alloy_smelting>")
+    log = (server.directory / "logs/crafttweaker.log").read_text()
+    dump = '<recipetype:enderio:alloy_smelting>.addRecipeJson("alloy_smelting/sized",'
+    if not any(dump in line and "PortAlloyResult" in line and "1800" in line for line in log.splitlines()):
+        raise AssertionError("CraftTweaker's recipe dump did not contain the scripted native fields")
+    results.append({"assertion": "crafttweaker_command_dumps_the_replacement_with_native_fields", "passed": True})
+    charge(server, X, 537)
+    time.sleep(0.55)
+    server.assert_state("jei_transfer_keeps_the_recipe_visible_but_cannot_bypass_the_owner_stage",
+                        f"if data block {mill(X)} {{EnergyStored:537,Task:{{ProgressMade:0,HasDeterminedOutputs:0b}}}} "
+                        f"{stocked_inputs(RELOADED)} unless data block {output(X)} Items[1]", results)
+    charge(server, X, 0)
+    server.command(f"gamestage add {PLAYER} jei_smelting")
 
 
 def load_fixture(server, results):
@@ -115,12 +151,17 @@ def run_client(args, server, report, recipe):
             verify_transfer(server, results, "stock", STOCK, player_transfer=True)
             process(server, results)
 
-            write_recipe(recipe, reloaded=True)
+            if args.crafttweaker_mod_dir:
+                script_replacement(server)
+            else:
+                write_recipe(recipe, reloaded=True)
             server.command("reload")
             supply_player(server, RELOADED)
             ready_at(server, X, "reloaded", evidence)
             wait_signal(client, evidence, "reloaded-transferred")
             verify_transfer(server, results, "reloaded", RELOADED, player_transfer=True)
+            if args.crafttweaker_mod_dir:
+                check_scripted_transfer(server, results)
             process(server, results, reloaded=True)
             (evidence / "server-finished").touch()
             if client.wait(timeout=30) != 0:
@@ -142,9 +183,12 @@ def main():
         parser.add_argument(f"--{path}", required=True, type=Path)
     parser.add_argument("--jei", type=Path)
     parser.add_argument("--launch", type=Path)
+    parser.add_argument("--crafttweaker-mod-dir", type=Path)
     args = parser.parse_args()
     if bool(args.jei) != bool(args.launch):
         parser.error("provide --jei and --launch together for the packaged client scenario")
+    if args.crafttweaker_mod_dir and not args.launch:
+        parser.error("provide --launch to test CraftTweaker's live JEI recipes")
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a directory name")
     directory = ROOT / "build/port-runtime" / args.name
@@ -153,6 +197,9 @@ def main():
     if args.jei:
         shutil.copyfile(args.jei, directory / "mods/jei.jar")
         jars["jei"] = digest(args.jei)
+    if args.crafttweaker_mod_dir:
+        for name in COMPANIONS[:-1]:
+            shutil.copyfile(args.crafttweaker_mod_dir / name, directory / "mods" / name)
     pack = directory / WORLD / "datapacks/port_alloy"
     recipe = pack / "data/port_alloy/recipes/alloy_smelting/sized.json"
     recipe.parent.mkdir(parents=True)

@@ -12,6 +12,7 @@ import com.enderio.enderio.client.content.machines.gui.screen.WeatherObeliskScre
 import com.enderio.enderio.client.content.machines.gui.screen.base.MachineScreen;
 import com.enderio.enderio.compat.jei.subtype.SoulBindableSubtypeInterpreter;
 import com.enderio.enderio.compat.jei_machines_to_merge.category.AlloySmeltingCategory;
+import com.enderio.enderio.compat.jei_machines_to_merge.transfer.AlloySmelterTransferHelper;
 import com.enderio.enderio.compat.jei_machines_to_merge.category.EnchanterCategory;
 import com.enderio.enderio.compat.jei_machines_to_merge.category.SagMillCategory;
 import com.enderio.enderio.compat.jei_machines_to_merge.category.SlicingRecipeCategory;
@@ -25,7 +26,6 @@ import com.enderio.enderio.compat.jei_machines_to_merge.transfer.FluidTankTransf
 import com.enderio.enderio.compat.jei_machines_to_merge.transfer.VATTransferHelper;
 import com.enderio.enderio.compat.jei_machines_to_merge.transfer.WeatherObeliskTransferHelper;
 import com.enderio.enderio.content.enchanter.EnchanterMenu;
-import com.enderio.enderio.content.machines.alloy.AlloySmelterMenu;
 import com.enderio.enderio.content.machines.sag_mill.SagMillMenu;
 import com.enderio.enderio.content.machines.slicer.SlicerMenu;
 import com.enderio.enderio.content.machines.soul_binder.SoulBinderMenu;
@@ -100,9 +100,8 @@ public class MachinesJEI implements IModPlugin {
 
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        registration.addRecipeTransferHandler(AlloySmelterMenu.class, EIOMenus.ALLOY_SMELTER.get(),
-                AlloySmeltingCategory.TYPE, AlloySmelterMenu.INPUTS_INDEX, AlloySmelterMenu.INPUT_COUNT,
-                AlloySmelterMenu.LAST_INDEX + 1, 36);
+        registration.addRecipeTransferHandler(new AlloySmelterTransferHelper(registration.getTransferHelper()),
+                AlloySmeltingCategory.TYPE);
 
         registration.addRecipeTransferHandler(EnchanterMenu.class, EIOMenus.ENCHANTER.get(), EnchanterCategory.TYPE,
                 EnchanterMenu.INPUTS_INDEX, EnchanterMenu.INPUT_COUNT, EnchanterMenu.LAST_INDEX + 1, 36);

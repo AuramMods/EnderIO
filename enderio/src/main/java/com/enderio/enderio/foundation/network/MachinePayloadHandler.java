@@ -1,6 +1,9 @@
 package com.enderio.enderio.foundation.network;
 
 import com.enderio.enderio.api.io.IOConfigurable;
+import com.enderio.enderio.content.machines.alloy.AlloyRecipeTransfer;
+import com.enderio.enderio.content.machines.alloy.AlloySmelterMenu;
+import com.enderio.enderio.content.machines.alloy.AlloySmeltingRecipe;
 import com.enderio.enderio.content.enderface.EnderfaceBlockEntity;
 import com.enderio.enderio.content.storage.crafter.CrafterMenu;
 import com.enderio.core.common.menu.MenuRecipeTransfer;
@@ -14,6 +17,7 @@ import com.enderio.enderio.foundation.network.packets.ClientboundFarmStationSoul
 import com.enderio.enderio.foundation.network.packets.ClientboundPoweredSpawnerSoulPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundSolarSoulPacket;
 import com.enderio.enderio.foundation.network.packets.ClientboundSoulEngineSoulPacket;
+import com.enderio.enderio.foundation.network.packets.ServerboundAlloyRecipeTransferPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundCycleIOConfigPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundEnderfaceInteractPacket;
 import com.enderio.enderio.foundation.network.packets.ServerboundTransferItemsPacket;
@@ -115,6 +119,15 @@ public class MachinePayloadHandler {
             var registered = player.level().getRecipeManager().byKey(packet.recipeId()).orElse(null);
             if (registered instanceof FermentingRecipe recipe && recipe.input().test(menu.getBlockEntity().getInputTank().getFluid())) {
                 VatRecipeTransfer.transfer(menu, player, recipe, packet.maximum());
+            }
+        }
+
+        public void handleAlloyRecipeTransfer(ServerboundAlloyRecipeTransferPacket packet, Player player) {
+            if (!(player.containerMenu instanceof AlloySmelterMenu menu) || menu.containerId != packet.containerId()
+                    || player.isSpectator() || !menu.stillValid(player)) return;
+            var registered = player.level().getRecipeManager().byKey(packet.recipeId()).orElse(null);
+            if (registered instanceof AlloySmeltingRecipe recipe) {
+                AlloyRecipeTransfer.load(menu, player, recipe, packet.maximum());
             }
         }
     }

@@ -61,6 +61,7 @@ final class ClientAlloyJeiSmoke {
     private long titleAt;
     private int finishedAt = -1;
     private boolean reloaded;
+    private boolean retried;
 
     ClientAlloyJeiSmoke() {
         MinecraftForge.EVENT_BUS.addListener(this::render);
@@ -69,6 +70,13 @@ final class ClientAlloyJeiSmoke {
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
+            if (minecraft.screen instanceof DisconnectedScreen disconnected && stage == Stage.JOIN && !retried) {
+                disconnected.onClose();
+                titleAt = 0;
+                retried = true;
+                stage = Stage.TITLE;
+                return;
+            }
             if (minecraft.screen instanceof DisconnectedScreen || System.nanoTime() - started > 160_000_000_000L) {
                 throw new AssertionError("Alloy JEI stopped during " + stage + " for " + label());
             }
