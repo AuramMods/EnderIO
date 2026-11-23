@@ -35,6 +35,8 @@ primitive.addRecipe("glowing_alloy", <item:minecraft:glow_ink_sac> * 2, 80, 0.0f
 
 CraftTweaker puts new recipe names in the `crafttweaker` namespace. Scripts run in order on each load. To replace a recipe created earlier in the same script, use its `crafttweaker:` ID.
 
+The shared lookup, removal, and JSON methods apply to all managers in this guide. Run `/ct recipes manager <recipetype:enderio:alloy_smelting>` as a player to print script-ready definitions to `logs/crafttweaker.log`. A dumped `addRecipeJson` call creates a CraftTweaker ID. Pass the original full ID to `replaceRecipeJson` if the ID must stay the same.
+
 ### Inherited furnace recipes
 
 The powered Alloy Smelter in Furnace or All mode inherits the current `minecraft:smelting` recipes. It generates IDs in the form `enderio:smelting/<source namespace>/<source path>` and uses the smelter's `vanillaItemEnergy` setting, which defaults to 1,500 FE per input. Furnace cooking time stays a furnace setting.
@@ -154,6 +156,7 @@ Use ordinary CraftTweaker item, fluid, and block tags where a manager accepts th
 
 ```zenscript
 import mods.enderio.EnderIOIngredients;
+import mods.enderio.FireOutput;
 import mods.enderio.SagOutput;
 import mods.enderio.SelectorGroup;
 import mods.enderio.SoulSelector;
@@ -166,8 +169,15 @@ group.remove(<resource:enderio:fluid>);
 val sag = <recipetype:enderio:sag_milling>;
 sag.addRecipe("qa_conduit_group", group.asIngredient(), 400, "none",
     SagOutput.item(<item:minecraft:rabbit_hide>, 1.0f, false));
+sag.addRecipe("qa_empty_vial", EnderIOIngredients.emptySoulStorage(<item:enderio:soul_vial>), 400, "none",
+    SagOutput.item(<item:minecraft:glass>, 1.0f, false));
 <recipetype:enderio:soul_binding>.addRecipe("qa_tagged_binder", <item:minecraft:quartz>, <item:minecraft:emerald>,
     1600, 1, SoulSelector.tag(<tag:entity_types:port_qa:binding_souls>), false);
+
+val dimensions = SelectorGroup.dimensions(<resource:port_qa:fire_dimensions>);
+dimensions.replace(<resource:minecraft:overworld>);
+<recipetype:enderio:fire_crafting>.addRecipe("qa_dimension_group", [<block:minecraft:gold_block>], [],
+    dimensions.members, <block:minecraft:lapis_block>, FireOutput.item(<item:minecraft:quartz>, 1, 1, 1.0f));
 ```
 
 - `EnderIOIngredients.emptySoulStorage(stack)`, `filledSoulStorage(stack)`, and `anySoulStorage(stack)` match the specified item type and its corresponding soul state. Use `<item:enderio:soul_vial>` for vials.
@@ -254,7 +264,29 @@ Each `clear` method removes all requirements for its target. Stage names follow 
 
 The player taking a book from the Enchanter supplies that recipe's stage context. A machine uses the owner recorded at placement for unattended recipes. A disconnected or missing owner and a Forge fake player cannot satisfy personal stage rules. A shared machine keeps its recorded owner when another player interacts with it. No stage requirement applies until a script configures one.
 
-If the required stage is lost mid-job, the recipe check pauses work before further charges or item consumption. The machine retains prior work and saved outputs under its existing recipe and output rules. A recipe lock leaves normal inventory access available. The Crafter also honors RecipeStages crafting wrappers and uses the owner's stages to evaluate them. ItemStages still handles its usual player item restrictions.
+If the required stage is lost mid-job, the recipe check pauses work before further charges or item consumption. The machine retains prior work and saved outputs under its existing recipe and output rules. A recipe lock leaves normal inventory access and JEI transfer available. The server checks the owner's stage when processing starts or resumes. The Crafter also honors RecipeStages crafting wrappers and uses the owner's stages to evaluate them. ItemStages still handles its usual player item restrictions.
+
+A stage on a legacy grinding-ball recipe controls loading the ball at the end of a SAG Mill job. The mill can finish the job without activating a locked ball. Installed balls continue to wear normally. Modern grinding-ball data takes priority when present.
+
+### Stage a recipe and machine placement
+
+```zenscript
+import mods.enderio.EnderIOStages;
+
+EnderIOStages.requireRecipe(<resource:enderio:alloy_smelting/redstone_alloy_ingot>, "parts");
+EnderIOStages.requireAction(<resource:enderio:machine_placement>, "parts");
+```
+
+With both players online, run `/gamestage add Alex parts`. Alex can place a machine and run the specified alloy recipe in an Alloy Smelter Alex owns. Steve can recover items from an existing machine and sees the same JEI recipes. Steve needs the stage to place a machine or run that recipe in a smelter Steve owns. `/gamestage remove Alex parts` pauses the recipe in Alex's smelter. Granting the stage again lets the same job resume.
+
+Replace the two `require` calls with the following script, then run `/reload` to clear the rules for both players.
+
+```zenscript
+import mods.enderio.EnderIOStages;
+
+EnderIOStages.clearRecipe(<resource:enderio:alloy_smelting/redstone_alloy_ingot>);
+EnderIOStages.clearAction(<resource:enderio:machine_placement>);
+```
 
 ## Crafting and addon inputs
 
@@ -273,6 +305,16 @@ The serializer requires a bound soul in the crafting grid and transfers that sou
 
 The entity-type tags `enderio:soul_vial_whitelist`, `enderio:soul_vial_blacklist`, `c:capturing_not_supported`, and `c:bosses` control native capture eligibility. The powered spawner uses `enderio:spawner_whitelist` and `enderio:spawner_blacklist` alongside its normal rules. Modify these with CraftTweaker's entity-type tag manager. Soul rules control how a device uses a stored soul after capture or binding.
 
+Use the tags loader for the other native capability and processing selectors.
+
+| Tag bracket | Where Ender IO reads it |
+| --- | --- |
+| `<tag:fluids:c:experience>` | Soul Binder and XP Obelisk tank acceptance and experience-based item repair. |
+| `<tag:fluids:enderio:fluid_fuel/cold_fire_igniter>`, `<tag:fluids:enderio:fluid_fuel/staff_of_levity>` | The internal tanks of the Cold Fire Igniter and Staff of Levity. |
+| `<tag:fluids:enderio:solar_panel_light>`, `<tag:fluids:enderio:solar_panel_dark>` | Fluids that supply the corresponding solar panel light conditions. |
+| `<tag:blocks:enderio:redstone_connectable>` | Blocks eligible to connect to redstone conduits. |
+| `<tag:blocks:enderio:range_extender>` | Blocks the wireless charger considers for the `ProcessingData` range extension. |
+
 Use Forge fluid brackets and tags for addon fluids consumed by the VAT, tanks, or Soul Engine. Mekanism gases, infuse types, pigments, and slurries use the addon’s chemical conduit transport. Recipes involving an addon conduit can select its registered variant, such as `enderio:chemical` when Mekanism is installed.
 
 ## Implementation coverage
@@ -282,11 +324,11 @@ Use Forge fluid brackets and tags for addon fluids consumed by the VAT, tanks, o
 | Powered and primitive alloy smelting | Packaged Forge passed ZenScript lookup, add, replacement, removal, and exact machine input, output, and FE or fuel checks across server restarts. The packaged mod also booted without CraftTweaker. Client recipe-dump and JEI checks are pending. |
 | Inherited furnace recipes | Packaged Forge verified a scripted furnace addition and replacement, a source removal, two alloy-only exclusions, exact FE, and restoration after live `/reload`. |
 | SAG milling and slicing | Packaged Forge verified scripted additions, replacements, removal by tagged SAG output, exact FE and item counts, positional slicer inputs, and tool wear. |
-| Legacy grinding ball recipes | Typed manager and packaged test coverage for yield, FE, and durability. |
+| Legacy grinding ball recipes | Packaged Forge verified named additions, replacements, removals, yield, FE, durability, and that a staged ball stays in the input slot until its rule is cleared. |
 | VAT fermentation, tanks, and weather | Packaged Forge verified add, replace, and remove through both tank modes, reversed VAT reagent order, exact fluid volumes and rocket use, and native weather changes. |
 | Soul Binder, painting, Enchanter, and fire | Packaged Forge verified add, replace, and remove through each gameplay path. Guarded Enchanter clients verified normal pickup, shift-click, exact XP and ingredient costs, and zero charges when a player's XP or inventory space was insufficient. |
 | Crafter and shaped entity storage | Packaged Forge verified add, replacement, removal, exact FE, and a soul transfer to each scripted output. |
 | Ingredients | Packaged Forge verified exact conduit variants, distinct soul-vial states, and changes to conduit, entity-type, and dimension membership. |
-| Processing data | Set, get, and remove ran through the grinding ball, VAT, and range extender maps. Gameplay confirmed the edited VAT yield and its removal, plus scripted farming, solar, powered spawner, and Soul Engine behavior. Modern grinding-ball and wireless charger gameplay and client sync remain pending. |
+| Processing data | Packaged Forge verified edited VAT yields, native grinding-ball priority and fallback, measured wireless charger range, and scripted farming, solar, powered spawner, and Soul Engine behavior. Client sync remains pending. |
 | Addon inputs | Source audit confirmed that native processing uses Forge item and fluid inputs, with registered addon conduit variants available through the same conduit selector. The full Auram compatibility run remains pending. |
 | GameStages | Packaged Forge with the pinned companion mods verified exact and family lockout, saved inputs and fuel, rule clearing, and a world-stage fire grant. Multiplayer owner, manual feature, staged Crafter, and JEI checks remain pending. |
