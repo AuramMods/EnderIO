@@ -1,5 +1,8 @@
 package com.enderio.enderio.content.storage.crafter;
 
+import com.enderio.enderio.integration.gamestages.StageRules;
+import net.minecraft.server.level.ServerLevel;
+
 import com.enderio.core.common.item.ItemDataKey;
 import com.enderio.core.common.recipes.CraftingRecipeInput;
 import com.enderio.core.common.serialization.StackDataCodecs;
@@ -197,6 +200,11 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
         if (recipe == null || !outputBuffer.isEmpty() || getEnergyStorage().consumeEnergy(cost, true) < cost) {
             return;
         }
+        var activeRecipe = level instanceof ServerLevel server
+                ? StageRules.resolveCrafterRecipe(server, getMachineOwner(), recipe) : recipe;
+        if (activeRecipe == null) {
+            return;
+        }
 
         for (int i = 0; i < 9; i++) {
             if (!ItemStack.isSameItem(INPUT.get(i).getItemStack(this), GHOST.get(i).getItemStack(this))) {
@@ -204,15 +212,15 @@ public class CrafterBlockEntity extends PoweredMachineBlockEntity {
             }
         }
         var input = getCraftingInput(INPUT);
-        if (!recipe.matches(input, level)) {
+        if (!activeRecipe.matches(input, level)) {
             return;
         }
 
-        var result = recipe.assemble(input, level.registryAccess());
+        var result = activeRecipe.assemble(input, level.registryAccess());
         if (result.isEmpty() || !canMergeOutput(result)) {
             return;
         }
-        var remainders = recipe.getRemainingItems(input);
+        var remainders = activeRecipe.getRemainingItems(input);
         outputBuffer.add(result.copy());
         for (var remainder : remainders) {
             if (!remainder.isEmpty()) {

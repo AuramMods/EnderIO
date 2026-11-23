@@ -1,5 +1,8 @@
 package com.enderio.enderio.content.storage.fluid_tank;
 
+import com.enderio.enderio.integration.gamestages.StageRules;
+import net.minecraft.server.level.ServerLevel;
+
 import com.enderio.core.common.capability.EnderFluidUtil;
 import com.enderio.enderio.foundation.attachment.FluidTankUser;
 import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
@@ -230,6 +233,10 @@ public abstract class FluidTankBlockEntity extends MachineBlockEntity implements
         // A datapack reload can replace the matching recipe while a tank is paused.
         var recipe = level.getRecipeManager().getRecipeFor(EIORecipes.TANK.type().get(), input, level).orElse(null);
         if (recipe == null) {
+            return;
+        }
+        if (level instanceof ServerLevel server
+                && !StageRules.permitsRecipe(server, getMachineOwner(), recipe)) {
             return;
         }
 

@@ -133,6 +133,8 @@ dependencies {
     modCompileOnly(libs.jei)
     "modLocalRuntime"(libs.jei)
     modCompileOnly(libs.craftTweaker)
+    modCompileOnly(libs.gameStages) { isTransitive = false }
+    modCompileOnly(libs.recipeStages)
 
     // CC: Tweaked
     modCompileOnly(libs.ccTweaked)

@@ -111,7 +111,7 @@ public class PrimitiveAlloySmelterBlockEntity extends MachineBlockEntity {
             burnTime--;
             setChanged();
         }
-        if (canAct() && burnTime == 0 && crafting.hasTask() && crafting.getProgress() < 1) {
+        if (canAct() && burnTime == 0 && crafting.hasTask() && crafting.getProgress() < 1 && crafting.permitsCurrentRecipe()) {
             igniteFuel();
         }
     }

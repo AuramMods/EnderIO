@@ -1,5 +1,7 @@
 package com.enderio.enderio.content.fire_crafting;
 
+import com.enderio.enderio.integration.gamestages.StageRules;
+
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.config.base.BaseConfig;
 import com.enderio.enderio.init.EIORecipes;
@@ -62,6 +64,9 @@ public class FireCraftingManager {
         for (var recipeHolder : getRecipes(level)) {
             var recipe = recipeHolder;
             if (recipe.isBaseValid(blockBelow.getBlock()) && recipe.isDimensionValid(level.dimension())) {
+                if (level instanceof ServerLevel server && !StageRules.permitsWorldRecipe(server, recipe)) {
+                    return null;
+                }
                 return recipe;
             }
         }

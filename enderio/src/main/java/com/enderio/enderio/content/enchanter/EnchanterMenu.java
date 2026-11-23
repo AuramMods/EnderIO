@@ -1,5 +1,8 @@
 package com.enderio.enderio.content.enchanter;
 
+import com.enderio.enderio.integration.gamestages.StageRules;
+import net.minecraft.server.level.ServerLevel;
+
 import com.enderio.core.common.menu.BaseBlockEntityMenu;
 import com.enderio.core.common.network.menu.IntSyncSlot;
 import com.enderio.enderio.foundation.inventory.MachineInventory;
@@ -139,6 +142,10 @@ public class EnchanterMenu extends BaseBlockEntityMenu<EnchanterBlockEntity> {
 
             if (recipe != null && blockEntity.isLoadedRecipe(recipe)
                     && (playerIn.experienceLevel >= recipe.getXPCost(recipeInput) || playerIn.isCreative())) {
+                if (playerIn.level() instanceof ServerLevel server
+                        && !StageRules.permitsRecipe(server, playerIn.getUUID(), recipe)) {
+                    return false;
+                }
                 return super.mayPickup(playerIn);
             }
 

@@ -1,5 +1,7 @@
 package com.enderio.enderio.foundation.block;
 
+import com.enderio.enderio.integration.gamestages.StageRules;
+
 import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.api.soul.binding.SoulBindable;
@@ -70,6 +72,9 @@ public class MachineBlock<T extends MachineBlockEntity> extends EIOEntityBlock<T
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (level.getBlockEntity(pos) instanceof MachineBlockEntity machine && !StageRules.permitsMachineMenu(player, machine)) {
+            return InteractionResult.FAIL;
+        }
         var result = useHeldItem(player.getItemInHand(hand), state, level, pos, player, hand, hit);
         if (result != InteractionResult.PASS) return result;
         return hand == InteractionHand.MAIN_HAND ? openMachineMenu(state, level, pos, player, hit) : InteractionResult.PASS;

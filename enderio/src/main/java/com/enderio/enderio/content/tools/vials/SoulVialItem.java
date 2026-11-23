@@ -1,5 +1,8 @@
 package com.enderio.enderio.content.tools.vials;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
+import com.enderio.enderio.integration.gamestages.StageRules;
+
 import com.enderio.core.client.item.AdvancedTooltipProvider;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.api.EnderIOAPI;
@@ -123,7 +126,8 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
     @Override
     public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity interactionTarget,
             InteractionHand usedHand) {
-        if (player.level().isClientSide) {
+        if (player.level().isClientSide || !StageRules.permitsAction(player, StageFeature.SOUL_CAPTURE)
+                || !StageRules.permitsItem(player, stack)) {
             return InteractionResult.FAIL;
         }
 
@@ -151,8 +155,12 @@ public class SoulVialItem extends Item implements AdvancedTooltipProvider {
         if (!(context.getLevel() instanceof ServerLevel serverLevel)) {
             return InteractionResult.FAIL;
         }
+        var player = context.getPlayer();
+        if (!StageRules.permitsAction(player, StageFeature.SOUL_SPAWNING)
+                || !StageRules.permitsItem(player, context.getItemInHand())) {
+            return InteractionResult.FAIL;
+        }
 
-        Player player = context.getPlayer();
 
         // Only players may use the soul vial
         if (player == null) {

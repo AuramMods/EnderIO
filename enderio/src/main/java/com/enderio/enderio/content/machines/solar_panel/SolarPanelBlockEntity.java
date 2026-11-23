@@ -1,5 +1,8 @@
 package com.enderio.enderio.content.machines.solar_panel;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
+import com.enderio.enderio.integration.gamestages.StageRules;
+
 import net.minecraft.world.item.ItemStack;
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.api.soul.binding.SoulBindable;
@@ -168,7 +171,8 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
 
     @Override
     public void serverTick() {
-        int generated = getGenerationRate();
+        int generated = level instanceof ServerLevel server
+                        && !StageRules.permitsWorldAction(server, StageFeature.SOUL_DEVICE) ? 0 : getGenerationRate();
         if (generated > 0) {
             node.addEnergyToNetwork(generated);
         }

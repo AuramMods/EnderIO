@@ -1,5 +1,8 @@
 package com.enderio.enderio.content.conduits.menu;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
+import com.enderio.enderio.integration.gamestages.StageRules;
+
 import com.enderio.core.common.menu.BaseEnderMenu;
 import com.enderio.core.common.network.codec.RegistryPacketBuffer;
 import com.enderio.enderio.api.EnderIOCapabilities;
@@ -42,6 +45,9 @@ public class ConduitMenu extends BaseEnderMenu {
 
     public static void openConduitMenu(ServerPlayer serverPlayer, ConduitBundleBlockEntity conduitBundle,
             Direction side, Holder<Conduit<?, ?>> conduit) {
+        if (!StageRules.permitsAction(serverPlayer, StageFeature.CONDUIT_CONFIGURATION)) {
+            return;
+        }
         // Forge closes the old server menu without sending a close-screen packet.
         net.minecraftforge.network.NetworkHooks.openScreen(serverPlayer, new MenuProvider(conduitBundle, side, conduit), raw -> {
             var buf = new RegistryPacketBuffer(raw, serverPlayer.level().registryAccess());
@@ -204,7 +210,8 @@ public class ConduitMenu extends BaseEnderMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return connectionAccessor.stillValid(player) && connectionAccessor.canOpenScreen(conduit, side);
+        return StageRules.permitsAction(player, StageFeature.CONDUIT_CONFIGURATION)
+                && connectionAccessor.stillValid(player) && connectionAccessor.canOpenScreen(conduit, side);
     }
 
     @Override

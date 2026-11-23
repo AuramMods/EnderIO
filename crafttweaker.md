@@ -193,6 +193,45 @@ ProcessingData.setRangeExtension(<block:minecraft:amethyst_block>, <tag:blocks:e
 
 Ender IO loads stock data and datapacks first, then applies the script edits in order. Edits modify the active resource snapshot. Removing an edit script and running `/reload` restores the underlying datapack values. Already installed grinding balls and queued machine outputs follow the machine's saved state rules.
 
+## GameStages
+
+Install GameStages and its Bookshelf dependency to opt in. Stage rules belong to the loaded server resources. Each target may require several stages, and the principal must have all stages required by the applicable rules. Removing a script and running `/reload` clears its rules.
+
+```zenscript
+import mods.enderio.EnderIOStages;
+
+EnderIOStages.requireRecipe(<resource:enderio:alloy_smelting/redstone_alloy_ingot>, "parts");
+EnderIOStages.requireRecipeType(<resource:enderio:primitive_alloy_smelting>, "machining");
+EnderIOStages.requireAction(<resource:enderio:fire_crafting>, "fire_works");
+EnderIOStages.setWorldStage("fire_works", true);
+```
+
+| Rule | Scope |
+| --- | --- |
+| `requireRecipe(id, stage)`, `clearRecipe(id)` | Exact recipe ID, including inherited smelting recipes and the Crafter's vanilla crafting recipes. |
+| `requireRecipeType(type, stage)`, `clearRecipeType(type)` | Every recipe of the given type. |
+| `requireBlock(block, stage)`, `clearBlock(block)` | Placement and block interaction. Ender IO machines also use this rule for automatic work. |
+| `requireItem(item, stage)`, `clearItem(item)` | Interactive item use, including tool-assisted travel. |
+| `requireAction(action, stage)`, `clearAction(action)` | A documented Ender IO action, identified with a resource bracket such as `<resource:enderio:machine_placement>`. |
+| `setWorldStage(stage, unlocked)` | Grant or revoke a pack-wide stage for actorless processing. |
+
+Each `clear` method removes all requirements for its target. Stage names follow GameStages validation. An exact recipe rule can be declared before that recipe exists.
+
+| Action ID in the `enderio` namespace | Where Ender IO checks it |
+| --- | --- |
+| `machine_placement`, `machine_use` | Forge block placement and machine interaction, using the acting player. |
+| `crafter_automation` | Automatic crafting, using the Crafter's owner. |
+| `soul_capture`, `soul_spawning` | Soul Vial capture and release or spawner assignment use the acting player. Powered Spawner capture and spawn modes use the machine owner. |
+| `soul_device` | Soul Engine and Farming Station operation use their owners. Solar generation uses world stages. |
+| `obelisk` | Obelisk interactions use the acting player. Autonomous operation uses the owner. |
+| `travel`, `mobility` | Travel Staff and anchor teleports, levitation tool use, and glider operation use the acting player. |
+| `conduit_placement`, `conduit_configuration` | Placement and extension of bundles, and opening or updating conduit settings, use the acting player. |
+| `fire_crafting` | Fire crafting uses world stages. The world stage must also satisfy any exact fire recipe or family requirement. |
+
+The player taking a book from the Enchanter supplies that recipe's stage context. A machine uses the owner recorded at placement for unattended recipes. A disconnected or missing owner and a Forge fake player cannot satisfy personal stage rules. A shared machine keeps its recorded owner when another player interacts with it. No stage requirement applies until a script configures one.
+
+If the required stage is lost mid-job, the recipe check pauses work before further charges or item consumption. The machine retains prior work and saved outputs under its existing recipe and output rules. A recipe lock leaves normal inventory access available. The Crafter also honors RecipeStages crafting wrappers and uses the owner's stages to evaluate them. ItemStages still handles its usual player item restrictions.
+
 ## Implementation coverage
 
 | Processing path | Current cycle |
@@ -207,4 +246,4 @@ Ender IO loads stock data and datapacks first, then applies the script edits in 
 | Ingredients | Packaged Forge verified exact conduit variants, distinct soul-vial states, and changes to conduit, entity-type, and dimension membership. |
 | Processing data | Set, get, and remove ran through the grinding ball, VAT, and range extender maps. Gameplay confirmed the edited VAT yield and its removal. Verification for modern grinding balls, wireless charger range, and client sync remains pending. Farming, solar, powered spawner, and Soul Engine rule editors remain pending. |
 | Addon inputs | Modded conduits transport optional resources such as Mekanism chemicals. Audit which resources are consumed by processing before exposing selectors. |
-| GameStages | Rule API, recipe checks, action checks, and tests with RecipeStages and ItemStages are pending. |
+| GameStages | Packaged Forge with the pinned companion mods verified exact and family lockout, saved inputs and fuel, rule clearing, and a world-stage fire grant. Multiplayer owner, manual feature, staged Crafter, and JEI checks remain pending. |

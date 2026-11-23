@@ -1,5 +1,9 @@
 package com.enderio.enderio.foundation.task.host;
 
+import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
+import com.enderio.enderio.integration.gamestages.StageRules;
+import net.minecraft.server.level.ServerLevel;
+
 import com.enderio.core.common.blockentity.EnderBlockEntity;
 import com.enderio.enderio.foundation.MachineRecipe;
 import com.enderio.core.common.recipes.RecipeLookup;
@@ -21,6 +25,7 @@ public class CraftingMachineTaskHost<R extends MachineRecipe<T>, T extends Recip
     }
 
     private final RecipeType<R> recipeType;
+    private final EnderBlockEntity blockEntity;
     private final CraftingMachineTaskFactory<? extends CraftingMachineTask<R, T>, R, T> taskFactory;
     private final Supplier<T> recipeInputSupplier;
 
@@ -31,6 +36,7 @@ public class CraftingMachineTaskHost<R extends MachineRecipe<T>, T extends Recip
             RecipeType<R> recipeType, CraftingMachineTaskFactory<? extends CraftingMachineTask<R, T>, R, T> taskFactory,
             Supplier<T> recipeInputSupplier) {
         super(blockEntity, canAcceptNewTask);
+        this.blockEntity = blockEntity;
         this.recipeType = recipeType;
         this.taskFactory = taskFactory;
         this.recipeInputSupplier = recipeInputSupplier;
@@ -43,6 +49,21 @@ public class CraftingMachineTaskHost<R extends MachineRecipe<T>, T extends Recip
     }
 
     // region MachineTaskHost Implementation
+
+    @Override
+    protected boolean canTickTask() {
+        return permitsCurrentRecipe();
+    }
+
+    public boolean permitsCurrentRecipe() {
+        var task = getCurrentTask();
+        if (task == null || task.getRecipe() == null || !(getLevel() instanceof ServerLevel server)) {
+            return true;
+        }
+        var owner = blockEntity instanceof MachineBlockEntity machine
+                ? machine.getMachineOwner() : null;
+        return StageRules.permitsRecipe(server, owner, task.getRecipe());
+    }
 
     @Override
     protected @Nullable CraftingMachineTask<R, T> getNewTask() {

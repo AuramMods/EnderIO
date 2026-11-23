@@ -1,5 +1,8 @@
 package com.enderio.enderio.content.conduits.bundle;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
+import com.enderio.enderio.integration.gamestages.StageRules;
+
 import com.enderio.core.common.capability.CapabilityUtil;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.enderio.api.EnderIODataComponents;
@@ -428,6 +431,9 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
         Holder<Conduit<?, ?>> conduit = EnderIODataComponents.CONDUIT.get(stack, level.registryAccess());
         if (conduit == null) {
             return InteractionResult.PASS;
+        }
+        if (!StageRules.permitsAction(player, StageFeature.CONDUIT_PLACEMENT) || !StageRules.permitsItem(player, stack)) {
+            return InteractionResult.FAIL;
         }
 
         if (!conduitBundle.canAddConduit(conduit)) {

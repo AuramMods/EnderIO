@@ -102,7 +102,7 @@ public abstract class MachineTaskHost {
             return;
         }
 
-        if (!currentTask.isCompleted()) {
+        if (!currentTask.isCompleted() && canTickTask()) {
             currentTask.tick();
         }
 
@@ -111,6 +111,10 @@ public abstract class MachineTaskHost {
             newTaskAvailable();
             findNewTaskIfAble();
         }
+    }
+
+    protected boolean canTickTask() {
+        return true;
     }
 
     private void findNewTaskIfAble() {

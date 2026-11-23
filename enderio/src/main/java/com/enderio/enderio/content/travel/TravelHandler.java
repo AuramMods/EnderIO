@@ -1,5 +1,8 @@
 package com.enderio.enderio.content.travel;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
+import com.enderio.enderio.integration.gamestages.StageRules;
+
 import com.enderio.core.common.energy.ItemStackEnergy;
 import com.enderio.enderio.api.travel.TravelTarget;
 import com.enderio.enderio.api.travel.TravelTargetApi;
@@ -113,6 +116,9 @@ public class TravelHandler {
     }
 
     public static boolean shortTeleport(Level level, Player player, boolean sendToServer) {
+        if (!StageRules.permitsAction(player, StageFeature.TRAVEL) || !StageRules.permitsItem(player, findTravelItem(player))) {
+            return false;
+        }
         Optional<Vec3> pos = teleportPosition(level, player);
         if (pos.isPresent()) {
             Optional<Vec3> eventPos = teleportEvent(player, pos.get());
@@ -169,6 +175,10 @@ public class TravelHandler {
     }
 
     public static boolean blockTeleportTo(Level level, Player player, TravelTarget target, boolean sendToServer) {
+        if (!StageRules.permitsAction(player, StageFeature.TRAVEL)
+                || !canBlockTeleport(player) && !StageRules.permitsItem(player, findTravelItem(player))) {
+            return false;
+        }
         Optional<Double> height = isTeleportPositionClear(level, target.pos());
         if (height.isEmpty()) {
             return false;

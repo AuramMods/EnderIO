@@ -15,6 +15,7 @@ import com.enderio.enderio.foundation.io.IOConfig;
 import com.enderio.enderio.foundation.io.SidedIOConfigurable;
 import com.enderio.enderio.foundation.io.TransferUtil;
 import com.enderio.enderio.foundation.state.MachineState;
+import com.enderio.enderio.integration.gamestages.StageRules;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -150,7 +151,8 @@ public abstract class MachineBlockEntity extends EIOBlockEntity
             return false;
         }
 
-        return !isRedstoneBlocked();
+        return !isRedstoneBlocked()
+                && (!(level instanceof ServerLevel server) || StageRules.permitsMachineAutomation(server, this));
     }
 
     public boolean canAct(int interval) {

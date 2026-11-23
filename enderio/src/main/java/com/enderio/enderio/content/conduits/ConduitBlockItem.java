@@ -1,5 +1,10 @@
 package com.enderio.enderio.content.conduits;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
+import com.enderio.enderio.integration.gamestages.StageRules;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+
 import com.enderio.core.common.item.ICustomCreativeTabEntries;
 import com.enderio.core.common.util.TooltipUtil;
 import com.enderio.enderio.api.EnderIOCapabilities;
@@ -86,6 +91,11 @@ public class ConduitBlockItem extends BlockItem implements ICustomCreativeTabEnt
         Level level = context.getLevel();
         @Nullable
         Player player = context.getPlayer();
+        if (level instanceof ServerLevel server && !StageRules.permits(server,
+                player instanceof ServerPlayer actor ? actor : null, StageRules.Kind.ACTION,
+                StageFeature.CONDUIT_PLACEMENT.id())) {
+            return InteractionResult.FAIL;
+        }
         BlockPos blockpos = context.getClickedPos();
 
         // Allow placing from the edge of an adjacent block

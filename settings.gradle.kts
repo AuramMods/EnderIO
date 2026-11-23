@@ -77,6 +77,7 @@ dependencyResolutionManagement {
             url = uri("https://maven.blamejared.com")
             content {
                 includeGroup("com.blamejared.crafttweaker")
+                includeGroup("net.darkhax.gamestages")
                 includeGroup("vazkii.patchouli")
                 includeGroup("net.darkhax.bookshelf")
                 includeGroup("net.darkhax.enchdesc")

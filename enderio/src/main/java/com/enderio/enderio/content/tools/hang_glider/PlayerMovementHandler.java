@@ -1,5 +1,8 @@
 package com.enderio.enderio.content.tools.hang_glider;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
+import com.enderio.enderio.integration.gamestages.StageRules;
+
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.glider.GliderMovementInfo;
 import com.enderio.enderio.api.integration.IntegrationManager;
@@ -96,7 +99,8 @@ public class PlayerMovementHandler {
 
     private static Optional<GliderMovementInfo> calculateGliderMovementInfo(Player player,
             boolean displayDisabledMessage, FallState fall) {
-        if (fall == null || fall.ticks <= DEPLOYMENT_DELAY || !canGlide(player)) {
+        if (fall == null || fall.ticks <= DEPLOYMENT_DELAY || !canGlide(player)
+                || !StageRules.permitsAction(player, StageFeature.MOBILITY)) {
             return Optional.empty();
         }
 
