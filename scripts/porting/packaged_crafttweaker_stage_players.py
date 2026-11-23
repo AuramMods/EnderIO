@@ -28,6 +28,7 @@ JOB_A = Smelt(3842, 3, "amethyst_shard", 1, FE)
 JOB_B = Smelt(3846, 3, "amethyst_shard", 1, FE)
 REVOKED = Smelt(3850, 3, "amethyst_shard", 1, FE)
 OFFLINE = Smelt(3854, 3, "amethyst_shard", 1, FE)
+QUEUED = Smelt(3850, 9, "amethyst_shard", 1, FE)
 CRAFT_A, CRAFT_B = "3842 80 6", "3846 80 6"
 
 
@@ -104,6 +105,26 @@ def check_placement(server, results, client):
                         f"unless data entity {name} Inventory[{{Slot:0b}}]", results)
 
 
+def check_paid_output(server, results):
+    pos, hopper = QUEUED.pos(80), QUEUED.pos(79)
+    prepare_job(server, QUEUED, OWNER_A, 0)
+    server.command(f"setblock {hopper} minecraft:air")
+    server.command(f'data modify block {pos} Items.Items append value {{Slot:3,id:"minecraft:amethyst_shard",Count:64}}')
+    server.command(f"data merge block {pos} {{EnergyStored:{FE + 137}}}")
+    paid = (f'if data block {pos} {{EnergyStored:137,Task:{{ProgressMade:{FE},ProgressRequired:{FE},'
+            'Outputs:[{Item:{id:"minecraft:amethyst_shard",Count:1}}]}}')
+    server.assert_state("full_output_keeps_the_paid_result_in_its_task", paid, results, timeout=25)
+    server.command(f"gamestage remove {OWNER_A} parts")
+    server.command(f"data remove block {pos} Items.Items[{{Slot:3}}]")
+    server.command(f"setblock {hopper} minecraft:hopper[facing=down]")
+    time.sleep(0.55)
+    server.assert_state("revoked_stage_keeps_paid_output_after_the_output_slot_opens",
+                        f"{paid} unless data block {hopper} Items[0]", results)
+    server.command(f"gamestage add {OWNER_A} parts")
+    server.assert_state("paid_output_is_delivered_once_after_grant",
+                        finished_smelter(QUEUED, namespace="minecraft"), results, timeout=25)
+
+
 def exercise(server, results, args, report):
     check_script(server, "PORT_CT_STAGES_CONFIGURED")
     server.command("forceload add 3840 0 3855 15")
@@ -147,6 +168,7 @@ def exercise(server, results, args, report):
         server.command(f"gamestage add {OWNER_A} parts")
         server.assert_state("restored_stage_finishes_the_same_job_once",
                             finished_smelter(REVOKED, namespace="minecraft"), results, timeout=30)
+        check_paid_output(server, results)
 
         server.command(f"gamestage add {OWNER_B} parts")
         server.assert_state("second_owner_can_work_when_individually_unlocked",
@@ -156,6 +178,12 @@ def exercise(server, results, args, report):
         time.sleep(1)
         server.assert_state("previously_staged_offline_owner_has_no_personal_processing_context",
                             f"unless entity {OWNER_B} {waiting(OFFLINE, FE + 137, OWNER_B)}", results)
+        script = server.directory / "scripts/stage_processing.zs"
+        with script.open("a") as handle:
+            handle.write('\nEnderIOStages.clearRecipe(<resource:crafttweaker:qa_stage_alloy>);\n')
+        server.command("reload")
+        server.assert_state("clearing_the_exact_rule_on_reload_resumes_the_offline_owners_unrestricted_recipe",
+                            finished_smelter(OFFLINE, namespace="minecraft"), results, timeout=30)
         check_placement(server, results, client_a)
         stop_cleanly(server, client_a, report)
 

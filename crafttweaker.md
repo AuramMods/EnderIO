@@ -243,7 +243,7 @@ EnderIOStages.setWorldStage("fire_works", true);
 | Rule | Scope |
 | --- | --- |
 | `requireRecipe(id, stage)`, `clearRecipe(id)` | Exact recipe ID, including inherited smelting recipes and the Crafter's vanilla crafting recipes. |
-| `requireRecipeType(type, stage)`, `clearRecipeType(type)` | Every recipe of the given type. |
+| `requireRecipeType(type, stage)`, `clearRecipeType(type)` | Ender IO processing of every recipe of the given type. |
 | `requireBlock(block, stage)`, `clearBlock(block)` | Placement and block interaction. Ender IO machines also use this rule for automatic work. |
 | `requireItem(item, stage)`, `clearItem(item)` | Interactive item use, including tool-assisted travel. |
 | `requireAction(action, stage)`, `clearAction(action)` | A documented Ender IO action, identified with a resource bracket such as `<resource:enderio:machine_placement>`. |
@@ -321,7 +321,7 @@ Use Forge fluid brackets and tags for addon fluids consumed by the VAT, tanks, o
 
 | Processing path | Current cycle |
 | --- | --- |
-| Powered and primitive alloy smelting | Packaged Forge passed ZenScript lookup, add, replacement, removal, and exact machine input, output, and FE or fuel checks across server restarts. The packaged mod also booted without CraftTweaker. Client recipe-dump and JEI checks are pending. |
+| Powered and primitive alloy smelting | Packaged Forge passed ZenScript lookup, add, replacement, removal, and exact input, output, and FE or fuel checks. JEI displayed and transferred exact amounts and NBT after a live scripted replacement. CraftTweaker's recipe dump included the native fields. |
 | Inherited furnace recipes | Packaged Forge verified a scripted furnace addition and replacement, a source removal, two alloy-only exclusions, exact FE, and restoration after live `/reload`. |
 | SAG milling and slicing | Packaged Forge verified scripted additions, replacements, removal by tagged SAG output, exact FE and item counts, positional slicer inputs, and tool wear. |
 | Legacy grinding ball recipes | Packaged Forge verified named additions, replacements, removals, yield, FE, durability, and that a staged ball stays in the input slot until its rule is cleared. |
@@ -329,6 +329,8 @@ Use Forge fluid brackets and tags for addon fluids consumed by the VAT, tanks, o
 | Soul Binder, painting, Enchanter, and fire | Packaged Forge verified add, replace, and remove through each gameplay path. Guarded Enchanter clients verified normal pickup, shift-click, exact XP and ingredient costs, and zero charges when a player's XP or inventory space was insufficient. |
 | Crafter and shaped entity storage | Packaged Forge verified add, replacement, removal, exact FE, and a soul transfer to each scripted output. |
 | Ingredients | Packaged Forge verified exact conduit variants, distinct soul-vial states, and changes to conduit, entity-type, and dimension membership. |
-| Processing data | Packaged Forge verified edited VAT yields, native grinding-ball priority and fallback, measured wireless charger range, and scripted farming, solar, powered spawner, and Soul Engine behavior. Client sync remains pending. |
-| Addon inputs | Source audit confirmed that native processing uses Forge item and fluid inputs, with registered addon conduit variants available through the same conduit selector. The full Auram compatibility run remains pending. |
-| GameStages | Packaged Forge with the pinned companion mods verified exact and family lockout, saved inputs and fuel, rule clearing, and a world-stage fire grant. Multiplayer owner, manual feature, staged Crafter, and JEI checks remain pending. |
+| Processing data | Packaged Forge verified edited VAT yields, grinding-ball priority and fallback, wireless charger range, and scripted farming, solar, powered spawner, and Soul Engine behavior. A live script reload and removal synced all three data maps to a connected client, including the displayed grinding-ball tooltips. |
+| Addon inputs | Native processing uses Forge item and fluid inputs. The same conduit selector accepts registered addon conduit variants. |
+| GameStages | Two real players verified owner isolation, placement grants, paid progress through revocation and resumption, offline owners, and RecipeStages in the Crafter. Dedicated tests verified family lockout, saved fuel, rule clearing, and a world-stage fire grant. |
+
+All 14 ZenScript examples above compiled and ran with the pinned companion mods. Packaged Forge also booted with Ender IO alone and with CraftTweaker alone. Invalid recipe input and a stage requirement without GameStages produce actionable script errors.

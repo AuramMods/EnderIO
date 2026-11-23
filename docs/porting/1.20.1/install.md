@@ -4,7 +4,7 @@ The port targets Minecraft 1.20.1, Forge 47.4.10 and Java 17. The tested Java di
 
 ## Install the runtime jar
 
-The Auram runtime is `enderio-8.2.17-beta.jar`. It targets Auram’s Forge 47.4.10 and JEI 15.20.0.129 versions. [Auram compatibility checks](cycle-280.md)
+The Auram runtime is `enderio-8.2.18-beta.jar`. It targets Auram’s Forge 47.4.10 and JEI 15.20.0.129 versions. See the integration guide for optional CraftTweaker and GameStages customization. [CraftTweaker integration guide](../../../crafttweaker.md), [Auram compatibility checks](cycle-280.md)
 
 1. Create a Minecraft 1.20.1 instance with Forge 47.4.10 and configure its launcher to use Java 17. For a dedicated server, use the pinned Forge installer, then use its generated startup script.
 2. Put the main reobfuscated `enderio-<version>.jar` in the instance's `mods` directory. If upgrading an Ender IO installation, move the previous Ender IO jar to the backup first. The API, sources, standalone submodule and QA archives serve the build and tests.

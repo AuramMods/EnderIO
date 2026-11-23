@@ -35,6 +35,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /** Drives real client packets/widgets and the integrated server in an owned disposable world. */
 final class ClientWorldSmoke {
@@ -44,6 +45,7 @@ final class ClientWorldSmoke {
     private final String worldName = System.getProperty("enderio.clientqa.worldName");
     private final boolean pressurized = Boolean.getBoolean("enderio.clientqa.pressurized");
     private final long started = System.nanoTime();
+    private final long timeout = TimeUnit.SECONDS.toNanos(Long.getLong("enderio.clientqa.timeoutSeconds", 240));
     private final Map<String, Object> checks = new LinkedHashMap<>();
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final Map<String, Object> observations = new LinkedHashMap<>();
@@ -70,7 +72,7 @@ final class ClientWorldSmoke {
     }
 
     private void capture(String name) throws Exception {
-        var result = ClientSmoke.capture(name + ".png");
+        var result = ClientSmoke.capture(name + ".png", "title".equals(name) ? 8 : 100);
         captures.put(name, result);
         check(name + "_silent_hidden_render", Boolean.TRUE.equals(result.get("passed")));
     }
@@ -96,7 +98,7 @@ final class ClientWorldSmoke {
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE || stage == Stage.SAVING) return;
         try {
-            if (System.nanoTime() - started > 240_000_000_000L) throw new AssertionError("World scenario timed out in " + stage);
+            if (System.nanoTime() - started > timeout) throw new AssertionError("World scenario timed out in " + stage);
             switch (stage) {
                 case TITLE -> {
                     if (!(minecraft.screen instanceof TitleScreen) || minecraft.getOverlay() != null) return;
