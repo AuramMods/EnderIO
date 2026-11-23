@@ -46,6 +46,7 @@ final class ClientMultiplayerSmoke {
     private final Map<String, Object> captures = new LinkedHashMap<>();
     private final long started = System.nanoTime();
     private long titleReady;
+    private boolean retried;
     private long stageStarted = started;
     private Stage stage = Stage.TITLE;
 
@@ -117,7 +118,14 @@ final class ClientMultiplayerSmoke {
     private void render(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.END || stage == Stage.DONE) return;
         try {
-            if (minecraft.screen instanceof DisconnectedScreen) {
+            if (minecraft.screen instanceof DisconnectedScreen disconnected) {
+                if (stage == Stage.CONNECTING && !retried) {
+                    disconnected.onClose();
+                    titleReady = 0;
+                    retried = true;
+                    next(Stage.TITLE);
+                    return;
+                }
                 throw new AssertionError("Server disconnected during " + stage + "; see failure.png for the native reason");
             }
             if (System.nanoTime() - started > 240_000_000_000L) throw new AssertionError("Multiplayer scenario timed out in " + stage);

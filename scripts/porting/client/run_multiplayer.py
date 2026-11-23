@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import signal
 import subprocess
 import sys
@@ -50,7 +51,7 @@ def tank_state(amount, player=False):
     return conditions
 
 
-def write_data_map_fixture(pack, initial_override):
+def write_data_map_fixture(pack, initial_override, *, script_override=False):
     def write(relative, value):
         path = pack / "data/enderio" / relative
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -58,6 +59,8 @@ def write_data_map_fixture(pack, initial_override):
 
     grinding_tag = ["minecraft:flint", "minecraft:charcoal"] if initial_override else ["minecraft:flint"]
     write("tags/items/port_qa_grinding.json", {"replace": True, "values": grinding_tag})
+    if script_override:
+        return
     grinding = ({"OutputMultiplier": 1.5, "BonusMultiplier": 1.75, "PowerUse": 0.5, "Durability": 45678}
                 if initial_override else
                 {"OutputMultiplier": 2.0, "BonusMultiplier": 1.25, "PowerUse": 0.75, "Durability": 33333})
@@ -70,8 +73,8 @@ def write_data_map_fixture(pack, initial_override):
         write(range_extender, {"values": {"enderio:wireless_charger_antenna": {"#enderio:range_extender": 29}},
                                "remove": ["enderio:wireless_charger_antenna_advanced"]})
     else:
-        (pack / "data/enderio" / vat).unlink()
-        (pack / "data/enderio" / range_extender).unlink()
+        (pack / "data/enderio" / vat).unlink(missing_ok=True)
+        (pack / "data/enderio" / range_extender).unlink(missing_ok=True)
 
 
 def run_client(args, server, phase, report):
@@ -91,9 +94,14 @@ def run_client(args, server, phase, report):
                 if args.data_maps:
                     pack = server.directory / "port-multiplayer/datapacks/port_data_maps"
                     wait_signal(client, output, "data_maps_initial")
-                    write_data_map_fixture(pack, True)
+                    script = server.directory / "scripts/data_map_sync.zs"
+                    write_data_map_fixture(pack, True, script_override=bool(args.crafttweaker))
+                    if args.crafttweaker:
+                        shutil.copyfile(ROOT / "scripts/porting/fixtures/crafttweaker" / script.name, script)
                     server.command("reload")
                     wait_signal(client, output, "data_maps_override")
+                    if args.crafttweaker:
+                        script.unlink()
                     write_data_map_fixture(pack, False)
                     server.command("reload")
                     wait_signal(client, output, "data_maps_final")
@@ -124,9 +132,12 @@ def main():
     parser.add_argument("--launch", required=True, type=Path)
     parser.add_argument("--port", type=int, default=25641)
     parser.add_argument("--data-maps", action="store_true", help="Exercise live server-only data map and tag changes")
+    parser.add_argument("--crafttweaker", type=Path, help="Use a CraftTweaker script for the intermediate data map edits")
     args = parser.parse_args()
     if Path(args.name).name != args.name or args.name in ("", ".", ".."):
         parser.error("name must be a single directory name")
+    if args.crafttweaker and not args.data_maps:
+        parser.error("--crafttweaker requires --data-maps")
     directory = ROOT / "build/port-runtime" / args.name
     directory.mkdir(parents=True, exist_ok=False)
     artifact = args.jar.read_bytes()
@@ -141,6 +152,9 @@ def main():
                            stdout=log, stderr=subprocess.STDOUT, check=True)
         (directory / "mods").mkdir(exist_ok=True)
         (directory / "mods/enderio.jar").write_bytes(artifact)
+        if args.crafttweaker:
+            shutil.copyfile(args.crafttweaker, directory / "mods" / args.crafttweaker.name)
+            (directory / "scripts").mkdir(exist_ok=True)
         (directory / "eula.txt").write_text("eula=true\n")
         flat = json.dumps({"layers": [{"block": "minecraft:bedrock", "height": 1},
                                       {"block": "minecraft:dirt", "height": 2},
