@@ -19,6 +19,7 @@ import net.minecraftforge.fluids.FluidStack;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 /** Reload-aware fluid recipe predicates backed by native Forge fluids and Minecraft tags. */
@@ -55,13 +56,17 @@ public final class FluidIngredient implements Predicate<FluidStack> {
     }
     @Override
     public boolean test(FluidStack stack) {
+        return test(stack, (fluid, tag) -> fluid.builtInRegistryHolder().is(tag));
+    }
+
+    public boolean test(FluidStack stack, BiPredicate<Fluid, TagKey<Fluid>> tagMatcher) {
         if (stack.isEmpty()) return false;
         return switch (kind) {
             case FLUID -> BuiltInRegistries.FLUID.getKey(stack.getFluid()).equals(id);
-            case TAG -> stack.getFluid().builtInRegistryHolder().is(TagKey.create(Registries.FLUID, id));
-            case COMPOUND -> children.stream().anyMatch(child -> child.test(stack));
-            case INTERSECTION -> children.stream().allMatch(child -> child.test(stack));
-            case DIFFERENCE -> children.get(0).test(stack) && !children.get(1).test(stack);
+            case TAG -> tagMatcher.test(stack.getFluid(), TagKey.create(Registries.FLUID, id));
+            case COMPOUND -> children.stream().anyMatch(child -> child.test(stack, tagMatcher));
+            case INTERSECTION -> children.stream().allMatch(child -> child.test(stack, tagMatcher));
+            case DIFFERENCE -> children.get(0).test(stack, tagMatcher) && !children.get(1).test(stack, tagMatcher);
         };
     }
     public FluidStack[] getStacks() {

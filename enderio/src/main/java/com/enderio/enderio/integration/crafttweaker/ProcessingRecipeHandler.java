@@ -6,8 +6,11 @@ import com.blamejared.crafttweaker.api.recipe.manager.base.IRecipeManager;
 import com.enderio.core.common.recipes.CodecRecipeSerializer;
 import com.enderio.enderio.content.machines.alloy.AlloySmeltingRecipe;
 import com.enderio.enderio.content.machines.alloy.PrimitiveAlloySmeltingRecipe;
+import com.enderio.enderio.content.machines.obelisks.weather.WeatherChangeRecipe;
 import com.enderio.enderio.content.machines.sag_mill.SagMillingRecipe;
 import com.enderio.enderio.content.machines.slicer.SlicingRecipe;
+import com.enderio.enderio.content.machines.vat.FermentingRecipe;
+import com.enderio.enderio.content.storage.fluid_tank.TankRecipe;
 import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.resources.ResourceLocation;
@@ -19,6 +22,9 @@ import java.util.Optional;
 @IRecipeHandler.For(PrimitiveAlloySmeltingRecipe.class)
 @IRecipeHandler.For(SagMillingRecipe.class)
 @IRecipeHandler.For(SlicingRecipe.class)
+@IRecipeHandler.For(FermentingRecipe.class)
+@IRecipeHandler.For(TankRecipe.class)
+@IRecipeHandler.For(WeatherChangeRecipe.class)
 public final class ProcessingRecipeHandler implements IRecipeHandler<Recipe<?>> {
     @Override
     public String dumpToCommandString(IRecipeManager<? super Recipe<?>> manager, Recipe<?> recipe) {

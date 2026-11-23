@@ -79,6 +79,33 @@ slice.addRecipe("qa_slice", <item:minecraft:echo_shard> * 2, 600,
 
 `addRecipe(name, output, energy, inputs...)` accepts exactly six slots, left to right across the top row, then left to right across the bottom row. Use `<item:minecraft:air>` for a slot that must be empty. Each occupied slot consumes one item. `energy` is in FE. The machine handles axe and shears wear. `replaceRecipe(id, output, energy, inputs...)` keeps the existing ID.
 
+## VAT, fluid tanks, and Weather Obelisk
+
+```zenscript
+val vat = <recipetype:enderio:vat_fermenting>;
+vat.addRecipe("qa_vat", <tag:fluids:minecraft:water> * 250, <tag:items:forge:ingots/gold>,
+    <tag:items:forge:ingots/copper>, <fluid:minecraft:lava> * 425, 30);
+
+val tank = <recipetype:enderio:tank>;
+tank.addRecipe("qa_tank_fill", "fill", <item:minecraft:paper>, <item:minecraft:feather> * 2,
+    <fluid:minecraft:water> * 100);
+tank.addRecipe("qa_tank_empty", "empty", <item:minecraft:rabbit_hide>, <item:minecraft:leather>,
+    <tag:fluids:minecraft:water> * 225);
+
+val weather = <recipetype:enderio:weather_change>;
+weather.addRecipe("qa_weather", <fluid:minecraft:lava> * 200, "rain");
+```
+
+| Manager | `addRecipe` parameters |
+| --- | --- |
+| VAT | `name, input, firstReagent, secondReagent, output, ticks`. The input specifies mB. Pass an item tag for each reagent group, a fluid stack for the base output, and the job duration in ticks. The two reagent tags may match either slot order. The VAT applies each reagent's native yield multiplier. |
+| Tank | `name, mode, input, output, fluid`. Use `fill` to consume tank fluid while processing the item, or `empty` to put fluid into the tank while processing the item. The fluid determines candidates and mB. |
+| Weather Obelisk | `name, fluid, mode`. Specify the required fluid stack and `clear`, `rain`, or `lightning`. Each completed job spends the given mB and one firework rocket, and the obelisk requires open sky and 600 ticks of eligible work. There is no output item or fluid. |
+
+Each manager has a `replaceRecipe(id, ...)` method with the same parameters after the exact ID. VAT and tank fluid inputs accept CraftTweaker fluid stacks, sized fluid tags, and alternatives with a common amount. Their native fluid ingredients match by type or tag membership.
+
+`getRecipesByFluidOutput(ingredient)` and `removeFluidOutput(ingredient)` are available for the VAT and tanks. Match with CraftTweaker fluid ingredients, which can specify a minimum amount. The VAT compares base outputs before yield multipliers. Tank output matching considers all candidate fluids for `empty` recipes. Use the weather recipe's ID to find, remove, or replace it.
+
 ## Implementation coverage
 
 | Processing path | Current cycle |
@@ -87,8 +114,8 @@ slice.addRecipe("qa_slice", <item:minecraft:echo_shard> * 2, 600,
 | Inherited furnace recipes | Packaged Forge verified a scripted furnace addition and replacement, a source removal, two alloy-only exclusions, exact FE, and restoration after live `/reload`. |
 | SAG milling and slicing | Packaged Forge verified scripted additions, replacements, removal by tagged SAG output, exact FE and item counts, positional slicer inputs, and tool wear. |
 | Legacy grinding ball recipes | Inventory complete. Modern modifiers take precedence over the legacy grinding ball recipe. |
-| Soul Binder, VAT fermentation, and tank processing | Inventory complete. The VAT accepts its two reagent tags in either slot order, and the tank supports both filling and emptying. |
-| Painting, Enchanter, weather, and fire | Inventory complete. Painting uses the supplied paint block. Enchanter uses the selected enchantment and amount. Weather and fire have world effects. |
+| VAT fermentation, tanks, and weather | Packaged Forge verified add, replace, and remove through both tank modes, reversed VAT reagent order, exact fluid volumes and rocket use, and native weather changes. |
+| Soul Binder, painting, Enchanter, and fire | Inventory complete. Painting uses the supplied paint block. Enchanter uses the selected enchantment and amount. Fire crafting has world effects. |
 | Crafter and shaped entity storage | Both use the vanilla crafting recipe manager. The shaped entity storage serializer adds soul-storage output behavior. |
 | Ingredients | Forge defines `empty_soul_storage`, `filled_soul_storage`, `any_soul_storage`, and `conduit` serializers. Typed script helpers and editable selector groups are pending. |
 | Processing data | The three native data maps cover grinding balls, VAT reagents, and range extenders. Separate loaders supply farming, solar, powered spawner, and Soul Engine rules. Script editors and reload tests are pending. |
