@@ -256,6 +256,25 @@ The player taking a book from the Enchanter supplies that recipe's stage context
 
 If the required stage is lost mid-job, the recipe check pauses work before further charges or item consumption. The machine retains prior work and saved outputs under its existing recipe and output rules. A recipe lock leaves normal inventory access available. The Crafter also honors RecipeStages crafting wrappers and uses the owner's stages to evaluate them. ItemStages still handles its usual player item restrictions.
 
+## Crafting and addon inputs
+
+The Crafter uses `<recipetype:minecraft:crafting>` or the equivalent `craftingTable` global. Use the normal shaped and shapeless methods, or load Ender IO's shaped entity-storage serializer with `addJsonRecipe`.
+
+```zenscript
+craftingTable.addJsonRecipe("qa_entity_storage", {
+    "type": "enderio:shaped_entity_storage",
+    "pattern": ["V"],
+    "key": {"V": {"item": "enderio:soul_vial"}},
+    "result": {"item": "enderio:broken_spawner"}
+});
+```
+
+The serializer requires a bound soul in the crafting grid and transfers that soul to a compatible output. To replace an existing result or pattern, call `craftingTable.removeByName("crafttweaker:qa_entity_storage")` before adding the new definition under the same path.
+
+The entity-type tags `enderio:soul_vial_whitelist`, `enderio:soul_vial_blacklist`, `c:capturing_not_supported`, and `c:bosses` control native capture eligibility. The powered spawner uses `enderio:spawner_whitelist` and `enderio:spawner_blacklist` alongside its normal rules. Modify these with CraftTweaker's entity-type tag manager. Soul rules control how a device uses a stored soul after capture or binding.
+
+Use Forge fluid brackets and tags for addon fluids consumed by the VAT, tanks, or Soul Engine. Mekanism gases, infuse types, pigments, and slurries use the addon’s chemical conduit transport. Recipes involving an addon conduit can select its registered variant, such as `enderio:chemical` when Mekanism is installed.
+
 ## Implementation coverage
 
 | Processing path | Current cycle |
@@ -265,9 +284,9 @@ If the required stage is lost mid-job, the recipe check pauses work before furth
 | SAG milling and slicing | Packaged Forge verified scripted additions, replacements, removal by tagged SAG output, exact FE and item counts, positional slicer inputs, and tool wear. |
 | Legacy grinding ball recipes | Typed manager and packaged test coverage for yield, FE, and durability. |
 | VAT fermentation, tanks, and weather | Packaged Forge verified add, replace, and remove through both tank modes, reversed VAT reagent order, exact fluid volumes and rocket use, and native weather changes. |
-| Soul Binder, painting, Enchanter, and fire | Packaged gameplay verified add, replace, and remove for soul binding, painting, and fire. The Enchanter manager, enchantment lookup, replacement, and removal ran in ZenScript. Enchanter crafting and JEI tests remain pending. |
-| Crafter and shaped entity storage | Both use the vanilla crafting recipe manager. The shaped entity storage serializer adds soul-storage output behavior. |
+| Soul Binder, painting, Enchanter, and fire | Packaged Forge verified add, replace, and remove through each gameplay path. Guarded Enchanter clients verified normal pickup, shift-click, exact XP and ingredient costs, and zero charges when a player's XP or inventory space was insufficient. |
+| Crafter and shaped entity storage | Packaged Forge verified add, replacement, removal, exact FE, and a soul transfer to each scripted output. |
 | Ingredients | Packaged Forge verified exact conduit variants, distinct soul-vial states, and changes to conduit, entity-type, and dimension membership. |
 | Processing data | Set, get, and remove ran through the grinding ball, VAT, and range extender maps. Gameplay confirmed the edited VAT yield and its removal, plus scripted farming, solar, powered spawner, and Soul Engine behavior. Modern grinding-ball and wireless charger gameplay and client sync remain pending. |
-| Addon inputs | Modded conduits transport optional resources such as Mekanism chemicals. Audit which resources are consumed by processing before exposing selectors. |
+| Addon inputs | Source audit confirmed that native processing uses Forge item and fluid inputs, with registered addon conduit variants available through the same conduit selector. The full Auram compatibility run remains pending. |
 | GameStages | Packaged Forge with the pinned companion mods verified exact and family lockout, saved inputs and fuel, rule clearing, and a world-stage fire grant. Multiplayer owner, manual feature, staged Crafter, and JEI checks remain pending. |
