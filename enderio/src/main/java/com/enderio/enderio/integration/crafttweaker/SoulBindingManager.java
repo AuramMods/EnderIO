@@ -36,6 +36,6 @@ public final class SoulBindingManager extends ProcessingRecipeManager<SoulBindin
             throw new IllegalArgumentException("Soul binding needs a nonempty input and nonnegative XP levels");
         }
         return new SoulBindingRecipe(outputStack(output), ingredient, positive(energy, "Energy"), xpLevels,
-                selector.entity(), selector.category(), selector.rule(), copyInputNbt, id);
+                selector.entity(), selector.category(), selector.rule(), copyInputNbt, selector.entityTag(), id);
     }
 }

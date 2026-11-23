@@ -22,10 +22,13 @@ import com.mojang.serialization.RecordBuilder;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
 import com.enderio.core.common.network.codec.PacketCodecs;
 import com.enderio.core.common.network.codec.PacketCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import io.netty.handler.codec.DecoderException;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -40,12 +43,21 @@ import java.util.stream.Stream;
 
 public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, int experience,
         Optional<ResourceLocation> entityType, Optional<MobCategory> mobCategory, Optional<String> soulData,
-        boolean copyInputComponents, ResourceLocation id) implements MachineRecipe<SoulBindingRecipe.Input> {
+        boolean copyInputComponents, Optional<TagKey<EntityType<?>>> entityTag, ResourceLocation id)
+        implements MachineRecipe<SoulBindingRecipe.Input> {
 
     public SoulBindingRecipe(ItemStack output, Ingredient input, int energy, int experience, Optional<ResourceLocation> entityType, Optional<MobCategory> mobCategory, Optional<String> soulData, boolean copyInputComponents) { this(output, input, energy, experience, entityType, mobCategory, soulData, copyInputComponents, null); }
 
-    public SoulBindingRecipe withId(ResourceLocation id) { return new SoulBindingRecipe(output, input, energy, experience, entityType, mobCategory, soulData, copyInputComponents, java.util.Objects.requireNonNull(id)); }
+    public SoulBindingRecipe(ItemStack output, Ingredient input, int energy, int experience,
+            Optional<ResourceLocation> entityType, Optional<MobCategory> mobCategory, Optional<String> soulData,
+            boolean copyInputComponents, ResourceLocation id) {
+        this(output, input, energy, experience, entityType, mobCategory, soulData, copyInputComponents, Optional.empty(), id);
+    }
 
+    public SoulBindingRecipe withId(ResourceLocation id) {
+        return new SoulBindingRecipe(output, input, energy, experience, entityType, mobCategory, soulData,
+                copyInputComponents, entityTag, java.util.Objects.requireNonNull(id));
+    }
 
     public Ingredient getInput() {
         return input;
@@ -115,7 +127,8 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
         }
 
         return (mobCategory.isEmpty() || soul.entityType().getCategory() == mobCategory.get())
-                && (entityType.isEmpty() || entityType.get().equals(soul.entityTypeId()));
+                && (entityType.isEmpty() || entityType.get().equals(soul.entityTypeId()))
+                && (entityTag.isEmpty() || soul.entityType().is(entityTag.get()));
     }
 
     @Override
@@ -168,8 +181,10 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
                         withLegacyField("soul_data", Codec.STRING.optionalFieldOf("soul_data"), Codec.STRING.optionalFieldOf("souldata"))
                                 .forGetter(SoulBindingRecipe::soulData),
                         Codec.BOOL.optionalFieldOf("copyInputComponents", false)
-                                .forGetter(SoulBindingRecipe::copyInputComponents))
-                .apply(instance, SoulBindingRecipe::new))
+                                .forGetter(SoulBindingRecipe::copyInputComponents),
+                        TagKey.codec(Registries.ENTITY_TYPE).optionalFieldOf("entity_tag").forGetter(SoulBindingRecipe::entityTag))
+                .apply(instance, (output, input, energy, experience, type, category, data, copy, tag) ->
+                        new SoulBindingRecipe(output, input, energy, experience, type, category, data, copy, tag, null)))
                 .flatXmap(Serializer::validate, Serializer::validate);
 
         private static <F> MapCodec<F> withLegacyField(String field, MapCodec<F> current, MapCodec<F> legacy) {
@@ -195,8 +210,9 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
             int entityType = recipe.entityType().isPresent() ? 1 : 0;
             int mobCategory = recipe.mobCategory().isPresent() ? 1 : 0;
             int soulData = recipe.soulData().isPresent() ? 1 : 0;
-            if (entityType + mobCategory + soulData > 1) {
-                return DataResult.error(() -> "Soul Binding recipe properties entity_type, mob_category and soul_data are mutually exclusive.");
+            int entityTag = recipe.entityTag().isPresent() ? 1 : 0;
+            if (entityType + mobCategory + soulData + entityTag > 1) {
+                return DataResult.error(() -> "Soul Binding recipe properties entity_type, mob_category, soul_data and entity_tag are mutually exclusive.");
             }
             return DataResult.success(recipe);
         }
@@ -216,7 +232,9 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
                                 MobCategory::getName).optional(),
                         SoulBindingRecipe::mobCategory, PacketCodecs.STRING_UTF8.optional(),
                         SoulBindingRecipe::soulData, PacketCodecs.BOOL, SoulBindingRecipe::copyInputComponents,
-                        SoulBindingRecipe::new);
+                        PacketCodecs.RESOURCE_LOCATION.map(id -> TagKey.create(Registries.ENTITY_TYPE, id), TagKey::location).optional(),
+                        SoulBindingRecipe::entityTag, (output, input, energy, experience, type, category, data, copy, tag) ->
+                                new SoulBindingRecipe(output, input, energy, experience, type, category, data, copy, tag, null));
 
         @Override
         protected SoulBindingRecipe withId(SoulBindingRecipe recipe, ResourceLocation id) { return recipe.withId(id); }

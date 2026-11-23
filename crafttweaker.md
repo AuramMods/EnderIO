@@ -143,6 +143,56 @@ Each manager accepts the same arguments in `replaceRecipe(id, ...)` after the ex
 
 `SoulSelector.any()` accepts any bound soul. `SoulSelector.entity(entityType)` selects a single entity type. `SoulSelector.category(name)` selects a native mob category such as `creature`. `SoulSelector.soulRule(domain)` selects the souls accepted by a named Ender IO data loader.
 
+## Ingredients and selector groups
+
+Use ordinary CraftTweaker item, fluid, and block tags where a manager accepts them. For a list of souls that can change with pack progression, define an entity-type tag in a separate tag script.
+
+```zenscript
+#loader tags
+<tag:entity_types:port_qa:binding_souls>.addId(<resource:minecraft:cow>);
+```
+
+```zenscript
+import mods.enderio.EnderIOIngredients;
+import mods.enderio.SagOutput;
+import mods.enderio.SelectorGroup;
+import mods.enderio.SoulSelector;
+
+val group = SelectorGroup.conduits(<resource:port_qa:processing_conduits>);
+group.replace(<resource:enderio:energy>, <resource:enderio:fluid>);
+group.add(<resource:enderio:item>);
+group.remove(<resource:enderio:fluid>);
+
+val sag = <recipetype:enderio:sag_milling>;
+sag.addRecipe("qa_conduit_group", group.asIngredient(), 400, "none",
+    SagOutput.item(<item:minecraft:rabbit_hide>, 1.0f, false));
+<recipetype:enderio:soul_binding>.addRecipe("qa_tagged_binder", <item:minecraft:quartz>, <item:minecraft:emerald>,
+    1600, 1, SoulSelector.tag(<tag:entity_types:port_qa:binding_souls>), false);
+```
+
+- `EnderIOIngredients.emptySoulStorage(stack)`, `filledSoulStorage(stack)`, and `anySoulStorage(stack)` match the specified item type and its corresponding soul state. Use `<item:enderio:soul_vial>` for vials.
+- `EnderIOIngredients.conduit(variant)` matches one registered conduit variant. The selector distinguishes variants that share `enderio:conduit`.
+- `SelectorGroup.conduits(id)` and `SelectorGroup.dimensions(id)` open named groups. Use `add(ids...)`, `remove(ids...)`, and `replace(ids...)` to edit them and `members` to read their IDs. A conduit group's `asIngredient()` creates a recipe ingredient from the current members. A dimension group's `members` can be passed as the dimension argument in fire crafting. Declare memberships before adding or replacing the recipe. Both forms are included in normal recipe sync.
+- `SoulSelector.tag(tag)` refers to a live entity-type tag. Edit its membership with normal CraftTweaker tag operations. Datapacks can also specify the optional `entity_tag` field on the native Soul Binder recipe, using the tag ID without a leading `#`.
+
+## Processing data
+
+```zenscript
+import mods.enderio.ProcessingData;
+
+ProcessingData.setGrindingBall(<item:minecraft:feather>, 2.0f, 1.0f, 0.5f, 5000);
+ProcessingData.setVatYield(<item:minecraft:gold_ingot>, <tag:items:forge:ingots/gold>, 3.0);
+ProcessingData.setRangeExtension(<block:minecraft:amethyst_block>, <tag:blocks:enderio:range_extender>, 24);
+```
+
+| Methods | Behavior |
+| --- | --- |
+| `setGrindingBall(item, grinding, chance, power, durability)`, `getGrindingBall(item)`, `removeGrindingBall(item)` | Edit the modern data map with the same units as the legacy recipe. The getter returns a record with `grinding`, `chance`, `power`, and `durability`, or `null`. Removing it allows the matching legacy recipe to supply the ball. |
+| `setVatYield(item, reagentTag, multiplier)`, `getVatYield(item, reagentTag)`, `removeVatYield(item, reagentTag)` | The multiplier applies when that item matches the specified reagent group in an active VAT recipe. The default is 1. The two reagents' multipliers multiply together. |
+| `setRangeExtension(block, targetTag, distance)`, `getRangeExtension(block, targetTag)`, `removeRangeExtension(block, targetTag)` | Set the range adjustment in blocks. The default is zero. The wireless charger reads the `enderio:range_extender` key when the block above it belongs to that block tag. Add new extender blocks to the tag in the tags loader. |
+
+Ender IO loads stock data and datapacks first, then applies the script edits in order. Edits modify the active resource snapshot. Removing an edit script and running `/reload` restores the underlying datapack values. Already installed grinding balls and queued machine outputs follow the machine's saved state rules.
+
 ## Implementation coverage
 
 | Processing path | Current cycle |
@@ -154,7 +204,7 @@ Each manager accepts the same arguments in `replaceRecipe(id, ...)` after the ex
 | VAT fermentation, tanks, and weather | Packaged Forge verified add, replace, and remove through both tank modes, reversed VAT reagent order, exact fluid volumes and rocket use, and native weather changes. |
 | Soul Binder, painting, Enchanter, and fire | Packaged gameplay verified add, replace, and remove for soul binding, painting, and fire. The Enchanter manager, enchantment lookup, replacement, and removal ran in ZenScript. Enchanter crafting and JEI tests remain pending. |
 | Crafter and shaped entity storage | Both use the vanilla crafting recipe manager. The shaped entity storage serializer adds soul-storage output behavior. |
-| Ingredients | Forge defines `empty_soul_storage`, `filled_soul_storage`, `any_soul_storage`, and `conduit` serializers. Typed script helpers and editable selector groups are pending. |
-| Processing data | The three native data maps cover grinding balls, VAT reagents, and range extenders. Separate loaders supply farming, solar, powered spawner, and Soul Engine rules. Script editors and reload tests are pending. |
+| Ingredients | Packaged Forge verified exact conduit variants, distinct soul-vial states, and changes to conduit, entity-type, and dimension membership. |
+| Processing data | Set, get, and remove ran through the grinding ball, VAT, and range extender maps. Gameplay confirmed the edited VAT yield and its removal. Verification for modern grinding balls, wireless charger range, and client sync remains pending. Farming, solar, powered spawner, and Soul Engine rule editors remain pending. |
 | Addon inputs | Modded conduits transport optional resources such as Mekanism chemicals. Audit which resources are consumed by processing before exposing selectors. |
 | GameStages | Rule API, recipe checks, action checks, and tests with RecipeStages and ItemStages are pending. |

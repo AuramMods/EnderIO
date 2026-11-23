@@ -1,6 +1,7 @@
 package com.enderio.core.common.datamap;
 
 import com.enderio.core.EnderCore;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraftforge.event.AddReloadListenerEvent;
@@ -13,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.function.UnaryOperator;
 
 /** Each loaded resource set / client connection owns an independent immutable snapshot. */
 @Mod.EventBusSubscriber(modid = EnderCore.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -37,6 +39,22 @@ public final class DataMaps {
 
     public static synchronized void replace(RecipeManager owner, Snapshot snapshot) {
         SNAPSHOTS.put(owner, snapshot);
+    }
+
+    /** Edits the active reload's data snapshot. Returning null removes the entry. */
+    public static synchronized <R, V> void edit(RecipeManager owner, RegistryDataMap<R, V> type,
+            ResourceLocation id, UnaryOperator<V> change) {
+        var current = snapshot(owner);
+        var values = new LinkedHashMap<>(current.values(type));
+        var next = change.apply(values.get(id));
+        if (next == null) {
+            values.remove(id);
+        } else {
+            values.put(id, next);
+        }
+        var maps = new LinkedHashMap<>(current.maps());
+        maps.put(type, values);
+        replace(owner, new Snapshot(maps));
     }
 
     public static void clear(RecipeManager owner) {
