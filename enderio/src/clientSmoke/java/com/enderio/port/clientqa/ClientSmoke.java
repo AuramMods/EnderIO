@@ -106,6 +106,7 @@ public final class ClientSmoke {
             case "inventory-sorter" -> new ClientInventorySorterSmoke(true);
             case "inventory-sorter-absent" -> new ClientInventorySorterSmoke(false);
             case "enchanter" -> new ClientEnchanterSmoke(false);
+            case "crafttweaker-stage-player" -> new ClientStagePlayerSmoke();
             case "enchanter-catalog" -> new ClientEnchanterCatalogSmoke();
             case "enchanter-presentation-core" -> new ClientEnchanterPresentationSmoke(false);
             case "enchanter-presentation-embeddium" -> new ClientEnchanterPresentationSmoke(true);

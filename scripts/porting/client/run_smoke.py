@@ -14,7 +14,7 @@ parser.add_argument("--timeout", default=180, type=int)
 parser.add_argument("--launch", type=Path, default=ROOT / "build/port-client-harness/client-smoke-launch.json")
 parser.add_argument("--scenario",
                     choices=("title", "model-inventory", "xp-tools", "gameplay-particles", "xp-tool-crafting", "special-enderios",
-                             "singleplayer", "multiplayer", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
+                             "singleplayer", "multiplayer", "crafttweaker-stage-player", "travel", "carried-tanks", "extraction-upgrades", "legacy-lights",
                              "primitive-smelter", "industrial-insulation", "stirling", "soul-binder", "soul-binder-backpressure", "soul-binder-jei", "soul-binder-jei-rules",
                              "soul-binder-jei-silverfish", "spawner-rebinding",
                              "soul-components", "soul-vials", "soul-engine", "soul-engine-fuels",
@@ -97,6 +97,10 @@ result = json.loads(result_path.read_text()) if result_path.exists() else {"pass
 log = (output / "focus.json.client.log").read_text()
 errors = [line for line in log.splitlines() if "/ERROR]" in line or "/FATAL]" in line]
 known_diagnostics = []
+slow_glfw = [line for line in errors if " [EARLYDISPLAY/]: WARNING : glfwInit took " in line]
+if focus["status"] == "pass" and result["passed"]:
+    known_diagnostics.extend(slow_glfw)
+    errors = [line for line in errors if line not in slow_glfw]
 checks = result.get("checks", {})
 shaders_disabled = (args.scenario in {"stained-facades-oculus", "facade-ctm-oculus"}
                     and " [Oculus/]: Shaders are disabled because enableShaders is set to false" in log)
@@ -117,7 +121,7 @@ if (checks.get("expected_oculus_installation") and (shaders_disabled or shader_d
     notice = ("/ERROR] [Embeddium-MixinTaintDetector/]: Mod mixin into Embeddium internals detected. "
               "This instance is now tainted. The Embeddium team does not provide any guarantee of support "
               "for issues encountered while such mods are installed.")
-    known_diagnostics = [line for line in errors if line.endswith(notice)]
+    known_diagnostics.extend(line for line in errors if line.endswith(notice))
     errors = [line for line in errors if not line.endswith(notice)]
 model_warnings = [line for line in log.splitlines() if "/WARN] [minecraft/Model" in line and "enderio:" in line]
 passed = (process.returncode == 0 and focus["status"] == "pass" and result["passed"] and not errors

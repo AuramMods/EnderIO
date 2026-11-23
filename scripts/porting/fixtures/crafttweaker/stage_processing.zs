@@ -13,5 +13,6 @@ Recipes.setRecipeStage("machining", <resource:crafttweaker:qa_stage_crafter>);
 
 EnderIOStages.requireRecipe(<resource:crafttweaker:qa_stage_alloy>, "parts");
 EnderIOStages.requireRecipeType(<resource:enderio:primitive_alloy_smelting>, "machining");
+EnderIOStages.requireAction(<resource:enderio:machine_placement>, "placement");
 EnderIOStages.requireAction(<resource:enderio:fire_crafting>, "fire_works");
 println("PORT_CT_STAGES_CONFIGURED");
