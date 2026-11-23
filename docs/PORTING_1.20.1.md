@@ -41,7 +41,7 @@ EnderCore is already part of this repository and bundled by the Ender IO build. 
 
 Current build ownership is in `settings.gradle.kts`, `gradle/libs.versions.toml`, `buildSrc/src/main/kotlin/mod-common-conventions.gradle.kts`, and the three module build files. It uses ModDevGradle 2.0.148 and Gradle 9.8.2. The historical build uses ForgeGradle 6 with additional mapping/mixin plugins; its old repositories and versions are reference material, not assumed to remain resolvable.
 
-The baseline tests include 33 Java files under `src/test` and 34 under `src/gametest`, including helpers and package descriptors. These are file counts, not executed test counts. The build now targets Java 17. Cycles 034–035 port the main JUnit and gameplay suites to CPU/native Forge profiles; all 58 enabled baseline gameplay IDs are present in the passing runtime report. CI now invokes all profiles through `check --continue`; remote CI has not run.
+The baseline tests include 33 Java files under `src/test` and 34 under `src/gametest`, including helpers and package descriptors. These are file counts. The build targets Java 17. Cycles 034–035 ported the main JUnit and gameplay suites to CPU/native Forge profiles. All 58 enabled baseline gameplay IDs are present in the passing runtime report. Run all profiles locally with `./gradlew check --continue`. [Local build policy](../README.md)
 
 ## Main conversion areas
 
