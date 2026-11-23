@@ -64,7 +64,7 @@ sag.addRecipe("qa_sag", <item:minecraft:paper>, 800, "none",
 
 - `addRecipe(name, input, energy, bonus, outputs...)` consumes one item matching `input`. Pass the base FE cost and one or more `SagOutput` values.
 - `replaceRecipe(id, input, energy, bonus, outputs...)` takes the same arguments under an existing recipe ID.
-- `bonus` is `none` to skip grinding balls, `chance_only` to apply their chance modifier, or `multiply_output` to apply both yield and chance modifiers. The machine applies its native grinding-ball FE rules.
+- `bonus` is `none` for unmodified chances and yields, `chance_only` to apply the chance modifier, or `multiply_output` to apply both yield and chance modifiers. The machine applies its native grinding-ball FE rules.
 - `SagOutput.item(stack, chance, optional)` specifies a stack. `SagOutput.tag(tag, count, chance, optional)` resolves the item using Ender IO's material preference rules. Use a chance from `0.0f` to `1.0f` and supply the native `optional` flag for serialization.
 - `remove(ingredient)` and `getRecipesByOutput(ingredient)` match all possible item outputs with nonzero chances. For tag outputs, they use the tag membership from the current CraftTweaker reload. The machine chooses the actual result using Ender IO's material preference rules.
 
@@ -106,6 +106,43 @@ Each manager has a `replaceRecipe(id, ...)` method with the same parameters afte
 
 `getRecipesByFluidOutput(ingredient)` and `removeFluidOutput(ingredient)` are available for the VAT and tanks. Match with CraftTweaker fluid ingredients, which can specify a minimum amount. The VAT compares base outputs before yield multipliers. Tank output matching considers all candidate fluids for `empty` recipes. Use the weather recipe's ID to find, remove, or replace it.
 
+## Painting, enchanting, soul binding, fire, and legacy grinding balls
+
+```zenscript
+import mods.enderio.FireOutput;
+import mods.enderio.SoulSelector;
+
+val painter = <recipetype:enderio:painting>;
+painter.addRecipe("qa_paint", <item:minecraft:brick>, <item:enderio:painted_fence>);
+
+val enchanter = <recipetype:enderio:enchanting>;
+enchanter.addRecipe("qa_enchanter", <item:minecraft:amethyst_shard> * 2,
+    <enchantment:minecraft:aqua_affinity>, 1);
+
+val binder = <recipetype:enderio:soul_binding>;
+binder.addRecipe("qa_binder", <item:minecraft:quartz>, <item:minecraft:amethyst_shard>,
+    1600, 1, SoulSelector.entity(<entitytype:minecraft:cow>), true);
+
+val fire = <recipetype:enderio:fire_crafting>;
+fire.addRecipe("qa_fire", [<block:minecraft:emerald_block>], [], [<resource:minecraft:overworld>],
+    <block:minecraft:diamond_block>, FireOutput.item(<item:minecraft:rabbit_hide>, 2, 2, 1.0f));
+
+val balls = <recipetype:enderio:grinding_ball>;
+balls.addRecipe("qa_ball", <item:minecraft:feather>, 2.0f, 1.0f, 0.5f, 5000);
+```
+
+| Manager | `addRecipe` parameters |
+| --- | --- |
+| Painting | `name, template, output`. A successful job consumes the template and reads the paint block from the separate paint slot. Ender IO stores the paint on the output. The common config controls FE. |
+| Enchanting | `name, catalyst, enchantment, costMultiplier`. Use a sized catalyst ingredient, an enchantment bracket, and a positive XP level cost multiplier. The Enchanter uses the catalyst amount to compute the enchantment level and applies its normal book, lapis, and XP rules. |
+| Soul binding | `name, material, output, energy, xpLevels, selector, copyInputNbt`. Enter FE and the XP level used to calculate the fluid cost. The Soul Binder empties one bound soul vial and uses its soul when the output supports it. Enable `copyInputNbt` to merge the material's NBT into the output before binding. |
+| Fire crafting | `name, bases, baseTags, dimensions, replacement, results...`. Give an array of blocks, an array of block tags, at least one dimension ID, and an optional replacement block. Pass `null` to keep the base. `FireOutput.item(stack, minCount, maxCount, chance)` uses an inclusive range and a chance from 0 to 1. A successful drop triggers the replacement. |
+| Legacy grinding ball | `name, item, grinding, chance, power, durability`. Use an item type, three multipliers in that order, and durability measured in FE spent. The modern grinding-ball data map takes priority for an item. The SAG Mill loads a ball from its slot at the end of its first eligible job. |
+
+Each manager accepts the same arguments in `replaceRecipe(id, ...)` after the existing recipe ID. For the Enchanter, `getRecipesByEnchantment(enchantment)` and `removeByEnchantment(enchantment)` match the exact enchantment. Item output lookup uses the level-one preview book. Fire output lookups consider every nonzero-chance drop at its maximum count. Legacy grinding-ball definitions are managed by exact ID.
+
+`SoulSelector.any()` accepts any bound soul. `SoulSelector.entity(entityType)` selects a single entity type. `SoulSelector.category(name)` selects a native mob category such as `creature`. `SoulSelector.soulRule(domain)` selects the souls accepted by a named Ender IO data loader.
+
 ## Implementation coverage
 
 | Processing path | Current cycle |
@@ -113,9 +150,9 @@ Each manager has a `replaceRecipe(id, ...)` method with the same parameters afte
 | Powered and primitive alloy smelting | Packaged Forge passed ZenScript lookup, add, replacement, removal, and exact machine input, output, and FE or fuel checks across server restarts. The packaged mod also booted without CraftTweaker. Client recipe-dump and JEI checks are pending. |
 | Inherited furnace recipes | Packaged Forge verified a scripted furnace addition and replacement, a source removal, two alloy-only exclusions, exact FE, and restoration after live `/reload`. |
 | SAG milling and slicing | Packaged Forge verified scripted additions, replacements, removal by tagged SAG output, exact FE and item counts, positional slicer inputs, and tool wear. |
-| Legacy grinding ball recipes | Inventory complete. Modern modifiers take precedence over the legacy grinding ball recipe. |
+| Legacy grinding ball recipes | Typed manager and packaged test coverage for yield, FE, and durability. |
 | VAT fermentation, tanks, and weather | Packaged Forge verified add, replace, and remove through both tank modes, reversed VAT reagent order, exact fluid volumes and rocket use, and native weather changes. |
-| Soul Binder, painting, Enchanter, and fire | Inventory complete. Painting uses the supplied paint block. Enchanter uses the selected enchantment and amount. Fire crafting has world effects. |
+| Soul Binder, painting, Enchanter, and fire | Packaged gameplay verified add, replace, and remove for soul binding, painting, and fire. The Enchanter manager, enchantment lookup, replacement, and removal ran in ZenScript. Enchanter crafting and JEI tests remain pending. |
 | Crafter and shaped entity storage | Both use the vanilla crafting recipe manager. The shaped entity storage serializer adds soul-storage output behavior. |
 | Ingredients | Forge defines `empty_soul_storage`, `filled_soul_storage`, `any_soul_storage`, and `conduit` serializers. Typed script helpers and editable selector groups are pending. |
 | Processing data | The three native data maps cover grinding balls, VAT reagents, and range extenders. Separate loaders supply farming, solar, powered spawner, and Soul Engine rules. Script editors and reload tests are pending. |
