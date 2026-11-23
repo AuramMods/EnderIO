@@ -112,18 +112,22 @@ public record SoulBindingRecipe(ItemStack output, Ingredient input, int energy, 
             return false;
         }
 
-        return acceptsSoul(SoulBoundUtils.getBoundSoul(recipeInput.getItem(0)))
+        return acceptsSoul(SoulBoundUtils.getBoundSoul(recipeInput.getItem(0)), level)
                 && ExperienceUtil.getLevelFromFluid(recipeInput.getFluid(2).getAmount()) >= experience;
     }
 
     public boolean acceptsSoul(Soul soul) {
+        return acceptsSoul(soul, null);
+    }
+
+    public boolean acceptsSoul(Soul soul, Level level) {
         if (soul.isEmpty()) {
             return false;
         }
 
         if (soulData.isPresent()) {
             var listener = SoulDataReloadListener.fromString(soulData.get());
-            return listener != null && listener.matches(soul.entityTypeId()).isPresent();
+            return listener != null && listener.matches(level, soul.entityTypeId()).isPresent();
         }
 
         return (mobCategory.isEmpty() || soul.entityType().getCategory() == mobCategory.get())

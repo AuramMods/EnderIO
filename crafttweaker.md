@@ -193,6 +193,30 @@ ProcessingData.setRangeExtension(<block:minecraft:amethyst_block>, <tag:blocks:e
 
 Ender IO loads stock data and datapacks first, then applies the script edits in order. Edits modify the active resource snapshot. Removing an edit script and running `/reload` restores the underlying datapack values. Already installed grinding balls and queued machine outputs follow the machine's saved state rules.
 
+### Soul rules
+
+```zenscript
+import mods.enderio.SoulRules;
+
+val cow = <entitytype:minecraft:cow>;
+SoulRules.setSpawner(cow, 3600, "copy");
+SoulRules.setEngine(cow, <fluid:minecraft:water>, 197, 5);
+SoulRules.setEngineTag(cow, <tag:fluids:minecraft:water>, 197, 5);
+SoulRules.setFarming(<entitytype:minecraft:bee>, 1.0f, 0, 1.0f);
+SoulRules.setSolar(cow, false, true, <resource:minecraft:overworld>);
+```
+
+| Method | Parameters and behavior |
+| --- | --- |
+| `setSpawner(entity, energy, mode)` | FE cost and `entity_type` for a fresh entity or `copy` to spawn from the stored soul data. |
+| `setEngine(entity, fuel, powerPerMb, ticksPerMb)` | A fluid stack identifying the fuel, base FE per mB, and base ticks per mB. Amounts in the fluid argument are ignored. |
+| `setEngineTag(entity, fuelTag, powerPerMb, ticksPerMb)` | Uses a fluid tag in place of the single fuel. The Soul Engine still applies its native machine modifiers. |
+| `setFarming(entity, bonemeal, seeds, power)` | Bonemeal consumption multiplier, native seed and Fortune adjustment, and FE multiplier. |
+| `setSolar(entity, daytime, nighttime, dimension)` | Toggles soul-assisted generation by time of day. Pass a dimension ID or `null` for every dimension. |
+| `getJson(domain, entity)`, `remove(domain, entity)` | Inspect the effective definition as native JSON, or remove it from that resource snapshot. Domains are `spawner`, `engine`, `farm`, and `solar`. Getters return `null` for a missing definition. |
+
+Each setter replaces the domain's effective rule for that entity. Stock and datapack rules load first, and a fresh reload without the script restores them. The Soul Binder's `SoulSelector.soulRule(domain)` uses the effective rules. A removed spawner rule falls back to the native default for a soul already in a powered spawner. Other capture and device restrictions still apply.
+
 ## GameStages
 
 Install GameStages and its Bookshelf dependency to opt in. Stage rules belong to the loaded server resources. Each target may require several stages, and the principal must have all stages required by the applicable rules. Removing a script and running `/reload` clears its rules.
@@ -244,6 +268,6 @@ If the required stage is lost mid-job, the recipe check pauses work before furth
 | Soul Binder, painting, Enchanter, and fire | Packaged gameplay verified add, replace, and remove for soul binding, painting, and fire. The Enchanter manager, enchantment lookup, replacement, and removal ran in ZenScript. Enchanter crafting and JEI tests remain pending. |
 | Crafter and shaped entity storage | Both use the vanilla crafting recipe manager. The shaped entity storage serializer adds soul-storage output behavior. |
 | Ingredients | Packaged Forge verified exact conduit variants, distinct soul-vial states, and changes to conduit, entity-type, and dimension membership. |
-| Processing data | Set, get, and remove ran through the grinding ball, VAT, and range extender maps. Gameplay confirmed the edited VAT yield and its removal. Verification for modern grinding balls, wireless charger range, and client sync remains pending. Farming, solar, powered spawner, and Soul Engine rule editors remain pending. |
+| Processing data | Set, get, and remove ran through the grinding ball, VAT, and range extender maps. Gameplay confirmed the edited VAT yield and its removal, plus scripted farming, solar, powered spawner, and Soul Engine behavior. Modern grinding-ball and wireless charger gameplay and client sync remain pending. |
 | Addon inputs | Modded conduits transport optional resources such as Mekanism chemicals. Audit which resources are consumed by processing before exposing selectors. |
 | GameStages | Packaged Forge with the pinned companion mods verified exact and family lockout, saved inputs and fuel, rule clearing, and a world-stage fire grant. Multiplayer owner, manual feature, staged Crafter, and JEI checks remain pending. |

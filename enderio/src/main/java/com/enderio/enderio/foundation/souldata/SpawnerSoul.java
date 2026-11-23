@@ -47,6 +47,6 @@ public class SpawnerSoul {
 
     @SubscribeEvent
     static void addResource(AddReloadListenerEvent event) {
-        event.addListener(SPAWNER);
+        SPAWNER.addReloadListener(event);
     }
 }

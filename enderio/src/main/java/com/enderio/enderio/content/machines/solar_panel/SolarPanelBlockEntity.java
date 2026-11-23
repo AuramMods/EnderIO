@@ -202,7 +202,7 @@ public class SolarPanelBlockEntity extends EIOBlockEntity implements SoulBindabl
         }
 
         //When should the panel make power
-        var soulData = boundSoul.hasEntity() ? SolarSoul.SOLAR.matches(boundSoul.entityTypeId()).orElse(null) : null;
+        var soulData = boundSoul.hasEntity() ? SolarSoul.SOLAR.matches(level, boundSoul.entityTypeId()).orElse(null) : null;
         boolean day = true;
         boolean night = false;
         if (soulData != null) {

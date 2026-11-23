@@ -67,6 +67,6 @@ public class EngineSoul {
 
     @SubscribeEvent
     public static void addResource(AddReloadListenerEvent event) {
-        event.addListener(ENGINE);
+        ENGINE.addReloadListener(event);
     }
 }

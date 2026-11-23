@@ -50,6 +50,6 @@ public class SolarSoul {
 
     @SubscribeEvent
     public static void addResource(AddReloadListenerEvent event) {
-        event.addListener(SOLAR);
+        SOLAR.addReloadListener(event);
     }
 }

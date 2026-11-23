@@ -154,7 +154,7 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
         int energyCost = MachinesConfig.COMMON.DEFAULT_SPAWN_ENERGY_COST.get();
         MobSpawnMode spawnType = MachinesConfig.COMMON.SPAWN_TYPE.get();
 
-        var spawnDataOpt = SpawnerSoul.SPAWNER.matches(entityType);
+        var spawnDataOpt = SpawnerSoul.SPAWNER.matches(level, entityType);
         if (spawnDataOpt.isPresent()) {
             var data = spawnDataOpt.get();
             energyCost = data.power();
@@ -264,7 +264,7 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
 
         MobSpawnMode spawnType = MachinesConfig.COMMON.SPAWN_TYPE.get();
 
-        var spawnDataOpt = SpawnerSoul.SPAWNER.matches(entityType);
+        var spawnDataOpt = SpawnerSoul.SPAWNER.matches(level, entityType);
         if (spawnDataOpt.isPresent()) {
             spawnType = spawnDataOpt.get().spawnType();
         }
@@ -313,7 +313,7 @@ public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity impleme
 
     @Override
     public boolean isSoulValid(Soul soul) {
-        return soul.isEmpty() || SpawnerSoul.SPAWNER.matches(soul.entityTypeId()).isPresent();
+        return soul.isEmpty() || SpawnerSoul.SPAWNER.matches(level, soul.entityTypeId()).isPresent();
     }
 
     @Override

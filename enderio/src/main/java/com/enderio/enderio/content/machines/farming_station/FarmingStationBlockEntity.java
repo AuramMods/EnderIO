@@ -361,7 +361,7 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
 
     @Override
     public boolean isSoulValid(Soul soul) {
-        return soul.isEmpty() || FarmSoul.FARM.matches(soul.entityTypeId()).isPresent();
+        return soul.isEmpty() || FarmSoul.FARM.matches(level, soul.entityTypeId()).isPresent();
     }
 
     @Override
@@ -380,7 +380,7 @@ public class FarmingStationBlockEntity extends PoweredMachineBlockEntity impleme
     }
 
     private @Nullable FarmSoul.SoulData getSoulData() {
-        return boundSoul.hasEntity() ? FarmSoul.FARM.matches(boundSoul.entityTypeId()).orElse(null) : null;
+        return boundSoul.hasEntity() ? FarmSoul.FARM.matches(level, boundSoul.entityTypeId()).orElse(null) : null;
     }
 
     @Nullable

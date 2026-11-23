@@ -34,6 +34,12 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.OnDatapackSyncEvent;
+import net.minecraftforge.event.AddReloadListenerEvent;
+import net.minecraftforge.fml.util.thread.EffectiveSide;
+import net.minecraftforge.server.ServerLifecycleHooks;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.level.Level;
+import java.util.WeakHashMap;
 import com.enderio.enderio.foundation.network.EIONetwork;
 import org.slf4j.Logger;
 
@@ -53,6 +59,7 @@ import java.util.function.Function;
 public class SoulDataReloadListener<T extends SoulData> extends SimpleJsonResourceReloadListener {
     private static final Gson GSON = new Gson();
     public Map<ResourceLocation, T> map = new HashMap<>();
+    private final Map<RecipeManager, Map<ResourceLocation, T>> serverRules = new WeakHashMap<>();
     private final Codec<T> codec;
     private final String folderName;
     private static final Map<String, SoulDataReloadListener<? extends SoulData>> LOADED_SOUL_DATA = new HashMap<>();
@@ -88,6 +95,23 @@ public class SoulDataReloadListener<T extends SoulData> extends SimpleJsonResour
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> object, ResourceManager resourceManager,
             ProfilerFiller profiler) {
+        this.map = parse(object);
+    }
+
+    public void addReloadListener(AddReloadListenerEvent event) {
+        var owner = event.getServerResources().getRecipeManager();
+        event.addListener(new SimpleJsonResourceReloadListener(GSON, folderName) {
+            @Override
+            protected void apply(Map<ResourceLocation, JsonElement> object, ResourceManager resources, ProfilerFiller profiler) {
+                var rules = parse(object);
+                synchronized (serverRules) {
+                    serverRules.put(owner, rules);
+                }
+            }
+        });
+    }
+
+    private Map<ResourceLocation, T> parse(Map<ResourceLocation, JsonElement> object) {
         Map<ResourceLocation, T> newMap = new HashMap<>();
 
         for (Map.Entry<ResourceLocation, JsonElement> element : object.entrySet()) {
@@ -96,8 +120,35 @@ public class SoulDataReloadListener<T extends SoulData> extends SimpleJsonResour
             result.result().ifPresent(value -> newMap.put(value.getKey(), value));
         }
 
-        this.map = newMap;
-        LOGGER.info("Data loader for {} loaded {} jsons", this.folderName, this.map.size());
+        LOGGER.info("Data loader for {} loaded {} jsons", this.folderName, newMap.size());
+        return Map.copyOf(newMap);
+    }
+
+    public Map<ResourceLocation, T> rules(RecipeManager owner) {
+        synchronized (serverRules) {
+            return serverRules.getOrDefault(owner, Map.of());
+        }
+    }
+
+    public void set(RecipeManager owner, T data) {
+        synchronized (serverRules) {
+            var changed = new HashMap<>(rules(owner));
+            changed.put(data.getKey(), data);
+            serverRules.put(owner, Map.copyOf(changed));
+        }
+    }
+
+    public void remove(RecipeManager owner, ResourceLocation id) {
+        synchronized (serverRules) {
+            var changed = new HashMap<>(rules(owner));
+            changed.remove(id);
+            serverRules.put(owner, Map.copyOf(changed));
+        }
+    }
+
+    public Optional<JsonElement> encode(RecipeManager owner, ResourceLocation id) {
+        return Optional.ofNullable(rules(owner).get(id)).map(value ->
+                codec.encodeStart(JsonOps.INSTANCE, value).getOrThrow(false, message -> LOGGER.error("{}", message)));
     }
 
     /**
@@ -118,7 +169,7 @@ public class SoulDataReloadListener<T extends SoulData> extends SimpleJsonResour
             final Function<Map<ResourceLocation, T>, P> packetFactory) {
         return event -> {
             ServerPlayer player = event.getPlayer();
-            P packet = packetFactory.apply(this.map);
+            P packet = packetFactory.apply(rules(event.getPlayerList().getServer().getRecipeManager()));
 
             if (player == null) {
                 event.getPlayerList().getPlayers().forEach(target -> EIONetwork.sendToPlayer(target, packet));
@@ -132,10 +183,20 @@ public class SoulDataReloadListener<T extends SoulData> extends SimpleJsonResour
      * Returns an optional ISoulData implementation.
      */
     public Optional<T> matches(ResourceLocation entitytype) {
-        if (map.containsKey(entitytype)) {
-            return Optional.of(map.get(entitytype));
+        var server = ServerLifecycleHooks.getCurrentServer();
+        if (EffectiveSide.get().isServer() && server != null) {
+            return Optional.ofNullable(rules(server.getRecipeManager()).get(entitytype));
         }
-        return Optional.empty();
+        return Optional.ofNullable(map.get(entitytype));
+    }
+
+    public Optional<T> matches(Level level, ResourceLocation entitytype) {
+        return level == null ? matches(entitytype)
+                : Optional.ofNullable((level.isClientSide() ? map : rules(level.getRecipeManager())).get(entitytype));
+    }
+
+    public Optional<T> matches(Level level, EntityType<?> entitytype) {
+        return Optional.ofNullable(BuiltInRegistries.ENTITY_TYPE.getKey(entitytype)).flatMap(id -> matches(level, id));
     }
 
     /**

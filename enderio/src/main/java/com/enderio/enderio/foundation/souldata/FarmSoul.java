@@ -37,6 +37,6 @@ public class FarmSoul {
 
     @SubscribeEvent
     public static void addResource(AddReloadListenerEvent event) {
-        event.addListener(FARM);
+        FARM.addReloadListener(event);
     }
 }

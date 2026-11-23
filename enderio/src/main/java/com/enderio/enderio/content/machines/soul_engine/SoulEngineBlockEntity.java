@@ -128,7 +128,7 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
 
     @Override
     public boolean isSoulValid(Soul soul) {
-        return soul.isEmpty() || EngineSoul.ENGINE.matches(soul.entityTypeId()).isPresent();
+        return soul.isEmpty() || EngineSoul.ENGINE.matches(level, soul.entityTypeId()).isPresent();
     }
 
     @Override
@@ -150,7 +150,7 @@ public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements 
     }
 
     private @Nullable EngineSoul.SoulData getSoulData() {
-        return boundSoul.hasEntity() ? EngineSoul.ENGINE.matches(boundSoul.entityTypeId()).orElse(null) : null;
+        return boundSoul.hasEntity() ? EngineSoul.ENGINE.matches(level, boundSoul.entityTypeId()).orElse(null) : null;
     }
 
     private boolean hasRoomFor(int energy) {
