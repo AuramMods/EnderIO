@@ -3,6 +3,7 @@ minecraft = { strictly = "[1.20.1]", prefer = "1.20.1" }
 forge = "47.4.10"
 almostUnified = "1.20.1-0.10.1"
 jeiVersion = "15.20.0.129"
+craftTweaker = "14.0.59"
 ccTweaked = "1.121.0"
 jade = "11.13.3+forge"
 athena = "3.1.2"
@@ -27,6 +28,7 @@ jetbrainsAnnotations = { group = "org.jetbrains", name = "annotations", version 
 # loader uses the same display version. Human-readable versions are above.
 almostUnified = { group = "com.almostreliable.mods", name = "almostunified-forge", version.ref = "almostUnified" }
 jei = { group = "maven.modrinth", name = "jei", version = "p7yZWpEg" }
+craftTweaker = { group = "com.blamejared.crafttweaker", name = "CraftTweaker-forge-1.20.1", version.ref = "craftTweaker" }
 ccTweaked = { group = "maven.modrinth", name = "cc-tweaked", version = "Qm9iIIEY" }
 jade = { group = "maven.modrinth", name = "jade", version = "xJQHCmWJ" }
 athena = { group = "maven.modrinth", name = "athena-ctm", version = "DULOQFj7" }

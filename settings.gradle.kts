@@ -76,6 +76,7 @@ dependencyResolutionManagement {
             name = "Jared's Maven"
             url = uri("https://maven.blamejared.com")
             content {
+                includeGroup("com.blamejared.crafttweaker")
                 includeGroup("vazkii.patchouli")
                 includeGroup("net.darkhax.bookshelf")
                 includeGroup("net.darkhax.enchdesc")

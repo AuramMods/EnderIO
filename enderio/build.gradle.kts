@@ -132,6 +132,7 @@ dependencies {
     // JEI
     modCompileOnly(libs.jei)
     "modLocalRuntime"(libs.jei)
+    modCompileOnly(libs.craftTweaker)
 
     // CC: Tweaked
     modCompileOnly(libs.ccTweaked)

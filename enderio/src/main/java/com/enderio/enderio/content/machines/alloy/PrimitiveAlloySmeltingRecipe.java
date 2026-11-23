@@ -7,7 +7,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 
 /** The alloy recipes used by the fuel-fired smelter in Forge 6.x worlds. */
 public final class PrimitiveAlloySmeltingRecipe extends AlloySmeltingRecipe {
-    private PrimitiveAlloySmeltingRecipe(AlloySmeltingRecipe recipe, ResourceLocation id) {
+    public PrimitiveAlloySmeltingRecipe(AlloySmeltingRecipe recipe, ResourceLocation id) {
         super(recipe.inputs(), recipe.output(), recipe.energy(), recipe.experience(), false, id);
         if (recipe.isSmelting()) {
             throw new IllegalArgumentException("Primitive alloy recipes cannot use vanilla smelting");
