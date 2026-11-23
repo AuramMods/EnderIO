@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.storage.crafter;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
 import com.enderio.enderio.integration.gamestages.StageRules;
 import net.minecraft.server.level.ServerLevel;
 
@@ -37,6 +38,12 @@ import java.util.Queue;
 
 // TODO: Might want to see if we can adapt this into a crafting task.
 public class CrafterBlockEntity extends PoweredMachineBlockEntity {
+
+    @Override
+    public StageFeature automationStageFeature() {
+        return StageFeature.CRAFTER_AUTOMATION;
+    }
+
     private static final String OUTPUT_BUFFER_TAG = "OutputBuffer";
     private static final ItemDataKey<List<ItemStack>> ITEM_OUTPUT_BUFFER = new ItemDataKey<>(
         EnderIO.rl("crafter_output_buffer"), StackDataCodecs.OPTIONAL_ITEM.listOf(), false);

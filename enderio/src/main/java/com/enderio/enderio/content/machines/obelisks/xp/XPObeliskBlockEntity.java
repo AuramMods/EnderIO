@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.obelisks.xp;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
 import com.enderio.core.common.capability.EnderFluidUtil;
 import net.minecraft.world.item.ItemStack;
 import com.enderio.enderio.foundation.attachment.FluidTankUser;
@@ -26,6 +27,12 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 public class XPObeliskBlockEntity extends MachineBlockEntity implements FluidTankUser {
+
+    @Override
+    public StageFeature automationStageFeature() {
+        return StageFeature.OBELISK;
+    }
+
 
     private final MachineFluidHandler fluidHandler;
     private static final TankAccess TANK = new TankAccess();

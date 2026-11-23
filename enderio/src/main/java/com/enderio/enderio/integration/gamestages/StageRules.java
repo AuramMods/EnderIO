@@ -1,13 +1,5 @@
 package com.enderio.enderio.integration.gamestages;
 
-import com.enderio.enderio.content.machines.farming_station.FarmingStationBlockEntity;
-import com.enderio.enderio.content.machines.obelisks.ObeliskBlockEntity;
-import com.enderio.enderio.content.machines.obelisks.weather.WeatherObeliskBlockEntity;
-import com.enderio.enderio.content.machines.obelisks.xp.XPObeliskBlockEntity;
-import com.enderio.enderio.content.machines.powered_spawner.PoweredSpawnerBlockEntity;
-import com.enderio.enderio.content.machines.powered_spawner.PoweredSpawnerMode;
-import com.enderio.enderio.content.machines.soul_engine.SoulEngineBlockEntity;
-import com.enderio.enderio.content.storage.crafter.CrafterBlockEntity;
 import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -128,7 +120,7 @@ public final class StageRules {
         if (!permitsOwner(level, owner, Kind.BLOCK, block)) {
             return false;
         }
-        var feature = automationFeature(machine);
+        var feature = machine.automationStageFeature();
         return feature == null || permitsOwner(level, owner, Kind.ACTION, feature.id());
     }
 
@@ -139,26 +131,7 @@ public final class StageRules {
         var block = BuiltInRegistries.BLOCK.getKey(machine.getBlockState().getBlock());
         return permits(serverPlayer.serverLevel(), serverPlayer, Kind.BLOCK, block)
                 && permitsAction(player, StageFeature.MACHINE_USE)
-                && (!isObelisk(machine) || permitsAction(player, StageFeature.OBELISK));
-    }
-
-    @Nullable
-    private static StageFeature automationFeature(MachineBlockEntity machine) {
-        if (machine instanceof PoweredSpawnerBlockEntity spawner) {
-            return spawner.getMode() == PoweredSpawnerMode.CAPTURE ? StageFeature.SOUL_CAPTURE : StageFeature.SOUL_SPAWNING;
-        }
-        if (machine instanceof CrafterBlockEntity) {
-            return StageFeature.CRAFTER_AUTOMATION;
-        }
-        if (machine instanceof SoulEngineBlockEntity || machine instanceof FarmingStationBlockEntity) {
-            return StageFeature.SOUL_DEVICE;
-        }
-        return isObelisk(machine) ? StageFeature.OBELISK : null;
-    }
-
-    private static boolean isObelisk(MachineBlockEntity machine) {
-        return machine instanceof ObeliskBlockEntity<?> || machine instanceof XPObeliskBlockEntity
-                || machine instanceof WeatherObeliskBlockEntity;
+                && (machine.automationStageFeature() != StageFeature.OBELISK || permitsAction(player, StageFeature.OBELISK));
     }
 
     private static synchronized boolean hasRules(ServerLevel level) {

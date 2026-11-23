@@ -25,7 +25,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayer;
 
-import java.util.HashMap;
 import java.util.UUID;
 
 public class SolarChargingTests {
@@ -107,7 +106,8 @@ public class SolarChargingTests {
                 var level = helper.getLevel();
                 var solar = helper.getBlockEntity(0, 1, 0, SolarPanelBlockEntity.class);
                 var phantom = Soul.of(EntityType.PHANTOM);
-                var originalData = SolarSoul.SOLAR.map;
+                var recipes = level.getRecipeManager();
+                var originalData = SolarSoul.SOLAR.matches(level, phantom.entityTypeId()).orElseThrow();
                 long originalTime = level.getDayTime();
                 try {
                     helper.setBlock(0, 2, 0, EIOFluids.LIQUID_DARKNESS.block().get());
@@ -120,10 +120,9 @@ public class SolarChargingTests {
                     helper.assertTrue(Soul.isSameEntity(solar.getBoundSoul(), phantom), "phantom restored on disk load");
                     helper.assertValueEqual(solar.getGenerationRate(), 64, "phantom restores night production immediately");
 
-                    SolarSoul.SOLAR.map = new HashMap<>(originalData);
-                    SolarSoul.SOLAR.map.remove(phantom.entityTypeId());
+                    SolarSoul.SOLAR.remove(recipes, phantom.entityTypeId());
                     helper.assertValueEqual(solar.getGenerationRate(), 0, "removed soul rule clears night production");
-                    SolarSoul.SOLAR.map = originalData;
+                    SolarSoul.SOLAR.set(recipes, originalData);
                     helper.assertValueEqual(solar.getGenerationRate(), 64, "restored rule takes effect on the loaded panel");
                     level.setDayTime(6000);
                     helper.setBlock(0, 2, 0, EIOFluids.LIQUID_SUNSHINE.block().get());
@@ -131,7 +130,7 @@ public class SolarChargingTests {
                     solar.bindSoul(Soul.EMPTY);
                     helper.assertValueEqual(solar.getGenerationRate(), 64, "unbinding restores daylight generation");
                 } finally {
-                    SolarSoul.SOLAR.map = originalData;
+                    SolarSoul.SOLAR.set(recipes, originalData);
                     level.setDayTime(originalTime);
                 }
             })

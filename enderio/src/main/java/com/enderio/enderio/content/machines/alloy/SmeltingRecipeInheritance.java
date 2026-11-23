@@ -1,7 +1,6 @@
 package com.enderio.enderio.content.machines.alloy;
 
 import com.enderio.core.common.recipes.SizedIngredient;
-import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.EnderIOAPI;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.RegistryAccess;
@@ -32,7 +31,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /** Derives alloy recipes from the current furnace recipes during a server resource reload. */
-@Mod.EventBusSubscriber(modid = EnderIO.MOD_ID)
+@Mod.EventBusSubscriber(modid = EnderIOAPI.MOD_ID)
 public final class SmeltingRecipeInheritance {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Map<RecipeManager, Reload> SCRIPT_RELOADS = Collections.synchronizedMap(new WeakHashMap<>());

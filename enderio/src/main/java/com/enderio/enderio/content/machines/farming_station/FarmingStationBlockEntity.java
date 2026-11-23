@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.farming_station;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
 import com.enderio.core.annotations.UseOnly;
 import com.enderio.enderio.api.capacitor.CapacitorModifier;
 import com.enderio.enderio.api.capacitor.QuadraticScalable;
@@ -51,6 +52,12 @@ import java.util.List;
 import java.util.Objects;
 
 public class FarmingStationBlockEntity extends PoweredMachineBlockEntity implements RangedActor, FarmingMachine, SoulBindable {
+
+    @Override
+    public StageFeature automationStageFeature() {
+        return StageFeature.SOUL_DEVICE;
+    }
+
     private static final QuadraticScalable ENERGY_CAPACITY = new QuadraticScalable(CapacitorModifier.ENERGY_CAPACITY,
             MachinesConfig.COMMON.ENERGY.FARM_CAPACITY);
     private static final QuadraticScalable ENERGY_USAGE = new QuadraticScalable(CapacitorModifier.ENERGY_USE,

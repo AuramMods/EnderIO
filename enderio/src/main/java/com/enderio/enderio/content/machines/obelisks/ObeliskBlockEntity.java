@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.obelisks;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
 import net.minecraft.world.item.ItemStack;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.core.annotations.UseOnly;
@@ -36,6 +37,12 @@ import java.util.Objects;
 
 public abstract class ObeliskBlockEntity<T extends ObeliskBlockEntity<T>> extends PoweredMachineBlockEntity
         implements RangedActor {
+
+    @Override
+    public StageFeature automationStageFeature() {
+        return StageFeature.OBELISK;
+    }
+
 
     private @Nullable AABB aabb;
     private @Nullable ObeliskAreaManager<T> registeredManager;

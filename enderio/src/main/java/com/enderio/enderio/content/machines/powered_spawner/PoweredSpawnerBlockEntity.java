@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.powered_spawner;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
 import com.enderio.enderio.EnderIO;
 import com.enderio.enderio.api.EnderIOCapabilities;
 import com.enderio.core.annotations.UseOnly;
@@ -51,6 +52,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 public class PoweredSpawnerBlockEntity extends PoweredMachineBlockEntity implements SoulBindable {
+
+    @Override
+    public StageFeature automationStageFeature() {
+        return getMode() == PoweredSpawnerMode.CAPTURE ? StageFeature.SOUL_CAPTURE : StageFeature.SOUL_SPAWNING;
+    }
+
     public static final SingleSlotAccess INPUT = new SingleSlotAccess();
     public static final SingleSlotAccess OUTPUT = new SingleSlotAccess();
 

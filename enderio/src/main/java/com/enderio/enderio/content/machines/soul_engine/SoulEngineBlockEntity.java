@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.soul_engine;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
 import com.enderio.core.common.capability.EnderFluidUtil;
 import net.minecraft.world.item.ItemStack;
 import com.enderio.enderio.api.capacitor.CapacitorModifier;
@@ -43,6 +44,12 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 
 public class SoulEngineBlockEntity extends PoweredMachineBlockEntity implements FluidTankUser, SoulBindable {
+
+    @Override
+    public StageFeature automationStageFeature() {
+        return StageFeature.SOUL_DEVICE;
+    }
+
 
     private static final QuadraticScalable CAPACITY = new QuadraticScalable(CapacitorModifier.ENERGY_CAPACITY,
             MachinesConfig.COMMON.ENERGY.SOUL_ENGINE_CAPACITY);

@@ -1,5 +1,6 @@
 package com.enderio.enderio.content.machines.obelisks.weather;
 
+import com.enderio.enderio.integration.gamestages.StageFeature;
 import com.enderio.core.common.recipes.OutputStack;
 import com.enderio.enderio.api.io.IOMode;
 import com.enderio.enderio.foundation.attachment.FluidTankUser;
@@ -37,6 +38,12 @@ import java.util.Calendar;
 import java.util.List;
 
 public class WeatherObeliskBlockEntity extends MachineBlockEntity implements FluidTankUser {
+
+    @Override
+    public StageFeature automationStageFeature() {
+        return StageFeature.OBELISK;
+    }
+
 
     public static final ItemStack FIREWORK = new ItemStack(Items.FIREWORK_ROCKET, 1);
     private final MachineFluidHandler fluidHandler;

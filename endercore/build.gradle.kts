@@ -47,6 +47,10 @@ tasks.named<JavaCompile>(gameTestSourceSet.compileJavaTaskName) {
         "foundation/block/MachineWrench.java",
         "foundation/block/WrenchableBlockHandler.java",
         "foundation/block/entity/MachineBlockEntity.java",
+        "integration/gamestages/GameStagesAccess.java",
+        "integration/gamestages/RecipeStagesAccess.java",
+        "integration/gamestages/StageFeature.java",
+        "integration/gamestages/StageRules.java",
         "foundation/block/entity/PoweredMachineBlockEntity.java",
         "foundation/block/entity/MachineInstallable.java",
         "foundation/block/entity/flags/CapacitorSupport.java",
@@ -174,6 +178,8 @@ tasks.named<JavaCompile>(sourceSets.test.get().compileJavaTaskName) {
 
 dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
+    add(gameTestSourceSet.compileOnlyConfigurationName, libs.gameStages)
+    add(gameTestSourceSet.compileOnlyConfigurationName, libs.recipeStages)
     testImplementation(libs.junitJupiter)
     testRuntimeOnly(libs.junitPlatformLauncher)
     testRuntimeOnly("org.openjdk.nashorn:nashorn-core:15.4")

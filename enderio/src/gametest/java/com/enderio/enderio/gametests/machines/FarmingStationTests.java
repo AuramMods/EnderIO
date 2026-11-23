@@ -23,7 +23,6 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmBlock;
 
 import java.util.List;
-import java.util.Map;
 
 public class FarmingStationTests {
     private static final BlockPos WHEAT_PLOT = new BlockPos(2, 3, 1);
@@ -145,9 +144,10 @@ public class FarmingStationTests {
             var station = helper.getBlockEntity(0, 1, 0, FarmingStationBlockEntity.class);
             var bee = Soul.of(EntityType.BEE);
             var id = bee.entityTypeId();
-            var previous = FarmSoul.FARM.map;
+            var recipes = helper.getLevel().getRecipeManager();
+            var previous = FarmSoul.FARM.rules(recipes).get(id);
             try {
-                FarmSoul.FARM.map = Map.of(id, new FarmSoul.SoulData(id, 0f, 0, 1f));
+                FarmSoul.FARM.set(recipes, new FarmSoul.SoulData(id, 0f, 0, 1f));
                 station.bindSoul(bee);
                 var fertilizer = FarmingStationBlockEntity.BONEMEAL.get(0);
                 fertilizer.setStackInSlot(station, new ItemStack(Items.BONE_MEAL, 4));
@@ -159,7 +159,8 @@ public class FarmingStationTests {
                 helper.assertTrue(reopened.consumeBonemeal(), "bound fertilizer is available immediately on load");
                 helper.assertValueEqual(fertilizer.getItemStack(reopened).getCount(), 4, "restored bee rule preserves fertilizer");
             } finally {
-                FarmSoul.FARM.map = previous;
+                if (previous == null) FarmSoul.FARM.remove(recipes, id);
+                else FarmSoul.FARM.set(recipes, previous);
             }
             helper.startSequence().thenSucceed();
         });
@@ -172,29 +173,31 @@ public class FarmingStationTests {
             var station = helper.getBlockEntity(0, 1, 0, FarmingStationBlockEntity.class);
             var bee = Soul.of(EntityType.BEE);
             var id = bee.entityTypeId();
-            var previous = FarmSoul.FARM.map;
+            var recipes = helper.getLevel().getRecipeManager();
+            var previous = FarmSoul.FARM.rules(recipes).get(id);
             var conserve = new FarmSoul.SoulData(id, 0f, 0, 1f);
             try {
-                FarmSoul.FARM.map = Map.of(id, conserve);
+                FarmSoul.FARM.set(recipes, conserve);
                 station.bindSoul(bee);
                 var fertilizer = FarmingStationBlockEntity.BONEMEAL.get(0);
                 fertilizer.setStackInSlot(station, new ItemStack(Items.BONE_MEAL, 4));
                 helper.assertTrue(station.consumeBonemeal(), "the first fertilizer action can proceed");
                 helper.assertValueEqual(fertilizer.getItemStack(station).getCount(), 4, "the first rule saves a unit");
 
-                FarmSoul.FARM.map = Map.of(id, new FarmSoul.SoulData(id, 1f, 0, 1f));
+                FarmSoul.FARM.set(recipes, new FarmSoul.SoulData(id, 1f, 0, 1f));
                 helper.assertTrue(station.consumeBonemeal(), "the updated fertilizer action can proceed");
                 helper.assertValueEqual(fertilizer.getItemStack(station).getCount(), 3, "the replacement rule consumes a unit");
 
-                FarmSoul.FARM.map = Map.of(id, conserve);
+                FarmSoul.FARM.set(recipes, conserve);
                 station.consumeBonemeal();
                 helper.assertValueEqual(fertilizer.getItemStack(station).getCount(), 3, "the conserving rule takes effect again");
-                FarmSoul.FARM.map = Map.of();
+                FarmSoul.FARM.remove(recipes, id);
                 station.consumeBonemeal();
                 helper.assertValueEqual(fertilizer.getItemStack(station).getCount(), 2, "removing the rule restores default consumption");
                 helper.assertTrue(Soul.isSameEntity(station.getBoundSoul(), bee), "removing a rule preserves the stored soul");
             } finally {
-                FarmSoul.FARM.map = previous;
+                if (previous == null) FarmSoul.FARM.remove(recipes, id);
+                else FarmSoul.FARM.set(recipes, previous);
             }
             helper.startSequence().thenSucceed();
         });
