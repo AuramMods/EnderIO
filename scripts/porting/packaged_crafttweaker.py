@@ -10,7 +10,7 @@ import time
 
 sys.dont_write_bytecode = True
 from packaged_glass_progression import Smelt, finished_smelter, prepare_smelter, start_smelter, supply
-from packaged_server_smoke import ROOT, digest
+from packaged_server_smoke import ROOT, Server, digest
 from packaged_spawners import prepare_profile, run_stage
 
 
@@ -67,6 +67,34 @@ def removed(server, results):
                         f'{{Slot:1,Count:2}},{{Slot:2,Count:1}}]}}}} unless data block {PRIMITIVE} Task', results)
 
 
+def diagnostics(args, directory, report):
+    scripts = directory / "scripts"
+    invalid_energy = '''<recipetype:enderio:alloy_smelting>.addRecipe(
+    "invalid_energy", <item:minecraft:amethyst_shard>, 0, 0.0f, <item:minecraft:stick>);
+'''
+    stages = '''import mods.enderio.EnderIOStages;
+EnderIOStages.requireRecipe(<resource:enderio:alloy_smelting/red_dye>, "parts");
+'''
+    for name, source, message in (
+            ("invalid_energy", invalid_energy, "Energy must be positive"),
+            ("missing_stage_mod", stages, "Ender IO stage rules require GameStages to be installed")):
+        script = scripts / f"{name}.zs"
+        script.write_text(source)
+        server = Server(directory, args.java, name)
+        try:
+            server.wait('For help, type "help"', timeout=150)
+            log = (directory / "logs/crafttweaker.log").read_text()
+            if message not in log:
+                raise AssertionError(f"Expected CraftTweaker diagnostic {message!r}; see {server.log_path}")
+            report["assertions"].append({"assertion": message, "passed": True})
+        finally:
+            exit_code = server.stop()
+            script.unlink()
+            report["servers"].append({"stage": name, "exit": exit_code, "log": str(server.log_path)})
+        if exit_code:
+            raise RuntimeError(f"Forge failed after reporting an invalid script; see {server.log_path}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True)
@@ -120,6 +148,7 @@ if powered.getRecipeByName("crafttweaker:qa_powered_alloy") == null
 }
 """)
         run_stage(args, directory, report, "removed", removed)
+        diagnostics(args, directory, report)
         report["passed"] = True
     finally:
         result = directory / "crafttweaker-results.json"
