@@ -2,6 +2,8 @@ package com.enderio.enderio.client;
 
 import com.enderio.enderio.client.foundation.model.ModelRenderUtil;
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.math.Axis;
+import com.mojang.math.Transformation;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -10,13 +12,44 @@ import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.IQuadTransformer;
+import net.minecraftforge.client.model.QuadTransformers;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Uses native CPU vertex/image buffers only: no Minecraft instance, window or GL context. */
 class ModelRenderUtilTests {
+    @Test
+    void transformedConduitQuadsExposeFacingOfFinishedGeometry() {
+        try (var sprite = new TestSprite(16, 16)) {
+            var rotations = List.of(Axis.XP.rotationDegrees(90), Axis.XN.rotationDegrees(90),
+                Axis.ZP.rotationDegrees(90), Axis.ZN.rotationDegrees(90), Axis.ZP.rotationDegrees(180));
+            for (var quaternion : rotations) {
+                var rotation = new Transformation(null, quaternion, null, null).applyOrigin(new Vector3f(0.5f));
+                for (Direction sourceFace : Direction.values()) {
+                    var source = ModelRenderUtil.createQuad(
+                        ModelRenderUtil.createQuadVerts(sourceFace, 7 / 16f, 9 / 16f, 9 / 16f), sprite);
+                    var rotated = QuadTransformers.applying(rotation).process(source);
+                    var expectedFacing = Direction.rotate(rotation.getMatrix(), sourceFace);
+
+                    // Forge leaves the original facing on the transformed copy.
+                    assertEquals(sourceFace, rotated.getDirection());
+                    var finished = ModelRenderUtil.rebuildTransformedQuad(rotated);
+                    assertNotSame(rotated, finished);
+                    assertEquals(expectedFacing, finished.getDirection(), sourceFace + " face rotated by " + quaternion);
+                    assertArrayEquals(rotated.getVertices(), finished.getVertices());
+                    assertSame(rotated.getSprite(), finished.getSprite());
+                    assertEquals(rotated.getTintIndex(), finished.getTintIndex());
+                    assertEquals(rotated.isShade(), finished.isShade());
+                    assertEquals(rotated.hasAmbientOcclusion(), finished.hasAmbientOcclusion());
+                }
+            }
+        }
+    }
+
     @Test
     void allSixFacesHaveOutwardNormalsAndCorrectBounds() {
         try (var sprite = new TestSprite(16, 16)) {

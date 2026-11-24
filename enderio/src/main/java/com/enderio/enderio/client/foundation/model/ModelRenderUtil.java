@@ -1,6 +1,7 @@
 package com.enderio.enderio.client.foundation.model;
 
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.FaceBakery;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.util.FastColor;
@@ -8,6 +9,13 @@ import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
 import org.joml.Vector3f;
 
 public class ModelRenderUtil {
+    public static BakedQuad rebuildTransformedQuad(BakedQuad quad) {
+        // Embeddium caches normals and face flags in the constructor. Give it the final vertices.
+        var vertices = quad.getVertices();
+        return new BakedQuad(vertices, quad.getTintIndex(), FaceBakery.calculateFacing(vertices), quad.getSprite(),
+            quad.isShade(), quad.hasAmbientOcclusion());
+    }
+
     /**
      * Helper to create vertices for a quad face. Simplifies a lot.
      */
