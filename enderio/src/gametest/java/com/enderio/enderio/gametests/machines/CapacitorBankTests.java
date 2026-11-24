@@ -5,10 +5,15 @@ import com.enderio.core.common.energy.ItemStackEnergy;
 import com.enderio.enderio.api.io.IOMode;
 import com.enderio.enderio.api.io.RedstoneControl;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity;
+import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankMenu;
 import com.enderio.enderio.content.machines.capacitor_bank.CapacitorTier;
 import com.enderio.enderio.content.machines.capacitor_bank.DisplayMode;
+import com.enderio.enderio.foundation.network.MachinePayloadHandler;
+import com.enderio.enderio.foundation.network.packets.ServerboundCycleIOConfigPacket;
 import com.enderio.enderio.gametests.util.EnderGameTestHelper;
 import com.enderio.enderio.init.EIOBlocks;
+import com.enderio.enderio.init.EIOItems;
+import com.mojang.authlib.GameProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -18,10 +23,12 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -30,6 +37,7 @@ import com.enderio.enderio.gametests.util.GameplayTest;
 import com.enderio.enderio.gametests.util.FixtureTemplate;
 import com.enderio.enderio.gametests.util.FixtureBuilder;
 
+import java.util.UUID;
 import java.util.function.Supplier;
 
 // Scenario group: machines.capacitor_bank
@@ -160,6 +168,90 @@ public class CapacitorBankTests {
                 helper.assertValueEqual(storage.extractEnergy(capacity, false), 0, "removed view cannot spend the carried charge");
             })
             .thenSucceed());
+    }
+
+    @GameTest
+    public static void unsetFacesPowerAdjacentMachines(GameplayTest test) {
+        var bankBlock = EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get();
+        var charger = EIOBlocks.WIRED_CHARGER.get().defaultBlockState();
+        test.registerGameTestTemplate(() -> FixtureBuilder.withSize(2, 2, 1)
+            .set(0, 0, 0, bankBlock.defaultBlockState())
+            .set(0, 1, 0, charger)
+            .set(1, 0, 0, charger));
+        test.onGameTest(EnderGameTestHelper.class, helper -> {
+            var bank = helper.getBlockEntity(0, 1, 0, CapacitorBankBlockEntity.class);
+            var input = bank.getCapability(ForgeCapabilities.ENERGY, Direction.NORTH).orElseThrow(AssertionError::new);
+            helper.startSequence().thenExecute(() -> {
+                helper.insertIntoContainer(0, 2, 0, EIOItems.BASIC_CAPACITOR.get(), 1);
+                helper.insertIntoContainer(1, 1, 0, EIOItems.BASIC_CAPACITOR.get(), 1);
+                helper.assertValueEqual(bank.getIOMode(Direction.UP), IOMode.BOTH, "unset upper face");
+                helper.assertValueEqual(bank.getIOMode(Direction.EAST), IOMode.BOTH, "unset horizontal face");
+                helper.assertValueEqual(bank.getIOOverlayMode(Direction.EAST), IOMode.NONE, "unset face stays unmarked");
+                helper.assertValueEqual(input.receiveEnergy(2048, false), 2048, "unset face accepts an external charge");
+            }).thenExecuteAfter(3, () -> {
+                helper.assertEnergyStored(0, 2, 0, 1024);
+                helper.assertEnergyStored(1, 1, 0, 1024);
+                helper.assertEnergyStored(0, 1, 0, 0);
+                bank.setIOMode(Direction.UP, IOMode.NONE);
+                bank.setIOMode(Direction.EAST, IOMode.PULL);
+                helper.provideEnergyExact(0, 1, 0, 2048);
+            }).thenExecuteAfter(3, () -> {
+                helper.assertEnergyStored(0, 2, 0, 1024);
+                helper.assertEnergyStored(1, 1, 0, 1024);
+                helper.assertEnergyStored(0, 1, 0, 2048);
+                bank.setIOMode(Direction.UP, IOMode.PUSH);
+                bank.setIOMode(Direction.EAST, IOMode.DISABLED);
+                bank.setNetworkRedstoneControl(RedstoneControl.NEVER_ACTIVE);
+            }).thenExecuteAfter(3, () -> {
+                helper.assertEnergyStored(0, 2, 0, 1024);
+                helper.assertEnergyStored(1, 1, 0, 1024);
+                helper.assertEnergyStored(0, 1, 0, 2048);
+                bank.setNetworkRedstoneControl(RedstoneControl.ALWAYS_ACTIVE);
+            }).thenExecuteAfter(3, () -> {
+                helper.assertEnergyStored(0, 2, 0, 3072);
+                helper.assertEnergyStored(1, 1, 0, 1024);
+                helper.assertEnergyStored(0, 1, 0, 0);
+            }).thenSucceed();
+        });
+    }
+
+    @GameTest
+    public static void openBankMenuCanEditDistantMembersOfItsOwnNetwork(GameplayTest test) {
+        var bankBlock = EIOBlocks.CAPACITOR_BANKS.get(CapacitorTier.BASIC).get().defaultBlockState();
+        test.registerGameTestTemplate(() -> {
+            var builder = FixtureBuilder.withSize(11, 1, 1);
+            for (int i = 0; i <= 8; i++) {
+                builder.set(i, 0, 0, bankBlock);
+            }
+            return builder.set(10, 0, 0, bankBlock);
+        });
+        test.onGameTest(EnderGameTestHelper.class, helper -> helper.startSequence().thenExecute(() -> {
+            var player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "CapBankFaces"));
+            player.setGameMode(GameType.SURVIVAL);
+            var opened = helper.getBlockEntity(0, 1, 0, CapacitorBankBlockEntity.class);
+            var connected = helper.getBlockEntity(8, 1, 0, CapacitorBankBlockEntity.class);
+            var separate = helper.getBlockEntity(10, 1, 0, CapacitorBankBlockEntity.class);
+            var stand = Vec3.atCenterOf(opened.getBlockPos().south());
+            player.moveTo(stand.x, stand.y, stand.z, 0, 0);
+            var menu = new CapacitorBankMenu(1, player.getInventory(), opened);
+            player.containerMenu = menu;
+            helper.assertTrue(menu.stillValid(player), "the opened bank remains in menu reach");
+            helper.assertTrue(!player.canReach(connected.getBlockPos(), 1),
+                "the selected connected bank is outside ordinary block reach");
+
+            var handler = MachinePayloadHandler.Server.getInstance();
+            var packet = new ServerboundCycleIOConfigPacket(connected.getBlockPos(), Direction.SOUTH);
+            handler.handleCycleIOConfigPacket(packet, player);
+            helper.assertValueEqual(connected.getIOMode(Direction.SOUTH), IOMode.DISABLED, "click cycles the distant member");
+            helper.assertValueEqual(connected.getIOOverlayMode(Direction.SOUTH), IOMode.DISABLED, "configured face is marked");
+            helper.assertValueEqual(connected.getIOMode(Direction.NORTH), IOMode.BOTH, "the opposite face keeps its mode");
+            handler.handleCycleIOConfigPacket(new ServerboundCycleIOConfigPacket(separate.getBlockPos(), Direction.SOUTH), player);
+            helper.assertValueEqual(separate.getIOMode(Direction.SOUTH), IOMode.BOTH, "a separate bank cannot be edited remotely");
+
+            player.containerMenu = player.inventoryMenu;
+            handler.handleCycleIOConfigPacket(packet, player);
+            helper.assertValueEqual(connected.getIOMode(Direction.SOUTH), IOMode.DISABLED, "a closed menu cannot authorize remote edits");
+        }).thenSucceed());
     }
 
     @GameTest

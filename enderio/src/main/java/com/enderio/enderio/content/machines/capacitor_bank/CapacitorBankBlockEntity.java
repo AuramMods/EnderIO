@@ -223,7 +223,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
         if (isValidPushTargetCacheDirty) {
             validPushTargetCache.clear();
             for (Direction side : Direction.values()) {
-                if (side == Direction.UP) {
+                if (!getIOMode(side).canPush()) {
                     continue;
                 }
 
@@ -236,8 +236,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
                     () -> isValidPushTargetCacheDirty = true));
 
                 var energyStorage = cache.getCapability();
-                if (energyStorage != null && !(energyStorage instanceof CapacitorBankEnergyStorage) && energyStorage.canReceive() &&
-                    getIOMode(side).canPush()) {
+                if (energyStorage != null && !(energyStorage instanceof CapacitorBankEnergyStorage) && energyStorage.canReceive()) {
                     validPushTargetCache.add(new SidedEnergy(energyStorage, new CapacitorBankNetwork.SidedPos(getBlockPos(), side)));
                 }
             }
@@ -249,8 +248,10 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
 
     private void setIOConfig(IOConfig ioConfig) {
         this.ioConfig = ioConfig;
+        isValidPushTargetCacheDirty = true;
 
         if (level != null) {
+            CapabilityUtil.refresh(this);
             setChanged();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
         }
@@ -258,7 +259,7 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
 
     @Override
     public IOMode getIOMode(Direction side) {
-        return ioConfig.getMode(translateIOSide(side));
+        return ioConfig.modes().getOrDefault(translateIOSide(side), IOMode.BOTH);
     }
 
     @Override
@@ -272,14 +273,13 @@ public class CapacitorBankBlockEntity extends EIOBlockEntity implements MenuProv
     }
 
     @Override
-    public void setIOMode(Direction side, IOMode mode) {
-        Direction localSide = translateIOSide(side);
-        setIOConfig(ioConfig.withMode(localSide, mode));
+    public IOMode getIOOverlayMode(Direction side) {
+        return ioConfig.getMode(translateIOSide(side));
+    }
 
-        // Invalidate caps
-        CapabilityUtil.refresh(this);
-        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
-        isValidPushTargetCacheDirty = true;
+    @Override
+    public void setIOMode(Direction side, IOMode mode) {
+        setIOConfig(ioConfig.withMode(translateIOSide(side), mode));
     }
 
     @Override

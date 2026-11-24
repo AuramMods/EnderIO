@@ -69,9 +69,6 @@ public class EnergyConduitTests {
                     EnergyConduitConnectionConfig.DEFAULT
                         .withIsExtract(false)
                         .withIsInsert(true)))
-            .thenExecute(() -> helper.changeIoConfig(0, 1, 0, ioConfigurable -> {
-                ioConfigurable.setIOMode(Direction.EAST, IOMode.PUSH);
-            }))
             .thenExecute(() -> helper.provideEnergyExact(0, 1, 0, transferRate * 2))
             .thenExecuteAfter(10, () -> {
                 int sourceEnergy = helper.getEnergyStored(0, 1, 0);

@@ -4,6 +4,8 @@ import com.enderio.enderio.api.io.IOConfigurable;
 import com.enderio.enderio.content.machines.alloy.AlloyRecipeTransfer;
 import com.enderio.enderio.content.machines.alloy.AlloySmelterMenu;
 import com.enderio.enderio.content.machines.alloy.AlloySmeltingRecipe;
+import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity;
+import com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankMenu;
 import com.enderio.enderio.content.enderface.EnderfaceBlockEntity;
 import com.enderio.enderio.content.storage.crafter.CrafterMenu;
 import com.enderio.core.common.menu.MenuRecipeTransfer;
@@ -77,11 +79,13 @@ public class MachinePayloadHandler {
 
         public void handleCycleIOConfigPacket(ServerboundCycleIOConfigPacket packet, Player player) {
             var level = player.level();
-            if (player.isSpectator() || !level.hasChunkAt(packet.pos()) || !player.canReach(packet.pos(), 1)
+            if (player.isSpectator() || !level.hasChunkAt(packet.pos())
                     || !level.mayInteract(player, packet.pos())) return;
-            BlockEntity be = level.getBlockEntity(packet.pos());
-
-            if (be instanceof IOConfigurable ioConfigurable) {
+            BlockEntity target = level.getBlockEntity(packet.pos());
+            if (target instanceof IOConfigurable ioConfigurable && ioConfigurable.isIOConfigMutable()
+                    && (player.canReach(packet.pos(), 1)
+                        || target instanceof CapacitorBankBlockEntity bank
+                            && player.containerMenu instanceof CapacitorBankMenu menu && menu.canConfigure(player, bank))) {
                 ioConfigurable.cycleIOMode(packet.side());
             }
         }

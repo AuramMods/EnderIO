@@ -115,8 +115,7 @@ def restart(server, results, carry):
         assert_bridge(server, results, "restart_retains_survival_bank_and_side_configuration")
     server.command(f"setblock {RECEIVER} enderio:wired_charger")
     server.command(f'data merge block {RECEIVER} {{Items:{{Size:3,Items:[{{Slot:0,id:"enderio:basic_capacitor",Count:1}}]}}}}')
-    server.command('data merge block 1041 80 8 {IOConfig:{Modes:{south:"push"}}}')
-    server.assert_state("bank_powers_a_real_neighbor_after_restart",
+    server.assert_state("unset_bank_face_powers_a_real_neighbor_after_restart",
                         f"if data block {RECEIVER} {{EnergyStored:128000}}", results)
     observe(server, "bank_and_receiver_account_for_every_fe", results, (list(BANKS), remaining - 128000))
 

@@ -36,26 +36,21 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.RenderTypeHelper;
 import net.minecraftforge.client.model.data.ModelData;
 import com.enderio.enderio.foundation.network.EIONetwork;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,10 +66,6 @@ import java.util.LinkedHashMap;
 public class IOConfigOverlay extends BaseOverlay {
 
     private static final Quaternionf ROT_180_Z = Axis.ZP.rotation((float) Math.PI);
-    private static final Vec3 RAY_ORIGIN = new Vec3(1.5, 1.5, 1.5);
-    private static final Vec3 RAY_START = new Vec3(1.5, 1.5, -1);
-    private static final Vec3 RAY_END = new Vec3(1.5, 1.5, 3);
-    private static final BlockPos POS = new BlockPos(1, 1, 1);
     private static final int Z_OFFSET = 100;
     private static final int OVERLAY_Z_OFFSET = 500;
     private static final ResourceLocation IO_CONFIG_OVERLAY = EnderIO.rl("buttons/io_config_overlay");
@@ -82,9 +73,9 @@ public class IOConfigOverlay extends BaseOverlay {
     private static final Minecraft MINECRAFT = Minecraft.getInstance();
     private static MultiBufferSource.BufferSource ghostBuffers;
     private static MultiBufferSource.BufferSource solidBuffers;
-    private final Vector3f worldOrigin;
-    private final Vector3f multiblockSize;
-    private final List<BlockPos> configurable = new ArrayList<>();
+    private Vec3 worldOrigin = Vec3.ZERO;
+    private float rayDepth = 1;
+    private List<BlockPos> configurable = List.of();
     private final List<BlockPos> neighbours = new ArrayList<>();
     private float scale = 20;
     private float pitch;
@@ -96,47 +87,41 @@ public class IOConfigOverlay extends BaseOverlay {
     public static final ResourceLocation NEIGHBOURS_BTN = EnderIO.rl("buttons/neighbour");
     private final Rect2i neighBtnRect;
 
-    public IOConfigOverlay(int x, int y, int width, int height, List<BlockPos> _configurable) {
+    public IOConfigOverlay(int x, int y, int width, int height, List<BlockPos> blocks) {
         super(x, y, width, height, Component.empty());
-        this.configurable.addAll(_configurable);
-
-        if (configurable.size() == 1) {
-            BlockPos bc = configurable.get(0);
-            worldOrigin = new Vector3f(bc.getX() + 0.5f, bc.getY() + 0.5f, bc.getZ() + 0.5f);
-            multiblockSize = new Vector3f(1, 1, 1);
-        } else {
-            Vector3f min = new Vector3f(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
-            Vector3f max = new Vector3f(-Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE);
-            for (BlockPos bc : configurable) {
-                min.set(Math.min(bc.getX(), min.x()), Math.min(bc.getY(), min.y()), Math.min(bc.getZ(), min.z()));
-                max.set(Math.max(bc.getX(), max.x()), Math.max(bc.getY(), max.y()), Math.max(bc.getZ(), max.z()));
-            }
-            multiblockSize = max;
-            multiblockSize.sub(min);
-            multiblockSize.mul(0.5f);
-            worldOrigin = new Vector3f(min.x() + multiblockSize.x(), min.y() + multiblockSize.y(),
-                    min.z() + multiblockSize.z());
-            multiblockSize.mul(2);
-        }
-
-        var radius = Math.max(Math.max(multiblockSize.x(), multiblockSize.y()), multiblockSize.z());
-        scale -= (radius - 1) * 3; // adjust later
-        scale = Math.min(40, Math.max(10, scale)); // clamp
-
-        configurable.forEach(pos -> {
-            for (Direction dir : Direction.values()) {
-                BlockPos loc = pos.relative(dir);
-                if (!configurable.contains(loc) && !neighbours.contains(loc)) {
-                    neighbours.add(loc);
-                }
-            }
-
-        });
+        setConfigurableBlocks(blocks);
         pitch = MINECRAFT.player.getXRot();
         yaw = MINECRAFT.player.getYRot();
 
         initBuffers();
         neighBtnRect = new Rect2i(getX() + getWidth() - 2 - 16, getY() + getHeight() - 2 - 16, 16, 16);
+    }
+
+    public void setConfigurableBlocks(List<BlockPos> blocks) {
+        if (configurable.equals(blocks)) {
+            return;
+        }
+        configurable = List.copyOf(blocks);
+        selection = Optional.empty();
+
+        var bounds = BoundingBox.encapsulatingPositions(configurable).orElseGet(() -> new BoundingBox(BlockPos.ZERO));
+        float spanX = bounds.getXSpan();
+        float spanY = bounds.getYSpan();
+        float spanZ = bounds.getZSpan();
+        worldOrigin = new Vec3(bounds.minX() + spanX / 2.0, bounds.minY() + spanY / 2.0, bounds.minZ() + spanZ / 2.0);
+        rayDepth = (float) Math.sqrt(spanX * spanX + spanY * spanY + spanZ * spanZ) / 2 + 1;
+        scale = Math.max(10, 20 - (Math.max(Math.max(spanX, spanY), spanZ) - 1) * 3);
+
+        neighbours.clear();
+        var seen = new HashSet<>(configurable);
+        for (var pos : configurable) {
+            for (var side : Direction.values()) {
+                var neighbor = pos.relative(side);
+                if (seen.add(neighbor)) {
+                    neighbours.add(neighbor);
+                }
+            }
+        }
     }
 
     @Override
@@ -171,31 +156,38 @@ public class IOConfigOverlay extends BaseOverlay {
         }
     }
 
-    private static Vec3 transform(Vec3 vec, Matrix4f transform) {
-        // Move vector to a (0,0,0) origin as the transformation matrix expects
-        Vector4f vec4 = new Vector4f((float) (vec.x - RAY_ORIGIN.x), (float) (vec.y - RAY_ORIGIN.y),
-                (float) (vec.z - RAY_ORIGIN.z), 1F);
-        // Apply the transformation matrix
-        vec4.mul(transform);
-        // Move transformed vector back to the actual origin
-        return new Vec3(vec4.x() + RAY_ORIGIN.x, vec4.y() + RAY_ORIGIN.y, vec4.z() + RAY_ORIGIN.z);
+    private Quaternionf previewRotation() {
+        return new Quaternionf(ROT_180_Z).mul(Axis.XN.rotationDegrees(pitch)).mul(Axis.YP.rotationDegrees(yaw));
     }
 
-    @Nullable
-    private BlockHitResult raycast(BlockPos pos, BlockState state, float diffX, float diffY, Matrix4f transform) {
-        // Add mouse offset to start and end vectors
-        Vec3 start = RAY_START.add(diffX, diffY, 0);
-        Vec3 end = RAY_END.add(diffX, diffY, 0);
+    private Optional<SelectedFace> pickFace(double mouseX, double mouseY, Quaternionf rotation) {
+        var level = MINECRAFT.level;
+        if (level == null || !isMouseOver(mouseX, mouseY)) {
+            return Optional.empty();
+        }
 
-        // Rotate start and end vectors around the block
-        start = transform(start, transform);
-        end = transform(end, transform);
+        float x = (float) ((mouseX - (getX() + width / 2)) / scale);
+        float y = (float) ((mouseY - (getY() + height / 2)) / scale);
+        var inverse = new Quaternionf(rotation).conjugate();
+        // The preview negates Z, so the front of the view starts at negative depth.
+        var from = inverse.transform(new Vector3f(x, y, -rayDepth));
+        var to = inverse.transform(new Vector3f(x, y, rayDepth));
+        var start = worldOrigin.add(from.x, from.y, from.z);
+        var end = worldOrigin.add(to.x, to.y, to.z);
 
-        // Get block's shape and cast a ray through it
-        VoxelShape shape = state.getShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
-        Vector3f centerPos = new Vector3f(pos.getX() + 0.5f, pos.getY() + 0.5f, pos.getZ() + 0.5f).sub(worldOrigin);
-        shape = shape.move(centerPos.x(), centerPos.y(), centerPos.z());
-        return shape.clip(start, end, POS);
+        BlockHitResult closest = null;
+        double closestDistance = Double.POSITIVE_INFINITY;
+        for (var pos : configurable) {
+            var hit = level.getBlockState(pos).getShape(level, pos).clip(start, end, pos);
+            if (hit != null) {
+                double distance = hit.getLocation().distanceToSqr(start);
+                if (distance < closestDistance) {
+                    closest = hit;
+                    closestDistance = distance;
+                }
+            }
+        }
+        return closest == null ? Optional.empty() : Optional.of(new SelectedFace(closest.getBlockPos(), closest.getDirection()));
     }
 
     public void toggleNeighbourVisibility() {
@@ -213,10 +205,11 @@ public class IOConfigOverlay extends BaseOverlay {
                 }
             }
             if (button == 1) {
+                selection = pickFace(mouseX, mouseY, previewRotation());
                 if (selection.isPresent()) {
                     var selectedFace = selection.get();
                     BlockEntity entity = MINECRAFT.level.getBlockEntity(selectedFace.blockPos);
-                    if (entity instanceof IOConfigurable) {
+                    if (entity instanceof IOConfigurable ioConfigurable && ioConfigurable.isIOConfigMutable()) {
                         EIONetwork.sendToServer(new ServerboundCycleIOConfigPacket(selectedFace.blockPos, selectedFace.side));
                         this.playDownSound(MINECRAFT.getSoundManager());
                         return true;
@@ -263,52 +256,9 @@ public class IOConfigOverlay extends BaseOverlay {
             // Calculate widget center
             int centerX = getX() + (width / 2);
             int centerY = getY() + (height / 2);
-            // Calculate mouse offset from center and scale to the block space
-            float diffX = (mouseX - centerX) / scale;
-            float diffY = (mouseY - centerY) / scale;
-
-            Quaternionf rotPitch = Axis.XN.rotationDegrees(pitch);
-            Quaternionf rotYaw = Axis.YP.rotationDegrees(yaw);
-
-            // Build block transformation matrix
-            // Rotate 180 around Z, otherwise the block is upside down
-            Quaternionf blockTransform = new Quaternionf(ROT_180_Z);
-            // Rotate around X (pitch) in negative direction
-            blockTransform.mul(rotPitch);
-            // Rotate around Y (yaw)
-            blockTransform.mul(rotYaw);
-
-            // Draw block
+            Quaternionf blockTransform = previewRotation();
             renderWorld(guiGraphics, centerX, centerY, blockTransform, partialTick);
-
-            // Build ray transformation matrix
-            // Rotate 180 around Z, otherwise the block is upside down
-            Matrix4f rayTransform = new Matrix4f();
-            rayTransform.set(ROT_180_Z);
-            // Rotate around Y (yaw)
-            rayTransform.rotate(rotYaw);
-            // Rotate around X (pitch) in negative direction
-            rayTransform.rotate(rotPitch);
-
-            // Ray-cast hit on block shape
-            Map<BlockHitResult, BlockPos> hits = new HashMap<>();
-            configurable.forEach(blockPos -> {
-                BlockState state = MINECRAFT.level.getBlockState(blockPos);
-                BlockHitResult hit = raycast(blockPos, state, diffX, diffY, rayTransform);
-                if (hit != null && hit.getType() != HitResult.Type.MISS) {
-                    hits.put(hit, blockPos);
-                }
-
-            });
-
-            Vec3 eyePosition = transform(RAY_START, rayTransform).add(worldOrigin.x, worldOrigin.y, worldOrigin.z);
-            selection = hits.entrySet()
-                    .stream()
-                    .min(Comparator.comparingDouble(entry -> entry.getValue().distToCenterSqr(eyePosition))) // find
-                                                                                                             // closest
-                                                                                                             // to eye
-                    .map(closest -> new SelectedFace(closest.getValue(), closest.getKey().getDirection()));
-
+            selection = pickFace(mouseX, mouseY, blockTransform);
             renderSelection(guiGraphics, centerX, centerY, blockTransform);
             renderOverlay(guiGraphics);
 
@@ -331,9 +281,7 @@ public class IOConfigOverlay extends BaseOverlay {
         // RenderNeighbours
         if (neighbourVisible) {
             for (var neighbour : neighbours) {
-                Vector3f pos = new Vector3f(neighbour.getX() - worldOrigin.x(), neighbour.getY() - worldOrigin.y(),
-                        neighbour.getZ() - worldOrigin.z());
-                renderBlock(guiGraphics, neighbour, pos, ghostBuffers, partialTick);
+                renderBlock(guiGraphics, neighbour, ghostBuffers, partialTick);
             }
 
         }
@@ -341,9 +289,7 @@ public class IOConfigOverlay extends BaseOverlay {
 
         // Render configurable
         for (var configurable : configurable) {
-            Vector3f pos = new Vector3f(configurable.getX() - worldOrigin.x(), configurable.getY() - worldOrigin.y(),
-                    configurable.getZ() - worldOrigin.z());
-            renderBlock(guiGraphics, configurable, pos, solidBuffers, partialTick);
+            renderBlock(guiGraphics, configurable, solidBuffers, partialTick);
         }
         solidBuffers.endBatch();
 
@@ -351,10 +297,10 @@ public class IOConfigOverlay extends BaseOverlay {
         Lighting.setupFor3DItems();
     }
 
-    private void renderBlock(GuiGraphics guiGraphics, BlockPos blockPos, Vector3f renderPos,
-            MultiBufferSource.BufferSource buffers, float partialTick) {
+    private void renderBlock(GuiGraphics guiGraphics, BlockPos blockPos, MultiBufferSource.BufferSource buffers,
+            float partialTick) {
         guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(renderPos.x(), renderPos.y(), renderPos.z());
+        translateToBlock(guiGraphics, blockPos);
 
         ModelData modelData = Optional.ofNullable(MINECRAFT.level.getModelDataManager().getAt(blockPos))
                 .orElse(ModelData.EMPTY);
@@ -389,6 +335,10 @@ public class IOConfigOverlay extends BaseOverlay {
         guiGraphics.pose().popPose();
     }
 
+    private void translateToBlock(GuiGraphics guiGraphics, BlockPos pos) {
+        guiGraphics.pose().translate(pos.getX() - worldOrigin.x, pos.getY() - worldOrigin.y, pos.getZ() - worldOrigin.z);
+    }
+
     private void renderSelection(GuiGraphics guiGraphics, int centerX, int centerY, Quaternionf transform) {
         if (selection.isEmpty()) {
             return;
@@ -407,10 +357,7 @@ public class IOConfigOverlay extends BaseOverlay {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         var selectedFace = selection.get();
-        BlockPos blockPos = selectedFace.blockPos;
-        guiGraphics.pose()
-                .translate(blockPos.getX() - worldOrigin.x(), blockPos.getY() - worldOrigin.y(),
-                        blockPos.getZ() - worldOrigin.z());
+        translateToBlock(guiGraphics, selectedFace.blockPos);
         Vector3f[] vec = ModelRenderUtil.createQuadVerts(selectedFace.side, 0, 1, 1);
         Matrix4f matrix4f = guiGraphics.pose().last().pose();
         bufferbuilder.vertex(matrix4f, vec[0].x(), vec[0].y(), vec[0].z())

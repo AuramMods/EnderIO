@@ -15,12 +15,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class CapacitorBankScreen extends EnderContainerScreen<CapacitorBankMenu> {
 
     public static final ResourceLocation BG_TEXTURE = EnderIO.rl("textures/gui/screen/capacitor_bank.png");
+    private IOConfigOverlay ioConfigOverlay;
 
     public CapacitorBankScreen(CapacitorBankMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -34,8 +34,8 @@ public class CapacitorBankScreen extends EnderContainerScreen<CapacitorBankMenu>
         addRenderableWidget(new RedstoneControlPickerWidget(leftPos + imageWidth - 6 - 16, topPos + 6,
             menu::getRedstoneControl, menu::setRedstoneControl, EIOCommonLang.REDSTONE_MODE));
 
-        var overlay = addIOConfigOverlay(1, leftPos + 7, topPos + 83, 162, 76);
-        addIOConfigButton(leftPos + imageWidth - 6 - 16, topPos + 24, overlay);
+        ioConfigOverlay = addIOConfigOverlay(1, leftPos + 7, topPos + 83, 162, 76);
+        addIOConfigButton(leftPos + imageWidth - 6 - 16, topPos + 24, ioConfigOverlay);
     }
 
     @Override
@@ -43,15 +43,20 @@ public class CapacitorBankScreen extends EnderContainerScreen<CapacitorBankMenu>
         guiGraphics.blit(BG_TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
     }
 
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        ioConfigOverlay.setConfigurableBlocks(bankBlocks());
+    }
+
+    private List<BlockPos> bankBlocks() {
+        var bank = getMenu().getBlockEntity();
+        var data = CapacitorBankManager.getData(bank.getUuid());
+        return data == null || data.nodes().isEmpty() ? List.of(bank.getBlockPos()) : data.nodes();
+    }
+
     protected IOConfigOverlay addIOConfigOverlay(int layer, int x, int y, int width, int height) {
-        List<BlockPos> configurables = new ArrayList<>();
-
-        CapacitorBankManager.CapacitorSyncData data = CapacitorBankManager.getData(getMenu().getBlockEntity().getUuid());
-        if (data != null) {
-            configurables.addAll(data.nodes());
-        }
-
-        var widget = addOverlayRenderable(layer, new IOConfigOverlay(x, y, width, height, configurables));
+        var widget = addOverlayRenderable(layer, new IOConfigOverlay(x, y, width, height, bankBlocks()));
         addRestorableState("io_config", widget);
         widget.setVisible(false);
         return widget;

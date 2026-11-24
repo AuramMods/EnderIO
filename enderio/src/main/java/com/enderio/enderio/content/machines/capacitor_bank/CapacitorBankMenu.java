@@ -42,6 +42,12 @@ public class CapacitorBankMenu extends BaseBlockEntityMenu<CapacitorBankBlockEnt
         return Container.stillValidBlockEntity(getBlockEntity(), player);
     }
 
+    public boolean canConfigure(Player player, CapacitorBankBlockEntity target) {
+        var openedBank = getBlockEntity();
+        return stillValid(player) && openedBank.hasActiveNode() && target.hasActiveNode()
+            && openedBank.getNetwork() == target.getNetwork();
+    }
+
     //No inv
     @Override
     public ItemStack quickMoveStack(Player player, int index) {

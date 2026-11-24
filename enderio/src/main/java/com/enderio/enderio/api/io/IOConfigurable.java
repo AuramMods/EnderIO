@@ -19,6 +19,13 @@ public interface IOConfigurable {
     boolean shouldRenderIOConfigOverlay();
 
     /**
+     * The mode displayed on the block model. Implicit defaults can leave the face unmarked.
+     */
+    default IOMode getIOOverlayMode(Direction side) {
+        return getIOMode(side);
+    }
+
+    /**
      * Set the IO mode for this side.
      * Must be supported mode, otherwise {@link IOMode#NONE} will be set.
      */
