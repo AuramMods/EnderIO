@@ -64,19 +64,26 @@ def check(name, expected, observed, results):
     results.append({"assertion": name, "passed": expected == observed, "expected": expected, "observed": observed})
 
 
-def observe(server, stage, results, *networks):
-    server.command("save-all flush")
+def observe(server, stage, results, *networks, settle_timeout=0):
     path = server.directory / WORLD / "data/enderio_capacitor_bank_network.dat"
-    observed = []
-    for network in read_saved_networks(path):
-        nodes = network["nodes"]
-        xs = [node["pos"][0] for node in nodes]
-        edges = [tuple(sorted((xs[e["first"]], xs[e["second"]]))) for e in network["edges"]]
-        observed.append((sorted((node["pos"][0], node["capacity"]) for node in nodes), sorted(edges), network["energy"]))
     expected = []
     for xs, energy in networks:
         expected.append(([(x, BANKS[x][1]) for x in xs], list(zip(xs, xs[1:])), energy))
-    check(stage, sorted(expected), sorted(observed), results)
+    expected.sort()
+    deadline = time.monotonic() + settle_timeout
+    while True:
+        server.command("save-all flush")
+        observed = []
+        for network in read_saved_networks(path):
+            nodes = network["nodes"]
+            xs = [node["pos"][0] for node in nodes]
+            edges = [tuple(sorted((xs[e["first"]], xs[e["second"]]))) for e in network["edges"]]
+            observed.append((sorted((node["pos"][0], node["capacity"]) for node in nodes), sorted(edges), network["energy"]))
+        observed.sort()
+        if observed == expected or time.monotonic() >= deadline:
+            check(stage, expected, observed, results)
+            return
+        time.sleep(0.05)
 
 
 def first_run(args, server, report):
@@ -87,7 +94,7 @@ def first_run(args, server, report):
         server.command(f"setblock {x} 80 8 enderio:{tier}_capacitor_bank")
     server.command("setblock 1038 80 8 enderio:creative_power")
     # A live external source fills the mixed-tier array only through the leftmost bank.
-    observe(server, "mixed_tiers_share_capacity_and_charge", results, (list(BANKS), TOTAL))
+    observe(server, "mixed_tiers_share_capacity_and_charge", results, (list(BANKS), TOTAL), settle_timeout=5)
     server.command("setblock 1038 80 8 minecraft:air")
     server.command(f"forceload remove {CHUNKS}")
     server.assert_state("both_array_chunks_actually_unload", "unless loaded 1039 80 8 unless loaded 1042 80 8", results, timeout=40)
