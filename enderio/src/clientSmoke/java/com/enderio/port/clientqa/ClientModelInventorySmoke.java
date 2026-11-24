@@ -2,9 +2,12 @@ package com.enderio.port.clientqa;
 
 import com.enderio.enderio.api.soul.Soul;
 import com.enderio.enderio.client.content.conduits.model.ConduitAdditionalModels;
+import com.enderio.enderio.client.content.conduits.model.bundle.ConduitBundleModel;
 import com.enderio.enderio.content.conduits.probe.ConduitProbeItem;
 import com.enderio.enderio.content.conduits.type.energy.EnergyConduitConnectionConfig;
 import com.enderio.enderio.content.machines.solar_panel.SolarPanelTier;
+import com.enderio.enderio.content.paint.block.entity.DoublePaintedBlockEntity;
+import com.enderio.enderio.content.paint.block.entity.SinglePaintedBlockEntity;
 import com.enderio.enderio.content.tools.vials.SoulVialItem;
 import com.enderio.enderio.init.EIOBlocks;
 import com.enderio.enderio.init.EIODataComponents;
@@ -23,8 +26,10 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraftforge.client.model.IQuadTransformer;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fluids.FluidStack;
@@ -146,9 +151,30 @@ final class ClientModelInventorySmoke {
         checkTooltip(tooltips, "copy_probe", "- portqa:unknown_conduit");
         checks.merge("registered_block_models", !blocks.isEmpty() && missingBlocks.isEmpty(), (before, after) -> before && after);
         checks.merge("registered_item_models", !items.isEmpty() && missingItems.isEmpty(), (before, after) -> before && after);
+        checks.merge("registered_block_particle_sprites", blockParticles.isEmpty(), (before, after) -> before && after);
+        checks.merge("registered_item_particle_sprites", itemParticles.isEmpty(), (before, after) -> before && after);
+        checkDynamicParticles();
         return Map.of("blocks", blocks, "invisibleStates", invisibleStates, "missingBlocks", missingBlocks,
             "missingBlockParticles", blockParticles, "items", items, "missingItems", missingItems,
             "missingItemParticles", itemParticles, "variants", variants, "tooltips", tooltips, "language", language);
+    }
+
+    private void checkDynamicParticles() {
+        var shaper = minecraft.getBlockRenderer().getBlockModelShaper();
+        var slab = shaper.getBlockModel(EIOBlocks.PAINTED_SLAB.get().defaultBlockState());
+        var gold = shaper.getBlockModel(Blocks.GOLD_BLOCK.defaultBlockState()).getParticleIcon();
+        var emerald = shaper.getBlockModel(Blocks.EMERALD_BLOCK.defaultBlockState()).getParticleIcon();
+        var top = ModelData.builder().with(DoublePaintedBlockEntity.PAINT2, Blocks.EMERALD_BLOCK).build();
+        var both = top.derive().with(SinglePaintedBlockEntity.PAINT, Blocks.GOLD_BLOCK).build();
+        checks.merge("painted_slab_keeps_its_particle_material",
+            slab.getParticleIcon(top) == emerald && slab.getParticleIcon(both) == gold, (before, after) -> before && after);
+
+        var bundle = shaper.getBlockModel(EIOBlocks.CONDUIT_BUNDLE.get().defaultBlockState());
+        var fallback = bundle.getParticleIcon();
+        checks.merge("conduit_with_missing_model_data_or_texture_uses_connector_sprite",
+            fallback == bundle.getParticleIcon(ModelData.EMPTY)
+                && fallback == ConduitBundleModel.conduitParticle(ResourceLocation.parse("enderio:qa_absent_conduit")),
+            (before, after) -> before && after);
     }
 
     private void checkConduitArrowDepth() {

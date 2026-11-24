@@ -1,35 +1,34 @@
 package com.enderio.enderio.client.content.conduits;
 
 import com.enderio.enderio.api.conduits.Conduit;
-import com.enderio.enderio.content.conduits.bundle.ConduitShape;
+import com.enderio.enderio.api.conduits.bundle.ConduitBundle;
+import com.enderio.enderio.client.content.conduits.model.bundle.ConduitBundleModel;
+import com.enderio.enderio.client.content.conduits.model.bundle.ConduitBundleRenderState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
 import net.minecraft.util.Mth;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.VoxelShape;
-
-import java.util.List;
 
 public class ConduitBreakParticle extends TextureSheetParticle {
     private final BlockPos pos;
     private final float uo;
     private final float vo;
 
-    public ConduitBreakParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed,
-            double zSpeed, BlockPos pos, ResourceLocation texture) {
+    private ConduitBreakParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed,
+            double zSpeed, BlockPos pos, TextureAtlasSprite sprite) {
         super(level, x, y, z, xSpeed, ySpeed, zSpeed);
         this.pos = pos;
-        this.setSprite(
-                Minecraft.getInstance().getModelManager().getAtlas(InventoryMenu.BLOCK_ATLAS).getSprite(texture));
+        this.setSprite(sprite);
         this.gravity = 1.0F;
         this.rCol = 0.6F;
         this.gCol = 0.6F;
@@ -65,15 +64,15 @@ public class ConduitBreakParticle extends TextureSheetParticle {
         return i == 0 && this.level.hasChunkAt(this.pos) ? LevelRenderer.getLightColor(this.level, this.pos) : i;
     }
 
-    public static void addDestroyEffects(BlockPos pos, BlockState state, Conduit<?, ?> conduit) {
+    public static void addDestroyEffects(BlockPos pos, BlockState state, Holder<Conduit<?, ?>> conduit) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) {
             return;
         }
 
         ParticleEngine engine = Minecraft.getInstance().particleEngine;
-//        List<AABB> boxes = ConduitShape.CONNECTION.toAabbs();
         VoxelShape shape = state.getShape(level, pos);
+        var sprite = getSprite(level, pos, conduit);
 
         shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
             double sizeX = Math.min(1D, maxX - minX);
@@ -93,27 +92,23 @@ public class ConduitBreakParticle extends TextureSheetParticle {
                         double y = pos.getY() + offY * sizeY + minY;
                         double z = pos.getZ() + offZ * sizeZ + minZ;
                         engine.add(new ConduitBreakParticle(level, x, y, z, offX - 0.5D, offY - 0.5D, offZ - 0.5D, pos,
-                                conduit.texture()));
+                                sprite));
                     }
                 }
             }
         });
     }
 
-    public static void addCrackEffects(BlockPos pos, BlockState state, Conduit<?, ?> conduit, Direction side) {
+    public static void addCrackEffects(BlockPos pos, BlockState state, Holder<Conduit<?, ?>> conduit, Direction side) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) {
             return;
         }
 
         ParticleEngine engine = Minecraft.getInstance().particleEngine;
-        List<AABB> boxes = ConduitShape.CONNECTION.toAabbs();
-        double countMult = 1D / boxes.size();
-
         int i = pos.getX();
         int j = pos.getY();
         int k = pos.getZ();
-        float f = 0.1F;
         AABB aabb = state.getShape(level, pos).bounds();
         double x = (double) i + level.getRandom().nextDouble() * (aabb.maxX - aabb.minX - 0.2F) + 0.1F + aabb.minX;
         double y = (double) j + level.getRandom().nextDouble() * (aabb.maxY - aabb.minY - 0.2F) + 0.1F + aabb.minY;
@@ -142,7 +137,7 @@ public class ConduitBreakParticle extends TextureSheetParticle {
             x = (double) i + aabb.maxX + 0.1F;
         }
 
-        engine.add(new ConduitBreakParticle(level, x, y, z, 0.0D, 0.0D, 0.0D, pos, conduit.texture()).setPower(0.2F)
+        engine.add(new ConduitBreakParticle(level, x, y, z, 0.0D, 0.0D, 0.0D, pos, getSprite(level, pos, conduit)).setPower(0.2F)
                 .scale(0.6F));
     }
 
@@ -153,7 +148,14 @@ public class ConduitBreakParticle extends TextureSheetParticle {
         }
 
         ParticleEngine engine = Minecraft.getInstance().particleEngine;
-        engine.add(new ConduitBreakParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, blockpos, conduit.texture()).setPower(0.2F)
+        var sprite = ConduitBundleModel.conduitParticle(conduit.texture());
+        engine.add(new ConduitBreakParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, blockpos, sprite).setPower(0.2F)
             .scale(0.6F));
+    }
+
+    private static TextureAtlasSprite getSprite(ClientLevel level, BlockPos pos, Holder<Conduit<?, ?>> conduit) {
+        var extraWorldData = level.getBlockEntity(pos) instanceof ConduitBundle bundle
+                ? bundle.getConduitExtraWorldData(conduit) : null;
+        return ConduitBundleModel.conduitParticle(ConduitBundleRenderState.getTexture(conduit, extraWorldData));
     }
 }

@@ -1,20 +1,18 @@
 package com.enderio.enderio.client.content.conduits.model;
 
 import com.enderio.core.client.RenderUtil;
+import com.enderio.core.data.model.ModelHelper;
 import com.enderio.enderio.api.EnderIODataComponents;
 import com.enderio.enderio.api.conduits.Conduit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
-import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.SingleThreadedRandomSource;
 import net.minecraftforge.client.RenderTypeGroup;
@@ -58,19 +56,14 @@ public class ConduitItemModel extends BakedModelWrapper<BakedModel> {
             }
             Holder<Conduit<?, ?>> conduit = registries == null ? null
                 : EnderIODataComponents.CONDUIT.get(stack, registries);
-            return CACHE.computeIfAbsent(conduit, t -> createBakedModel(t, model));
+            return conduit == null ? model : CACHE.computeIfAbsent(conduit, t -> createBakedModel(t, model));
         }
 
-        private BakedModel createBakedModel(@Nullable Holder<Conduit<?, ?>> conduit, BakedModel model) {
-            ResourceLocation conduitTexture = MissingTextureAtlasSprite.getLocation();
-            if (conduit != null) {
-                conduitTexture = conduit.value().texture();
+        private BakedModel createBakedModel(Holder<Conduit<?, ?>> conduit, BakedModel model) {
+            TextureAtlasSprite newTexture = ModelHelper.getBlockSprite(conduit.value().texture());
+            if (ModelHelper.isMissingTexture(newTexture)) {
+                return model;
             }
-
-            // Get the replacement texture.
-            TextureAtlasSprite newTexture = Minecraft.getInstance()
-                    .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                    .apply(conduitTexture);
 
             // Construct a new baked model, replacing the texture of each quad with the new
             // texture.

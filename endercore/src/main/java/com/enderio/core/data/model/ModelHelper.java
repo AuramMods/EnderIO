@@ -15,8 +15,16 @@ public class ModelHelper {
     }
 
     public static TextureAtlasSprite getMissingTexture() {
+        return getBlockSprite(MissingTextureAtlasSprite.getLocation());
+    }
+
+    public static TextureAtlasSprite getBlockSprite(ResourceLocation texture) {
         return Minecraft.getInstance()
                 .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                .apply(MissingTextureAtlasSprite.getLocation());
+                .apply(texture);
+    }
+
+    public static boolean isMissingTexture(TextureAtlasSprite sprite) {
+        return MissingTextureAtlasSprite.getLocation().equals(sprite.contents().name());
     }
 }

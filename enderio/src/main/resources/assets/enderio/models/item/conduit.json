@@ -3,7 +3,8 @@
     "credit": "Made with Blockbench",
     "parent": "minecraft:block/block",
     "textures": {
-        "0": "enderio:block/conduit/energy"
+        "0": "enderio:block/conduit/energy",
+        "particle": "#0"
     },
     "elements": [
         {

@@ -321,7 +321,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
             if (level.isClientSide()) {
                 if (!conduitBundle.getConduits().isEmpty()) {
                     var conduit = conduitBundle.getConduits().get(0);
-                    ConduitBreakParticle.addDestroyEffects(pos, state, conduit.value());
+                    ConduitBreakParticle.addDestroyEffects(pos, state, conduit);
                 } else {
                     // TODO: Facade particles?
                 }
@@ -371,7 +371,7 @@ public class ConduitBundleBlock extends Block implements EntityBlock, SimpleWate
             }
 
             if (level.isClientSide()) {
-                ConduitBreakParticle.addDestroyEffects(pos, state, conduit.value());
+                ConduitBreakParticle.addDestroyEffects(pos, state, conduit);
             }
 
             conduitBundle.removeConduit(conduit, droppedItem -> {

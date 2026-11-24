@@ -19,6 +19,7 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -44,6 +45,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class PaintedBlockModel implements IDynamicBakedModel {
+    private static final ResourceLocation PARTICLE_FALLBACK = ResourceLocation.withDefaultNamespace("block/stone");
 
     private final Map<Block, List<BakedModel>> itemRenderCache = new HashMap<>();
 
@@ -138,29 +140,27 @@ public class PaintedBlockModel implements IDynamicBakedModel {
 
     @Override
     public TextureAtlasSprite getParticleIcon(ModelData data) {
-        Block paint = data.get(SinglePaintedBlockEntity.PAINT);
-        if (paint != null) {
-            BakedModel model = getModel(paint.defaultBlockState());
-            TextureAtlasSprite sprite = model.getParticleIcon(ModelData.EMPTY);
-            if (!sprite.contents().name().getPath().equals("missingno")) {
-                return sprite;
-            }
+        var primary = paintParticle(data.get(SinglePaintedBlockEntity.PAINT));
+        if (primary != null) {
+            return primary;
         }
 
-        if (data.has(DoublePaintedBlockEntity.PAINT2)) {
-            paint = data.get(DoublePaintedBlockEntity.PAINT2);
-            if (paint != null) {
-                BakedModel model = getModel(paint.defaultBlockState());
-                return model.getParticleIcon(ModelData.EMPTY);
-            }
-        }
-
-        return ModelHelper.getMissingTexture();
+        var secondary = paintParticle(data.get(DoublePaintedBlockEntity.PAINT2));
+        return secondary == null ? getParticleIcon() : secondary;
     }
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
-        return ModelHelper.getMissingTexture();
+        var referenceSprite = paintParticle(reference);
+        return referenceSprite == null ? ModelHelper.getBlockSprite(PARTICLE_FALLBACK) : referenceSprite;
+    }
+
+    private @Nullable TextureAtlasSprite paintParticle(@Nullable Block paint) {
+        if (paint == null) {
+            return null;
+        }
+        var sprite = getModel(paint.defaultBlockState()).getParticleIcon(ModelData.EMPTY);
+        return ModelHelper.isMissingTexture(sprite) ? null : sprite;
     }
 
     @Override
@@ -404,7 +404,8 @@ public class PaintedBlockModel implements IDynamicBakedModel {
 
         @Override
         public TextureAtlasSprite getParticleIcon() {
-            return PaintedBlockModel.this.getParticleIcon();
+            var sprite = paintParticle(paint);
+            return sprite == null ? PaintedBlockModel.this.getParticleIcon() : sprite;
         }
 
         @Override

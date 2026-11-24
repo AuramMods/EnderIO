@@ -76,7 +76,14 @@ public class FacadeItemModel implements IDynamicBakedModel {
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
-        return ModelHelper.getMissingTexture();
+        if (facade != null) {
+            var sprite = Minecraft.getInstance().getBlockRenderer().getBlockModel(facade.defaultBlockState())
+                    .getParticleIcon();
+            if (!ModelHelper.isMissingTexture(sprite)) {
+                return sprite;
+            }
+        }
+        return facadeModel.getParticleIcon();
     }
 
     @Override

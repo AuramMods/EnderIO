@@ -104,12 +104,12 @@ public class ConduitBundleRenderState {
     }
 
     public ResourceLocation getTexture(Holder<Conduit<?, ?>> conduit) {
+        return getTexture(conduit, getExtraWorldData(conduit));
+    }
+
+    public static ResourceLocation getTexture(Holder<Conduit<?, ?>> conduit, @Nullable CompoundTag extraWorldData) {
         var modifier = ConduitModelModifiers.getModifier(conduit.value().type());
-        if (modifier != null) {
-            return modifier.getTexture(conduit, getExtraWorldData(conduit));
-        } else {
-            return conduit.value().texture();
-        }
+        return modifier == null ? conduit.value().texture() : modifier.getTexture(conduit, extraWorldData);
     }
 
     public boolean hasFacade() {

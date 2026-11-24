@@ -2,6 +2,7 @@ package com.enderio.enderio.client.content.conduits.model.bundle;
 
 import com.enderio.core.common.util.Area;
 import com.enderio.core.data.model.ModelHelper;
+import com.enderio.enderio.api.EnderIOAPI;
 import com.enderio.enderio.api.conduits.Conduit;
 import com.enderio.enderio.api.conduits.model.ConduitModelModifier;
 import com.enderio.enderio.client.content.conduits.model.ConduitTextureEmissiveQuadTransformer;
@@ -50,6 +51,7 @@ import static com.enderio.enderio.client.content.conduits.model.ConduitAdditiona
 
 public class ConduitBundleModel implements IDynamicBakedModel {
     public static final ModelProperty<ModelData> FACADE_MODEL_DATA = new ModelProperty<>();
+    private static final ResourceLocation PARTICLE_FALLBACK = EnderIOAPI.rl("block/conduit_connector");
 
     private static final ChunkRenderTypeSet CUTOUT_SET = ChunkRenderTypeSet.of(RenderType.cutout());
 
@@ -305,31 +307,41 @@ public class ConduitBundleModel implements IDynamicBakedModel {
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
-        return ModelHelper.getMissingTexture();
+        return sprite(PARTICLE_FALLBACK);
     }
 
     @Override
     public TextureAtlasSprite getParticleIcon(ModelData data) {
-        // This is only used for facades.
         ConduitBundleRenderState bundleState = data.get(ConduitBundleRenderState.PROPERTY);
 
         if (bundleState == null) {
-            return ModelHelper.getMissingTexture();
+            return getParticleIcon();
         }
 
         if (bundleState.hasFacade() && ClientFacadeVisibility.areFacadesVisible()) {
-            return Minecraft.getInstance()
+            ModelData facadeData = data.get(FACADE_MODEL_DATA);
+            var facadeSprite = Minecraft.getInstance()
                     .getBlockRenderer()
                     .getBlockModel(bundleState.facade())
-                    .getParticleIcon(data.get(FACADE_MODEL_DATA));
+                    .getParticleIcon(facadeData == null ? ModelData.EMPTY : facadeData);
+            if (!ModelHelper.isMissingTexture(facadeSprite)) {
+                return facadeSprite;
+            }
         }
 
-        // Shouldn't be called anymore, but sensible fallback to have:
-        if (bundleState.conduits().isEmpty()) {
-            return ModelHelper.getMissingTexture();
+        for (var conduit : bundleState.conduits()) {
+            var conduitSprite = sprite(bundleState.getTexture(conduit));
+            if (!ModelHelper.isMissingTexture(conduitSprite)) {
+                return conduitSprite;
+            }
         }
 
-        return sprite(bundleState.getTexture(bundleState.conduits().get(0)));
+        return getParticleIcon();
+    }
+
+    public static TextureAtlasSprite conduitParticle(ResourceLocation texture) {
+        var conduitSprite = sprite(texture);
+        return ModelHelper.isMissingTexture(conduitSprite) ? sprite(PARTICLE_FALLBACK) : conduitSprite;
     }
 
     @Override

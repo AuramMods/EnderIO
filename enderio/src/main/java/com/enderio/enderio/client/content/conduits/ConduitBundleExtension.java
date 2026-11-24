@@ -31,7 +31,7 @@ public class ConduitBundleExtension implements IClientBlockExtensions {
 
             var conduit = conduitBundle.getShape().getConduit(blockHitResult.getBlockPos(), target);
             if (conduit != null) {
-                ConduitBreakParticle.addCrackEffects(blockHitResult.getBlockPos(), state, conduit.value(),
+                ConduitBreakParticle.addCrackEffects(blockHitResult.getBlockPos(), state, conduit,
                         blockHitResult.getDirection());
             }
 
