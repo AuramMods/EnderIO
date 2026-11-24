@@ -4,6 +4,8 @@ import com.enderio.enderio.api.conduits.connection.ConduitBlockConnection;
 import com.enderio.enderio.api.conduits.connection.path.ConduitConnectionPath;
 import com.enderio.enderio.api.conduits.connection.path.ConnectionPathProperty;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
+import com.enderio.enderio.compat.auram.RfTransferBridge;
+import com.enderio.enderio.content.conduits.type.energy.EnergyConduit;
 import com.google.common.collect.Maps;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,13 +45,18 @@ public class BreadthFirstPathingStrategy implements ConduitPathingStrategy {
         Map<ConnectionPathProperty<?>, List<Object>> startAggregates = 
             createAggregateMap(context.collectNodeProperties(start));
         
+        boolean observeRoute = RfTransferBridge.enabled()
+                && startAggregates.containsKey(EnergyConduit.PATH_MAX_TRANSFER_RATE);
+        Map<ConduitNode, ConduitNode> parents = observeRoute ? new HashMap<>() : null;
+
         // Special case: same node
         if (start.equals(goal)) {
             return Optional.of(new ConduitConnectionPath(
                 from, 
                 to, 
                 1, 
-                aggregatePropertyValues(startAggregates)
+                aggregatePropertyValues(startAggregates),
+                route(from, to, 1, parents)
             ));
         }
         
@@ -76,6 +83,7 @@ public class BreadthFirstPathingStrategy implements ConduitPathingStrategy {
                     continue;
                 }
                 
+                if (parents != null) parents.put(neighbor, current);
                 visited.add(neighbor);
                 queue.add(neighbor);
                 distance.put(neighbor, currentDist + 1);
@@ -92,7 +100,8 @@ public class BreadthFirstPathingStrategy implements ConduitPathingStrategy {
                         from,
                         to,
                         currentDist + 1,
-                        aggregatePropertyValues(neighborAggregate)
+                        aggregatePropertyValues(neighborAggregate),
+                        route(from, to, currentDist + 1, parents)
                     ));
                 }
             }
@@ -102,6 +111,20 @@ public class BreadthFirstPathingStrategy implements ConduitPathingStrategy {
         return Optional.empty();
     }
     
+    private static long[] route(ConduitBlockConnection from, ConduitBlockConnection to, int length,
+            @Nullable Map<ConduitNode, ConduitNode> parents) {
+        if (parents == null) return null;
+        long[] positions = new long[length + 2];
+        positions[0] = from.connectedBlockPos().asLong();
+        positions[length + 1] = to.connectedBlockPos().asLong();
+        ConduitNode current = to.node();
+        for (int i = length; i >= 1; i--) {
+            positions[i] = current.pos().asLong();
+            current = parents.get(current);
+        }
+        return positions;
+    }
+
     // region Property Aggregation Helpers
     
     /**

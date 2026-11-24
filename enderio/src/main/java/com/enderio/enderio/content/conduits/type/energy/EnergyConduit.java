@@ -103,7 +103,7 @@ public record EnergyConduit(ResourceLocation texture, Component description, int
                 // If this conduit can be pushed into, provide the full cap
                 var config = connectionReader.getConnectionConfig(side, EnergyConduitConnectionConfig.TYPE);
                 if (config.isExtract()) {
-                    return (TCapability) new EnergyConduitStorage(side, node);
+                    return (TCapability) new EnergyConduitStorage(level, side, node);
                 }
             }
 

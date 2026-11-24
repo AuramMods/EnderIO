@@ -2,10 +2,14 @@ package com.enderio.enderio.api.conduits.connection.path;
 
 import com.enderio.enderio.api.conduits.connection.ConduitBlockConnection;
 import com.enderio.enderio.api.conduits.network.node.ConduitNode;
+import com.enderio.enderio.compat.auram.RfTransferBridge;
+import net.minecraft.server.level.ServerLevel;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.IntConsumer;
 
 /**
  * Provides information about the path between two {@link ConduitBlockConnection}s.
@@ -17,8 +21,24 @@ public final class ConduitConnectionPath {
     private final ConduitBlockConnection end;
     private final int length;
     private final Map<ConnectionPathProperty<?>, ?> properties;
+    private final @Nullable long[] route;
+    private final boolean reversed;
+    private @Nullable IntConsumer rfObserver;
 
     public ConduitConnectionPath(ConduitBlockConnection start, ConduitBlockConnection end, int length, Map<ConnectionPathProperty<?>, ?> properties) {
+        this(start, end, length, properties, null, false);
+    }
+
+    @ApiStatus.Internal
+    public ConduitConnectionPath(ConduitBlockConnection start, ConduitBlockConnection end, int length,
+            Map<ConnectionPathProperty<?>, ?> properties, @Nullable long[] route) {
+        this(start, end, length, properties, route, false);
+    }
+
+    private ConduitConnectionPath(ConduitBlockConnection start, ConduitBlockConnection end, int length,
+            Map<ConnectionPathProperty<?>, ?> properties, @Nullable long[] route, boolean reversed) {
+        this.route = route;
+        this.reversed = reversed;
         this.start = start;
         this.end = end;
         this.length = length;
@@ -53,7 +73,20 @@ public final class ConduitConnectionPath {
     }
 
     public ConduitConnectionPath reverse() {
-        return new ConduitConnectionPath(end, start, length, properties);
+        return new ConduitConnectionPath(end, start, length, properties, route, !reversed);
+    }
+
+    @ApiStatus.Internal
+    public void recordEnergyTransfer(ServerLevel level, int amount) {
+        if (route == null) return;
+        if (rfObserver == null) {
+            long[] ordered = new long[route.length];
+            for (int i = 0; i < route.length; i++) {
+                ordered[i] = route[reversed ? route.length - 1 - i : i];
+            }
+            rfObserver = RfTransferBridge.observe(level, ordered);
+        }
+        rfObserver.accept(amount);
     }
 
     @Override

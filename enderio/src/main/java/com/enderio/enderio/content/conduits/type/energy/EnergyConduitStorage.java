@@ -5,11 +5,13 @@ import com.enderio.enderio.api.conduits.network.node.ConduitNode;
 import com.enderio.enderio.init.EIOConduitTypes;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
-public record EnergyConduitStorage(Direction side, ConduitNode node) implements IEnergyStorage {
+public record EnergyConduitStorage(Level level, Direction side, ConduitNode node) implements IEnergyStorage {
     @Override
     public int receiveEnergy(int amount, boolean simulate) {
         if (!node.isLoaded() || amount <= 0) {
@@ -45,6 +47,9 @@ public record EnergyConduitStorage(Direction side, ConduitNode node) implements 
             int toSend = Math.min(energyToSend, insert.property(EnergyConduit.PATH_MAX_TRANSFER_RATE));
 
             int sent = energyStorage.receiveEnergy(toSend, simulate);
+            if (!simulate && sent > 0 && level instanceof ServerLevel serverLevel) {
+                insert.recordEnergyTransfer(serverLevel, sent);
+            }
             energyAccepted += sent;
             energyToSend -= sent;
             if (energyToSend <= 0) {
