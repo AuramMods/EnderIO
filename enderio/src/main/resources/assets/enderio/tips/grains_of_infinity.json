@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.grains_of_infinity",
+    "fallback": "Light a fire on bedrock or ordinary deepslate in the Overworld. Let it burn for a while before it goes out to get a chance at Grains of Infinity."
+  }
+}

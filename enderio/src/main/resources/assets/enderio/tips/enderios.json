@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.enderios",
+    "fallback": "The bowl comes back when you eat Enderios. The Ender Pearl does not."
+  }
+}

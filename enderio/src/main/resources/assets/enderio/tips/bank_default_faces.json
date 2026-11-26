@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.bank_default_faces",
+    "fallback": "Blank Capacitor Bank faces default to Push/Pull. A charged bank can feed a machine directly above it without configuring that face."
+  }
+}

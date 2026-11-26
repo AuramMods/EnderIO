@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.fluid_destination",
+    "fallback": "If a fluid conduit stalls, check the destination tank for room and the right liquid. Even a little of the previous fluid can block a refill."
+  }
+}

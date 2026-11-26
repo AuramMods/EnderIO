@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.probe_copy_paste",
+    "fallback": "Sneak-scroll the Conduit Probe into Copy/Paste mode. Sneak-use an endpoint to copy its settings, then use the probe normally on a matching endpoint to paste."
+  }
+}

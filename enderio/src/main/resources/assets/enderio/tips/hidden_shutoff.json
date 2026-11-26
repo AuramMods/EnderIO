@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.hidden_shutoff",
+    "fallback": "Give a hidden item line a lever before you paint the facades. 'I'll just unplug it' is easier to say while you can still find it."
+  }
+}

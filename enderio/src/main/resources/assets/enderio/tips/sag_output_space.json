@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.sag_output_space",
+    "fallback": "If the SAG Mill stops halfway through a chest of ore, check the bonus output slots. The cobblestone is also part of the job, apparently."
+  }
+}

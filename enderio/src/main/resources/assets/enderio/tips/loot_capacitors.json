@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.loot_capacitors",
+    "fallback": "Read a Loot Capacitor's tooltip before installing it. Two capacitors with the same name can have very different effects in the same machine."
+  }
+}

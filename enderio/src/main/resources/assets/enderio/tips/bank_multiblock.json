@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.bank_multiblock",
+    "fallback": "Capacitor Banks that touch face to face share capacity, even if their tiers differ. You can charge one end and draw power from the other."
+  }
+}

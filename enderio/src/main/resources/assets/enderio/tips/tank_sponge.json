@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.tank_sponge",
+    "fallback": "Use a Fluid Tank with room for a bucket of water to dry a Wet Sponge. The tank keeps the water and returns the dry sponge."
+  }
+}

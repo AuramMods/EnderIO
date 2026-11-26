@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.silent_pressure_plate",
+    "fallback": "A Silent Pressure Plate still sends redstone. Put one in a doorway to turn on a lamp behind the person who just walked in."
+  }
+}

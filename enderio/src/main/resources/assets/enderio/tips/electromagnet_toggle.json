@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.electromagnet_toggle",
+    "fallback": "Turn off your Electromagnet before sorting items on the floor. Otherwise the pile you're making tends to become the pile you already had."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.mixed_conduit_rates",
+    "fallback": "Check the conduit tooltip for its transfer rate. One slower segment can bottleneck a mixed-tier route."
+  }
+}

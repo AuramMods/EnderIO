@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.impulse_hopper",
+    "fallback": "The Impulse Hopper waits for a full batch in every configured lane and room for every output. Use it to feed recipes that need matching ingredient ratios."
+  }
+}

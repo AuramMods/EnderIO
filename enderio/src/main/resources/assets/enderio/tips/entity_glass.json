@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.entity_glass",
+    "fallback": "Check the collision rule on Soul Token glass before building a mob pen. Glass that's solid only to players is an excellent way to pen yourself in."
+  }
+}

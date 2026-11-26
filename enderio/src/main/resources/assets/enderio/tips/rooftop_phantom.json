@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.rooftop_phantom",
+    "fallback": "A Phantom-bound Photovoltaic Module generates at night. This is the rare case where losing sleep improves your power bill."
+  }
+}

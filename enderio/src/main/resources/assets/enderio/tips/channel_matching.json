@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.channel_matching",
+    "fallback": "An item or fluid Extract endpoint needs an Insert endpoint on the same channel color. Redstone signal colors are configured separately."
+  }
+}

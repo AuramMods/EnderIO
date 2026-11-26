@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.bank_face_controls",
+    "fallback": "Open a Capacitor Bank's I/O preview and right-click a face to cycle its mode. You can edit distant blocks in the same bank from that menu."
+  }
+}

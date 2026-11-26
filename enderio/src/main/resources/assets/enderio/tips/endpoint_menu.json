@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.endpoint_menu",
+    "fallback": "Right-click a conduit endpoint with an empty hand to open its controls. Check the selected conduit tab before changing a face."
+  }
+}

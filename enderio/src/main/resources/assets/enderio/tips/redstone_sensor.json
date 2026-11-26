@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.redstone_sensor",
+    "fallback": "Put a Redstone Sensor Filter on a conduit input to read a chest's comparator signal. Test the output with a lamp before wiring it to a machine."
+  }
+}

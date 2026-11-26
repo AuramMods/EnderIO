@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.weather_obelisk",
+    "fallback": "Keep the Weather Obelisk under open sky. Liquid Sunshine and a Firework Rocket can clear the weather, which is a reasonable amount of paperwork for a picnic."
+  }
+}

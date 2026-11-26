@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.overflow_barrel",
+    "fallback": "With Round Robin off, give your main destination a higher Insert priority than your overflow barrel. Label the barrel 'Someone else's problem.'"
+  }
+}

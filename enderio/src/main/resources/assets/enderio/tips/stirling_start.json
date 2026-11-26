@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.stirling_start",
+    "fallback": "A coal-fed Stirling Generator beside a machine is enough to start. Install a capacitor in both, then set the generator's touching face to Push."
+  }
+}

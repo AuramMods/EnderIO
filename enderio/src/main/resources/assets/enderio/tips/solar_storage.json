@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.solar_storage",
+    "fallback": "Put a Capacitor Bank on a photovoltaic line to save daytime surplus for after dark. Connect to the side or bottom of the solar array."
+  }
+}

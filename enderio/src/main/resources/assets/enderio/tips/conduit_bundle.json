@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.conduit_bundle",
+    "fallback": "Add a different conduit to an existing bundle by using it on the bundle. Items, power, fluids and redstone can share the block while running separate networks."
+  }
+}

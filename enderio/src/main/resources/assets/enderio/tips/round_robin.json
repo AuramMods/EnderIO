@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.round_robin",
+    "fallback": "Use Round Robin on an Extract endpoint when several machines should take turns receiving items."
+  }
+}

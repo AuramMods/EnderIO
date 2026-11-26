@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.painting_table",
+    "fallback": "You can paint a Crafting Table to look like a Diamond Block. It will still make sticks. Your visitors don't need to know that."
+  }
+}

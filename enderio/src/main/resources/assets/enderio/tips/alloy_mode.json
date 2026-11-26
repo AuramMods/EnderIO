@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.alloy_mode",
+    "fallback": "Set the Alloy Smelter to alloy-only on a dedicated alloy line. It keeps ordinary furnace recipes from using ingredients you meant to alloy."
+  }
+}

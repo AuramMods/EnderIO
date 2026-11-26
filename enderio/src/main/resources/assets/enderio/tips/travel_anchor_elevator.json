@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.travel_anchor_elevator",
+    "fallback": "Stack two Travel Anchors vertically. Stand on one and jump to go up or sneak to go down with empty hands."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.soul_vial_label",
+    "fallback": "A filled Soul Vial tells you which mob it holds. If you find a cow in the parts chest, at least the tooltip can identify it."
+  }
+}

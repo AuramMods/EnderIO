@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.xp_obelisk",
+    "fallback": "Deposit your XP in an XP Obelisk before a risky trip. It stores it as XP Juice and can return it through the menu later."
+  }
+}

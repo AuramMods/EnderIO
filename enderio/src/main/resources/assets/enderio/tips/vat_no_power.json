@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.vat_no_power",
+    "fallback": "The VAT can ferment without FE. If it sits idle, check the liquid, both reagents, the output tank and the redstone setting."
+  }
+}

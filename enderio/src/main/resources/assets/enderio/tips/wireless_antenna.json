@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.wireless_antenna",
+    "fallback": "Place an antenna directly above the Wireless Charger to extend its range. Use the range display to check whether it reaches your workbench."
+  }
+}

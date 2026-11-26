@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.slicer_tools",
+    "fallback": "Slice'N'Splice needs both an axe and shears. Check their slots when a familiar recipe stops working."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.powered_spawner_capture",
+    "fallback": "Set a Powered Spawner to Capture and supply an empty Soul Vial to bottle its bound mob instead of spawning it into the room."
+  }
+}

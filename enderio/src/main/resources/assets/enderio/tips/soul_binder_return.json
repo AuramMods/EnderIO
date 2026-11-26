@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.soul_binder_return",
+    "fallback": "The Soul Binder returns the empty Soul Vial after a job. Leave room for it and the finished item when setting up extraction."
+  }
+}

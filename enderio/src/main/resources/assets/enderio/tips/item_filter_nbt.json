@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.item_filter_nbt",
+    "fallback": "Use an Advanced Item Filter's NBT matching when two items look alike but have different stored data, such as a custom name."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.extraction_redstone",
+    "fallback": "If an item line has a source and destination but nothing moves, check the source's redstone mode. Always Active is a quick way to rule out the signal."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.facade_access",
+    "fallback": "Hold a Yeta Wrench to see through conduit facades and reach the controls underneath. Put the wrench away when you want to break the facade itself."
+  }
+}

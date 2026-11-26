@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.basic_capacitor",
+    "fallback": "Power bar empty? Check the capacitor slot. Most powered Ender IO machines need a Basic Capacitor or better before they can do anything with that cable."
+  }
+}

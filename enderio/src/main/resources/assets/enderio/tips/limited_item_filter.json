@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.limited_item_filter",
+    "fallback": "A Limited Item Filter can keep a stock level. On Insert it stops filling at the sample count. On Extract it leaves that count behind."
+  }
+}

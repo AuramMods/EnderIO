@@ -1,0 +1,9 @@
+{
+  "title": {
+    "text": "Ender IO"
+  },
+  "tip": {
+    "translate": "tip.enderio.grinding_balls",
+    "fallback": "Hover a Grinding Ball before you put it in the SAG Mill. Its output, bonus and energy modifiers can favor very different jobs."
+  }
+}
